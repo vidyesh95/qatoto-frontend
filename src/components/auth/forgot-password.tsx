@@ -145,7 +145,7 @@ export default function ForgotPassword() {
           <div
             key={s}
             className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              s <= step ? "bg-[#00696E]" : "bg-[#DAE4E5]"
+              s <= step ? "bg-primary-imprint" : "bg-muted"
             }`}
           />
         ))}
@@ -162,7 +162,7 @@ export default function ForgotPassword() {
         {step === 1 && (
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="relative">
-              <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
+              <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
                 <label
                   htmlFor="email"
                   className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -191,7 +191,7 @@ export default function ForgotPassword() {
             </div>
             <button
               type="submit"
-              className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
+              className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
             >
               <Image
                 src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
@@ -220,14 +220,14 @@ export default function ForgotPassword() {
                     value={otp[index]}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="h-14 w-12 rounded border border-[#6F7979] bg-transparent text-center text-xl font-semibold transition-colors outline-none focus:border-2 focus:border-[#00696E]"
+                    className="h-14 w-12 rounded border border-outline-strong bg-transparent text-center text-xl font-semibold transition-colors outline-none focus:border-2 focus:border-primary-imprint"
                     required
                   />
                 ))}
               </div>
               <button
                 type="submit"
-                className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
+                className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
               >
                 <Image
                   src={"/icons/check_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
@@ -238,12 +238,12 @@ export default function ForgotPassword() {
                 <span>Verify</span>
               </button>
             </form>
-            <p className="text-center text-sm font-medium text-[#3F4949]">
+            <p className="text-center text-sm font-medium text-muted-foreground">
               Didn&apos;t receive the code?{" "}
               <button
                 type="button"
                 onClick={() => emailOtp.sendVerificationOtp({ email, type: "forget-password" })}
-                className="cursor-pointer font-medium text-[#00696E]"
+                className="cursor-pointer font-medium text-primary-imprint"
               >
                 Resend
               </button>
@@ -255,7 +255,7 @@ export default function ForgotPassword() {
         {step === 3 && (
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="relative">
-              <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
+              <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
                 <label
                   htmlFor="password"
                   className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -294,7 +294,7 @@ export default function ForgotPassword() {
                   />
                 </button>
               </div>
-              <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
+              <p className="mt-1 w-full pl-4 text-xs text-muted-foreground">
                 Must be at least 8 characters
               </p>
             </div>
@@ -311,8 +311,8 @@ export default function ForgotPassword() {
                   className="peer sr-only"
                   aria-label="Remember me toggle switch"
                 />
-                <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
-                <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
+                <div className="h-8 w-13 rounded-full border-2 border-outline-strong bg-muted transition-colors duration-200 ease-in-out peer-checked:border-primary-imprint peer-checked:bg-primary-imprint"></div>
+                <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-outline-strong shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
                   <svg
                     className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
                     fill="none"
@@ -327,7 +327,7 @@ export default function ForgotPassword() {
                     />
                   </svg>
                   <svg
-                    className="check-icon absolute h-4 w-4 text-[#00696E] opacity-0 transition-opacity duration-200"
+                    className="check-icon absolute h-4 w-4 text-primary-imprint opacity-0 transition-opacity duration-200"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -344,7 +344,7 @@ export default function ForgotPassword() {
             </div>
             <button
               type="submit"
-              className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
+              className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
             >
               <Image
                 src={"/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
@@ -359,8 +359,8 @@ export default function ForgotPassword() {
         )}
 
         <p className="space-x-1 text-center text-sm font-medium">
-          <span className="text-[#BEC8C9]">Remember your password?</span>
-          <Link href={"/sign-in"} className="cursor-pointer text-[#00696E]">
+          <span className="text-muted-foreground">Remember your password?</span>
+          <Link href={"/sign-in"} className="cursor-pointer text-primary-imprint">
             Sign in
           </Link>
         </p>

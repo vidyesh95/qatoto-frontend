@@ -50,7 +50,7 @@ export default function YourResearchPrograms() {
       {programsQuery.data.map((program) => (
         <li
           key={program.programId}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <div className="min-w-0 space-y-1">
             <p className="text-sm font-medium">{program.title}</p>
@@ -65,7 +65,7 @@ export default function YourResearchPrograms() {
           */}
           <Link
             href={`/research-and-development/programs/${program.slug}`}
-            className="shrink-0 rounded-full border border-[#00696E] px-3 py-1.5 text-xs font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/10"
+            className="shrink-0 rounded-full border border-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/10"
           >
             Open
           </Link>

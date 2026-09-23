@@ -73,7 +73,7 @@ export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="mt-auto cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+        className="mt-auto cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
       >
         Apply for this role
       </button>
@@ -139,7 +139,7 @@ export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
                       aria-pressed={selectedSkills.includes(skill)}
                       className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
                         selectedSkills.includes(skill)
-                          ? "bg-[#00696E] text-white"
+                          ? "bg-primary-imprint text-primary-imprint-foreground"
                           : "bg-muted text-foreground"
                       }`}
                     >
@@ -186,7 +186,7 @@ export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
             <button
               type="submit"
               disabled={!isFormValid || applyMutation.isPending}
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
               {applyMutation.isPending ? "Sending…" : "Send my application"}
             </button>

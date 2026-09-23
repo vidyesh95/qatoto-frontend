@@ -98,32 +98,32 @@ export default function PriceChart({
           </span>
 
           <span className="block px-4 lg:px-6">
-            <span className="block border-t border-[#CAC4D0]" />
+            <span className="block border-t border-outline-variant" />
             <span className="flex">
               {pricingTiers.map((tier, tierIndex) => (
                 <span
                   key={tier.minimumOrderQuantity}
                   className={`flex flex-1 flex-col gap-1 rounded p-1 ${
                     tierIndex === activeTierIndex
-                      ? "bg-[#D6E3FF]/40 outline -outline-offset-1 outline-[#2A76FD]"
+                      ? "bg-secondary outline -outline-offset-1 outline-blue-600"
                       : ""
                   }`}
                 >
-                  <span className="text-sm font-medium tracking-wide text-[#191C1C]">
+                  <span className="text-sm font-medium tracking-wide text-foreground">
                     {formatCentsLabel(tier.unitPriceInCents, currency)}
                   </span>
                   <span className="flex flex-col gap-0.5">
-                    <span className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
+                    <span className="text-xs leading-4 font-medium tracking-wide text-foreground">
                       Min. order:
                     </span>
-                    <span className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
+                    <span className="text-xs leading-4 font-medium tracking-wide text-foreground">
                       {tier.minimumOrderQuantity}
                     </span>
                   </span>
                 </span>
               ))}
             </span>
-            <span className="block border-t border-[#CAC4D0]" />
+            <span className="block border-t border-outline-variant" />
           </span>
         </button>
       )}
@@ -132,9 +132,9 @@ export default function PriceChart({
           button) */}
       <div className="flex items-center justify-between px-4 py-2 lg:px-6">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm text-[#191C1C]">Quantity</span>
+          <span className="text-sm text-foreground">Quantity</span>
           {activeTier !== null && (
-            <span className="text-xs text-[#6F7979]">
+            <span className="text-xs text-outline-strong">
               Price: {formatCentsLabel(activeTier.unitPriceInCents, currency)} per unit at this
               quantity
             </span>
@@ -148,7 +148,7 @@ export default function PriceChart({
             // the line outright, so offering the value would be offering a refusal.
             disabled={quantity <= minimumOrderQuantity}
             aria-label="Decrease quantity"
-            className="grid size-8 place-items-center rounded-full text-base text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
+            className="grid size-8 place-items-center rounded-full text-base text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
           >
             −
           </button>
@@ -159,13 +159,13 @@ export default function PriceChart({
             onChange={handleQuantityInputChange}
             onBlur={handleQuantityInputBlur}
             aria-label="Quantity"
-            className="mx-1 w-14 rounded py-1 text-center text-sm font-medium text-[#191C1C] outline -outline-offset-1 outline-[#E0E3E3] focus:outline-[#2A76FD]"
+            className="mx-1 w-14 rounded py-1 text-center text-sm font-medium text-foreground outline -outline-offset-1 outline-border focus:outline-blue-600"
           />
           <button
             type="button"
             onClick={handleIncreaseQuantityClick}
             aria-label="Increase quantity"
-            className="grid size-8 place-items-center rounded-full text-base text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+            className="grid size-8 place-items-center rounded-full text-base text-primary-imprint outline -outline-offset-1 outline-outline-strong"
           >
             +
           </button>

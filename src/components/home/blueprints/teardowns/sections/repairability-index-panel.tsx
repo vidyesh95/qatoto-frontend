@@ -32,18 +32,18 @@ function CriterionRow({
     <li className="space-y-1">
       <div className="flex items-baseline justify-between gap-3 text-sm">
         <span className="text-foreground">{label}</span>
-        <span className="shrink-0 text-[#6F7979] tabular-nums">
+        <span className="shrink-0 text-outline-strong tabular-nums">
           {criterion.scoreOutOfTen} of {MAXIMUM_SCORE}
         </span>
       </div>
       {/* The bar is decoration: the number beside it is the accessible value. */}
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted" role="presentation">
         <div
-          className="h-full rounded-full bg-[#00696E]"
+          className="h-full rounded-full bg-primary-imprint"
           style={{ width: `${(criterion.scoreOutOfTen / MAXIMUM_SCORE) * 100}%` }}
         />
       </div>
-      <p className="text-xs leading-5 text-[#6F7979]">{criterion.note}</p>
+      <p className="text-xs leading-5 text-outline-strong">{criterion.note}</p>
     </li>
   );
 }
@@ -64,13 +64,13 @@ export default function RepairabilityIndexPanel({
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Repairability</h2>
-      <div className="mt-2 max-w-2xl rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="mt-2 max-w-2xl rounded-xl border border-outline-variant/60 px-4 py-3">
         <div className="flex items-baseline gap-3">
-          <p className="shrink-0 text-3xl font-semibold text-[#00696E]">
+          <p className="shrink-0 text-3xl font-semibold text-primary-imprint">
             {repairabilityIndex.overallScoreOutOfTen}
-            <span className="text-sm font-normal text-[#6F7979]">/{MAXIMUM_SCORE}</span>
+            <span className="text-sm font-normal text-outline-strong">/{MAXIMUM_SCORE}</span>
           </p>
-          <p className="text-xs leading-5 text-[#6F7979]">
+          <p className="text-xs leading-5 text-outline-strong">
             Scored by the author against four criteria. The overall is their judgement, not an
             average of the four.
           </p>

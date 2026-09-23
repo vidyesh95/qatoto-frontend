@@ -38,7 +38,7 @@ const STEP_STATUS_LABELS: Record<VerificationStepStatus, string> = {
  */
 const STEP_STATUS_BADGE_CLASS: Record<VerificationStepStatus, string> = {
   pending: "bg-muted text-muted-foreground",
-  passed: "bg-[#00696E]/10 text-[#00696E]",
+  passed: "bg-primary-imprint/10 text-primary-imprint",
   flagged: "bg-amber-100 text-amber-800",
   failed: "bg-red-100 text-red-800",
   skipped: "bg-muted text-muted-foreground",
@@ -110,7 +110,7 @@ export default function ClaimDetailDisclosure({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="mt-3 cursor-pointer text-xs font-medium text-[#00696E]"
+        className="mt-3 cursor-pointer text-xs font-medium text-primary-imprint"
       >
         Show the run history
       </button>
@@ -155,7 +155,7 @@ export default function ClaimDetailDisclosure({
             <button
               type="button"
               onClick={() => setOverridingStepId(isOverriding ? null : step.id)}
-              className="cursor-pointer text-xs font-medium text-[#00696E]"
+              className="cursor-pointer text-xs font-medium text-primary-imprint"
             >
               {isOverriding ? "Cancel" : "Override this judgement"}
             </button>
@@ -181,7 +181,7 @@ export default function ClaimDetailDisclosure({
                     const parsed = VerificationStepStatusSchema.safeParse(changeEvent.target.value);
                     if (parsed.success) setOverriddenStatus(parsed.data);
                   }}
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                 >
                   {VERIFICATION_STEP_STATUSES.map((status) => (
                     <option key={status} value={status}>
@@ -195,7 +195,7 @@ export default function ClaimDetailDisclosure({
                   value={overrideReason}
                   onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
                   placeholder="Why is the machine wrong here?"
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
                   You are correcting a judgement, not a number. The formula recomputes the minutes
@@ -204,7 +204,7 @@ export default function ClaimDetailDisclosure({
                 <button
                   type="submit"
                   disabled={overrideMutation.isPending}
-                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                 >
                   {overrideMutation.isPending ? "Recording…" : "Record the override"}
                 </button>
@@ -218,11 +218,11 @@ export default function ClaimDetailDisclosure({
   }
 
   return (
-    <div className="mt-3 space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+    <div className="mt-3 space-y-3 border-t border-outline-variant/40 pt-3">
       <button
         type="button"
         onClick={() => setIsOpen(false)}
-        className="cursor-pointer text-xs font-medium text-[#00696E]"
+        className="cursor-pointer text-xs font-medium text-primary-imprint"
       >
         Hide the run history
       </button>
@@ -231,7 +231,7 @@ export default function ClaimDetailDisclosure({
 
       {/* The 202 state, made visible. The claim exists; the number does not yet. */}
       {isVerdictOutstanding && (
-        <p className="text-xs text-[#00696E]">
+        <p className="text-xs text-primary-imprint">
           The pipeline is still checking this claim. No minutes and no slices exist for it yet —
           this updates itself when the verdict lands.
         </p>
@@ -280,7 +280,10 @@ export default function ClaimDetailDisclosure({
           )}
 
           {claimQuery.data.runs.map((run) => (
-            <section key={run.id} className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3">
+            <section
+              key={run.id}
+              className="space-y-2 rounded-xl border border-outline-variant/60 p-3"
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-medium">
                   Attempt {run.attemptNumber} — {run.verdict.replaceAll("_", " ")}
@@ -312,7 +315,7 @@ export default function ClaimDetailDisclosure({
                         href={evidence.externalUrl}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="text-[#00696E] underline underline-offset-2"
+                        className="text-primary-imprint underline underline-offset-2"
                       >
                         {evidence.label}
                       </a>
@@ -346,20 +349,20 @@ export default function ClaimDetailDisclosure({
                   required
                   value={reverifyReason}
                   onChange={(changeEvent) => setReverifyReason(changeEvent.target.value)}
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                   placeholder="Why re-verify?"
                 />
               </label>
               <button
                 type="submit"
                 disabled={reverifyMutation.isPending}
-                className="cursor-pointer rounded-full border border-[#00696E]/40 px-3 py-1.5 text-xs font-medium text-[#00696E] disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
               >
                 {reverifyMutation.isPending ? "Requesting…" : "Re-verify this claim"}
               </button>
               {/* 202: the run is queued, the number does not exist yet. */}
               {reverifyMutation.isSuccess && (
-                <p className="text-xs text-[#00696E]">
+                <p className="text-xs text-primary-imprint">
                   Queued. The new attempt appears above when it finishes — nothing has changed yet.
                 </p>
               )}

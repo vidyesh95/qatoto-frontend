@@ -101,7 +101,7 @@ function InboxRow({ comment }: { readonly comment: CreatorInboxComment }) {
           {comment.author?.name ?? "Deleted account"}
         </span>
         {comment.parentCommentId !== null && (
-          <span className="rounded-full bg-secondary/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+          <span className="rounded-full bg-secondary/60 px-2 py-0.5 text-xs text-muted-foreground">
             Reply
           </span>
         )}

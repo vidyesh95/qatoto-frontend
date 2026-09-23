@@ -198,7 +198,7 @@ function Metric({
 }) {
   return (
     <div>
-      <dt className="text-[11px] tracking-wide text-muted-foreground uppercase">{label}</dt>
+      <dt className="text-xs tracking-wide text-muted-foreground uppercase">{label}</dt>
       <dd className={value === null ? "text-xs text-muted-foreground" : "text-sm text-foreground"}>
         {value ?? absence ?? "—"}
       </dd>

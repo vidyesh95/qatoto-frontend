@@ -99,7 +99,7 @@ export default function WatchContent({
   if (video === null) {
     return (
       <section className="px-4 py-8 lg:px-6">
-        <p className="text-sm text-[#6F7979]">Video not found.</p>
+        <p className="text-sm text-outline-strong">Video not found.</p>
       </section>
     );
   }
@@ -158,7 +158,7 @@ export default function WatchContent({
           />
 
           {video.publishedAt !== null && (
-            <RelativeTime isoInstant={video.publishedAt} className="text-xs text-[#6F7979]" />
+            <RelativeTime isoInstant={video.publishedAt} className="text-xs text-outline-strong" />
           )}
 
           {/* Channel + subscribe */}
@@ -180,7 +180,7 @@ export default function WatchContent({
                   creator-verification concept exists in its schema, and a hard-coded `false`
                   would be a trust signal the platform cannot support.
                 */}
-                <span className="ml-1 text-xs text-[#6F7979]">
+                <span className="ml-1 text-xs text-outline-strong">
                   {formatSubscriberCountLabel(video.creator.subscriberCount)}
                 </span>
               </div>
@@ -200,11 +200,13 @@ export default function WatchContent({
           {video.builtInTheOpen !== null && (
             <Link
               href={`/research-and-development/project/${video.builtInTheOpen.projectSlug}`}
-              className="flex items-center gap-2 self-start rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition hover:bg-[#F4FBFA]"
+              className="flex items-center gap-2 self-start rounded-full border border-outline-variant px-3 py-1.5 text-xs transition hover:bg-muted"
             >
-              <span className="text-[#6F7979]">Built in the open ·</span>
-              <span className="font-medium text-[#191C1C]">{video.builtInTheOpen.projectName}</span>
-              <span className="text-[#00696E]">
+              <span className="text-outline-strong">Built in the open ·</span>
+              <span className="font-medium text-foreground">
+                {video.builtInTheOpen.projectName}
+              </span>
+              <span className="text-primary-imprint">
                 {PROJECT_STAGE_LABELS[video.builtInTheOpen.stage]}
               </span>
             </Link>
@@ -229,7 +231,7 @@ export default function WatchContent({
           */}
           {video.documents.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-[#191C1C]">Documents</h2>
+              <h2 className="text-sm font-medium text-foreground">Documents</h2>
               <ul className="flex flex-wrap gap-2">
                 {video.documents.map((document) => (
                   <li key={document.id}>
@@ -237,7 +239,7 @@ export default function WatchContent({
                       href={`${API_BASE_URL}${document.downloadPath}`}
                       target="_blank"
                       rel="noopener"
-                      className="flex items-center gap-2 rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium text-[#191C1C] transition-colors hover:bg-[#F2F4F4]"
+                      className="flex items-center gap-2 rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
                     >
                       <Image
                         src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -246,7 +248,7 @@ export default function WatchContent({
                         height={16}
                       />
                       {document.fileName}
-                      <span className="text-[#6F7979]">
+                      <span className="text-outline-strong">
                         {formatDocumentSizeLabel(document.byteSize)}
                       </span>
                     </a>
@@ -323,12 +325,12 @@ export default function WatchContent({
 function PremiumBanner() {
   return (
     <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-xl bg-black p-6">
-      <p className="text-center text-sm leading-5 font-medium tracking-[0.1px] text-[#C4C7C7]">
+      <p className="text-center text-sm leading-5 font-medium tracking-normal text-muted-foreground">
         Get Premium and enjoy the Premium exclusive video!
       </p>
       <button
         type="button"
-        className="flex items-center gap-2 rounded-full bg-[#00696E] px-6 py-2.5 text-sm font-medium text-white hover:opacity-90"
+        className="flex items-center gap-2 rounded-full bg-primary-imprint px-6 py-2.5 text-sm font-medium text-primary-imprint-foreground hover:opacity-90"
       >
         <Image
           src="/icons/diamond_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"

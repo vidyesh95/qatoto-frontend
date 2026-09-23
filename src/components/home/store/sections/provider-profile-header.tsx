@@ -29,7 +29,7 @@ export default function ProviderProfileHeader({
     <header className="px-4 pt-4 lg:px-6">
       <div className="flex items-start gap-3">
         {provider.logoUrl === null ? (
-          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-base font-medium text-[#00696E]">
+          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary text-base font-medium text-primary-imprint">
             {provider.displayName.slice(0, 2).toUpperCase()}
           </span>
         ) : (
@@ -46,11 +46,11 @@ export default function ProviderProfileHeader({
           <h1 className="text-xl font-medium text-foreground lg:text-2xl">
             {provider.displayName}
           </h1>
-          <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">
+          <p className="mt-0.5 text-xs leading-4 text-outline-strong">
             {countryLabelFromCode(provider.countryCode)}
             {provider.serviceRegionSummary !== null && ` · serves ${provider.serviceRegionSummary}`}
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#00696E]">
+          <p className="mt-1 text-xs leading-4 text-primary-imprint">
             {PROVIDER_VERIFICATION_LABELS[provider.verificationState]}
           </p>
         </div>
@@ -58,7 +58,7 @@ export default function ProviderProfileHeader({
 
       {operatedKinds.length > 0 && (
         <div className="mt-3">
-          <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+          <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
             Lists services under
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -72,7 +72,7 @@ export default function ProviderProfileHeader({
       {/* Not accepting requests is a fact worth stating prominently: it changes whether the buyer
           should spend time reading the rest. Accepting them is the default and gets no banner. */}
       {!provider.acceptingRequests && (
-        <p className="mt-3 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           This provider is not taking new requests at the moment. Its offerings stay listed so you
           can compare them.
         </p>

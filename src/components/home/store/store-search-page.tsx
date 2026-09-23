@@ -149,7 +149,7 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           {searchQuery === undefined ? "Search the store" : `Results for “${searchQuery}”`}
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Products and trade services, ranked by the backend.
         </p>
       </header>
@@ -313,7 +313,7 @@ function SearchFilters({
       {appliedFilterCount > 0 && (
         <Link
           href="/store/search"
-          className="inline-block text-xs leading-4 text-[#00696E] underline"
+          className="inline-block text-xs leading-4 text-primary-imprint underline"
         >
           Clear all filters
         </Link>
@@ -382,7 +382,7 @@ function SearchHitRow({ hit }: { hit: StoreSearchHit }) {
       return (
         <SearchHitShell
           href={`/store/product/${hit.publicSlug}`}
-          badge={<span className="text-[#6F7979]">Product</span>}
+          badge={<span className="text-outline-strong">Product</span>}
           hit={hit}
         />
       );
@@ -392,9 +392,9 @@ function SearchHitRow({ hit }: { hit: StoreSearchHit }) {
           href={`/store/services/${hit.publicSlug}`}
           badge={
             hit.providerKind === null ? (
-              <span className="text-[#6F7979]">Service</span>
+              <span className="text-outline-strong">Service</span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[#6F7979]">
+              <span className="inline-flex items-center gap-1 text-outline-strong">
                 <Image
                   src={`/icons/${PROVIDER_KIND_ICONS[hit.providerKind]}`}
                   alt=""
@@ -414,7 +414,7 @@ function SearchHitRow({ hit }: { hit: StoreSearchHit }) {
           // The seller storefront, the same route `CompanyDetailsSection` links to from a
           // product page — a supplier hit and a supplier link should land in one place.
           href={`/store/organizations/${hit.publicSlug}`}
-          badge={<span className="text-[#6F7979]">Supplier</span>}
+          badge={<span className="text-outline-strong">Supplier</span>}
           hit={hit}
         />
       );
@@ -445,19 +445,19 @@ function SearchHitShell({
   return (
     <Link
       href={href}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
-      <div className="flex items-center gap-2 text-[11px] leading-4 font-medium tracking-[0.4px]">
+      <div className="flex items-center gap-2 text-xs leading-4 font-medium tracking-wider">
         {badge}
-        <span aria-hidden className="text-[#CAC4D0]">
+        <span aria-hidden className="text-outline-variant">
           ·
         </span>
-        <span className="text-[#6F7979]">
+        <span className="text-outline-strong">
           {hit.organizationDisplayName} · {countryLabelFromCode(hit.organizationCountryCode)}
         </span>
       </div>
 
-      <p className="mt-1 text-sm leading-5 font-medium text-[#191C1C]">{hit.title}</p>
+      <p className="mt-1 text-sm leading-5 font-medium text-foreground">{hit.title}</p>
 
       {/* STORE §21.1. WHAT A PART-CODE SEARCH MATCHED ON. Searching `LM358` can return a dozen
           rows whose titles say nothing about it, because the code lives in the listing's own
@@ -465,24 +465,24 @@ function SearchHitShell({
           they cannot see the reason for. Null on offerings and organizations, which have no part
           code, so the guard doubles as the kind branch. Same label the detail sheet uses. */}
       {hit.modelNumber !== null && (
-        <p className="mt-0.5 font-mono text-xs leading-4 text-[#191C1C]">
+        <p className="mt-0.5 font-mono text-xs leading-4 text-foreground">
           <span className="sr-only">Model number: </span>
           {hit.modelNumber}
         </p>
       )}
 
       {hit.summary !== null && (
-        <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#6F7979]">{hit.summary}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-outline-strong">{hit.summary}</p>
       )}
 
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 text-xs leading-4">
         {priceLabel === null ? (
-          <span className="text-[#00696E]">Quote on request</span>
+          <span className="text-primary-imprint">Quote on request</span>
         ) : (
-          <span className="font-medium text-[#191C1C]">{priceLabel}</span>
+          <span className="font-medium text-foreground">{priceLabel}</span>
         )}
         {hit.minimumOrderQuantity !== null && (
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             Minimum order {formatCountLabel(hit.minimumOrderQuantity)}
           </span>
         )}

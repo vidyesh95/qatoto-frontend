@@ -131,7 +131,7 @@ export default async function ProofOfEffortPage({
       <header className="space-y-1 px-4 lg:px-6">
         <Link
           href={`/research-and-development/project/${project.slug}`}
-          className="text-xs font-medium text-[#00696E]"
+          className="text-xs font-medium text-primary-imprint"
         >
           ← {project.name}
         </Link>

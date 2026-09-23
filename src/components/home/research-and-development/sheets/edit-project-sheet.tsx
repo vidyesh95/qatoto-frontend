@@ -65,7 +65,7 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+        className="cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
       >
         Edit project
       </button>
@@ -126,13 +126,13 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
             <button
               type="submit"
               disabled={settingsMutation.isPending}
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
               Save details
             </button>
           </form>
 
-          <label className="flex flex-col gap-1 border-t border-[#CAC4D0]/40 pt-4">
+          <label className="flex flex-col gap-1 border-t border-outline-variant/40 pt-4">
             <span className={LABEL_CLASS}>Cover image</span>
             <input
               type="file"
@@ -148,7 +148,7 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
           {isFounder(project.viewerProjectRole) && (
             <>
               <form
-                className="flex flex-col gap-2 border-t border-[#CAC4D0]/40 pt-4"
+                className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4"
                 onSubmit={(submitEvent) => {
                   submitEvent.preventDefault();
                   settingsMutation.mutate({
@@ -191,13 +191,13 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
                 <button
                   type="submit"
                   disabled={settingsMutation.isPending || draftStage === project.stage}
-                  className="self-start rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] disabled:opacity-40"
+                  className="self-start rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
                 >
                   Move the stage
                 </button>
               </form>
 
-              <div className="flex flex-col gap-2 border-t border-[#CAC4D0]/40 pt-4">
+              <div className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4">
                 <span className={LABEL_CLASS}>Visibility</span>
                 <p className="text-xs text-muted-foreground">
                   {isDraft
@@ -210,7 +210,7 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
                   onClick={() =>
                     settingsMutation.mutate({ action: isDraft ? "publish" : "unpublish" })
                   }
-                  className="self-start rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                  className="self-start rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
                 >
                   {isDraft ? "Publish it" : "Unpublish it"}
                 </button>
@@ -219,7 +219,7 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
           )}
 
           {settingsError !== null && <MutationErrorNotice error={settingsError} />}
-          {settingsMutation.isSuccess && <p className="text-sm text-[#00696E]">Saved.</p>}
+          {settingsMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
         </div>
       </RndSheet>
     </>

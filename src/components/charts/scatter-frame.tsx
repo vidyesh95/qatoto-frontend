@@ -75,7 +75,7 @@ interface ScatterFrameProps {
   readonly children: (scale: ScatterChartScale) => ReactNode;
 }
 
-const PRIMARY_GUIDE_CLASS = "stroke-[#00696E]/70";
+const PRIMARY_GUIDE_CLASS = "stroke-primary-imprint/70";
 const SECONDARY_GUIDE_CLASS = "stroke-border";
 
 /** Distinct per kind, so the legend swatch identifies the line without a label on it. */
@@ -123,7 +123,7 @@ export function ScatterFrame({
   return (
     <figure className="space-y-2">
       <div className="grid grid-cols-[auto_1fr] gap-x-2">
-        <div className="flex flex-col justify-between py-0 text-right text-[10px] leading-none text-muted-foreground">
+        <div className="flex flex-col justify-between py-0 text-right text-xs leading-none text-muted-foreground">
           {descendingYTicks.map((tickValue, tickIndex) => (
             // Keyed on the POSITION, not the value: a value key collides the moment two ticks
             // round together.
@@ -237,7 +237,7 @@ export function ScatterFrame({
 
         <div aria-hidden />
 
-        <div className="relative mt-1 h-4 text-[10px] leading-none text-muted-foreground">
+        <div className="relative mt-1 h-4 text-xs leading-none text-muted-foreground">
           {scale.xTicks.map((tickValue, tickIndex) => (
             <span
               key={`x-label-${String(tickIndex)}`}

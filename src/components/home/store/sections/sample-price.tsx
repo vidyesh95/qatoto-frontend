@@ -80,7 +80,7 @@ export default function SamplePrice({
     <div className="px-4 py-2 lg:px-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm text-[#191C1C]">
+          <p className="text-sm text-foreground">
             Sample price:{" "}
             <span className="font-medium">
               {samplePriceInCents === null
@@ -89,7 +89,7 @@ export default function SamplePrice({
             </span>
           </p>
           {samplePolicy === "refundable" && (
-            <p className="text-xs leading-4 text-[#6F7979]">
+            <p className="text-xs leading-4 text-outline-strong">
               Refunded against your order when you buy in bulk.
             </p>
           )}
@@ -98,15 +98,15 @@ export default function SamplePrice({
           type="button"
           onClick={handleGetSampleClick}
           disabled={!canOrderSample}
-          className="shrink-0 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
+          className="shrink-0 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
         >
           {setCartItem.isPending ? "Adding…" : "Get sample"}
         </button>
       </div>
 
       {!isSignedIn && (
-        <p className="mt-1 text-xs leading-4 text-[#6F7979]">
-          <Link href="/sign-in" className="font-medium text-[#00696E]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
+          <Link href="/sign-in" className="font-medium text-primary-imprint">
             Sign in
           </Link>{" "}
           to order a sample.

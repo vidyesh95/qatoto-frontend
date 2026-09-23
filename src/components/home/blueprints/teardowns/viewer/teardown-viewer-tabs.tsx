@@ -46,7 +46,7 @@ export default function TeardownViewerTabs({
       // but focus belongs on the active tab, not the list, hence -1 here and 0 on the tab.
       tabIndex={-1}
       onKeyDown={handleTabKeyDown}
-      className="flex flex-wrap gap-1 rounded-full border border-[#CAC4D0]/60 bg-white p-1"
+      className="flex flex-wrap gap-1 rounded-full border border-outline-variant/60 bg-white p-1"
     >
       {orderedTabs.map((tab) => {
         const isActive = tab === activeTab;
@@ -61,7 +61,9 @@ export default function TeardownViewerTabs({
             tabIndex={isActive ? 0 : -1}
             onClick={() => onTabChange(tab)}
             className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              isActive ? "bg-[#00696E] text-white" : "text-foreground hover:bg-muted"
+              isActive
+                ? "bg-primary-imprint text-primary-imprint-foreground"
+                : "text-foreground hover:bg-muted"
             }`}
           >
             {TEARDOWN_VIEWER_TAB_LABELS[tab]}

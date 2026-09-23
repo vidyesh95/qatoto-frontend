@@ -86,7 +86,7 @@ export default function ResearchBranchMap({
 
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-3">
-          <div className="overflow-x-auto rounded-2xl bg-[#00696E]/5 p-2 sm:p-4">
+          <div className="overflow-x-auto rounded-2xl bg-primary-imprint/5 p-2 sm:p-4">
             <div className="relative h-105 min-w-180 sm:h-120">
               <svg
                 aria-hidden
@@ -140,8 +140,8 @@ export default function ResearchBranchMap({
                       left: permilleToPercent(position.leftPermille),
                       top: permilleToPercent(position.topPermille),
                     }}
-                    className={`absolute z-10 flex max-w-36 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col gap-1 rounded-2xl border-2 bg-card px-3 py-2 text-left shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-[#00696E] focus-visible:ring-offset-2 ${branchStatusStyle.nodeBorderClassName} ${
-                      isSelected ? "ring-2 ring-[#00696E] ring-offset-2" : ""
+                    className={`absolute z-10 flex max-w-36 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col gap-1 rounded-2xl border-2 bg-card px-3 py-2 text-left shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary-imprint focus-visible:ring-offset-2 ${branchStatusStyle.nodeBorderClassName} ${
+                      isSelected ? "ring-2 ring-primary-imprint ring-offset-2" : ""
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
@@ -150,16 +150,16 @@ export default function ResearchBranchMap({
                       />
                       <span className="truncate text-xs font-medium">{branch.title}</span>
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {branch.contributorCount} contributors · {branch.discussionCount} threads
                     </span>
                     {hasOverlappingGroups && (
-                      <span className="w-fit rounded-full bg-[#D6E3FF] px-1.5 text-[10px] text-blue-900">
+                      <span className="w-fit rounded-full bg-secondary px-1.5 text-xs text-blue-900">
                         {branch.overlappingGroupCount} overlap
                       </span>
                     )}
                     {branch.isClaimedByViewer && (
-                      <span className="w-fit rounded-full bg-[#00696E]/10 px-1.5 text-[10px] text-[#00696E]">
+                      <span className="w-fit rounded-full bg-primary-imprint/10 px-1.5 text-xs text-primary-imprint">
                         You
                       </span>
                     )}
@@ -201,7 +201,7 @@ export default function ResearchBranchMap({
                         action: selectedBranch.isClaimedByViewer ? "release" : "claim",
                       });
                     }}
-                    className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {selectedBranch.isClaimedByViewer
                       ? "Stop working on this"

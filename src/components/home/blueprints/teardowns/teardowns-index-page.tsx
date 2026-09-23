@@ -114,7 +114,7 @@ export default async function TeardownsIndexPage({
     <div className="pb-10">
       <header className="px-4 pt-4 lg:px-6">
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">Teardowns</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
+        <p className="mt-1 max-w-2xl text-sm text-outline-strong">
           Schematics, CAD breakdowns and bills of materials, pulled apart part by part.
         </p>
       </header>
@@ -148,7 +148,7 @@ function renderTeardowns(viewState: TeardownsViewState, searchParams: RawSearchP
   switch (viewState.status) {
     case "empty":
       return (
-        <p className="mt-8 px-4 text-sm text-[#6F7979] lg:px-6">
+        <p className="mt-8 px-4 text-sm text-outline-strong lg:px-6">
           {viewState.appliedFilterCount === 0
             ? "No teardowns have been published yet."
             : "No teardown matches these filters."}
@@ -160,7 +160,7 @@ function renderTeardowns(viewState: TeardownsViewState, searchParams: RawSearchP
       return (
         <div className="mt-8 px-4 lg:px-6">
           <p className="text-sm text-foreground">Teardowns could not be loaded.</p>
-          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">{viewState.message}</p>
+          <p className="mt-1 max-w-2xl text-sm text-outline-strong">{viewState.message}</p>
         </div>
       );
     case "ready":

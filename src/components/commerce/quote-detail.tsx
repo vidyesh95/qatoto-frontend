@@ -181,7 +181,7 @@ function QuoteBody({
   return (
     <div className="pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           {isProvider ? "Quote you submitted" : "Quote you received"}
         </p>
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">
@@ -385,7 +385,7 @@ function ServiceLineRow({ line, currency }: { line: QuoteServiceLine; currency: 
 
       {line.deliverables.length > 0 && (
         <div className="mt-2">
-          <p className="text-[11px] leading-4 font-medium tracking-[0.4px] text-muted-foreground uppercase">
+          <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
             Deliverables
           </p>
           <ul className="mt-1 space-y-0.5">
@@ -543,7 +543,7 @@ function BuyerQuoteActions({
 
       {/* The button names the revision, and this says what accepting DOES. Acceptance is the moment terms
           become an immutable order, and the default settlement rail means nobody holds the money. */}
-      <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
         Accepting revision {formatCountLabel(revision.revisionNumber)} creates an order from exactly
         these terms and fixes them. You will pay the provider directly — Qatoto does not hold the
         funds.
@@ -611,7 +611,7 @@ function ProviderQuoteActions({
       >
         {isBusy ? "Withdrawing…" : "Withdraw this quote"}
       </button>
-      <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
         Only possible until the buyer accepts. After that an order exists and the terms are fixed.
       </p>
       {errorMessage !== null && (

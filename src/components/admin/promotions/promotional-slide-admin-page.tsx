@@ -203,12 +203,12 @@ export default function PromotionalSlideAdminPage() {
       {/* Three distinct cases, said apart — a failed permission check is not the same as
           failing it. */}
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so this page is read-only.
         </output>
       )}
       {staffContextQuery.isSuccess && !canManagePromotionalSlides && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Managing the promotional carousel needs the admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
         </output>
@@ -266,7 +266,7 @@ function CreateSlideForm({
   const isCarouselFull = slideCount >= MAX_PROMOTIONAL_SLIDES;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <h2 className="text-lg font-medium">Add a slide</h2>
       <form
         className="space-y-4"
@@ -308,7 +308,7 @@ function CreateSlideForm({
             value={altText}
             onChange={(event) => setAltText(event.target.value)}
             placeholder="Winter sale on the store"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           {/* Not decoration: the image sits inside a link, so this text IS the link's
               accessible name for anyone not seeing the picture. */}
@@ -345,7 +345,7 @@ function CreateSlideForm({
             placeholder={isInternal ? "/store/product/abc" : "https://advertiser.example/campaign"}
             inputMode={isInternal ? "text" : "url"}
             aria-label="Destination"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <p className="text-xs text-muted-foreground">
             {isInternal
@@ -448,7 +448,7 @@ function SlideRow({
   const [replacementImageFile, setReplacementImageFile] = useState<File | null>(null);
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="flex flex-wrap items-start gap-4">
         {/* `object-contain` on a filled box, NOT `object-cover`: the home carousel letterboxes
             slides (`promo-carousel.tsx`), so a cropped thumbnail here would show framing the
@@ -492,7 +492,7 @@ function SlideRow({
             disabled={isReordering || index === 0}
             onClick={() => onMove(slide.id, index - 1)}
             aria-label="Move up one place"
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▲
           </button>
@@ -501,7 +501,7 @@ function SlideRow({
             disabled={isReordering || index === slideCount - 1}
             onClick={() => onMove(slide.id, index + 1)}
             aria-label="Move down one place"
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▼
           </button>
@@ -511,7 +511,7 @@ function SlideRow({
               value={index}
               disabled={isReordering}
               onChange={(event) => onMove(slide.id, Number(event.target.value))}
-              className="cursor-pointer rounded-lg border border-[#CAC4D0]/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+              className="cursor-pointer rounded-lg border border-outline-variant/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
             >
               {Array.from({ length: slideCount }, (_unused, position) => (
                 <option key={position} value={position}>
@@ -528,7 +528,7 @@ function SlideRow({
           type="button"
           disabled={isMutating}
           onClick={() => handleUpdate({ isActive: !slide.isActive })}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
           {slide.isActive ? "Hide from home page" : "Show on home page"}
         </button>
@@ -536,7 +536,7 @@ function SlideRow({
         <button
           type="button"
           onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
         >
           {isEditing ? "Cancel edit" : "Edit"}
         </button>
@@ -550,7 +550,7 @@ function SlideRow({
             setIsReplacingImage((wasReplacing) => !wasReplacing);
             setReplacementImageFile(null);
           }}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
           {replaceImage.isPending
             ? "Replacing…"
@@ -573,7 +573,7 @@ function SlideRow({
             <button
               type="button"
               onClick={() => setIsConfirmingDelete(false)}
-              className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs"
+              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
             >
               Cancel
             </button>
@@ -590,7 +590,7 @@ function SlideRow({
       </div>
 
       {isReplacingImage && (
-        <div className="space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+        <div className="space-y-3 border-t border-outline-variant/40 pt-3">
           <p className="text-sm font-medium">New image</p>
           <AdminImagePicker
             inputId={`replace-slide-image-${slide.id}`}
@@ -628,7 +628,7 @@ function SlideRow({
                 setIsReplacingImage(false);
                 setReplacementImageFile(null);
               }}
-              className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -656,7 +656,7 @@ function SlideRow({
 
       {isEditing && (
         <form
-          className="space-y-3 border-t border-[#CAC4D0]/40 pt-3"
+          className="space-y-3 border-t border-outline-variant/40 pt-3"
           onSubmit={(event) => {
             event.preventDefault();
             handleUpdate({
@@ -676,7 +676,7 @@ function SlideRow({
             value={draftAltText}
             onChange={(event) => setDraftAltText(event.target.value)}
             aria-label="Description"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
@@ -704,7 +704,7 @@ function SlideRow({
             value={draftDestinationValue}
             onChange={(event) => setDraftDestinationValue(event.target.value)}
             aria-label="Destination"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <button
             type="submit"

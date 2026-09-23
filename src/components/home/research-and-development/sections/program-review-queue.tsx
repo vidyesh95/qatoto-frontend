@@ -75,7 +75,7 @@ function ReviewQueueRow({
   const [reviewerNote, setReviewerNote] = useState("");
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-1">
         <Link
           href={`/research-and-development/programs/${programSlug}`}
@@ -92,7 +92,7 @@ function ReviewQueueRow({
         onChange={(event) => setReviewerNote(event.target.value)}
         maxLength={2000}
         placeholder="Your note — the submitter reads this"
-        className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+        className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -102,7 +102,7 @@ function ReviewQueueRow({
           onClick={() =>
             moderateMutation.mutate({ decision: "published", reviewerNote: reviewerNote.trim() })
           }
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
         >
           Publish
         </button>
@@ -112,7 +112,7 @@ function ReviewQueueRow({
           onClick={() =>
             moderateMutation.mutate({ decision: "rejected", reviewerNote: reviewerNote.trim() })
           }
-          className="cursor-pointer rounded-full border border-[#BA1A1A] px-4 py-1.5 text-xs text-[#BA1A1A] transition-colors hover:bg-[#BA1A1A]/10 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer rounded-full border border-destructive px-4 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Reject
         </button>

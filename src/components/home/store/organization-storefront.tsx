@@ -144,7 +144,7 @@ function StorefrontBody({
         // from describing itself and leaving the form blank, and only this one deserves
         // an empty state rather than a row of dashes.
         <section className="px-4 py-4 lg:px-6">
-          <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+          <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
             This seller has not published a company profile yet.
           </p>
         </section>
@@ -159,7 +159,7 @@ function StorefrontBody({
       <div className="flex justify-center px-4 py-4 lg:px-6">
         <Link
           href={`/store/organizations/${storefront.slug}/reviews`}
-          className="text-xs font-medium tracking-wide text-[#2A76FD]"
+          className="text-xs font-medium tracking-wide text-blue-600"
         >
           Read buyer reviews of this seller
         </Link>

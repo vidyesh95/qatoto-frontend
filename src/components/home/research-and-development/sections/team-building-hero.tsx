@@ -7,8 +7,8 @@ import Link from "next/link";
 // second CTA sends anyone who would rather be found than apply.
 export default function TeamBuildingHero() {
   return (
-    <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
-      <p className="text-xs tracking-widest text-white/80">STAGE 03 · TEAM BUILDING</p>
+    <section className="mx-4 rounded-2xl bg-linear-to-r from-band-ink via-band-deep to-band-imprint p-6 text-white md:p-10 lg:mx-6">
+      <p className="text-xs tracking-eyebrow text-white/80">STAGE 03 · TEAM BUILDING</p>
       <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
         Trade your skills for a stake.
       </h1>
@@ -20,7 +20,7 @@ export default function TeamBuildingHero() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
           href="#open-roles-grid"
-          className="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           Browse open roles
         </Link>

@@ -48,7 +48,7 @@ import {
 } from "@/lib/store/factories.schemas";
 import { formatIsoDateLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
@@ -57,7 +57,7 @@ const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
 
 type AuditListViewState =
   | { status: "restricted" }
@@ -110,12 +110,12 @@ export default function SiteAuditAdminPage() {
       </header>
 
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       )}
       {staffContextQuery.isSuccess && !canRecordAudits && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Recording site audits needs the `moderate_commerce` capability. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is not loaded.
         </output>
@@ -163,7 +163,7 @@ function renderAuditList(viewState: AuditListViewState) {
       return null;
     case "noOrganizationChosen":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Load an organization to see its audits.
         </p>
       );
@@ -177,7 +177,7 @@ function renderAuditList(viewState: AuditListViewState) {
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           {/* An organization with no audit is `documents_reviewed` at best, and that is a normal
               state rather than a gap. Most factories have never been visited. */}
           Nobody has visited this organization. Its verification state cannot be &ldquo;site
@@ -257,7 +257,7 @@ function AuditCard({ audit }: { audit: FactorySiteAudit }) {
           >
             Withdraw this audit
           </button>
-          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">
             Buyers may have chosen this factory on the strength of it. The row is kept and marked
             withdrawn rather than deleted.
           </p>
@@ -371,7 +371,7 @@ function RecordAuditForm({ organizationId }: { organizationId: string }) {
         Record it
       </button>
 
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-2 text-xs leading-4 text-muted-foreground">
         Buyers see only the date. Your name and what was covered stay on this page.
       </p>
 

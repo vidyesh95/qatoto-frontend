@@ -212,7 +212,7 @@ function QuestionRow({ question }: { readonly question: SellerQuestionInboxItem 
       </p>
 
       <p className="mt-1 text-sm leading-5 text-foreground">{question.bodyText}</p>
-      <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
         {question.askedBy?.name ?? "A buyer"} · {formatIsoInstantLabel(question.createdAt)}
         {/* Null is not zero, and a buyer's answer is still an answer — it just is not yours. */}
         {question.answerCount > 0 && ` · ${question.answerCount} answered`}
@@ -220,7 +220,7 @@ function QuestionRow({ question }: { readonly question: SellerQuestionInboxItem 
 
       {question.topAnswer !== null && (
         <div className="mt-2 rounded-lg bg-muted px-3 py-2">
-          <p className="text-[11px] font-medium text-foreground">
+          <p className="text-xs font-medium text-foreground">
             {question.hasSellerAnswer ? "Your organization answered" : "A verified buyer answered"}
           </p>
           <p className="text-xs leading-4 whitespace-pre-line text-foreground">

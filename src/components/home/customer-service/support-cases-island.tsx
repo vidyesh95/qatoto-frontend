@@ -75,7 +75,7 @@ export default function SupportCasesIsland({ isViewerSignedIn }: { isViewerSigne
           action={
             <Link
               href="/sign-in"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Sign in
             </Link>
@@ -90,7 +90,7 @@ export default function SupportCasesIsland({ isViewerSignedIn }: { isViewerSigne
           action={
             <Link
               href="/sign-in"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Sign in
             </Link>
@@ -128,7 +128,7 @@ export default function SupportCasesIsland({ isViewerSignedIn }: { isViewerSigne
                         {supportCase.subject}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium ${STATE_PILL_CLASSES[supportCase.state]}`}
+                        className={`rounded-full px-2 py-0.5 text-xs leading-4 font-medium ${STATE_PILL_CLASSES[supportCase.state]}`}
                       >
                         {SUPPORT_CASE_STATE_LABELS[supportCase.state]}
                       </span>

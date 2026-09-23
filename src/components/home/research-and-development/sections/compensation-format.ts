@@ -42,5 +42,8 @@ export const PAYMENT_STATE_BADGES: Record<
   // Deliberately not "Paid": a payment the member has not confirmed is a
   // one-sided claim, and rendering it as settled would be a lie to the member.
   recorded: { label: "Recorded · unconfirmed", className: "bg-amber-100 text-amber-800" },
-  confirmed: { label: "Confirmed by member", className: "bg-[#00696E]/10 text-[#00696E]" },
+  confirmed: {
+    label: "Confirmed by member",
+    className: "bg-primary-imprint/10 text-primary-imprint",
+  },
 };

@@ -49,7 +49,7 @@ export default function ProjectHeader({ project }: { project: ResearchProjectDet
           <p className="mt-1 text-sm text-muted-foreground">{project.tagline}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[#00696E]/10 px-3 py-1 text-xs font-medium text-[#00696E]">
+          <span className="rounded-full bg-primary-imprint/10 px-3 py-1 text-xs font-medium text-primary-imprint">
             {PROJECT_STAGE_LABELS[project.stage]}
           </span>
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">

@@ -77,17 +77,17 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
   return (
     <article className="mx-auto w-full max-w-3xl">
       <header className="px-4 pt-4 lg:px-6">
-        <nav className="pb-2 text-xs leading-4 text-[#6F7979]" aria-label="Breadcrumb">
+        <nav className="pb-2 text-xs leading-4 text-outline-strong" aria-label="Breadcrumb">
           <Link href="/store/find-cofounder" className="hover:underline">
             Find a cofounder
           </Link>
           <span aria-hidden="true"> / </span>
-          <span className="text-[#191C1C]">{profile.displayName}</span>
+          <span className="text-foreground">{profile.displayName}</span>
         </nav>
 
         <div className="flex items-start gap-3">
           {profile.avatarUrl === null ? (
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-base font-medium text-[#00696E]">
+            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary text-base font-medium text-primary-imprint">
               {profile.displayName.slice(0, 2).toUpperCase()}
             </span>
           ) : (
@@ -103,7 +103,7 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
             <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
               {profile.displayName}
             </h1>
-            <p className="mt-0.5 text-sm leading-5 text-[#6F7979]">
+            <p className="mt-0.5 text-sm leading-5 text-outline-strong">
               {countryLabelFromCode(profile.countryCode)} ·{" "}
               {COFOUNDER_COMMITMENT_LABELS[profile.commitmentLevel]} ·{" "}
               {COFOUNDER_ENGAGEMENT_LABELS[profile.engagementState]}
@@ -111,31 +111,31 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
           </div>
         </div>
 
-        <p className="mt-3 text-sm leading-6 text-[#191C1C]">{profile.headline}</p>
+        <p className="mt-3 text-sm leading-6 text-foreground">{profile.headline}</p>
 
-        <p className="mt-2 text-xs leading-4 text-[#00696E]">
+        <p className="mt-2 text-xs leading-4 text-primary-imprint">
           {COFOUNDER_IDENTITY_LABELS[profile.identityState]}
         </p>
 
         {/* Repeated from the directory on purpose — this is the page people link to. */}
-        <p className="mt-3 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           Written by {profile.displayName} and not checked by Qatoto. Nothing here is an offer of
           investment, and nothing on this page creates or transfers a stake in anything.
         </p>
       </header>
 
       <section className="px-4 pt-6 lg:px-6" aria-label="What they bring">
-        <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">What they bring</h2>
+        <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">What they bring</h2>
         <ul className="space-y-2">
           {profile.contributionKinds.map((contributionKind) => (
             <li
               key={contributionKind}
-              className="rounded-xl border border-[#CAC4D0]/60 px-4 py-2.5"
+              className="rounded-xl border border-outline-variant/60 px-4 py-2.5"
             >
-              <p className="text-sm leading-5 font-medium text-[#191C1C]">
+              <p className="text-sm leading-5 font-medium text-foreground">
                 {COFOUNDER_CONTRIBUTION_LABELS[contributionKind]}
               </p>
-              <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">
+              <p className="mt-0.5 text-xs leading-4 text-outline-strong">
                 {COFOUNDER_CONTRIBUTION_DESCRIPTIONS[contributionKind]}
               </p>
             </li>
@@ -144,12 +144,14 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
 
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-xs leading-4 text-[#6F7979]">Capital they say they can put in</dt>
+            <dt className="text-xs leading-4 text-outline-strong">
+              Capital they say they can put in
+            </dt>
             <dd
               className={
                 capitalRangeLabel === null
-                  ? "text-sm leading-5 text-[#6F7979] italic"
-                  : "text-sm leading-5 text-[#191C1C]"
+                  ? "text-sm leading-5 text-outline-strong italic"
+                  : "text-sm leading-5 text-foreground"
               }
             >
               {/* NOT ZERO WHEN ABSENT. "Did not say" is the fact; a figure would be an invention,
@@ -157,18 +159,18 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
               {capitalRangeLabel ?? "Not stated"}
             </dd>
             {capitalRangeLabel !== null && (
-              <p className="text-[11px] leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 Self-reported. Nobody has verified that this money exists or is available.
               </p>
             )}
           </div>
           <div>
-            <dt className="text-xs leading-4 text-[#6F7979]">Stake they are hoping for</dt>
+            <dt className="text-xs leading-4 text-outline-strong">Stake they are hoping for</dt>
             <dd
               className={
                 profile.equityExpectationBasisPoints === null
-                  ? "text-sm leading-5 text-[#6F7979] italic"
-                  : "text-sm leading-5 text-[#191C1C]"
+                  ? "text-sm leading-5 text-outline-strong italic"
+                  : "text-sm leading-5 text-foreground"
               }
             >
               {profile.equityExpectationBasisPoints === null
@@ -176,7 +178,7 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
                 : formatEquityExpectationLabel(profile.equityExpectationBasisPoints)}
             </dd>
             {profile.equityExpectationBasisPoints !== null && (
-              <p className="text-[11px] leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 An opening expectation to negotiate from. It is not a holding and it is not agreed.
               </p>
             )}
@@ -185,23 +187,23 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
       </section>
 
       <section className="px-4 pt-6 lg:px-6" aria-label="About">
-        <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">In their words</h2>
-        <p className="text-sm leading-6 whitespace-pre-line text-[#191C1C]">{detail.bio}</p>
+        <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">In their words</h2>
+        <p className="text-sm leading-6 whitespace-pre-line text-foreground">{detail.bio}</p>
       </section>
 
       <section className="px-4 pt-6 lg:px-6" aria-label="What they are looking for">
-        <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">
+        <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">
           What they are looking for
         </h2>
-        <p className="text-sm leading-6 whitespace-pre-line text-[#191C1C]">{detail.lookingFor}</p>
+        <p className="text-sm leading-6 whitespace-pre-line text-foreground">{detail.lookingFor}</p>
       </section>
 
       <section className="px-4 pt-6 lg:px-6" aria-label="Track record">
-        <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">Before this</h2>
+        <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">Before this</h2>
         {detail.priorVentures.length === 0 ? (
           // An empty list is the honest state for a first-timer, and saying so beats hiding the
           // section — a missing heading reads as "not shown" rather than "none".
-          <p className="text-sm leading-5 text-[#6F7979]">
+          <p className="text-sm leading-5 text-outline-strong">
             No previous ventures listed. First-time founders are not a worse bet, only a different
             one.
           </p>
@@ -221,14 +223,14 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {profile.sectors.length > 0 && (
               <div>
-                <dt className="text-xs leading-4 text-[#6F7979]">Sectors</dt>
-                <dd className="text-sm leading-5 text-[#191C1C]">{profile.sectors.join(", ")}</dd>
+                <dt className="text-xs leading-4 text-outline-strong">Sectors</dt>
+                <dd className="text-sm leading-5 text-foreground">{profile.sectors.join(", ")}</dd>
               </div>
             )}
             {detail.languages.length > 0 && (
               <div>
-                <dt className="text-xs leading-4 text-[#6F7979]">Languages</dt>
-                <dd className="text-sm leading-5 text-[#191C1C]">{detail.languages.join(", ")}</dd>
+                <dt className="text-xs leading-4 text-outline-strong">Languages</dt>
+                <dd className="text-sm leading-5 text-foreground">{detail.languages.join(", ")}</dd>
               </div>
             )}
           </dl>
@@ -238,7 +240,7 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
       <section className="px-4 pt-6 lg:px-6" aria-label="Getting in touch">
         {/* NOT A DISABLED BUTTON. There is no write behind it, and a control that reaches nothing is
             worse here than anywhere else on the platform — somebody would press it and wait. */}
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           Introductions are not available through Qatoto yet. This page is a directory entry, not an
           inbox.
         </p>
@@ -249,15 +251,15 @@ function CofounderProfileBody({ detail }: { detail: CofounderProfileDetail }) {
 
 function PriorVentureRow({ priorVenture }: { priorVenture: CofounderPriorVenture }) {
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <p className="text-sm leading-5 font-medium text-[#191C1C]">{priorVenture.name}</p>
-      <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <p className="text-sm leading-5 font-medium text-foreground">{priorVenture.name}</p>
+      <p className="mt-0.5 text-xs leading-4 text-outline-strong">
         {priorVenture.roleLabel} · {priorVenture.yearsActiveLabel}
       </p>
       {/* A venture with no outcome is normal — it is usually still running. Demanding a summary is
           how a directory fills up with invented exits. */}
       {priorVenture.outcomeSummary !== null && (
-        <p className="mt-1 text-xs leading-4 text-[#191C1C]">{priorVenture.outcomeSummary}</p>
+        <p className="mt-1 text-xs leading-4 text-foreground">{priorVenture.outcomeSummary}</p>
       )}
     </div>
   );

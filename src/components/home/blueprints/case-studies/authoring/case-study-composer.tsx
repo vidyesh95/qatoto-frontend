@@ -100,13 +100,13 @@ function RelationshipChoiceRow({
   // A TWO-COLUMN GRID RATHER THAN A WRAPPER SPAN around the two lines: the label's text sits one level
   // down, where `jsx-a11y(label-has-associated-control)` can see it, and the radio still spans both.
   return (
-    <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-border p-3 transition-colors has-checked:border-[#00696E]/60 has-checked:bg-[#00696E]/5">
+    <label className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-border p-3 transition-colors has-checked:border-primary-imprint/60 has-checked:bg-primary-imprint/5">
       <input
         type="radio"
         name="case-study-author-relationship"
         checked={isChecked}
         onChange={onSelect}
-        className="row-span-2 mt-0.5 size-4 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="row-span-2 mt-0.5 size-4 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       />
       <span className="text-sm font-medium text-foreground">{label}</span>
       <span className="col-start-2 mt-0.5 text-xs leading-5 text-muted-foreground">{detail}</span>
@@ -270,7 +270,7 @@ export default function CaseStudyComposer({
 
   return (
     <div className="max-w-2xl">
-      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+      <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">
         Case studies
       </p>
       <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">Write a case study</h1>
@@ -498,7 +498,7 @@ export default function CaseStudyComposer({
                   onChange={(changeEvent) =>
                     updateRelatedLessonSlot(slotIndex, changeEvent.target.value)
                   }
-                  className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+                  className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
                 >
                   <option value="">None</option>
                   {caseStudyOptions.map((caseStudyOption) => (
@@ -535,7 +535,7 @@ export default function CaseStudyComposer({
           {/* THE REAL INDEX ROW, not a copy of its classes, so the preview cannot drift from the list.
               It carries no record link: there is no record to open yet. */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
+            <p className="text-xs tracking-wider text-muted-foreground uppercase">
               How it will look in the list
             </p>
             <div className="mt-3 px-3">
@@ -588,7 +588,7 @@ export default function CaseStudyComposer({
           type="button"
           onClick={handleSendClick}
           disabled={sendBlockedReason !== null || isSending}
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSending ? "Sending…" : "Send for review"}
         </button>

@@ -160,7 +160,7 @@ function FundingRoundCard({ round }: { readonly round: MyFoundedFundingRound }) 
           */}
           <p className="text-xs text-muted-foreground">{round.projectName}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
           {ROUND_STATUS_LABELS[round.status]} · {ROUND_TYPE_LABELS[round.type]}
         </span>
       </div>

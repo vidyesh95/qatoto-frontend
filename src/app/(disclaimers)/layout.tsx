@@ -10,7 +10,7 @@ const Layout = ({ children }: Props) => {
     <>
       <nav className="sticky top-0 z-50 bg-background">
         <div className="px-4 py-2.5 md:px-16.5">
-          <Link href="/" className="font-serif text-3xl font-medium text-[#00696E]">
+          <Link href="/" className="font-serif text-3xl font-medium text-primary-imprint">
             Qatoto
           </Link>
         </div>

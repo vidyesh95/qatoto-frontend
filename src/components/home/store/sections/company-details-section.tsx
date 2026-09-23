@@ -32,7 +32,7 @@ import {
 function Divider() {
   return (
     <div className="px-4 lg:px-6">
-      <div className="h-px bg-[#CAC4D0]" />
+      <div className="h-px bg-outline-variant" />
     </div>
   );
 }
@@ -90,7 +90,7 @@ export default function CompanyDetailsSection({
     <>
       <details open className="group [&_summary]:list-none">
         <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
-          <span className="text-sm leading-5 tracking-wide text-[#191C1C]">Company details</span>
+          <span className="text-sm leading-5 tracking-wide text-foreground">Company details</span>
           <Image
             src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             width={22}
@@ -103,7 +103,7 @@ export default function CompanyDetailsSection({
         <div className="flex flex-col gap-2 px-4 pb-2 lg:px-6">
           <Link
             href={`/store/organizations/${storefront.slug}`}
-            className="text-base leading-6 font-medium tracking-[0.15px] text-[#2A76FD]"
+            className="text-base leading-6 font-medium tracking-normal text-blue-600"
           >
             {storefront.displayName}
           </Link>
@@ -115,14 +115,14 @@ export default function CompanyDetailsSection({
               height={24}
               alt=""
             />
-            <span className="text-base leading-6 tracking-[0.5px] text-[#191C1C]">
+            <span className="text-base leading-6 tracking-wider text-foreground">
               {countryLabelFromCode(storefront.countryCode)}
             </span>
           </div>
 
           {/* Two groups, not one grid. The heading on each is what stops a buyer reading
               the seller's founding year as something Qatoto checked. */}
-          <p className="mt-1 flex items-center gap-1 text-xs leading-4 font-medium tracking-[0.5px] text-[#00696E]">
+          <p className="mt-1 flex items-center gap-1 text-xs leading-4 font-medium tracking-wider text-primary-imprint">
             <Image
               src="/icons/verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
               width={14}
@@ -134,20 +134,20 @@ export default function CompanyDetailsSection({
           <div className="grid grid-cols-3 gap-x-2 gap-y-3">
             {measuredStats.map((stat) => (
               <div key={stat.label} className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-[#00696E]">{stat.value}</span>
-                <span className="text-[11px] leading-4 text-[#6F7979]">{stat.label}</span>
+                <span className="text-sm font-medium text-primary-imprint">{stat.value}</span>
+                <span className="text-xs leading-4 text-outline-strong">{stat.label}</span>
               </div>
             ))}
           </div>
 
-          <p className="mt-2 text-xs leading-4 font-medium tracking-[0.5px] text-[#6F7979]">
+          <p className="mt-2 text-xs leading-4 font-medium tracking-wider text-outline-strong">
             Stated by the seller
           </p>
           <div className="grid grid-cols-3 gap-x-2 gap-y-3">
             {declaredStats.map((stat) => (
               <div key={stat.label} className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-[#191C1C]">{stat.value}</span>
-                <span className="text-[11px] leading-4 text-[#6F7979]">{stat.label}</span>
+                <span className="text-sm font-medium text-foreground">{stat.value}</span>
+                <span className="text-xs leading-4 text-outline-strong">{stat.label}</span>
               </div>
             ))}
           </div>
@@ -160,7 +160,7 @@ export default function CompanyDetailsSection({
           onClick={() => setIsCapabilitiesSheetOpen(true)}
           className="flex w-full cursor-pointer items-center px-4 py-2 text-left lg:px-6"
         >
-          <span className="flex-1 text-sm leading-5 tracking-wide text-[#191C1C]">
+          <span className="flex-1 text-sm leading-5 tracking-wide text-foreground">
             Capabilities and certifications
           </span>
           <Image
@@ -178,7 +178,7 @@ export default function CompanyDetailsSection({
           {declaredCapabilities.map((capabilityLabel) => (
             <li
               key={capabilityLabel}
-              className="rounded bg-[#F2F4F4] px-2 py-1 text-xs leading-4 tracking-[0.4px] text-[#191C1C]"
+              className="rounded bg-muted px-2 py-1 text-xs leading-4 tracking-wider text-foreground"
             >
               {capabilityLabel}
             </li>
@@ -192,7 +192,7 @@ export default function CompanyDetailsSection({
           onClick={() => setIsCompanySheetOpen(true)}
           className="flex w-full cursor-pointer items-center px-4 py-2 text-left lg:px-6"
         >
-          <span className="flex-1 text-sm leading-5 tracking-wide text-[#191C1C]">
+          <span className="flex-1 text-sm leading-5 tracking-wide text-foreground">
             All company details
           </span>
           <Image

@@ -30,13 +30,13 @@ import {
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import type { PathwayModeration } from "@/lib/store/pathway-authoring.schemas";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
 
 type ConsoleState =
   | { readonly status: "checking" }
@@ -77,13 +77,13 @@ function renderConsole(state: ConsoleState) {
       return <div className="h-28 animate-pulse rounded-2xl bg-muted/40" aria-hidden />;
     case "capabilityUnknown":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       );
     case "restricted":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Deciding curated sets needs the `moderate_commerce` capability. Your role is{" "}
           {state.platformRole ?? "none"}, so this page is not loaded.
         </output>
@@ -142,7 +142,7 @@ function PathwayQueue() {
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Nothing is waiting for review.
         </p>
       );
@@ -312,7 +312,7 @@ function PathwayCard({ pathway }: { readonly pathway: PathwayModeration }) {
       )}
 
       {reviewNote.trim() === "" && cardState.status !== "confirmingPublish" && (
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           Sending a set back needs a note — it is the only thing the author will see.
         </p>
       )}

@@ -93,38 +93,38 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
 
             <Link
               href={`/store/providers/${provider.slug}`}
-              className="mt-1 inline-block text-xs font-medium text-[#2A76FD]"
+              className="mt-1 inline-block text-xs font-medium text-blue-600"
             >
               {provider.displayName} · {countryLabelFromCode(provider.countryCode)}
             </Link>
 
             {offering.summary !== null && (
-              <p className="mt-2 text-sm leading-5 text-[#191C1C]">{offering.summary}</p>
+              <p className="mt-2 text-sm leading-5 text-foreground">{offering.summary}</p>
             )}
 
             <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
               {priceRangeLabel === null ? (
-                <span className="font-medium text-[#00696E]">
+                <span className="font-medium text-primary-imprint">
                   {SERVICE_PRICING_MODEL_LABELS[offering.pricingModel]}
                 </span>
               ) : (
                 <>
-                  <span className="font-medium text-[#191C1C]">{priceRangeLabel}</span>
-                  <span className="text-xs text-[#6F7979]">
+                  <span className="font-medium text-foreground">{priceRangeLabel}</span>
+                  <span className="text-xs text-outline-strong">
                     {SERVICE_PRICING_MODEL_LABELS[offering.pricingModel].toLowerCase()}, indicative
                     only
                   </span>
                 </>
               )}
               {leadTimeLabel !== null && (
-                <span className="text-xs text-[#6F7979]">{leadTimeLabel}</span>
+                <span className="text-xs text-outline-strong">{leadTimeLabel}</span>
               )}
             </div>
 
             {/* Said once, plainly, and not repeated as a badge beside every number above. An
                 indicative range is what the provider publishes; what a buyer pays comes from a
                 quote against their actual shipment. */}
-            <p className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+            <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
               Published figures are indicative. A price and a lead time for your shipment come from
               a quote.
             </p>
@@ -135,7 +135,7 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
                   is encoded because it is server-generated but still lands in a query value. */}
               <Link
                 href={`/store/rfqs/new?offeringSlug=${encodeURIComponent(offering.slug)}`}
-                className="rounded-full bg-[#00696E] px-5 py-2 text-sm font-medium text-white"
+                className="rounded-full bg-primary-imprint px-5 py-2 text-sm font-medium text-primary-imprint-foreground"
               >
                 Request a quote
               </Link>
@@ -166,7 +166,7 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
           <div className="px-4 pt-4 lg:px-6">
             <Link
               href={`/store/providers/${provider.slug}`}
-              className="text-sm font-medium text-[#00696E] underline"
+              className="text-sm font-medium text-primary-imprint underline"
             >
               See everything {provider.displayName} offers
             </Link>

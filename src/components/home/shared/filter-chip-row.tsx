@@ -54,7 +54,7 @@ export default function FilterChipRow({
           aria-current={option.isSelected ? "true" : undefined}
           className={`${FILTER_CHIP_CLASS} ${
             option.isSelected
-              ? "bg-[#00696E] text-white"
+              ? "bg-primary-imprint text-primary-imprint-foreground"
               : "bg-muted text-foreground hover:bg-muted/70"
           }`}
         >

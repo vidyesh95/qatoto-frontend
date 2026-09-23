@@ -48,10 +48,10 @@ export default function ExplosionSlider({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[#CAC4D0]/60 bg-card px-3 py-2.5">
+    <div className="flex items-center gap-3 rounded-xl border border-outline-variant/60 bg-card px-3 py-2.5">
       <label
         htmlFor="teardown-explosion-slider"
-        className="font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase"
+        className="font-mono text-xs tracking-eyebrow text-outline-strong uppercase"
       >
         Explode
       </label>
@@ -66,12 +66,12 @@ export default function ExplosionSlider({
         disabled={!isInteractive}
         onInput={handleExplosionSliderInput}
         aria-label="Explosion amount"
-        className="h-1.5 w-full cursor-pointer accent-[#FF5500] disabled:cursor-not-allowed"
+        className="h-1.5 w-full cursor-pointer accent-cad-selection disabled:cursor-not-allowed"
       />
       <output
         ref={percentOutputRef}
         htmlFor="teardown-explosion-slider"
-        className="w-10 text-right font-mono text-[11px] text-foreground tabular-nums"
+        className="w-10 text-right font-mono text-xs text-foreground tabular-nums"
       >
         {formatPercentLabel(initialFactor)}
       </output>

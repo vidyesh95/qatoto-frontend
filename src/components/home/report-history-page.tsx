@@ -168,7 +168,7 @@ function renderVideoReportRow(report: MyVideoReport) {
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASSES[report.status]}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[report.status]}`}
         >
           {STATUS_LABELS[report.status]}
         </span>
@@ -214,14 +214,14 @@ function renderProfileReportRow(report: MyProfileReport) {
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASSES[report.status]}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[report.status]}`}
         >
           {STATUS_LABELS[report.status]}
         </span>
       </div>
 
       {report.status === "actioned" && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           Their description and links were hidden. Their videos and channel are unaffected.
         </p>
       )}
@@ -254,14 +254,14 @@ function renderBlueprintReportRow(report: MyBlueprintReport) {
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASSES[report.status]}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[report.status]}`}
         >
           {STATUS_LABELS[report.status]}
         </span>
       </div>
 
       {report.status === "actioned" && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           A moderator reviewed this report and took action on the content.
         </p>
       )}

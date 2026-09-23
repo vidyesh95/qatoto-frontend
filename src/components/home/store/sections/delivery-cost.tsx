@@ -89,9 +89,9 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
 
   return (
     <>
-      <div className="border-y border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+      <div className="border-y border-outline-variant/60 px-4 py-2 lg:px-6">
         <label className="flex items-center gap-2 text-xs">
-          <span className="text-[#191C1C]">Deliver to</span>
+          <span className="text-foreground">Deliver to</span>
           <select
             value={destinationCountryCode ?? ""}
             onChange={(changeEvent) =>
@@ -99,7 +99,7 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
                 changeEvent.target.value === "" ? null : changeEvent.target.value,
               )
             }
-            className="flex-1 rounded border border-[#CAC4D0] px-2 py-1 text-xs text-[#191C1C]"
+            className="flex-1 rounded border border-outline-variant px-2 py-1 text-xs text-foreground"
           >
             <option value="">Choose a country…</option>
             {COUNTRY_OPTIONS.map((country) => (
@@ -116,7 +116,7 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
           <button
             type="button"
             onClick={() => setIsSheetOpen(true)}
-            className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-[#00696E]"
+            className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-primary-imprint"
           >
             <span className="flex-1">
               {viewState.status === "ready" ? "See how this was worked out" : "See the route"}
@@ -142,18 +142,18 @@ function renderEstimate(viewState: DeliveryEstimateViewState) {
   switch (viewState.status) {
     case "no_destination":
       return (
-        <p className="text-xs leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           Pick a destination to see an indicative shipping cost.
         </p>
       );
     case "loading":
-      return <p className="text-xs leading-4 text-[#6F7979]">Checking coverage…</p>;
+      return <p className="text-xs leading-4 text-outline-strong">Checking coverage…</p>;
     case "error":
-      return <p className="text-xs leading-4 text-[#8C1D18]">{viewState.message}</p>;
+      return <p className="text-xs leading-4 text-destructive">{viewState.message}</p>;
     // NOT "free", and not an error either. No provider on the directory covers this lane.
     case "uncovered":
       return (
-        <p className="text-xs leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           No forwarder on Qatoto covers this route yet, so shipping has to be arranged with the
           seller. Manufacturing lead time is shown under Packaging and delivery.
         </p>
@@ -167,7 +167,7 @@ function renderEstimate(viewState: DeliveryEstimateViewState) {
               estimate.leadTimeMaxDays,
             );
             return (
-              <li key={estimate.currency} className="text-xs leading-4 text-[#191C1C]">
+              <li key={estimate.currency} className="text-xs leading-4 text-foreground">
                 <span className="font-medium">
                   {formatCentsRangeLabel(
                     estimate.estimatedMinInCents,
@@ -176,19 +176,19 @@ function renderEstimate(viewState: DeliveryEstimateViewState) {
                   )}
                 </span>
                 {leadTimeLabel !== null && (
-                  <span className="text-[#6F7979]"> · {leadTimeLabel} in transit</span>
+                  <span className="text-outline-strong"> · {leadTimeLabel} in transit</span>
                 )}
                 {/* The honest half. A seller who never declared package geometry produces an
                     estimate with no weight behind it, and a buyer should be able to tell. */}
                 {estimate.basis.hasIncompletePackageData && (
-                  <span className="block text-[11px] leading-4 text-[#6F7979]">
+                  <span className="block text-xs leading-4 text-outline-strong">
                     Rough — this seller has not published full package dimensions.
                   </span>
                 )}
               </li>
             );
           })}
-          <li className="text-[11px] leading-4 text-[#6F7979]">
+          <li className="text-xs leading-4 text-outline-strong">
             An estimate, not a quote or a booking. No delivery date is implied.
           </li>
         </ul>

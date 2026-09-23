@@ -215,7 +215,7 @@ export default function CheckoutPage({
          * back button.
          */}
         {buyNowItems !== undefined && (
-          <p className="mt-1 text-sm text-[#3F4949]">
+          <p className="mt-1 text-sm text-muted-foreground">
             Buying one item. The rest of your cart is untouched and stays there.{" "}
             <Link href="/cart" className="underline">
               Check out your whole cart instead
@@ -301,7 +301,7 @@ function ReviewStep({
       <div className="px-4 pt-6 lg:px-6">
         <StatusPanel
           message={cartResult?.error.message ?? "Couldn't load your cart."}
-          className="border border-[#CAC4D0]/60 px-6 py-16"
+          className="border border-outline-variant/60 px-6 py-16"
         />
       </div>
     );
@@ -312,11 +312,11 @@ function ReviewStep({
       <div className="px-4 pt-6 lg:px-6">
         <StatusPanel
           message="Your cart is empty, so there is nothing to check out."
-          className="border border-[#CAC4D0]/60 px-6 py-16"
+          className="border border-outline-variant/60 px-6 py-16"
           action={
             <Link
               href="/store"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Browse the store
             </Link>
@@ -335,14 +335,14 @@ function ReviewStep({
           already taken stock off the shelf to learn it. */}
       <BuyerWorkspaceNotice />
 
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-        <p className="text-sm leading-5 text-[#191C1C]">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+        <p className="text-sm leading-5 text-foreground">
           {formatCountLabel(cartResult.data.items.length)}{" "}
           {cartResult.data.items.length === 1 ? "line" : "lines"} ready to reserve.
         </p>
 
         {/* The address gap, stated rather than mocked with an empty select. */}
-        <p className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           No delivery address is attached yet. Addresses belong to a buyer organization, and
           organization setup is not wired on this surface — the reservation below works without one,
           and a seller cannot ship without it.
@@ -352,13 +352,13 @@ function ReviewStep({
           type="button"
           onClick={onPrepareClick}
           disabled={prepareCheckout.isPending}
-          className="mt-3 w-full cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+          className="mt-3 w-full cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
         >
           {prepareCheckout.isPending ? "Reserving…" : "Reserve stock and see totals"}
         </button>
 
         {/* Said BEFORE the press, because the press is the thing that takes stock off the shelf. */}
-        <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1.5 text-xs leading-4 text-outline-strong">
           This reserves the stock for a short window. Nothing is ordered and nothing is paid.
         </p>
 
@@ -395,9 +395,9 @@ function ReservedStep({
     <div className="space-y-4 px-4 pt-4 lg:px-6">
       <section
         aria-label="Reserved lines"
-        className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+        className="rounded-xl border border-outline-variant/60 px-4 py-3"
       >
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
           Reserved
         </p>
         <ul className="mt-2 space-y-2">
@@ -409,18 +409,18 @@ function ReservedStep({
               key={`${line.productId}-${line.sellerOrganizationId}-${line.variantNameSnapshot ?? ""}`}
               className="flex gap-3"
             >
-              <span className="min-w-0 flex-1 text-sm leading-5 text-[#191C1C]">
+              <span className="min-w-0 flex-1 text-sm leading-5 text-foreground">
                 {line.title}
                 {line.variantNameSnapshot !== null && (
-                  <span className="block text-xs leading-4 text-[#6F7979]">
+                  <span className="block text-xs leading-4 text-outline-strong">
                     {line.variantNameSnapshot}
                   </span>
                 )}
               </span>
-              <span className="text-xs leading-4 text-[#6F7979]">
+              <span className="text-xs leading-4 text-outline-strong">
                 × {formatCountLabel(line.quantity)}
               </span>
-              <span className="text-sm leading-5 font-medium text-[#191C1C]">
+              <span className="text-sm leading-5 font-medium text-foreground">
                 {formatCentsLabel(line.lineTotalInCents, line.currency)}
               </span>
             </li>
@@ -430,18 +430,23 @@ function ReservedStep({
         {/* The reservation expires. Shown as the server's own instant rather than a countdown: a
             countdown implies the client is tracking something it is not, and the release is a worker's
             job. */}
-        <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-2 text-xs leading-4 text-outline-strong">
           Reserved until {prepare.expiresAt}. After that the stock goes back to other buyers.
         </p>
       </section>
 
-      <section aria-label="Totals" className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <section
+        aria-label="Totals"
+        className="rounded-xl border border-outline-variant/60 px-4 py-3"
+      >
         <dl className="space-y-2">
           {prepare.currencyTotals.map((total) => (
             <div key={total.currency} className="space-y-0.5">
               <div className="flex items-baseline justify-between gap-4">
-                <dt className="text-xs leading-4 text-[#6F7979]">Subtotal, {total.currency}</dt>
-                <dd className="text-sm leading-5 text-[#191C1C]">
+                <dt className="text-xs leading-4 text-outline-strong">
+                  Subtotal, {total.currency}
+                </dt>
+                <dd className="text-sm leading-5 text-foreground">
                   {formatCentsLabel(total.subtotalInCents, total.currency)}
                 </dd>
               </div>
@@ -450,20 +455,20 @@ function ReservedStep({
                   billing from an indicative estimate with no booking behind it would put an invented
                   number into an immutable order. */}
               <div className="flex items-baseline justify-between gap-4">
-                <dt className="text-xs leading-4 text-[#6F7979]">Freight</dt>
-                <dd className="text-xs leading-4 text-[#6F7979]">
+                <dt className="text-xs leading-4 text-outline-strong">Freight</dt>
+                <dd className="text-xs leading-4 text-outline-strong">
                   Not charged — arranged separately
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4">
-                <dt className="text-xs leading-4 text-[#6F7979]">Taxes and duties</dt>
-                <dd className="text-xs leading-4 text-[#6F7979]">Not included</dd>
+                <dt className="text-xs leading-4 text-outline-strong">Taxes and duties</dt>
+                <dd className="text-xs leading-4 text-outline-strong">Not included</dd>
               </div>
-              <div className="flex items-baseline justify-between gap-4 border-t border-[#CAC4D0]/60 pt-1">
-                <dt className="text-sm leading-5 font-medium text-[#191C1C]">
+              <div className="flex items-baseline justify-between gap-4 border-t border-outline-variant/60 pt-1">
+                <dt className="text-sm leading-5 font-medium text-foreground">
                   Total, {total.currency}
                 </dt>
-                <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+                <dd className="text-sm leading-5 font-medium text-foreground">
                   {formatCentsLabel(total.totalInCents, total.currency)}
                 </dd>
               </div>
@@ -472,7 +477,7 @@ function ReservedStep({
         </dl>
 
         {prepare.currencyTotals.length > 1 && (
-          <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+          <p className="mt-2 text-xs leading-4 text-outline-strong">
             Separate totals per currency, never summed.
           </p>
         )}
@@ -484,35 +489,35 @@ function ReservedStep({
 
       <section
         aria-label="How this settles"
-        className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+        className="rounded-xl border border-outline-variant/60 px-4 py-3"
       >
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
           How this settles
         </p>
         {/* SAID BEFORE CONFIRMING. The default rail is `direct_offline` and nobody holds the money;
             a checkout silent about that implies the opposite. There is no escrow agreement to name
             here — that is something the two parties negotiate in their own thread first. */}
-        <p className="mt-1 text-sm leading-5 text-[#191C1C]">
+        <p className="mt-1 text-sm leading-5 text-foreground">
           {SETTLEMENT_RAIL_LABELS.direct_offline}
         </p>
-        <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           You and the seller can agree on a licensed escrow provider separately. Without one, you
           carry the counterparty risk.
         </p>
       </section>
 
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
         <button
           type="button"
           onClick={onConfirmClick}
           disabled={confirmCheckout.isPending}
-          className="w-full cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+          className="w-full cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
         >
           {confirmCheckout.isPending
             ? "Placing orders…"
             : `Place ${formatCountLabel(sellerOrganizationIds.length)} ${sellerOrganizationIds.length === 1 ? "order" : "orders"}`}
         </button>
-        <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1.5 text-xs leading-4 text-outline-strong">
           One order per seller. Nothing is paid at this step.
         </p>
 
@@ -569,9 +574,9 @@ function PrepareArrivalWindowSection({
   return (
     <section
       aria-label="What this journey is made of"
-      className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+      className="rounded-xl border border-outline-variant/60 px-4 py-3"
     >
-      <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+      <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
         Journey breakdown
       </p>
 
@@ -596,7 +601,7 @@ function PrepareArrivalWindowSection({
             </dl>
 
             {sellerWindow.arrivalWindow.missingComponents.length > 0 && (
-              <p className="mt-1.5 text-xs leading-4 text-[#6F7979]">
+              <p className="mt-1.5 text-xs leading-4 text-outline-strong">
                 No arrival window can be given for this seller yet —{" "}
                 {sellerWindow.arrivalWindow.missingComponents
                   .map((componentName) =>
@@ -613,7 +618,7 @@ function PrepareArrivalWindowSection({
 
       {/* The same closing rule as the freight panel above, for the same reason: the absence of a
           date here is deliberate, and saying so stops it reading as a bug. */}
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-2 text-xs leading-4 text-outline-strong">
         Durations only. Nothing above is a delivery date — the clock starts when the order is
         confirmed, not when it is prepared.
       </p>
@@ -627,9 +632,9 @@ function DeliveryEstimateSection({ prepare }: { prepare: CheckoutPrepare }) {
   return (
     <section
       aria-label="Indicative delivery"
-      className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+      className="rounded-xl border border-outline-variant/60 px-4 py-3"
     >
-      <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+      <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
         Indicative freight
       </p>
 
@@ -640,23 +645,23 @@ function DeliveryEstimateSection({ prepare }: { prepare: CheckoutPrepare }) {
               // AN EMPTY LIST MEANS "WE DO NOT KNOW", NOT "FREE". The mock this replaces rendered
               // "Free Delivery" for exactly this case, which is the specific lie the empty array
               // exists to prevent.
-              <p className="text-xs leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 No covering freight provider was found for this seller&apos;s lane. That is not the
                 same as free — you will need to arrange it.
               </p>
             ) : (
               sellerEstimate.estimates.map((estimate) => (
-                <p key={estimate.currency} className="text-xs leading-4 text-[#191C1C]">
+                <p key={estimate.currency} className="text-xs leading-4 text-foreground">
                   {formatCentsLabel(estimate.estimatedMinInCents, estimate.currency)} –{" "}
                   {formatCentsLabel(estimate.estimatedMaxInCents, estimate.currency)}
                   {estimate.leadTimeMinDays !== null && estimate.leadTimeMaxDays !== null && (
-                    <span className="text-[#6F7979]">
+                    <span className="text-outline-strong">
                       {" "}
                       · {estimate.leadTimeMinDays}–{estimate.leadTimeMaxDays} days in transit
                     </span>
                   )}
                   {estimate.basis.hasIncompletePackageData && (
-                    <span className="text-[#6F7979]">
+                    <span className="text-outline-strong">
                       {" "}
                       · the seller has not declared full package dimensions, so this is weaker than
                       usual
@@ -671,7 +676,7 @@ function DeliveryEstimateSection({ prepare }: { prepare: CheckoutPrepare }) {
 
       {/* No delivery DATE anywhere above, and this says why rather than leaving it looking like an
           omission. */}
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-2 text-xs leading-4 text-outline-strong">
         Indicative only, from providers&apos; published coverage. Not a booking, not a quote, and no
         delivery date — nothing here has been arranged with a carrier yet.
       </p>
@@ -682,8 +687,8 @@ function DeliveryEstimateSection({ prepare }: { prepare: CheckoutPrepare }) {
 function ConfirmedStep({ confirmation }: { confirmation: ConfirmCheckout }) {
   return (
     <div className="px-4 pt-4 lg:px-6">
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-4">
-        <h2 className="text-base font-medium text-[#191C1C]">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-4">
+        <h2 className="text-base font-medium text-foreground">
           {confirmation.orders.length === 1
             ? "Your order is placed"
             : `Your ${formatCountLabel(confirmation.orders.length)} orders are placed`}
@@ -691,18 +696,18 @@ function ConfirmedStep({ confirmation }: { confirmation: ConfirmCheckout }) {
 
         {/* `pending_payment` IS NOT PAID, and the state says so literally. A confirmation screen that
             implies otherwise is the single most misleading thing this flow could do. */}
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Nothing has been paid yet. Each seller will confirm their own order, and you settle with
           them directly.
         </p>
 
         <ul className="mt-3 space-y-2">
           {confirmation.orders.map((order) => (
-            <li key={order.id} className="rounded-lg bg-[#F2F4F4] px-3 py-2">
-              <p className="text-sm leading-5 font-medium text-[#191C1C]">
+            <li key={order.id} className="rounded-lg bg-muted px-3 py-2">
+              <p className="text-sm leading-5 font-medium text-foreground">
                 {order.counterpartyLegalNameSnapshot}
               </p>
-              <p className="text-xs leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 {formatCentsLabel(order.totalInCents, order.currency)} ·{" "}
                 {SETTLEMENT_RAIL_LABELS[order.settlementRail]}
               </p>
@@ -710,7 +715,7 @@ function ConfirmedStep({ confirmation }: { confirmation: ConfirmCheckout }) {
                   state plainly that nobody is holding the funds, rather than leaving it to be inferred
                   from a rail name. */}
               {!order.hasEscrowProtection && (
-                <p className="text-[11px] leading-4 text-[#6F7979]">
+                <p className="text-xs leading-4 text-outline-strong">
                   No escrow on this order — you carry the counterparty risk.
                 </p>
               )}
@@ -720,7 +725,7 @@ function ConfirmedStep({ confirmation }: { confirmation: ConfirmCheckout }) {
 
         <Link
           href="/orders-and-returns"
-          className="mt-3 inline-block rounded-full bg-[#00696E] px-5 py-2 text-sm font-medium text-white"
+          className="mt-3 inline-block rounded-full bg-primary-imprint px-5 py-2 text-sm font-medium text-primary-imprint-foreground"
         >
           See your orders
         </Link>

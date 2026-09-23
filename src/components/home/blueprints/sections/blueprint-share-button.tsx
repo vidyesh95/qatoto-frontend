@@ -41,7 +41,7 @@ import { SITE_URL } from "@/lib/site";
 type ShareButtonVariant = "cell" | "inline";
 
 const TRIGGER_BASE_CLASS =
-  "flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] text-sm font-medium text-[#041F21] hover:bg-[#bfe0e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]";
+  "flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-foreground hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
 
 const TRIGGER_CLASS_BY_VARIANT: Record<ShareButtonVariant, string> = {
   cell: `${TRIGGER_BASE_CLASS} w-full px-3 py-1.5`,

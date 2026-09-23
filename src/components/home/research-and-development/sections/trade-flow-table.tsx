@@ -40,9 +40,9 @@ export default function TradeFlowTable({ flows }: { flows: readonly CommodityTra
     <section className="space-y-3">
       <h2 className="text-sm font-medium text-foreground">Trade history</h2>
 
-      <div className="overflow-x-auto rounded-2xl border border-[#CAC4D0]/60">
-        <table className="w-full min-w-[46rem] text-sm">
-          <thead className="border-b border-[#CAC4D0]/60 text-left text-xs text-muted-foreground">
+      <div className="overflow-x-auto rounded-2xl border border-outline-variant/60">
+        <table className="w-full min-w-3xl text-sm">
+          <thead className="border-b border-outline-variant/60 text-left text-xs text-muted-foreground">
             <tr>
               <th scope="col" className="px-4 py-2 font-medium">
                 Year
@@ -64,7 +64,7 @@ export default function TradeFlowTable({ flows }: { flows: readonly CommodityTra
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#CAC4D0]/60">
+          <tbody className="divide-y divide-outline-variant/60">
             {flows.map((flow) => (
               <tr key={flow.id}>
                 <td className="px-4 py-2 tabular-nums">
@@ -96,7 +96,7 @@ export default function TradeFlowTable({ flows }: { flows: readonly CommodityTra
             {" · "}
             <a
               href={flows[0].sourceUrl}
-              className="underline hover:text-[#00696E]"
+              className="underline hover:text-primary-imprint"
               rel="noreferrer noopener"
               target="_blank"
             >

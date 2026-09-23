@@ -90,7 +90,7 @@ export default function HeroCarousel({ slides }: { slides: readonly StoreHeroSli
           It also covers the no-image path, which is the one guaranteed failure here:
           `accentSurfaceClass` falls back to `bg-amber-50`/`bg-slate-100`/etc, and white text on a
           50-shade tint is white-on-white. This element renders above both the tint and the image. */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/60 via-[96px] to-transparent" />
+      <div className="via-24 absolute inset-0 bg-linear-to-t from-black/60 via-black/60 to-transparent" />
       <div className="absolute bottom-7 left-4 lg:left-6">
         {slide.subtitle !== null && <p className="text-sm text-white">{slide.subtitle}</p>}
         <p className="text-3xl font-semibold text-white">{slide.title}</p>

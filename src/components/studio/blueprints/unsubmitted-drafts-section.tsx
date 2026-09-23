@@ -87,7 +87,7 @@ export default function UnsubmittedDraftsSection({
                 <span className="flex shrink-0 items-center gap-4">
                   <Link
                     href={`${composerHref}?draftId=${encodeURIComponent(draftSummary.draftId)}`}
-                    className="cursor-pointer text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="cursor-pointer text-sm font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   >
                     Resume
                   </Link>

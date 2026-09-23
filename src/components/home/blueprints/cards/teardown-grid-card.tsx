@@ -25,7 +25,7 @@ function PlayGlyph() {
 }
 
 const MEDIA_BADGE_CLASS =
-  "flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white";
+  "flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white";
 
 /**
  * How many CAD/fabrication formats the card names before it counts the rest. Four is one line at
@@ -110,7 +110,7 @@ export default function TeardownGridCard({
     // whole card selected, not a ring drawn over the photograph. The link had none at all before.
     <Link
       href={buildBlueprintHref(teardown)}
-      className="group/card block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00696E]"
+      className="group/card block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-imprint"
     >
       <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
         <Image
@@ -166,16 +166,16 @@ export default function TeardownGridCard({
           teardown rather than the cost of the parts, which is the kind of ambiguity PRODUCT.md
           calls a wrong part in a crate. One size throughout, hierarchy from weight and colour. */}
       {billOfMaterialsLabel === null ? null : (
-        <p className="mt-1.5 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1.5 text-sm leading-5 text-outline-strong">
           BOM{" "}
           <span className="font-medium text-foreground tabular-nums">{billOfMaterialsLabel}</span>
         </p>
       )}
 
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">{scaleLabel}</p>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">{scaleLabel}</p>
 
       {fileKindLabels === null ? null : (
-        <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">{fileKindLabels}</p>
+        <p className="mt-0.5 text-xs leading-4 text-outline-strong">{fileKindLabels}</p>
       )}
     </Link>
   );

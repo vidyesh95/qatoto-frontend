@@ -45,7 +45,7 @@ export default function CertificationValidityPill({ validUntil }: { validUntil: 
   if (isLapsed === null || !isLapsed) return null;
 
   return (
-    <span className="rounded bg-[#E0E3E3] px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] text-[#4A6364]">
+    <span className="rounded bg-muted px-2 py-0.5 text-xs leading-4 font-medium tracking-wider text-muted-foreground">
       Lapsed
     </span>
   );

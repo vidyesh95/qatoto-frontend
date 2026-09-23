@@ -196,7 +196,7 @@ export default function CofounderProfileComposer() {
                 either, and the backend answers 422 rather than discarding a figure, so adding one
                 back would stop this form working at all. This note says so rather than leaving the
                 absence to look like something nobody got round to. */}
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               Qatoto does not collect what you are willing to invest or what stake you want. Those
               are things to discuss with a person, not to publish beside your name.
             </p>
@@ -232,7 +232,7 @@ export default function CofounderProfileComposer() {
                 </p>
               </div>
             )}
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               Blank fields are left out entirely — a blank capital range is not an offer of zero,
               and a blank stake is not an expectation of none.
             </p>

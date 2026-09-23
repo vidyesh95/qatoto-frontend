@@ -44,16 +44,16 @@ export default function ResearchProgramProducts({ opportunities }: ResearchProgr
         {opportunities.map((opportunity) => (
           <div
             key={opportunity.opportunityId}
-            className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+            className="space-y-2 rounded-2xl border border-outline-variant/60 bg-card p-4"
           >
-            <p className="text-[10px] tracking-widest text-[#00696E]">DERIVED FROM RESEARCH</p>
+            <p className="text-xs tracking-eyebrow text-primary-imprint">DERIVED FROM RESEARCH</p>
             <p className="text-sm font-medium">{opportunity.productName}</p>
             <p className="text-xs text-muted-foreground">{opportunity.productDescription}</p>
             <p className="text-xs text-muted-foreground">
               From: {opportunity.derivedFromBranchTitle}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              <span className="rounded-full bg-[#00696E]/10 px-2.5 py-0.5 text-xs text-[#00696E]">
+              <span className="rounded-full bg-primary-imprint/10 px-2.5 py-0.5 text-xs text-primary-imprint">
                 {formatCompactMarketSize(opportunity.estimatedMarketSizeInCents)} est. market
               </span>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">

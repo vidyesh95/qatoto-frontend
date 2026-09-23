@@ -174,10 +174,11 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
             reserve, so the padding is conditional rather than always-on.
           */}
           <div
-            className={`absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 via-black/60 via-[64px] to-transparent p-2 pt-12 ${
+            className={`via-16 absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 via-black/60 to-transparent p-2 pt-12 ${
               slides.length > 1 ? "pb-5" : ""
             }`}
           >
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Legibility text shadow over hero image */}
             <p className="line-clamp-2 text-xs leading-tight font-normal text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
               {currentSlide.title}
             </p>

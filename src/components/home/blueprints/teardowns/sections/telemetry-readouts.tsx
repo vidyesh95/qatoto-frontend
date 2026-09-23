@@ -7,7 +7,7 @@ import {
 } from "@/lib/blueprints/format";
 import type { TeardownSimulationTelemetry } from "@/lib/blueprints/schemas";
 
-const LABEL_CLASS = "font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase";
+const LABEL_CLASS = "font-mono text-xs tracking-eyebrow text-outline-strong uppercase";
 
 /**
  * WHAT MAKES THE SCHEMA'S PROMISED COMPILE ERROR REAL.
@@ -31,9 +31,9 @@ const TELEMETRY_SOURCE_NOTES: Record<TeardownSimulationTelemetry["source"], stri
  * `#F59E0B` do not carry enough contrast for a figure a reader is meant to act on.
  */
 const FACTOR_OF_SAFETY_BAND_CLASSES: Record<FactorOfSafetyBand, string> = {
-  safe: "text-[#15803D]",
-  marginal: "text-[#B45309]",
-  critical: "text-[#B91C1C]",
+  safe: "text-green-700",
+  marginal: "text-amber-700",
+  critical: "text-red-700",
 };
 
 export default function TelemetryReadouts({
@@ -69,7 +69,7 @@ export default function TelemetryReadouts({
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Simulation</h2>
-      <div className="mt-2 rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="mt-2 rounded-xl border border-outline-variant/60 px-4 py-3">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-5">
           {readouts.map((readout) => (
             <div key={readout.label}>
@@ -82,7 +82,7 @@ export default function TelemetryReadouts({
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-3 text-xs leading-4 text-outline-strong">
           {TELEMETRY_SOURCE_NOTES[telemetry.source]}
         </p>
       </div>

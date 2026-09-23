@@ -297,7 +297,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                     accountHandle,
                     note: `The in-app deletion failed with code ${view.error.code}.`,
                   })}
-                  className="self-start text-sm font-medium text-[#00696E] underline"
+                  className="self-start text-sm font-medium text-primary-imprint underline"
                 >
                   Email {PRIVACY_CONTACT_EMAIL} instead
                 </a>

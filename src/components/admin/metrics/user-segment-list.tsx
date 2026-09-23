@@ -75,7 +75,7 @@ export function UserSegmentList() {
               className={`cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${
                 segment === selectedSegment
                   ? "border-transparent bg-primary text-primary-foreground"
-                  : "border-[#CAC4D0]/60 hover:bg-muted"
+                  : "border-outline-variant/60 hover:bg-muted"
               }`}
             >
               {SEGMENT_LABELS[segment].title}
@@ -135,7 +135,7 @@ function SegmentBody({ view }: { readonly view: MetricsViewState<SegmentUserRow[
             </thead>
             <tbody>
               {view.data.map((row) => (
-                <tr key={row.userId} className="border-t border-[#CAC4D0]/40">
+                <tr key={row.userId} className="border-t border-outline-variant/40">
                   <td className="py-1.5 pr-3">{row.displayName}</td>
                   {/* A null handle is an account that never set one — never invented here. */}
                   <td className="py-1.5 pr-3 text-muted-foreground">

@@ -78,7 +78,7 @@ export default function PackagingAndDelivery({
   return (
     <details className="group [&_summary]:list-none">
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
-        <span className="text-sm leading-5 tracking-wide text-[#191C1C]">
+        <span className="text-sm leading-5 tracking-wide text-foreground">
           Packaging and delivery
         </span>
         <Image
@@ -93,9 +93,9 @@ export default function PackagingAndDelivery({
       {packagingRows.length > 0 && (
         <dl className="px-4 pb-2 lg:px-6">
           {packagingRows.map((row) => (
-            <div key={row.label} className="flex gap-2 border-b border-[#CAC4D0]/60 py-2">
-              <dt className="w-2/5 text-sm font-medium text-[#6F7979]">{row.label}</dt>
-              <dd className="flex-1 text-sm text-[#191C1C]">{row.value}</dd>
+            <div key={row.label} className="flex gap-2 border-b border-outline-variant/60 py-2">
+              <dt className="w-2/5 text-sm font-medium text-outline-strong">{row.label}</dt>
+              <dd className="flex-1 text-sm text-foreground">{row.value}</dd>
             </div>
           ))}
         </dl>
@@ -104,7 +104,7 @@ export default function PackagingAndDelivery({
       {(productLeadTimeLabel !== null || tiersWithLeadTime.length > 0) && (
         <details className="group/lead-time px-4 pb-2 lg:px-6 [&_summary]:list-none">
           <summary className="flex cursor-pointer items-center justify-between py-2">
-            <span className="text-sm leading-5 tracking-wide text-[#191C1C]">Lead time</span>
+            <span className="text-sm leading-5 tracking-wide text-foreground">Lead time</span>
             <Image
               src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               width={20}
@@ -117,7 +117,7 @@ export default function PackagingAndDelivery({
           {/* Production time only. It is NOT a delivery date and never becomes one by adding
               shipping to it — see §19 for what an arrival window would take. */}
           {productLeadTimeLabel !== null && (
-            <p className="py-2 text-xs leading-4 text-[#6F7979]">
+            <p className="py-2 text-xs leading-4 text-outline-strong">
               {productLeadTimeLabel} after the order is confirmed. Shipping time is separate.
             </p>
           )}
@@ -127,12 +127,12 @@ export default function PackagingAndDelivery({
               {tiersWithLeadTime.map((tier) => (
                 <div
                   key={tier.minimumOrderQuantity}
-                  className="flex gap-2 border-b border-[#CAC4D0]/60 py-2"
+                  className="flex gap-2 border-b border-outline-variant/60 py-2"
                 >
-                  <dt className="w-2/5 text-sm font-medium text-[#6F7979]">
+                  <dt className="w-2/5 text-sm font-medium text-outline-strong">
                     {tier.minimumOrderQuantity}+ units
                   </dt>
-                  <dd className="flex-1 text-sm text-[#191C1C]">{tier.leadTimeDays} days</dd>
+                  <dd className="flex-1 text-sm text-foreground">{tier.leadTimeDays} days</dd>
                 </div>
               ))}
             </dl>

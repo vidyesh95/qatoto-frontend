@@ -116,7 +116,7 @@ export default function ProgramOwnerTools({
         <button
           type="button"
           onClick={() => setIsEditOpen((isOpen) => !isOpen)}
-          className="cursor-pointer rounded-full border border-[#00696E] px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/10"
+          className="cursor-pointer rounded-full border border-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/10"
         >
           {isEditOpen ? "Cancel edit" : "Edit programme details"}
         </button>
@@ -124,7 +124,7 @@ export default function ProgramOwnerTools({
           <button
             type="button"
             onClick={() => setIsOpportunityOpen((isOpen) => !isOpen)}
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm transition-colors hover:bg-muted"
+            className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm transition-colors hover:bg-muted"
           >
             {isOpportunityOpen ? "Cancel" : "Add a product opportunity"}
           </button>
@@ -134,7 +134,7 @@ export default function ProgramOwnerTools({
       {isEditOpen && (
         <form
           onSubmit={handleEditSubmit}
-          className="max-w-2xl space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <label className="block space-y-1 text-xs">
             <span className="font-medium">Name</span>
@@ -144,9 +144,9 @@ export default function ProgramOwnerTools({
               onChange={(event) => setTitle(event.target.value)}
               minLength={3}
               maxLength={120}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               The web address stays <code>{program.slug}</code> — it has been linked and cannot
               move.
             </span>
@@ -160,7 +160,7 @@ export default function ProgramOwnerTools({
               onChange={(event) => setTagline(event.target.value)}
               minLength={3}
               maxLength={200}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -173,14 +173,14 @@ export default function ProgramOwnerTools({
               minLength={20}
               maxLength={4000}
               rows={5}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
           <button
             type="submit"
             disabled={updateMutation.isPending}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:opacity-60"
           >
             {updateMutation.isPending ? "Saving…" : "Save changes"}
           </button>
@@ -194,7 +194,7 @@ export default function ProgramOwnerTools({
       {isOpportunityOpen && (
         <form
           onSubmit={handleOpportunitySubmit}
-          className="max-w-2xl space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <label className="block space-y-1 text-xs">
             <span className="font-medium">Product</span>
@@ -205,7 +205,7 @@ export default function ProgramOwnerTools({
               minLength={3}
               maxLength={200}
               placeholder="Senolytic supplement line"
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -218,7 +218,7 @@ export default function ProgramOwnerTools({
               minLength={10}
               maxLength={2000}
               rows={2}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -228,7 +228,7 @@ export default function ProgramOwnerTools({
               required
               value={derivedFromBranchId}
               onChange={(event) => setDerivedFromBranchId(event.target.value)}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             >
               <option value="">Choose a branch…</option>
               {branches.map((branch) => (
@@ -237,7 +237,7 @@ export default function ProgramOwnerTools({
                 </option>
               ))}
             </select>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Required — an opportunity with no research behind it is an unsourced projection.
             </span>
           </label>
@@ -253,7 +253,7 @@ export default function ProgramOwnerTools({
                 value={marketSizeInMajorUnits}
                 onChange={(event) => setMarketSizeInMajorUnits(event.target.value)}
                 placeholder="12000000000"
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
             </label>
             <label className="space-y-1 text-xs">
@@ -265,7 +265,7 @@ export default function ProgramOwnerTools({
                 max={600}
                 value={readinessMinMonths}
                 onChange={(event) => setReadinessMinMonths(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
             </label>
             <label className="space-y-1 text-xs">
@@ -277,7 +277,7 @@ export default function ProgramOwnerTools({
                 max={600}
                 value={readinessMaxMonths}
                 onChange={(event) => setReadinessMaxMonths(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -285,7 +285,7 @@ export default function ProgramOwnerTools({
           <button
             type="submit"
             disabled={opportunityMutation.isPending || !derivedFromBranchId}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
           >
             {opportunityMutation.isPending ? "Adding…" : "Add opportunity"}
           </button>
@@ -305,7 +305,7 @@ export default function ProgramOwnerTools({
                     opportunityId: opportunity.opportunityId,
                   })
                 }
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1 text-xs transition-colors hover:bg-muted disabled:opacity-60"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:bg-muted disabled:opacity-60"
               >
                 Remove &ldquo;{opportunity.productName}&rdquo;
               </button>

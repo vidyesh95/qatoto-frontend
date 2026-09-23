@@ -98,14 +98,14 @@ export default async function CaseStudiesIndexPage({
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 px-4 pt-4 lg:px-6">
         <div className="min-w-0">
           <h1 className="text-xl font-medium text-foreground lg:text-2xl">Case studies</h1>
-          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
+          <p className="mt-1 max-w-2xl text-sm text-outline-strong">
             What somebody learned the expensive way. Open a lesson to see what they did, or read the
             full record for the figures and where they came from.
           </p>
         </div>
         <Link
           href="/blueprints/case-studies/new"
-          className="shrink-0 rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="shrink-0 rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Write a case study
         </Link>
@@ -124,7 +124,7 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
   switch (viewState.status) {
     case "empty":
       return (
-        <p className="mt-8 px-4 text-sm text-[#6F7979] lg:px-6">
+        <p className="mt-8 px-4 text-sm text-outline-strong lg:px-6">
           {viewState.appliedFilterCount === 0
             ? "No case studies have been published yet."
             : "No case study covers that discipline yet."}
@@ -136,7 +136,7 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
       return (
         <div className="mt-8 px-4 lg:px-6">
           <p className="text-sm text-foreground">Case studies could not be loaded.</p>
-          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">{viewState.message}</p>
+          <p className="mt-1 max-w-2xl text-sm text-outline-strong">{viewState.message}</p>
         </div>
       );
     case "ready":

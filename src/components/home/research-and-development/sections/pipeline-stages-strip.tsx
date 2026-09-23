@@ -67,11 +67,11 @@ const PIPELINE_STAGES: PipelineStage[] = [
 // class strings because Tailwind only sees classes it can read at build time.
 const STAGE_BACKGROUND_TINT_CLASSES = [
   "bg-transparent",
-  "bg-[#00696E]/3",
-  "bg-[#00696E]/6",
-  "bg-[#00696E]/9",
-  "bg-[#00696E]/12",
-  "bg-[#00696E]/15",
+  "bg-primary-imprint/3",
+  "bg-primary-imprint/6",
+  "bg-primary-imprint/9",
+  "bg-primary-imprint/12",
+  "bg-primary-imprint/15",
 ];
 
 // Wrap grid of the six pipeline stages — 1 column on mobile, 2 from `sm`, 3 from
@@ -91,13 +91,13 @@ export default function PipelineStagesStrip() {
         <Link
           key={stage.stepNumber}
           href={stage.href}
-          className={`rounded-2xl border border-[#CAC4D0]/60 p-6 transition-colors hover:border-[#00696E]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${STAGE_BACKGROUND_TINT_CLASSES[stageIndex]}`}
+          className={`rounded-2xl border border-outline-variant/60 p-6 transition-colors hover:border-primary-imprint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${STAGE_BACKGROUND_TINT_CLASSES[stageIndex]}`}
         >
           <div className="flex items-start justify-between">
-            <div className="grid size-10 place-items-center rounded-full bg-[#00696E]/10">
+            <div className="grid size-10 place-items-center rounded-full bg-primary-imprint/10">
               <Image src={stage.iconSrc} width={24} height={24} alt="" />
             </div>
-            <p className="text-3xl leading-none font-medium text-[#00696E]/30 tabular-nums">
+            <p className="text-3xl leading-none font-medium text-primary-imprint/30 tabular-nums">
               {stage.stepNumber}
             </p>
           </div>

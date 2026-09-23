@@ -178,7 +178,7 @@ export default function AuditHashInputInspector({
         return <p className="text-xs text-muted-foreground">{localDigestState.reason}</p>;
       case "computed":
         return localDigestState.isDigestMatching ? (
-          <p className="rounded-lg bg-[#00696E]/10 p-2 text-xs font-medium text-[#00696E]">
+          <p className="rounded-lg bg-primary-imprint/10 p-2 text-xs font-medium text-primary-imprint">
             Recomputed in your browser and it matches. The server did not assert this — the bytes
             below hash to the entry hash below.
           </p>
@@ -188,7 +188,7 @@ export default function AuditHashInputInspector({
               Recomputed in your browser and it does NOT match. Treat this as an operational
               emergency and report it — do not dismiss it.
             </p>
-            <p className="font-mono text-[11px] break-all text-red-900">
+            <p className="font-mono text-xs break-all text-red-900">
               got {localDigestState.digestHex}
             </p>
           </div>
@@ -219,7 +219,7 @@ export default function AuditHashInputInspector({
             {/* The FULL 64 characters here, not the short rendering used in the list: a
                 24-bit prefix collides around 4,800 entries, and the whole hash is what is
                 being checked. */}
-            <p className="font-mono text-[11px] break-all text-muted-foreground">
+            <p className="font-mono text-xs break-all text-muted-foreground">
               {hashInput.entryHash}
             </p>
           </div>
@@ -230,12 +230,12 @@ export default function AuditHashInputInspector({
               <button
                 type="button"
                 onClick={() => void navigator.clipboard?.writeText(hashInput.canonicalBytes)}
-                className="cursor-pointer text-xs text-[#00696E] underline"
+                className="cursor-pointer text-xs text-primary-imprint underline"
               >
                 Copy
               </button>
             </div>
-            <pre className="max-h-48 overflow-auto rounded-lg bg-background p-2 font-mono text-[11px] whitespace-pre-wrap">
+            <pre className="max-h-48 overflow-auto rounded-lg bg-background p-2 font-mono text-xs whitespace-pre-wrap">
               {hashInput.canonicalBytes}
             </pre>
           </div>

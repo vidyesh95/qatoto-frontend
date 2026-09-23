@@ -36,13 +36,13 @@ export default function StorefrontFactoryGallery({ media }: { media: Organizatio
       <div className="flex flex-col gap-4">
         {groups.map((group) => (
           <div key={group.mediaKind}>
-            <p className="mb-1.5 text-sm leading-5 font-medium text-[#191C1C]">
+            <p className="mb-1.5 text-sm leading-5 font-medium text-foreground">
               {MEDIA_KIND_LABELS[group.mediaKind]}
             </p>
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {group.photos.map((photo) => (
                 <figure key={photo.id} className="flex flex-col gap-1">
-                  <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
                     <Image
                       src={photo.imageUrl}
                       fill
@@ -52,7 +52,7 @@ export default function StorefrontFactoryGallery({ media }: { media: Organizatio
                     />
                   </div>
                   {photo.altText && (
-                    <figcaption className="text-[11px] leading-4 text-[#6F7979]">
+                    <figcaption className="text-xs leading-4 text-outline-strong">
                       {photo.altText}
                     </figcaption>
                   )}

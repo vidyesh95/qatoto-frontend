@@ -70,7 +70,7 @@ export default function OptimizationTab({
             {suggestionsState.rows.map((suggestion) => (
               <li
                 key={suggestion.id}
-                className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+                className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="font-medium">{suggestion.title}</p>
@@ -119,7 +119,7 @@ export default function OptimizationTab({
                         }))
                       }
                       placeholder="Note (optional)"
-                      className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+                      className="w-full rounded-xl border border-outline-variant p-2 text-sm"
                     />
                     <div className="flex gap-2">
                       <button
@@ -132,7 +132,7 @@ export default function OptimizationTab({
                             note: decisionNotes[suggestion.id],
                           })
                         }
-                        className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                        className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                       >
                         Accept
                       </button>
@@ -146,7 +146,7 @@ export default function OptimizationTab({
                             note: decisionNotes[suggestion.id],
                           })
                         }
-                        className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                        className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                       >
                         Dismiss
                       </button>

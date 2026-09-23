@@ -120,7 +120,7 @@ function RfqRow({ rfq, which }: { rfq: RfqSummary; which: "buyer" | "provider" }
       {/* Visibility matters most to the BUYER, who is deciding how widely to expose a requirement. A
           provider already knows they can see it. */}
       {which === "buyer" && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           {RFQ_VISIBILITY_LABELS[rfq.visibility]}
         </p>
       )}

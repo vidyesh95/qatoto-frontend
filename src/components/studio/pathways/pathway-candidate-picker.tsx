@@ -175,7 +175,7 @@ export default function PathwayCandidatePicker({
                     className="w-full cursor-pointer rounded-lg px-2 py-1.5 text-left hover:bg-muted"
                   >
                     <span className="block text-sm text-foreground">{hit.title}</span>
-                    <span className="block text-[11px] text-muted-foreground">
+                    <span className="block text-xs text-muted-foreground">
                       {hit.organizationDisplayName}
                     </span>
                   </button>

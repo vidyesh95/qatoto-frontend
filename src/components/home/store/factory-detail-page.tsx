@@ -92,17 +92,17 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
   return (
     <article className="space-y-6">
       <header className="px-4 pt-4 lg:px-6">
-        <nav className="pb-2 text-xs leading-4 text-[#6F7979]" aria-label="Breadcrumb">
+        <nav className="pb-2 text-xs leading-4 text-outline-strong" aria-label="Breadcrumb">
           <Link href="/store/factories" className="hover:underline">
             Factories worldwide
           </Link>
           <span aria-hidden="true"> / </span>
-          <span className="text-[#191C1C]">{factory.displayName}</span>
+          <span className="text-foreground">{factory.displayName}</span>
         </nav>
 
         <div className="flex items-start gap-3">
           {factory.logoUrl === null ? (
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-base font-medium text-[#00696E]">
+            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary text-base font-medium text-primary-imprint">
               {factory.displayName.slice(0, 2).toUpperCase()}
             </span>
           ) : (
@@ -118,7 +118,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
             <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
               {factory.displayName}
             </h1>
-            <p className="mt-0.5 text-sm leading-5 text-[#6F7979]">
+            <p className="mt-0.5 text-sm leading-5 text-outline-strong">
               {countryLabelFromCode(factory.countryCode)} ·{" "}
               {FACTORY_VERIFICATION_LABELS[factory.verificationState]}
             </p>
@@ -126,14 +126,14 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
         </div>
 
         {factory.publicSummary !== null && (
-          <p className="mt-3 text-sm leading-5 text-[#191C1C]">{factory.publicSummary}</p>
+          <p className="mt-3 text-sm leading-5 text-foreground">{factory.publicSummary}</p>
         )}
 
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {factory.capabilityKinds.map((capabilityKind) => (
             <li
               key={capabilityKind}
-              className="rounded-full bg-[#D6E3FF] px-3 py-1 text-xs leading-4 font-medium text-[#00696E]"
+              className="rounded-full bg-secondary px-3 py-1 text-xs leading-4 font-medium text-primary-imprint"
             >
               {FACTORY_CAPABILITY_LABELS[capabilityKind]}
             </li>
@@ -144,13 +144,13 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
           {factory.acceptingInquiries ? (
             <Link
               href={`/store/factories/${factory.slug}/inquire`}
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90"
             >
               Write to this factory
             </Link>
           ) : (
             // Not a disabled button: there is nothing to enable. Saying why is the affordance.
-            <p className="rounded-full bg-[#F2F4F4] px-4 py-2 text-sm text-[#6F7979]">
+            <p className="rounded-full bg-muted px-4 py-2 text-sm text-outline-strong">
               This factory is not taking new inquiries.
             </p>
           )}
@@ -159,7 +159,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
               needs to reach it after the factory closes its inbox. */}
           <Link
             href="/store/factory-inquiries"
-            className="rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+            className="rounded-full bg-background px-4 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted"
           >
             Your inquiries
           </Link>
@@ -168,7 +168,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
               which is why it takes the slug rather than an organization id — see §6.6. */}
           <Link
             href={`/studio/factory-profile?factorySlug=${encodeURIComponent(factory.slug)}`}
-            className="text-xs leading-4 text-[#6F7979] hover:underline"
+            className="text-xs leading-4 text-outline-strong hover:underline"
           >
             Is this your factory? Edit its profile
           </Link>
@@ -237,7 +237,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
         <FactSection title="Certifications">
           {/* Says what these are before listing them. A certificate is the factory's document,
               reviewed at whatever depth `verificationState` states — it is not a Qatoto guarantee. */}
-          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+          <p className="pb-3 text-xs leading-4 text-outline-strong">
             Certificates the factory has provided. Check the validity dates — Qatoto records them,
             it does not issue them.
           </p>
@@ -260,7 +260,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
               side — but a factory holds standards no enum will finish enumerating, and dropping
               them would mean silently refusing to show a valid certificate somebody paid an
               auditor for. These are read, never matched. */}
-          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+          <p className="pb-3 text-xs leading-4 text-outline-strong">
             Held by this factory but outside the set you can filter on. Same rules — check the
             dates, Qatoto records these rather than issuing them.
           </p>
@@ -285,7 +285,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
             silently picked a winner would be asserting something neither party said. This line is
             what stops a reader assuming the per-site numbers add up to the headline one.
           */}
-          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+          <p className="pb-3 text-xs leading-4 text-outline-strong">
             Stated by the factory, site by site. The organization-wide floor area above is a
             separate figure it also stated; the two need not add up, and Qatoto does not reconcile
             them.
@@ -312,7 +312,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
 function FactSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="px-4 lg:px-6">
-      <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C] xl:text-base">
+      <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground xl:text-base">
         {title}
       </h2>
       {children}
@@ -338,12 +338,12 @@ function Fact({
 }) {
   return (
     <div>
-      <dt className="text-xs leading-4 text-[#6F7979]">{label}</dt>
+      <dt className="text-xs leading-4 text-outline-strong">{label}</dt>
       <dd
         className={
           value === null
-            ? "text-sm leading-5 text-[#6F7979] italic"
-            : "text-sm leading-5 text-[#191C1C]"
+            ? "text-sm leading-5 text-outline-strong italic"
+            : "text-sm leading-5 text-foreground"
         }
       >
         {value ?? absentLabel}
@@ -354,10 +354,12 @@ function Fact({
 
 function ProductionLineRow({ productionLine }: { productionLine: FactoryProductionLine }) {
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <p className="text-sm leading-5 font-medium text-[#191C1C]">{productionLine.name}</p>
-      <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">{productionLine.processSummary}</p>
-      <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <p className="text-sm leading-5 font-medium text-foreground">{productionLine.name}</p>
+      <p className="mt-0.5 text-xs leading-4 text-outline-strong">
+        {productionLine.processSummary}
+      </p>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         {/* Null capacity is "not measured", never zero — "0 pieces" would say this line produces
             nothing, which is a claim about a line that is plainly running. */}
         {productionLine.monthlyCapacityUnits === null
@@ -376,8 +378,8 @@ function CertificationRow({
   const { validFrom, validUntil } = certificationRecord;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[#CAC4D0]/60 px-4 py-2.5">
-      <span className="text-sm leading-5 font-medium text-[#191C1C]">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-outline-variant/60 px-4 py-2.5">
+      <span className="text-sm leading-5 font-medium text-foreground">
         {/* THE LABEL, NOT `standardName`. The enum's short label is what the filter chip says, so
             the row a buyer landed on from a chip must read the same. `standardName` is what the
             paper says — longer, usually carrying a revision year — and it goes below. */}
@@ -387,22 +389,24 @@ function CertificationRow({
       {/* Only when it adds something. Repeating "ISO 9001" under "ISO 9001" is noise. */}
       {certificationRecord.standardName !==
         FACTORY_CERTIFICATION_LABELS[certificationRecord.certification] && (
-        <span className="text-xs leading-4 text-[#6F7979]">{certificationRecord.standardName}</span>
+        <span className="text-xs leading-4 text-outline-strong">
+          {certificationRecord.standardName}
+        </span>
       )}
 
       {certificationRecord.issuingBody !== null && (
-        <span className="text-xs leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           issued by {certificationRecord.issuingBody}
         </span>
       )}
 
       {certificationRecord.certificateNumber !== null && (
-        <span className="text-xs leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           no. {certificationRecord.certificateNumber}
         </span>
       )}
 
-      <span className="text-xs leading-4 text-[#6F7979]">
+      <span className="text-xs leading-4 text-outline-strong">
         {validUntil === null
           ? // NOT "valid indefinitely". Nobody recorded an end date; that is all this says.
             validFrom === null
@@ -434,24 +438,24 @@ function OtherCertificationRow({
   const { validFrom, validUntil } = otherCertification;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[#CAC4D0]/60 px-4 py-2.5">
-      <span className="text-sm leading-5 font-medium text-[#191C1C]">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-outline-variant/60 px-4 py-2.5">
+      <span className="text-sm leading-5 font-medium text-foreground">
         {otherCertification.standardName}
       </span>
 
       {otherCertification.issuingBody !== null && (
-        <span className="text-xs leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           issued by {otherCertification.issuingBody}
         </span>
       )}
 
       {otherCertification.certificateNumber !== null && (
-        <span className="text-xs leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           no. {otherCertification.certificateNumber}
         </span>
       )}
 
-      <span className="text-xs leading-4 text-[#6F7979]">
+      <span className="text-xs leading-4 text-outline-strong">
         {validUntil === null
           ? // NOT "valid indefinitely" — nobody recorded an end date, that is all this says.
             validFrom === null
@@ -467,14 +471,14 @@ function OtherCertificationRow({
 
 function SiteRow({ site }: { site: FactorySite }) {
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <p className="text-sm leading-5 font-medium text-[#191C1C]">{site.label}</p>
-      <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <p className="text-sm leading-5 font-medium text-foreground">{site.label}</p>
+      <p className="mt-0.5 text-xs leading-4 text-outline-strong">
         {site.locality === null
           ? countryLabelFromCode(site.countryCode)
           : `${site.locality}, ${countryLabelFromCode(site.countryCode)}`}
       </p>
-      <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         {site.floorAreaSquareMetres === null
           ? "Floor area not stated"
           : formatSquareMetresLabel(site.floorAreaSquareMetres)}
@@ -490,7 +494,7 @@ function SiteRow({ site }: { site: FactorySite }) {
 function SamplePolicyBlock({ samplePolicy }: { samplePolicy: FactorySamplePolicy }) {
   if (!samplePolicy.offersSamples) {
     return (
-      <p className="text-sm leading-5 text-[#6F7979]">
+      <p className="text-sm leading-5 text-outline-strong">
         This factory does not offer samples. Ask in an inquiry if you need one anyway — a policy is
         not a refusal.
       </p>

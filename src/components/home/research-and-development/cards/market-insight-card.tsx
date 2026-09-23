@@ -25,7 +25,7 @@ export default function MarketInsightCard({ insight }: { insight: MarketInsight 
   const trendIndicator = TREND_INDICATORS[insight.trendDirection];
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex flex-col gap-2 rounded-2xl border border-outline-variant/60 p-4">
       <p className="flex items-baseline gap-2 text-2xl font-semibold">
         {formatMarketInsightStat(insight)}
         <span className={`text-base ${trendIndicator.colorClassName}`}>{trendIndicator.glyph}</span>

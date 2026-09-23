@@ -167,7 +167,7 @@ export default function SupportCaseQueuePage() {
                 </span>
               </div>
 
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {supportCase.openerName}
                 {supportCase.openerHandle !== null && ` @${supportCase.openerHandle}`} ·{" "}
                 {SUPPORT_CASE_CATEGORY_LABELS[supportCase.category]} · opened{" "}
@@ -230,7 +230,7 @@ function SupportCaseWorkspace({ caseId }: { caseId: string }) {
   return (
     <div className="mt-3 space-y-3">
       <div className="rounded-lg bg-muted px-3 py-2">
-        <p className="text-[11px] font-medium text-foreground">What they wrote</p>
+        <p className="text-xs font-medium text-foreground">What they wrote</p>
         <p className="mt-1 text-xs whitespace-pre-line text-foreground">
           {supportCase.description}
         </p>
@@ -242,7 +242,7 @@ function SupportCaseWorkspace({ caseId }: { caseId: string }) {
             .toSorted((left, right) => left.sequence - right.sequence)
             .map((message) => (
               <li key={message.id} className="rounded-lg border border-border px-3 py-2">
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {message.authorKind === "staff"
                     ? SUPPORT_STAFF_AUTHOR_LABEL
                     : supportCase.openerName}{" "}
@@ -338,13 +338,13 @@ function SupportCaseWorkspace({ caseId }: { caseId: string }) {
               Close for good
             </button>
           </div>
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Resolving leaves the case reopenable — they can reply and it comes back. Closing is
             final for both of you.
           </p>
         </>
       ) : (
-        <p className="text-[11px] leading-4 text-muted-foreground">
+        <p className="text-xs leading-4 text-muted-foreground">
           This case is closed. Nothing further can be added to it by either side.
         </p>
       )}

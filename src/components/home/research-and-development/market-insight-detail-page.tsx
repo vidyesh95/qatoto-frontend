@@ -70,7 +70,7 @@ export default async function MarketInsightDetailPage({ insightId }: { insightId
       <header className="space-y-2">
         <Link
           href="/research-and-development/market-research"
-          className="text-xs font-medium text-[#00696E]"
+          className="text-xs font-medium text-primary-imprint"
         >
           ← Market Research
         </Link>
@@ -94,7 +94,7 @@ export default async function MarketInsightDetailPage({ insightId }: { insightId
         <p className="max-w-prose text-sm leading-6">{insight.summary}</p>
       )}
 
-      <section className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <section className="space-y-2 rounded-2xl border border-outline-variant/60 p-4">
         <h2 className="text-sm font-medium tracking-wide">Source</h2>
         <p className="text-sm">
           {insight.sourceUrl === null ? (

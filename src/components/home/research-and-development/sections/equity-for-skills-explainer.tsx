@@ -56,7 +56,10 @@ export default function EquityForSkillsExplainer() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {EQUITY_STEPS.map((equityStep) => (
-          <div key={equityStep.stepNumber} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <div
+            key={equityStep.stepNumber}
+            className="rounded-2xl border border-outline-variant/60 p-4"
+          >
             <p className="text-xs text-muted-foreground">{equityStep.stepNumber}</p>
             <p className="mt-2 font-medium">{equityStep.title}</p>
             <p className="mt-1 text-xs text-muted-foreground">{equityStep.blurb}</p>
@@ -67,7 +70,7 @@ export default function EquityForSkillsExplainer() {
         See the whole ledger on a live project —{" "}
         <Link
           href="/research-and-development/project/solar-cold-storage/proof-of-effort"
-          className="font-medium text-[#00696E] underline underline-offset-2"
+          className="font-medium text-primary-imprint underline underline-offset-2"
         >
           SolarChill&apos;s Proof of Effort
         </Link>{" "}

@@ -27,13 +27,13 @@ import { BLUEPRINT_DISCIPLINE_LABELS, buildBlueprintHref } from "@/lib/blueprint
 import type { ApiError } from "@/lib/http";
 import { formatCentsLabel, formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
 
 type DecisionKind = CaseStudyModerationDecision["decision"];
 
@@ -146,7 +146,7 @@ export default function CaseStudyReviewCard({
   return (
     <article className={CARD_CLASS}>
       <header>
-        <p className="text-[11px] font-medium tracking-[0.2em] text-muted-foreground uppercase">
+        <p className="text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
           {submission.sector} · {BLUEPRINT_DISCIPLINE_LABELS[submission.discipline]}
         </p>
         <h2 className="mt-1 text-base font-medium">{submission.title}</h2>
@@ -186,7 +186,7 @@ export default function CaseStudyReviewCard({
               <li key={relatedLessonSlug}>
                 <Link
                   href={buildBlueprintHref({ category: "case_study", slug: relatedLessonSlug })}
-                  className="text-[#00696E] hover:underline"
+                  className="text-primary-imprint hover:underline"
                 >
                   {relatedLessonSlug}
                 </Link>
@@ -200,7 +200,7 @@ export default function CaseStudyReviewCard({
         <p className="mt-4 text-xs text-muted-foreground">Tags: {submission.tags.join(", ")}</p>
       )}
 
-      <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
+      <div className="mt-4 border-t border-outline-variant/60 pt-3">
         <label className="block text-xs text-muted-foreground">
           Note to the writer
           <textarea
@@ -212,7 +212,7 @@ export default function CaseStudyReviewCard({
             className={FIELD_CLASS}
           />
         </label>
-        <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+        <p className="mt-1 text-xs text-muted-foreground tabular-nums">
           {moderatorNote.length} of{" "}
           {CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS.toLocaleString("en-US")}
         </p>
@@ -264,7 +264,7 @@ export default function CaseStudyReviewCard({
                 : "Send back"}
             </button>
             {isNoteEmpty ? (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Sending back needs a note. It is the only thing the writer sees.
               </span>
             ) : null}
@@ -356,11 +356,11 @@ function ReviewFacts({ submission }: { readonly submission: CaseStudyReviewItem 
           />
         )}
         {submission.evidenceCompanies.map((company) => (
-          <div key={company.name} className="border-t border-[#CAC4D0]/40 py-1">
+          <div key={company.name} className="border-t border-outline-variant/40 py-1">
             <dt className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>{company.name}</span>
               {company.isNameWithheld ? (
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
                   Withheld from readers
                 </span>
               ) : null}
@@ -384,7 +384,7 @@ function ReviewFacts({ submission }: { readonly submission: CaseStudyReviewItem 
 
 function FactRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="border-t border-[#CAC4D0]/40 py-1">
+    <div className="border-t border-outline-variant/40 py-1">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>{value}</dd>
     </div>
@@ -406,7 +406,7 @@ function ReviewSources({ submission }: { readonly submission: CaseStudyReviewIte
                 href={source.url}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="text-[#00696E] hover:underline"
+                className="text-primary-imprint hover:underline"
               >
                 {source.label}
               </a>

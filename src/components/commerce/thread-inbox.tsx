@@ -93,7 +93,7 @@ function KindChip({
       aria-pressed={isSelected}
       className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${
         isSelected
-          ? "border-transparent bg-[#00696E] text-white"
+          ? "border-transparent bg-primary-imprint text-primary-imprint-foreground"
           : "border-border text-muted-foreground"
       }`}
     >
@@ -163,7 +163,7 @@ function ThreadRow({ thread }: { thread: ThreadInboxEntry }) {
         // Saying so beats a link that 404s.
         <div>
           {body}
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             Open this conversation from the product it is about.
           </p>
         </div>

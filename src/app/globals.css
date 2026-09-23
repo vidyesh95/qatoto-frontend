@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --tracking-eyebrow: 0.18em;
+  --color-cad-selection: oklch(0.6759 0.2175 38.8); /* #ff5500 3D viewport line parity */
+  --color-band-ink: oklch(0.2178 0 0); /* permanent dark hero band start */
+  --color-band-deep: oklch(0.3133 0.0533 200.58); /* #00393C */
+  --color-band-imprint: oklch(0.4736 0.0805 200.55); /* #00696E */
+}
+
 :root {
   --background: oklch(0.9761 0 0);
   --foreground: oklch(0.2178 0 0);
@@ -61,19 +69,17 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Two M3 BASE tones that components have been writing as raw hex all along.
-
-     docs/Design.md §2 names this as "the fracture": globals.css tokenized only the M3 *container*
-     tones, so `Surface Wash` has `--primary` while `Primary Imprint` — the pressable, committed
-     strength of the same role — had nothing to reference. §6 says "Don't write a new hardcoded
-     hex", which until now was an instruction with no way to follow it.
-
-     ⚠️ ADDING THEM CONVERTS NOTHING. The existing ~1,190 `#00696E` and `#CAC4D0` literals stay
-     exactly as they are: §6 is explicit that converting a file is its own change with its own
-     dark-mode check, and doing it as a side effect of a feature is how a dark regression ships
-     unnoticed. These exist so NEW work has a token, and the conversion is its own job. */
+  /* M3 Base Tokens & Systematic Design Foundation (docs/Design.md §2).
+     --primary-imprint is the authoritative solid action teal.
+     --primary-imprint-deep is hover/active and dark hero ground.
+     --primary-imprint-foreground provides AA/AAA contrast on primary imprint surfaces.
+     --outline-strong bounds form fields and interactive components.
+     --outline-variant is reserved for decorative hairlines and subtle dividers. */
   --primary-imprint: oklch(0.4736 0.0805 200.55);
+  --primary-imprint-deep: oklch(0.3133 0.0533 200.58);
+  --primary-imprint-foreground: oklch(1 0 0);
   --outline-variant: oklch(0.8287 0.0178 308.22);
+  --outline-strong: oklch(0.5677 0.012 196.82);
 }
 
 .dark {
@@ -110,13 +116,15 @@
   --sidebar-border: oklch(0.36 0 0);
   --sidebar-ring: oklch(0.3351 0.033 198.7355);
 
-  /* Dark counterparts. `Primary Imprint` brightens because the light value is a mid tone that
-     falls below the AA contrast floor against the dark ground; `Outline Variant` darkens for the
-     same reason in the other direction. Nothing reads these yet — no shipped rule uses the
-     tokens — so these are the values the first dark check will be run against, not ones it has
-     already passed. */
+  /* Dark counterparts (docs/Design.md §2).
+     --primary-imprint brightens to #1DBDC5 to pass AA/AAA contrast (7.57:1) on dark ground.
+     --primary-imprint-foreground shifts to dark ink (oklch(0.2178 0 0)) for 7.57:1 AAA contrast on #1DBDC5.
+     --outline-strong and --outline-variant adjust for dark surface boundaries. */
   --primary-imprint: oklch(0.7278 0.1195 200.43);
+  --primary-imprint-deep: oklch(0.25 0.04 200.58);
+  --primary-imprint-foreground: oklch(0.2178 0 0);
   --outline-variant: oklch(0.4382 0.0154 308.22);
+  --outline-strong: oklch(0.68 0.012 196.82);
 }
 
 @theme inline {
@@ -137,8 +145,6 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-primary-imprint: var(--primary-imprint);
-  --color-outline-variant: var(--outline-variant);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -154,6 +160,13 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Custom Qatoto Design Extensions (docs/Design.md §2) */
+  --color-primary-imprint: var(--primary-imprint);
+  --color-primary-imprint-deep: var(--primary-imprint-deep);
+  --color-primary-imprint-foreground: var(--primary-imprint-foreground);
+  --color-outline-variant: var(--outline-variant);
+  --color-outline-strong: var(--outline-strong);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);

@@ -22,7 +22,7 @@ export default function BusinessToolsIndexPage() {
     <div className="pb-8">
       <SectionHeader title="For your Business" href="/store" />
 
-      <p className="px-4 pb-4 text-sm leading-5 text-[#6F7979] lg:px-6">
+      <p className="px-4 pb-4 text-sm leading-5 text-outline-strong lg:px-6">
         Everything a business needs to run on Qatoto — sourcing, moving, checking and staffing what
         you build.
       </p>
@@ -35,9 +35,9 @@ export default function BusinessToolsIndexPage() {
         ))}
       </ul>
 
-      <p className="px-4 pt-6 text-xs leading-4 text-[#6F7979] lg:px-6">
+      <p className="px-4 pt-6 text-xs leading-4 text-outline-strong lg:px-6">
         Looking for products rather than a tool?{" "}
-        <Link href="/store/categories" className="text-[#00696E] underline">
+        <Link href="/store/categories" className="text-primary-imprint underline">
           Browse every product category
         </Link>
         .
@@ -50,16 +50,16 @@ function BusinessToolCard({ businessTool }: { businessTool: BusinessTool }) {
   return (
     <Link
       href={businessTool.href}
-      className="flex h-full items-start gap-3 rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="flex h-full items-start gap-3 rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-100">
         <Image src={businessTool.iconSrc} width={24} height={24} alt="" />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm leading-5 font-medium text-[#191C1C]">
+        <span className="block text-sm leading-5 font-medium text-foreground">
           {businessTool.label}
         </span>
-        <span className="mt-0.5 block text-xs leading-4 text-[#6F7979]">
+        <span className="mt-0.5 block text-xs leading-4 text-outline-strong">
           {businessTool.description}
         </span>
       </span>

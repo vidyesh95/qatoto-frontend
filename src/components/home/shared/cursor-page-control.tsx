@@ -47,7 +47,7 @@ export default function CursorPageControl({
       <Link
         href={buildCursorHref(nextCursor)}
         scroll={false}
-        className="rounded-full bg-background px-5 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+        className="rounded-full bg-background px-5 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted"
       >
         {label}
       </Link>

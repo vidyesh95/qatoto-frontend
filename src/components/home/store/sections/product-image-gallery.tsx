@@ -90,7 +90,7 @@ export default function ProductImageGallery({
             aria-label={`Image ${imageIndex + 1}`}
             aria-current={imageIndex === activeImageIndex}
             className={`relative size-16 overflow-hidden rounded outline -outline-offset-1 ${
-              imageIndex === activeImageIndex ? "outline-[#2A76FD]" : "outline-[#E0E3E3]"
+              imageIndex === activeImageIndex ? "outline-blue-600" : "outline-border"
             }`}
           >
             <Image src={image.url} fill sizes="64px" alt="" className="object-cover" />
@@ -102,7 +102,7 @@ export default function ProductImageGallery({
         <div
           ref={scrollTrackRef}
           onScroll={handleTrackScroll}
-          className="flex w-full snap-x snap-mandatory scrollbar-none overflow-x-auto bg-[#F5F5F5] [&::-webkit-scrollbar]:hidden"
+          className="flex w-full snap-x snap-mandatory scrollbar-none overflow-x-auto bg-muted [&::-webkit-scrollbar]:hidden"
         >
           {slidesWithClones.map((image, domSlideIndex) => (
             <div key={domSlideIndex} className="relative aspect-square w-full shrink-0 snap-center">
@@ -144,8 +144,8 @@ export default function ProductImageGallery({
               key={imageIndex}
               className={
                 imageIndex === activeImageIndex
-                  ? "h-1 w-2 rounded-full bg-[#4A6364]"
-                  : "size-1 rounded-full bg-[#CCE8E9]"
+                  ? "h-1 w-2 rounded-full bg-muted-foreground"
+                  : "size-1 rounded-full bg-primary"
               }
             />
           ))}

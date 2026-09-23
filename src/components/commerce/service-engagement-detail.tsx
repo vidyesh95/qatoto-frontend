@@ -204,7 +204,7 @@ export default function ServiceEngagementDetail({ engagementId }: { engagementId
 
         {/* This service finishing does NOT finish any other service on the order. Said plainly, because
             a buyer accepting an inspection report will reasonably wonder what it means for the freight. */}
-        <p className="text-[11px] leading-4 text-muted-foreground">
+        <p className="text-xs leading-4 text-muted-foreground">
           Each service on an order finishes on its own. Accepting this one does not complete
           anything else.
         </p>

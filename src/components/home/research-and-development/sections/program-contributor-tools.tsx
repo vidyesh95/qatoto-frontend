@@ -148,7 +148,7 @@ export default function ProgramContributorTools({
       <div className="grid gap-4 lg:grid-cols-2">
         <form
           onSubmit={handleEffortSubmit}
-          className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <h3 className="text-sm font-medium">Log effort</h3>
 
@@ -162,9 +162,9 @@ export default function ProgramContributorTools({
                 max={1440}
                 value={minutes}
                 onChange={(event) => setMinutes(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
-              <span className="text-[10px] text-muted-foreground">Up to 1440 — one day.</span>
+              <span className="text-xs text-muted-foreground">Up to 1440 — one day.</span>
             </label>
 
             <label className="space-y-1 text-xs">
@@ -176,7 +176,7 @@ export default function ProgramContributorTools({
                 // A future date is a 422 from the backend; `max` stops the common case here.
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setLoggedForDate(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -201,14 +201,14 @@ export default function ProgramContributorTools({
               onChange={(event) => setEffortNote(event.target.value)}
               maxLength={2000}
               rows={2}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
           <button
             type="submit"
             disabled={effortMutation.isPending || !effortNote.trim()}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
           >
             {effortMutation.isPending ? "Logging…" : "Log effort"}
           </button>
@@ -228,7 +228,7 @@ export default function ProgramContributorTools({
 
         <form
           onSubmit={handleContributionSubmit}
-          className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <h3 className="text-sm font-medium">Record a contribution</h3>
 
@@ -240,7 +240,7 @@ export default function ProgramContributorTools({
                 const parsed = ResearchContributionKindSchema.safeParse(event.target.value);
                 if (parsed.success) setContributionKind(parsed.data);
               }}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             >
               {RESEARCH_CONTRIBUTION_KINDS.map((kind) => (
                 <option key={kind} value={kind}>
@@ -263,7 +263,7 @@ export default function ProgramContributorTools({
                   step={0.01}
                   value={amountInMajorUnits}
                   onChange={(event) => setAmountInMajorUnits(event.target.value)}
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 />
               </label>
               <label className="space-y-1 text-xs">
@@ -274,7 +274,7 @@ export default function ProgramContributorTools({
                   onChange={(event) => setCurrencyCode(event.target.value)}
                   maxLength={3}
                   pattern="[A-Za-z]{3}"
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm uppercase"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm uppercase"
                 />
               </label>
             </div>
@@ -289,7 +289,7 @@ export default function ProgramContributorTools({
               maxLength={1000}
               rows={2}
               placeholder="Senolytics assay data from our Q3 run"
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -303,7 +303,7 @@ export default function ProgramContributorTools({
           <button
             type="submit"
             disabled={contributionMutation.isPending || !contributionDescription.trim()}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
           >
             {contributionMutation.isPending ? "Recording…" : "Record contribution"}
           </button>

@@ -76,12 +76,12 @@ export default async function TeardownRightsClaimRoute({
         abandon it or swear to something they did not mean. Neither is a good outcome, and a link is
         cheaper than either.
       */}
-      <p className="mx-auto mt-8 max-w-2xl border-t border-[#CAC4D0]/60 pt-4 text-sm text-muted-foreground">
+      <p className="mx-auto mt-8 max-w-2xl border-t border-outline-variant/60 pt-4 text-sm text-muted-foreground">
         Not a rights holder? If something about this write-up looks wrong — figures that look made
         up, a step that would injure someone, or a survey of a different product — use{" "}
         <Link
           href={`/blueprints/teardowns/${encodeURIComponent(slug)}`}
-          className="font-medium text-[#00696E] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="font-medium text-primary-imprint underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Report this
         </Link>{" "}

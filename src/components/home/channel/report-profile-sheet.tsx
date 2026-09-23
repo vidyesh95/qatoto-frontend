@@ -117,7 +117,7 @@ export default function ReportProfileSheet({
                         not believe this queue is the emergency channel — it is not, and the honest
                         thing is to say so where the choice is made rather than in a receipt. */}
                     {reason === "severe_harm_escalation" && (
-                      <p className="pb-1 pl-6 text-[11px] leading-4 text-muted-foreground">
+                      <p className="pb-1 pl-6 text-xs leading-4 text-muted-foreground">
                         This flags the report as urgent for a human to read. It is not an emergency
                         service — if someone is in immediate danger, contact your local authorities.
                       </p>

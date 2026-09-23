@@ -46,7 +46,7 @@ export default function AlphaBanner() {
   return (
     <aside
       aria-label="Alpha notice"
-      className="shrink-0 bg-[#00696E] px-4 py-2 text-center text-sm text-white lg:px-6"
+      className="shrink-0 bg-primary-imprint px-4 py-2 text-center text-sm text-primary-imprint-foreground lg:px-6"
     >
       {/* Decorative. Announced it would read "rocket" before the sentence it decorates. */}
       <span aria-hidden="true">🚀</span> Qatoto is currently in Alpha: the site is incomplete and

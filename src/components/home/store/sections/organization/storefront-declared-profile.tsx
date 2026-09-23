@@ -83,7 +83,7 @@ export default function StorefrontDeclaredProfile({
       description="Supplied by the seller and not independently verified by Qatoto."
     >
       {profile.publicSummary && (
-        <p className="mb-3 text-sm leading-5 tracking-[0.25px] text-[#191C1C]">
+        <p className="mb-3 text-sm leading-5 tracking-normal text-foreground">
           {profile.publicSummary}
         </p>
       )}
@@ -91,8 +91,8 @@ export default function StorefrontDeclaredProfile({
       <dl className="grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-4">
         {backedFacts.map((fact) => (
           <div key={fact.label} className="flex flex-col gap-0.5">
-            <dt className="text-[11px] leading-4 text-[#6F7979]">{fact.label}</dt>
-            <dd className="text-sm leading-5 font-medium text-[#191C1C]">{fact.value}</dd>
+            <dt className="text-xs leading-4 text-outline-strong">{fact.label}</dt>
+            <dd className="text-sm leading-5 font-medium text-foreground">{fact.value}</dd>
           </div>
         ))}
       </dl>
@@ -101,8 +101,8 @@ export default function StorefrontDeclaredProfile({
         <>
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-4">
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Registered capital</dt>
-              <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+              <dt className="text-xs leading-4 text-outline-strong">Registered capital</dt>
+              <dd className="text-sm leading-5 font-medium text-foreground">
                 {formatCentsLabel(
                   frontendOnlyProfile.registeredCapitalInCents,
                   frontendOnlyProfile.registeredCapitalCurrency,
@@ -110,8 +110,8 @@ export default function StorefrontDeclaredProfile({
               </dd>
             </div>
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Registration number</dt>
-              <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+              <dt className="text-xs leading-4 text-outline-strong">Registration number</dt>
+              <dd className="text-sm leading-5 font-medium text-foreground">
                 {frontendOnlyProfile.businessRegistrationNumber}
               </dd>
             </div>

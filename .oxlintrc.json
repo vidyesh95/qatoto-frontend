@@ -37,20 +37,30 @@
     "eslint/prefer-const": ["error", { "destructuring": "any" }],
     "typescript/no-explicit-any": "error",
     "react/react-in-jsx-scope": "off",
-    "shadcn/no-arbitrary-values": "off"
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": [
+          "*-[calc(*)]",
+          "*-[min(*)]",
+          "*-[max(*)]",
+          "*-[env(*)]",
+          "*-[*dvh]",
+          "*-[*vh]",
+          "*-[radial-gradient(*)]",
+          "aspect-[*]",
+          "grid-cols-[*]",
+          "grid-rows-[*]",
+          "transition-[*]"
+        ]
+      }
+    ]
   },
   "overrides": [
     {
       "files": ["**/*.test.{ts,tsx}", "tests/unit/**"],
       "plugins": ["vitest"],
       "env": { "vitest": true }
-    },
-    {
-      "files": ["src/components/ui/**/*.{ts,tsx}"],
-      "excludeFiles": ["**/creatable-combobox.tsx"],
-      "rules": {
-        "shadcn/no-arbitrary-values": "error"
-      }
     }
   ]
 }

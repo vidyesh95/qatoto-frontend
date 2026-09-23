@@ -57,7 +57,7 @@ export default function ShowcaseLaunchRowPreview({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-base leading-6 font-medium text-[#191C1C] sm:text-lg sm:leading-7">
+        <p className="text-base leading-6 font-medium text-foreground sm:text-lg sm:leading-7">
           {title.trim() === "" ? (
             <span className="text-muted-foreground">Your launch name</span>
           ) : (
@@ -72,7 +72,7 @@ export default function ShowcaseLaunchRowPreview({
           )}
         </p>
 
-        <BlueprintMetaLine className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+        <BlueprintMetaLine className="mt-1.5 text-xs leading-4 text-outline-strong">
           <BlueprintMetaItem hasSeparator={false}>
             <span>
               {launchedAtIsoInstant === null ? (

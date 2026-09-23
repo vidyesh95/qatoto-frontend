@@ -100,7 +100,7 @@ export default function SellerQuestionAnswer({
           className="mt-1 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
         />
       </label>
-      <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1 text-xs leading-4 text-muted-foreground">
         This is published on the listing under your organization&apos;s name, and it cannot be
         revised — withdraw it and answer again instead. {trimmedBody.length}/
         {PRODUCT_ANSWER_BODY_MAX_LENGTH}

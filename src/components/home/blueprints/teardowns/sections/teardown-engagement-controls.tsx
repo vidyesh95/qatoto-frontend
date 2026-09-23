@@ -45,8 +45,10 @@ function TeardownTogglePill({
       onClick={onToggle}
       aria-pressed={isSet}
       disabled={isPending}
-      className={`flex w-full cursor-pointer flex-row items-center justify-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default lg:w-24 ${
-        isSet ? "bg-[#00696E] text-white" : "bg-[#CCE8E9] text-[#041F21] hover:bg-[#BCDEDF]"
+      className={`flex w-full cursor-pointer flex-row items-center justify-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default lg:w-24 ${
+        isSet
+          ? "bg-primary-imprint text-primary-imprint-foreground"
+          : "bg-primary text-foreground hover:bg-primary/80"
       }`}
     >
       {/*
@@ -59,7 +61,7 @@ function TeardownTogglePill({
         alt=""
         width={18}
         height={18}
-        className={`size-[18px] shrink-0 ${isSet ? "invert" : ""}`}
+        className={`size-4.5 shrink-0 ${isSet ? "invert" : ""}`}
       />
       <span className="tabular-nums">
         <span aria-hidden="true">{formatCompactCountLabel(count)}</span>

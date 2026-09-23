@@ -104,7 +104,7 @@ export default function ReportBlueprintSheet({
             <button
               type="button"
               onClick={onClose}
-              className="mt-4 cursor-pointer rounded-md bg-[#00696E] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="mt-4 cursor-pointer rounded-md bg-primary-imprint px-3 py-1.5 text-sm font-medium text-primary-imprint-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             >
               Close
             </button>
@@ -151,7 +151,7 @@ export default function ReportBlueprintSheet({
                 setDetailText(event.target.value.slice(0, DETAIL_MAXIMUM_CHARACTERS));
               }}
               rows={3}
-              className="mt-1 w-full resize-y rounded-md border border-[#CAC4D0]/60 bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="mt-1 w-full resize-y rounded-md border border-outline-variant/60 bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             />
 
             {refusal === null ? null : (
@@ -162,14 +162,14 @@ export default function ReportBlueprintSheet({
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                className="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={reason === null || reportBlueprint.isPending}
-                className="cursor-pointer rounded-md bg-[#00696E] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default disabled:opacity-50"
+                className="cursor-pointer rounded-md bg-primary-imprint px-3 py-1.5 text-sm font-medium text-primary-imprint-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default disabled:opacity-50"
               >
                 {reportBlueprint.isPending ? "Sending…" : "Report"}
               </button>

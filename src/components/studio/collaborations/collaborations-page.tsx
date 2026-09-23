@@ -146,7 +146,7 @@ export default function StudioCollaborationsPage() {
 
 function StatusChip({ status }: { readonly status: VideoCollaborator["status"] }) {
   return (
-    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
       {COLLABORATION_STATUS_LABELS[status]}
     </span>
   );

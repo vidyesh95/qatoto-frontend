@@ -41,7 +41,7 @@ export default function ShowcaseLaunchLink({ showcase }: { showcase: ShowcaseBlu
 
       <Link
         href={buildBlueprintHref(showcase)}
-        className="-mr-3 flex min-w-0 items-center gap-x-3 rounded-lg py-2 pr-3 pl-2 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="-mr-3 flex min-w-0 items-center gap-x-3 rounded-lg py-2 pr-3 pl-2 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       >
         <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted">
           <Image src={showcase.thumbnailUrl} alt="" fill sizes="48px" className="object-cover" />
@@ -57,7 +57,9 @@ export default function ShowcaseLaunchLink({ showcase }: { showcase: ShowcaseBlu
               the end of a line — the component records the measurement. */}
           <BlueprintMetaLine className="mt-0.5 text-xs leading-4 text-muted-foreground">
             <BlueprintMetaItem hasSeparator={false}>
-              <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
+              <span className="font-medium text-primary-imprint">
+                {showcase.author.displayName}
+              </span>
             </BlueprintMetaItem>
             <BlueprintMetaItem>
               <span title={formatIsoInstantLabel(showcase.launchedAt)}>

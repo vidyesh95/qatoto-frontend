@@ -145,14 +145,14 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
               <div className="flex w-full flex-row">
                 <div className="min-w-0 flex-1">
                   <div className="w-full py-4 pl-4">
-                    <p className="w-full truncate text-base text-[#041F21]">
+                    <p className="w-full truncate text-base text-foreground">
                       {session?.user.name ?? "董雪博士"}
                     </p>
-                    <p className="w-full truncate text-xs text-[#041F21]">
+                    <p className="w-full truncate text-xs text-foreground">
                       @{session?.user.handle ?? "…"}
                     </p>
                   </div>
-                  <p className="ml-4 flex w-full gap-1 text-4xl text-[#1DBDC5]">
+                  <p className="ml-4 flex w-full gap-1 text-4xl text-primary-imprint">
                     <span>Level</span>
                     <span className="min-w-0 flex-1 truncate">1</span>
                   </p>

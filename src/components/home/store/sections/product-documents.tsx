@@ -37,7 +37,7 @@ export default function ProductDocuments({
 
   return (
     <section className="mt-6 flex flex-col gap-2">
-      <h2 className="text-sm font-medium text-[#191C1C]">Documents</h2>
+      <h2 className="text-sm font-medium text-foreground">Documents</h2>
       <ul className="flex flex-wrap gap-2">
         {orderedDocuments.map((document) => (
           <li key={document.id}>
@@ -45,7 +45,7 @@ export default function ProductDocuments({
               href={`${API_BASE_URL}${document.downloadPath}`}
               target="_blank"
               rel="noopener"
-              className="flex items-center gap-2 rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium text-[#191C1C] transition-colors hover:bg-[#F2F4F4]"
+              className="flex items-center gap-2 rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -54,7 +54,7 @@ export default function ProductDocuments({
                 height={16}
               />
               {document.fileName}
-              <span className="text-[#6F7979]">
+              <span className="text-outline-strong">
                 {PRODUCT_DOCUMENT_KIND_LABELS[document.documentKind]} ·{" "}
                 {formatByteSizeLabel(document.byteSize)}
               </span>

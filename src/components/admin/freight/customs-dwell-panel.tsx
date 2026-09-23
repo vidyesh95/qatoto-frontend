@@ -339,8 +339,8 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
 
   if (createResult !== undefined && createResult.success) {
     return (
-      <div className="space-y-2 rounded-xl border border-[#00696E]/30 bg-[#00696E]/5 p-3">
-        <p className="text-sm font-medium text-[#00696E]">Estimate recorded.</p>
+      <div className="space-y-2 rounded-xl border border-primary-imprint/30 bg-primary-imprint/5 p-3">
+        <p className="text-sm font-medium text-primary-imprint">Estimate recorded.</p>
         {/* Reported exactly once, here — the same shape of silent side effect as a superseded
             rate card. No later read mentions it. */}
         {createResult.data.closedDwellEstimateId !== null && (

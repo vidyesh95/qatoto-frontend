@@ -227,7 +227,7 @@ function LibraryVideoCard({ row }: { row: LibraryVideoRow }) {
           )}
           {/* Absent rather than zero: a null duration means the backend has not measured it yet. */}
           {durationLabel !== null && (
-            <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-[11px] font-medium text-white">
+            <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-xs font-medium text-white">
               {durationLabel}
             </span>
           )}

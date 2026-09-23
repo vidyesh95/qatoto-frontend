@@ -35,8 +35,8 @@ export default function WatchOpenRoles({
   if (openRoles.length === 0) return null;
 
   return (
-    <section className="space-y-2 rounded-xl border border-[#CAC4D0] p-3">
-      <h2 className="text-sm font-medium text-[#191C1C]">Roles this venture is hiring for</h2>
+    <section className="space-y-2 rounded-xl border border-outline-variant p-3">
+      <h2 className="text-sm font-medium text-foreground">Roles this venture is hiring for</h2>
 
       <ul className="space-y-2">
         {openRoles.map((openRole, index) => {
@@ -51,15 +51,17 @@ export default function WatchOpenRoles({
               // The blurbs carry no stable id on the wire and their rows are regenerated on
               // every save, so position is the only honest key here.
               key={`${openRole.roleTitle}-${String(index)}`}
-              className="flex flex-wrap items-center justify-between gap-2 border-b border-[#CAC4D0]/50 pb-2 last:border-b-0 last:pb-0"
+              className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/50 pb-2 last:border-b-0 last:pb-0"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm text-[#191C1C]">{openRole.roleTitle}</p>
+                <p className="truncate text-sm text-foreground">{openRole.roleTitle}</p>
                 {openRole.roleDescription !== null && (
-                  <p className="line-clamp-2 text-xs text-[#3F4948]">{openRole.roleDescription}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
+                    {openRole.roleDescription}
+                  </p>
                 )}
                 {linkedRole !== null && (
-                  <p className="text-xs text-[#6F7979]">
+                  <p className="text-xs text-outline-strong">
                     {ROLE_COMMITMENT_LABELS[linkedRole.commitment]} ·{" "}
                     {linkedRole.slotsTotal - linkedRole.slotsFilledCount} of {linkedRole.slotsTotal}{" "}
                     open
@@ -74,7 +76,7 @@ export default function WatchOpenRoles({
               {linkedRole === null ? null : hasOpenSeat ? (
                 <ApplyRoleSheet role={linkedRole} />
               ) : (
-                <span className="text-xs text-[#6F7979]">Closed</span>
+                <span className="text-xs text-outline-strong">Closed</span>
               )}
             </li>
           );

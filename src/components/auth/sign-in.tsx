@@ -92,7 +92,7 @@ export default function SignIn({
           type={"button"}
           onClick={handleGoogleSignIn}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint"
           }
         >
           <Image
@@ -107,7 +107,7 @@ export default function SignIn({
           type={"button"}
           onClick={handleGitHubSignIn}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint"
           }
         >
           <Image
@@ -123,7 +123,7 @@ export default function SignIn({
           onClick={handlePasskeySignIn}
           disabled={!isWebAuthnSupported || passkeySignInState.status === "authenticating"}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
           }
         >
           <Image
@@ -145,7 +145,7 @@ export default function SignIn({
             Your browser doesn't support passkeys.
           </p>
         ) : null}
-        <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
+        <div className="flex items-center gap-4 px-4 text-muted-foreground">
           <hr className="flex-1" />
           <span className="text-xs">or</span>
           <hr className="flex-1" />
@@ -153,7 +153,7 @@ export default function SignIn({
         <Link
           href={"/sign-in-with-password"}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
           }
         >
           <Image
@@ -165,8 +165,8 @@ export default function SignIn({
           <span>Sign in with Password</span>
         </Link>
         <p className="space-x-1 text-center text-sm font-medium">
-          <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="cursor-pointer text-[#00696E]">
+          <span className="text-muted-foreground">Don't have an account?</span>
+          <Link href={"/sign-up"} className="cursor-pointer text-primary-imprint">
             Sign up
           </Link>
         </p>

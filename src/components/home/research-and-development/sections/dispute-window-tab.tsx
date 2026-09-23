@@ -27,10 +27,10 @@ const PROPOSAL_STATUS_LABELS: Record<AllocationProposalStatus, string> = {
 };
 
 const PROPOSAL_STATUS_BADGE_CLASS: Record<AllocationProposalStatus, string> = {
-  open: "bg-[#D6E3FF] text-[#191C1C]",
+  open: "bg-secondary text-foreground",
   disputed: "bg-amber-100 text-amber-800",
-  locked: "bg-[#00696E]/10 text-[#00696E]",
-  consensus_reached: "bg-[#00696E]/10 text-[#00696E]",
+  locked: "bg-primary-imprint/10 text-primary-imprint",
+  consensus_reached: "bg-primary-imprint/10 text-primary-imprint",
 };
 
 const DISPUTE_STATUS_LABELS: Record<DisputeStatus, string> = {
@@ -110,7 +110,7 @@ export default function DisputeWindowTab({
         return (
           <ul className="space-y-3">
             {disputesState.rows.map((dispute) => (
-              <li key={dispute.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <li key={dispute.id} className="rounded-2xl border border-outline-variant/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium">Raised by {dispute.raisedByName}</p>

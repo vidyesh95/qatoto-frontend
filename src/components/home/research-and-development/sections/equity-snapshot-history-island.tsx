@@ -40,7 +40,7 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
       <button
         type="button"
         onClick={() => setIsHistoryOpen(true)}
-        className="cursor-pointer text-xs font-medium text-[#00696E] underline"
+        className="cursor-pointer text-xs font-medium text-primary-imprint underline"
       >
         How did this pie get here?
       </button>
@@ -55,7 +55,7 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
           <span className="text-xs font-medium">
             As of {formatIsoInstant(snapshot.asOf)}
             {snapshot.isBaked && (
-              <span className="ml-2 rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[#00696E]">
+              <span className="ml-2 rounded-full bg-primary-imprint/10 px-2 py-0.5 text-primary-imprint">
                 Baked
               </span>
             )}
@@ -80,7 +80,7 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
           <button
             type="button"
             onClick={() => setExpandedSnapshotId(isExpanded ? null : snapshot.id)}
-            className="mt-1 cursor-pointer text-xs font-medium text-[#00696E] underline"
+            className="mt-1 cursor-pointer text-xs font-medium text-primary-imprint underline"
           >
             {isExpanded ? "Hide the split" : "Show the split"}
           </button>
@@ -133,7 +133,7 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
       {snapshotsQuery.data !== undefined && snapshotsQuery.data.length > 0 && (
         <ul className="space-y-2">
           {snapshotsQuery.data.map((snapshot) => (
-            <li key={snapshot.id} className="rounded-2xl border border-[#CAC4D0]/60 p-3">
+            <li key={snapshot.id} className="rounded-2xl border border-outline-variant/60 p-3">
               {renderSnapshotRow(snapshot)}
             </li>
           ))}

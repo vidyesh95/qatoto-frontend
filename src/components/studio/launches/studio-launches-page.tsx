@@ -74,7 +74,7 @@ export default function StudioLaunchesPage() {
         </div>
         <Link
           href="/blueprints/showcase/new"
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Post a launch
         </Link>
@@ -184,7 +184,7 @@ export default function StudioLaunchesPage() {
                         category: "showcase",
                         slug: submission.publicSlug,
                       })}
-                      className="mt-2 inline-block text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                      className="mt-2 inline-block text-sm font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                     >
                       View the page
                     </Link>

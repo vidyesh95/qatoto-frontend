@@ -61,9 +61,9 @@ export default function PartCalloutPin({ store, loadedPart }: PartCalloutPinProp
         aria-pressed={isSelected}
         onClick={handlePinClick}
         tabIndex={isHidden ? -1 : 0}
-        className={`rounded-full border px-2 py-0.5 font-mono text-[10px] tracking-wide whitespace-nowrap transition-opacity duration-200 ${
+        className={`rounded-full border px-2 py-0.5 font-mono text-xs tracking-wide whitespace-nowrap transition-opacity duration-200 ${
           isSelected
-            ? "border-[#FF5500] bg-[#FF5500] text-white"
+            ? "border-cad-selection bg-cad-selection font-semibold text-black"
             : "border-black/10 bg-white/90 text-foreground shadow-xs backdrop-blur"
         } ${isHidden ? "pointer-events-none opacity-0" : "pointer-events-auto opacity-100"}`}
       >

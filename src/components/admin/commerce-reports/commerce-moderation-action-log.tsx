@@ -36,13 +36,13 @@ import {
 } from "@/lib/store/content-reports.schemas";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
 
 type ActionLogViewState =
   | { readonly status: "loading" }
@@ -91,7 +91,7 @@ export default function CommerceModerationActionLog({
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Nothing has been actioned yet.
         </p>
       );
@@ -196,7 +196,7 @@ function ActionCard({ action }: { readonly action: CommerceModerationAction }) {
       )}
 
       {canOfferRestore && (
-        <div className="mt-3 space-y-2 border-t border-[#CAC4D0]/60 pt-3">
+        <div className="mt-3 space-y-2 border-t border-outline-variant/60 pt-3">
           <label className="block text-xs text-muted-foreground">
             Reason for putting this back (required)
             <textarea

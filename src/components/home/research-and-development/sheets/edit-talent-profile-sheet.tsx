@@ -154,7 +154,7 @@ export default function EditTalentProfileSheet() {
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+        className="cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
       >
         Edit your profile
       </button>
@@ -254,7 +254,7 @@ export default function EditTalentProfileSheet() {
                   aria-pressed={skillSlugs.includes(skill.slug)}
                   className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
                     skillSlugs.includes(skill.slug)
-                      ? "bg-[#00696E] text-white"
+                      ? "bg-primary-imprint text-primary-imprint-foreground"
                       : "bg-muted text-foreground"
                   }`}
                 >
@@ -273,7 +273,7 @@ export default function EditTalentProfileSheet() {
             <button
               type="submit"
               disabled={saveMutation.isPending}
-              className="rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] disabled:opacity-40"
+              className="rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
             >
               {saveMutation.isPending ? "Saving…" : "Save"}
             </button>
@@ -283,7 +283,7 @@ export default function EditTalentProfileSheet() {
                 type="button"
                 disabled={unpublishMutation.isPending}
                 onClick={() => unpublishMutation.mutate()}
-                className="rounded-full border border-[#CAC4D0] px-4 py-2 text-sm font-medium disabled:opacity-40"
+                className="rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-40"
               >
                 Take it out of the directory
               </button>
@@ -292,7 +292,7 @@ export default function EditTalentProfileSheet() {
                 type="button"
                 disabled={saveMutation.isPending || !isPublishable}
                 onClick={() => saveProfile(true)}
-                className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
               >
                 Save and publish
               </button>
@@ -308,7 +308,7 @@ export default function EditTalentProfileSheet() {
           )}
 
           {saveError !== undefined && <MutationErrorNotice error={saveError.apiError} />}
-          {saveMutation.isSuccess && <p className="text-sm text-[#00696E]">Saved.</p>}
+          {saveMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
         </form>
       </RndSheet>
     </>

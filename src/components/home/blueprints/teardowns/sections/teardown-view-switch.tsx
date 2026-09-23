@@ -55,7 +55,7 @@ export default function TeardownViewSwitch({
                 [TEARDOWN_VIEW_QUERY_KEY]: view === DEFAULT_TEARDOWN_VIEW ? undefined : view,
               })}
               aria-current={isActive ? "page" : undefined}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
                 isActive
                   ? "bg-primary text-foreground"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"

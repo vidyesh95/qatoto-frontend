@@ -179,14 +179,14 @@ export default function PlatformFeedbackComposer({
           placeholder="Tell us what happened, or what would make this better."
           className="mt-1 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
         />
-        <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+        <span className="mt-1 block text-right text-xs text-muted-foreground">
           {message.length}/{FEEDBACK_MESSAGE_MAX_LENGTH}
         </span>
       </label>
 
       {/* SAID BEFORE THEY SEND IT, not in the receipt. Somebody who would rather not
           attach the page they are on deserves to know before they write. */}
-      <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1 text-xs leading-4 text-muted-foreground">
         {pagePathNote ?? (
           <>
             The page you are on ({pagePath}) and your browser details are sent along, so we can see

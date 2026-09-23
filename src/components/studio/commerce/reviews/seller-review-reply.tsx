@@ -76,7 +76,7 @@ export default function SellerReviewReply({
             className="mt-1 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           />
         </label>
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           {existingReplyBody === null
             ? "This is published beside the review. You can revise it once, within 30 days."
             : "This is your one revision, and it is only available within 30 days of the original answer."}
@@ -123,7 +123,7 @@ export default function SellerReviewReply({
         </button>
       ) : (
         <div className="rounded-lg bg-muted px-3 py-2">
-          <p className="text-[11px] font-medium text-foreground">You answered</p>
+          <p className="text-xs font-medium text-foreground">You answered</p>
           <p className="text-xs leading-4 whitespace-pre-line text-foreground">
             {existingReplyBody}
           </p>

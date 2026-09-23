@@ -125,17 +125,17 @@ export default function SellerReviewsPage() {
               {page.items.map((review) => (
                 <li key={review.id} className="rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                    <span className="rounded bg-primary px-1.5 py-0.5 text-xs font-medium text-primary-foreground">
                       {review.rating.toFixed(1)}
                     </span>
                     {/* No privileged identity here — see note 2. */}
                     <span className="text-xs font-medium text-foreground">
                       {review.reviewer?.displayName ?? "Verified buyer"}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {formatIsoInstantLabel(review.createdAt)}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {formatCountLabel(review.helpfulCount)} found this helpful
                     </span>
                   </div>

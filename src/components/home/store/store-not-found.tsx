@@ -7,7 +7,7 @@ export default function StoreNotFound() {
   return (
     <div className="flex flex-col items-center gap-3 px-4 py-24 text-center">
       <h1 className="text-lg font-medium tracking-tight text-foreground">We couldn't find that</h1>
-      <p className="text-sm text-[#6F7979]">
+      <p className="text-sm text-outline-strong">
         The page you're looking for doesn't exist or may have moved.
       </p>
       <Link

@@ -90,7 +90,7 @@ export default function PaperModerationQueue({
             {queuedPapers.map((paper) => (
               <li
                 key={paper.paperId}
-                className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+                className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
               >
                 <div className="space-y-1">
                   <p className="text-sm font-medium">{paper.title}</p>
@@ -116,7 +116,7 @@ export default function PaperModerationQueue({
                   maxLength={2000}
                   rows={2}
                   placeholder="Why? The author reads this."
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 />
 
                 <div className="flex flex-wrap gap-2">
@@ -138,10 +138,10 @@ export default function PaperModerationQueue({
                       }
                       className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                         decision === "approved"
-                          ? "bg-[#00696E] text-white hover:bg-[#00393C]"
+                          ? "bg-primary-imprint text-primary-imprint-foreground hover:bg-primary-imprint-deep"
                           : decision === "rejected"
-                            ? "border border-[#BA1A1A] text-[#BA1A1A] hover:bg-[#BA1A1A]/10"
-                            : "border border-[#CAC4D0] hover:bg-muted"
+                            ? "border border-destructive text-destructive hover:bg-destructive/10"
+                            : "border border-outline-variant hover:bg-muted"
                       }`}
                     >
                       {RESEARCH_PAPER_MODERATION_STATUS_LABELS[decision]}
@@ -166,7 +166,7 @@ export default function PaperModerationQueue({
             {openReports.map((report) => (
               <li
                 key={report.reportId}
-                className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+                className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
               >
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
@@ -191,7 +191,7 @@ export default function PaperModerationQueue({
                   }
                   maxLength={2000}
                   placeholder="Why is this fine?"
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 />
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -206,7 +206,7 @@ export default function PaperModerationQueue({
                         reasonNote: (noteByReportId[report.reportId] ?? "").trim(),
                       })
                     }
-                    className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-full border border-outline-variant px-4 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Dismiss — nothing wrong here
                   </button>
@@ -247,7 +247,7 @@ export default function PaperModerationQueue({
             {actionsQuery.data.map((action) => (
               <li
                 key={action.actionId}
-                className="rounded-xl border border-[#CAC4D0]/60 p-3 text-xs"
+                className="rounded-xl border border-outline-variant/60 p-3 text-xs"
               >
                 <p className="font-medium">
                   {RESEARCH_MODERATION_ACTION_LABELS[action.actionKind]}

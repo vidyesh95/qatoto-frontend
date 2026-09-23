@@ -88,7 +88,7 @@ export default async function BuildLogPage() {
       <LogLegend />
       {renderFeed()}
       <LogStreakLeaderboard standings={streakStandings} />
-      <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
+      <section className="mx-4 rounded-2xl bg-primary-imprint/5 p-6 text-center md:p-8 lg:mx-6">
         <h2 className="text-xl font-semibold md:text-2xl">See how a log becomes a slice</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Every verified minute mints slices at a locked rate, and the slices decide the cap table.
@@ -99,7 +99,7 @@ export default async function BuildLogPage() {
               Points at the project list until the Proof-of-Effort surface is wired. */}
           <Link
             href="/research-and-development"
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
           >
             Browse the projects
           </Link>

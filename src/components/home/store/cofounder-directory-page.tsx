@@ -125,13 +125,13 @@ export default async function CofounderDirectoryPage({
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Find a cofounder
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           People offering money, a domain they have already done, reach into a market, or the time
           to run the thing. Filter by what you are short of.
         </p>
         {/* THE DISCLAIMER THAT MAKES THE REST OF THE PAGE HONEST. Said once, at the top, in plain
             words — not as small print under a figure. */}
-        <p className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           Everything here is written by the person it describes and is not checked by Qatoto. A
           profile is not an offer of investment, Qatoto is not a broker, and nothing on this page
           creates or transfers a stake in anything.
@@ -141,7 +141,7 @@ export default async function CofounderDirectoryPage({
       <div className="flex flex-wrap items-center gap-2 px-4 pt-4 lg:px-6">
         <Link
           href="/store/find-cofounder/new"
-          className="shrink-0 rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="shrink-0 rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90"
         >
           List yourself
         </Link>
@@ -149,7 +149,7 @@ export default async function CofounderDirectoryPage({
             rows only, so a draft, a submitted profile and a rejected one are all invisible here. */}
         <Link
           href="/store/find-cofounder/mine"
-          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted"
         >
           Your profile
         </Link>
@@ -230,11 +230,11 @@ function CofounderRow({ profile }: { profile: CofounderProfileCard }) {
   return (
     <Link
       href={`/store/find-cofounder/${profile.slug}`}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <div className="flex items-start gap-3">
         {profile.avatarUrl === null ? (
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-sm font-medium text-[#00696E]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-sm font-medium text-primary-imprint">
             {profile.displayName.slice(0, 2).toUpperCase()}
           </span>
         ) : (
@@ -248,8 +248,8 @@ function CofounderRow({ profile }: { profile: CofounderProfileCard }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5 font-medium text-[#191C1C]">{profile.displayName}</p>
-          <p className="text-xs leading-4 text-[#6F7979]">
+          <p className="text-sm leading-5 font-medium text-foreground">{profile.displayName}</p>
+          <p className="text-xs leading-4 text-outline-strong">
             {countryLabelFromCode(profile.countryCode)} ·{" "}
             {COFOUNDER_COMMITMENT_LABELS[profile.commitmentLevel]}
           </p>
@@ -258,20 +258,20 @@ function CofounderRow({ profile }: { profile: CofounderProfileCard }) {
         {/* Only the two states that change what a reader should do are called out. "Open to
             introductions" is the default and needs no badge. */}
         {profile.engagementState !== "open_to_intros" && (
-          <span className="shrink-0 rounded bg-[#F2F4F4] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#6F7979]">
+          <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs leading-4 font-medium text-outline-strong">
             {COFOUNDER_ENGAGEMENT_LABELS[profile.engagementState]}
           </span>
         )}
       </div>
 
-      <p className="mt-2 line-clamp-2 text-sm leading-5 text-[#191C1C]">{profile.headline}</p>
+      <p className="mt-2 line-clamp-2 text-sm leading-5 text-foreground">{profile.headline}</p>
 
       {profile.contributionKinds.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {profile.contributionKinds.map((contributionKind) => (
             <li
               key={contributionKind}
-              className="rounded-full bg-[#D6E3FF] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]"
+              className="rounded-full bg-secondary px-2 py-0.5 text-xs leading-4 font-medium text-primary-imprint"
             >
               {COFOUNDER_CONTRIBUTION_LABELS[contributionKind]}
             </li>
@@ -279,26 +279,30 @@ function CofounderRow({ profile }: { profile: CofounderProfileCard }) {
         </ul>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] leading-4">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-4">
         {/* Says what was checked, and what was not. Never a bare "Verified" beside a money figure. */}
-        <span className="text-[#00696E]">{COFOUNDER_IDENTITY_LABELS[profile.identityState]}</span>
+        <span className="text-primary-imprint">
+          {COFOUNDER_IDENTITY_LABELS[profile.identityState]}
+        </span>
 
         {/* "DECLARED" IS IN THE ROW. Absent when they did not say — never rendered as zero, which
             would be a figure this person never gave. */}
         {capitalRangeLabel !== null && (
-          <span className="text-[#191C1C]">Declares {capitalRangeLabel} of capital</span>
+          <span className="text-foreground">Declares {capitalRangeLabel} of capital</span>
         )}
 
         {/* "Hoping for" and never "holds". An expectation is an ask, not an allocation. */}
         {profile.equityExpectationBasisPoints !== null && (
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             hoping for {formatEquityExpectationLabel(profile.equityExpectationBasisPoints)}
           </span>
         )}
       </div>
 
       {profile.sectors.length > 0 && (
-        <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">{profile.sectors.join(" · ")}</p>
+        <p className="mt-1.5 text-xs leading-4 text-outline-strong">
+          {profile.sectors.join(" · ")}
+        </p>
       )}
     </Link>
   );

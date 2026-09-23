@@ -94,7 +94,7 @@ export function LabeledTextInput({
         value={value}
         onChange={(changeEvent) => onValueChange(changeEvent.target.value)}
         placeholder={placeholder}
-        className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+        className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
       />
       <FieldHint hint={hint} />
       {characterLimit === undefined ? null : (
@@ -135,7 +135,7 @@ export function LabeledTextArea({
         readOnly={isReadOnly}
         rows={rowCount}
         onChange={(changeEvent) => onValueChange(changeEvent.target.value)}
-        className={`${INPUT_CLASS} mt-1 resize-y focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+        className={`${INPUT_CLASS} mt-1 resize-y focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
       />
       <FieldHint hint={hint} />
       <FieldError message={errorMessage} />
@@ -186,7 +186,7 @@ export function LabeledEnumSelect<TValue extends string>({
         onChange={(changeEvent) =>
           onValueChange(options.find((option) => option === changeEvent.target.value) ?? "")
         }
-        className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+        className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
       >
         {emptyOptionLabel === undefined ? null : <option value="">{emptyOptionLabel}</option>}
         {options.map((option) => (
@@ -226,7 +226,7 @@ export function CheckboxRow({
         type="checkbox"
         checked={isChecked}
         onChange={(changeEvent) => onCheckedChange(changeEvent.target.checked)}
-        className="mt-0.5 size-4 shrink-0 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="mt-0.5 size-4 shrink-0 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       />
       <span className="min-w-0">
         <span className="block text-sm font-medium text-foreground">{label}</span>
@@ -277,7 +277,7 @@ export function RepeatableRowsShell({
       <button
         type="button"
         onClick={onAddRow}
-        className="mt-3 rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="mt-3 rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       >
         {addLabel}
       </button>
@@ -298,9 +298,7 @@ export function RepeatableRowShell({
   return (
     <div className="rounded-xl border border-border p-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-          {rowLabel}
-        </span>
+        <span className="text-xs tracking-wider text-muted-foreground uppercase">{rowLabel}</span>
         <button
           type="button"
           onClick={onRemoveRow}

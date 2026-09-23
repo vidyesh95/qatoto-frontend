@@ -73,7 +73,7 @@ export default function SignIn() {
       <section className="space-y-4 p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
-            <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
+            <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
               <label
                 htmlFor="email"
                 className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -101,12 +101,12 @@ export default function SignIn() {
                 required
               />
             </div>
-            <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
+            <p className="mt-1 w-full pl-4 text-xs text-muted-foreground">
               Enter email you have access to
             </p>
           </div>
           <div className="relative">
-            <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
+            <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
               <label
                 htmlFor="password"
                 className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -149,7 +149,7 @@ export default function SignIn() {
                 />
               </button>
             </div>
-            <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
+            <p className="mt-1 w-full pl-4 text-xs text-muted-foreground">
               Click Forgot Password? if forgotten
             </p>
           </div>
@@ -167,10 +167,10 @@ export default function SignIn() {
                 aria-label="Remember me toggle switch"
               />
               {/* Track */}
-              <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
+              <div className="h-8 w-13 rounded-full border-2 border-outline-strong bg-muted transition-colors duration-200 ease-in-out peer-checked:border-primary-imprint peer-checked:bg-primary-imprint"></div>
 
               {/* Thumb */}
-              <div className="pointer-events-none absolute top-0.75 left-0.75 flex size-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
+              <div className="pointer-events-none absolute top-0.75 left-0.75 flex size-6.5 items-center justify-center rounded-full bg-outline-strong shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
                 {/* X Icon - shown when unchecked */}
                 <svg
                   className="x-icon absolute size-4 text-white opacity-100 transition-opacity duration-200"
@@ -187,7 +187,7 @@ export default function SignIn() {
                 </svg>
                 {/* Checkmark Icon - shown when checked */}
                 <svg
-                  className="check-icon absolute size-4 text-[#00696E] opacity-0 transition-opacity duration-200"
+                  className="check-icon absolute size-4 text-primary-imprint opacity-0 transition-opacity duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -206,7 +206,7 @@ export default function SignIn() {
           <button
             type="submit"
             className={
-              "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
+              "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
             }
           >
             <Image
@@ -219,11 +219,11 @@ export default function SignIn() {
           </button>
         </form>
         <p className="text-center text-sm font-medium">
-          <Link href={"/forgot-password"} className="cursor-pointer text-[#00696E]">
+          <Link href={"/forgot-password"} className="cursor-pointer text-primary-imprint">
             Forgot Password?
           </Link>
         </p>
-        <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
+        <div className="flex items-center gap-4 px-4 text-muted-foreground">
           <hr className="flex-1" />
           <span className="text-xs">or continue with</span>
           <hr className="flex-1" />
@@ -234,7 +234,7 @@ export default function SignIn() {
             onClick={handleGoogleSignIn}
             aria-label="Continue with Google"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
             }
           >
             <Image
@@ -249,7 +249,7 @@ export default function SignIn() {
             onClick={handleGitHubSignIn}
             aria-label="Continue with GitHub"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
             }
           >
             <Image
@@ -261,8 +261,8 @@ export default function SignIn() {
           </button>
         </div>
         <p className="space-x-1 text-center text-sm font-medium">
-          <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="cursor-pointer text-[#00696E]">
+          <span className="text-muted-foreground">Don't have an account?</span>
+          <Link href={"/sign-up"} className="cursor-pointer text-primary-imprint">
             Sign up
           </Link>
         </p>

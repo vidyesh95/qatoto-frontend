@@ -82,7 +82,7 @@ export default async function StudioFactoryProfileRoute({
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-6 lg:px-6">
         <StoreErrorPanel message="This page edits a company you are an active member of. Sign in with that account, or open it from your factory's directory listing." />
-        <p className="mt-3 text-center text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 text-center text-xs leading-4 text-outline-strong">
           <Link href="/store/factories" className="hover:underline">
             Browse the manufacturer directory
           </Link>

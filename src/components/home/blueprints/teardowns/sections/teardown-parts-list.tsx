@@ -36,13 +36,13 @@ export default function TeardownPartsList({
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Parts</h2>
-      <p className="mt-0.5 text-[11px] text-[#6F7979]">
+      <p className="mt-0.5 text-xs text-outline-strong">
         {formatCountLabel(partsList.length)} listed by the publisher, in the order they came out
       </p>
 
-      <div className="mt-2 max-w-2xl overflow-hidden rounded-xl border border-[#CAC4D0]/60">
+      <div className="mt-2 max-w-2xl overflow-hidden rounded-xl border border-outline-variant/60">
         <table className="w-full text-sm">
-          <thead className="border-b border-[#CAC4D0]/60 text-left text-xs text-[#6F7979]">
+          <thead className="border-b border-outline-variant/60 text-left text-xs text-outline-strong">
             <tr>
               <th scope="col" className={HEADER_CELL_CLASS}>
                 Part
@@ -52,7 +52,7 @@ export default function TeardownPartsList({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#CAC4D0]/60">
+          <tbody className="divide-y divide-outline-variant/60">
             {partsList.map((listedPart, partIndex) => (
               /*
                * ⚠️ KEYED BY POSITION, DELIBERATELY. These rows carry no id — the wire has none —
@@ -62,7 +62,7 @@ export default function TeardownPartsList({
                */
               <tr key={partIndex}>
                 <td className={`${BODY_CELL_CLASS} text-foreground`}>{listedPart.label}</td>
-                <td className={`${BODY_CELL_CLASS} text-[#6F7979]`}>{listedPart.material}</td>
+                <td className={`${BODY_CELL_CLASS} text-outline-strong`}>{listedPart.material}</td>
               </tr>
             ))}
           </tbody>

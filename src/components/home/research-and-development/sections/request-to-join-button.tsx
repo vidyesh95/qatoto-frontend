@@ -49,7 +49,7 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+        className="cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
       >
         Ask to join
       </button>
@@ -75,7 +75,7 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
         value={shortPitch}
         onChange={(changeEvent) => setShortPitch(changeEvent.target.value)}
         placeholder="What would you bring to this?"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <select
         value={statedCommitment}
@@ -83,7 +83,7 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
           const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
           if (parsed.success) setStatedCommitment(parsed.data);
         }}
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       >
         {ROLE_COMMITMENTS.map((commitment) => (
           <option key={commitment} value={commitment}>
@@ -95,20 +95,20 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
         value={expectedCompensationNote}
         onChange={(changeEvent) => setExpectedCompensationNote(changeEvent.target.value)}
         placeholder="What you'd hope for, in your own words (optional)"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={applyMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {applyMutation.isPending ? "Sending…" : "Send my application"}
         </button>
         <button
           type="button"
           onClick={() => setIsFormOpen(false)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm font-medium"
+          className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm font-medium"
         >
           Cancel
         </button>

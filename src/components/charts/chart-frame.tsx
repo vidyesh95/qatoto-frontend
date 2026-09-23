@@ -100,7 +100,7 @@ export function ChartFrame({
   return (
     <figure className="space-y-2">
       <div className="grid grid-cols-[auto_1fr] gap-x-2">
-        <div className="flex flex-col justify-between py-0 text-right text-[10px] leading-none text-muted-foreground">
+        <div className="flex flex-col justify-between py-0 text-right text-xs leading-none text-muted-foreground">
           {descendingValueTicks.map((tickValue, tickIndex) => (
             // Keyed on the POSITION, not the value: the tick list is a fixed-length ladder whose
             // entries are positional, and a value key collides the moment two ticks round together.
@@ -143,7 +143,7 @@ export function ChartFrame({
 
         <div aria-hidden />
 
-        <div className="relative mt-1 h-4 text-[10px] leading-none text-muted-foreground">
+        <div className="relative mt-1 h-4 text-xs leading-none text-muted-foreground">
           {bands.map((band, bandIndex) => {
             if (bandIndex % labelEvery !== 0) return null;
             // The drawing width is 1000 units, so a band's centre in units IS its position in

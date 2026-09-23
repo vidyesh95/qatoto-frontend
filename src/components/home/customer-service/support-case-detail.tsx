@@ -74,7 +74,7 @@ export default function SupportCaseDetail({ caseId }: { caseId: string }) {
           action={
             <Link
               href="/sign-in"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Sign in
             </Link>
@@ -89,7 +89,7 @@ export default function SupportCaseDetail({ caseId }: { caseId: string }) {
           action={
             <Link
               href="/customer-service"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Customer service
             </Link>
@@ -113,7 +113,7 @@ function SupportCaseBody({ supportCase }: { supportCase: SupportCaseDetailValue 
   return (
     <div>
       <header>
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Support case · {SUPPORT_CASE_STATE_LABELS[supportCase.state]}
         </p>
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -172,7 +172,7 @@ function MessageRow({ message }: { message: SupportCaseMessage }) {
   return (
     <li
       className={`rounded-xl px-4 py-3 ${
-        isStaffMessage ? "border-l-4 border-[#00696E] bg-muted" : "border border-border"
+        isStaffMessage ? "border-l-4 border-primary-imprint bg-muted" : "border border-border"
       }`}
     >
       <p className="text-xs leading-4 text-muted-foreground">
@@ -229,11 +229,11 @@ function ReplyComposer({ caseId }: { caseId: string }) {
             },
           )
         }
-        className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        className="mt-2 cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
       >
         {addMessageMutation.isPending ? "Sending…" : "Send"}
       </button>
-      <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
         Messages cannot be edited or removed once sent.
       </p>
 

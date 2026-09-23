@@ -83,7 +83,7 @@ export default async function PathwaySetPage({
               {pathway.title}
             </h1>
             {pathway.summary !== null && (
-              <p className="mt-1 text-sm leading-5 text-[#6F7979]">{pathway.summary}</p>
+              <p className="mt-1 text-sm leading-5 text-outline-strong">{pathway.summary}</p>
             )}
           </header>
 
@@ -92,7 +92,7 @@ export default async function PathwaySetPage({
               merchandiser, and that provenance is why the pieces belong together. */}
           {pathway.anchorProduct !== null && (
             <section aria-label="Built around" className="px-4 pt-4 lg:px-6">
-              <p className="pb-2 text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+              <p className="pb-2 text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
                 Built around
               </p>
               <div className="max-w-56">
@@ -136,24 +136,24 @@ function SetSummary({
 }) {
   return (
     <section aria-label={`Cost and availability for ${pathwayTitle}`} className="px-4 pt-5 lg:px-6">
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
         {/* ONE LINE PER CURRENCY, each stating how many slots it covers. A subtotal over 3 of 5
             slots is not the price of the set, and the slot count beside it is what stops it reading
             as one. `formatCurrencyTotalsLabel` exists for a compact join; here the slot counts
             matter enough to earn their own rows. */}
         {currencyTotals.length === 0 ? (
-          <p className="text-sm leading-5 text-[#6F7979]">
+          <p className="text-sm leading-5 text-outline-strong">
             Nothing in this set can be priced right now.
           </p>
         ) : (
           <dl className="space-y-1">
             {currencyTotals.map((total) => (
               <div key={total.currency} className="flex items-baseline justify-between gap-4">
-                <dt className="text-xs leading-4 text-[#6F7979]">
+                <dt className="text-xs leading-4 text-outline-strong">
                   {formatCountLabel(total.slotCount)} {total.slotCount === 1 ? "piece" : "pieces"}{" "}
                   in {total.currency}
                 </dt>
-                <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+                <dd className="text-sm leading-5 font-medium text-foreground">
                   {formatCentsLabel(total.subtotalInCents, total.currency)}
                 </dd>
               </div>
@@ -162,22 +162,22 @@ function SetSummary({
         )}
 
         {currencyTotals.length > 1 && (
-          <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+          <p className="mt-2 text-xs leading-4 text-outline-strong">
             These are separate subtotals, not a sum. The pieces are priced by different sellers in
             different currencies, and Qatoto does not convert between them.
           </p>
         )}
 
-        <div className="mt-3 border-t border-[#CAC4D0]/60 pt-3">
+        <div className="mt-3 border-t border-outline-variant/60 pt-3">
           {completeness.isComplete ? (
             <>
               <button
                 type="button"
-                className="w-full rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white"
+                className="w-full rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground"
               >
                 Add all {formatCountLabel(completeness.slotCount)} pieces to cart
               </button>
-              <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+              <p className="mt-1.5 text-xs leading-4 text-outline-strong">
                 Adds one chosen piece per required slot at the quantity the set asks for. Nothing is
                 ordered until you check out.
               </p>
@@ -189,12 +189,12 @@ function SetSummary({
               <button
                 type="button"
                 disabled
-                className="w-full rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+                className="w-full rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
               >
                 {completeness.filledRequiredSlotCount} of {completeness.requiredSlotCount} required
                 pieces available
               </button>
-              <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+              <p className="mt-1.5 text-xs leading-4 text-outline-strong">
                 This set cannot be bought whole right now. You can still add the available pieces
                 individually below.
               </p>

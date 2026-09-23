@@ -126,7 +126,7 @@ async function fetchModelBytes(url: string, signal: AbortSignal): Promise<ArrayB
 function StageStatusPill({ label }: { readonly label: string }) {
   return (
     <div className="absolute inset-0 grid place-items-center">
-      <p className="rounded-full border border-black/10 bg-white/85 px-3 py-1.5 font-mono text-[11px] text-foreground backdrop-blur">
+      <p className="rounded-full border border-black/10 bg-white/85 px-3 py-1.5 font-mono text-xs text-foreground backdrop-blur">
         {label}
       </p>
     </div>
@@ -328,7 +328,7 @@ export default function TeardownExplorer({
     switch (activeTab) {
       case "design":
         return (
-          <p className="text-sm leading-6 text-[#6F7979]">
+          <p className="text-sm leading-6 text-outline-strong">
             {formatCountLabel(assembly.parts.length)} parts modelled ·{" "}
             {formatFileSizeFromBytes(totalModelByteSize)} · drag to orbit · pinch, ctrl + scroll or
             the zoom buttons to zoom.
@@ -384,7 +384,7 @@ export default function TeardownExplorer({
       </div>
 
       {missingNodeNames.length === 0 ? null : (
-        <p className="mt-2 text-[11px] text-[#B45309]">
+        <p className="mt-2 text-xs text-amber-700">
           Not found in the model: {missingNodeNames.join(", ")}
         </p>
       )}

@@ -83,7 +83,7 @@ export default async function ProviderDetailPage({
               attribution="declared"
               description="What this provider says about itself."
             >
-              <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+              <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
                 This provider has not published a company profile yet.
               </p>
             </StorefrontSection>

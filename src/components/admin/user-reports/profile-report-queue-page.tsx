@@ -147,7 +147,7 @@ export default function ProfileReportQueuePage() {
                 </span>
               </div>
 
-              <p className="mt-1 text-[11px] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {/* Context, not a score. See the header. */}
                 {report.openReportCount} open report(s) about this person ·{" "}
                 {report.subject.profileModerationState === "hidden_by_moderator"
@@ -177,7 +177,7 @@ export default function ProfileReportQueuePage() {
               )}
 
               <div className="mt-2 rounded-lg bg-muted px-3 py-2">
-                <p className="text-[11px] font-medium text-foreground">The reported description</p>
+                <p className="text-xs font-medium text-foreground">The reported description</p>
                 <p className="text-xs whitespace-pre-line text-foreground">
                   {report.subject.bio ?? "No description set."}
                 </p>

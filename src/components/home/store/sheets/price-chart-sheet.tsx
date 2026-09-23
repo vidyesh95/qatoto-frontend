@@ -26,12 +26,12 @@ export default function PriceChartSheet({
 
   return (
     <ModalSheet title="Price chart" onClose={onClose}>
-      <p className="px-4 pb-2 text-xs text-[#6F7979]">
+      <p className="px-4 pb-2 text-xs text-outline-strong">
         Unit price drops as your order quantity grows. Prices exclude shipping and customization.
       </p>
 
       <div className="px-4 pb-6">
-        <div className="flex items-center border-b border-[#CAC4D0] py-2 text-xs font-medium tracking-wide text-[#6F7979]">
+        <div className="flex items-center border-b border-outline-variant py-2 text-xs font-medium tracking-wide text-outline-strong">
           <span className="flex-1">Order quantity</span>
           {hasAnyLeadTime && <span className="w-24 text-right">Lead time</span>}
           <span className="w-24 text-right">Unit price</span>
@@ -40,17 +40,17 @@ export default function PriceChartSheet({
         {pricingTiers.map((tier) => (
           <div
             key={tier.minimumOrderQuantity}
-            className="flex items-center border-b border-[#CAC4D0]/60 py-3"
+            className="flex items-center border-b border-outline-variant/60 py-3"
           >
-            <span className="flex-1 text-sm tracking-wide text-[#191C1C]">
+            <span className="flex-1 text-sm tracking-wide text-foreground">
               {tier.minimumOrderQuantity}+
             </span>
             {hasAnyLeadTime && (
-              <span className="w-24 text-right text-xs tracking-wide text-[#6F7979]">
+              <span className="w-24 text-right text-xs tracking-wide text-outline-strong">
                 {tier.leadTimeDays === null ? "" : `${tier.leadTimeDays} days`}
               </span>
             )}
-            <span className="w-24 text-right text-sm font-medium tracking-wide text-[#191C1C]">
+            <span className="w-24 text-right text-sm font-medium tracking-wide text-foreground">
               {formatCentsLabel(tier.unitPriceInCents, currency)}
             </span>
           </div>

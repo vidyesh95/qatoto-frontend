@@ -102,15 +102,17 @@ export default function FundingTab({
       <>
         <div className="flex items-baseline justify-between">
           <h3 className="text-sm font-medium tracking-wide xl:text-lg">Investor confidence</h3>
-          <span className="text-xs font-semibold text-[#00696E]">{confidencePercent} / 100</span>
+          <span className="text-xs font-semibold text-primary-imprint">
+            {confidencePercent} / 100
+          </span>
         </div>
         <div className="relative h-2 w-full rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-[#00696E]"
+            className="h-full rounded-full bg-primary-imprint"
             style={{ width: `${confidencePercent}%` }}
           />
           <span
-            className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-[#00696E]"
+            className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-primary-imprint"
             style={{ left: `${confidencePercent}%` }}
           />
         </div>
@@ -150,8 +152,8 @@ function renderOpenRound(openRound: FundingRound) {
     BASIS_POINTS_PER_PERCENT;
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
-      <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+    <div className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
+      <span className="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
         {FUNDING_ROUND_TYPE_LABELS[openRound.type]}
       </span>
       <p className="text-lg font-semibold">
@@ -163,7 +165,7 @@ function renderOpenRound(openRound: FundingRound) {
       </p>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full bg-[#00696E]"
+          className="h-full rounded-full bg-primary-imprint"
           style={{ width: `${barWidthPercent}%` }}
         />
       </div>
@@ -192,7 +194,7 @@ function renderRoundSections(fundingRounds: FundingRound[]) {
         {openRound ? (
           renderOpenRound(openRound)
         ) : (
-          <p className="rounded-2xl border border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
+          <p className="rounded-2xl border border-outline-variant/60 p-4 text-sm text-muted-foreground">
             No open round right now.
           </p>
         )}

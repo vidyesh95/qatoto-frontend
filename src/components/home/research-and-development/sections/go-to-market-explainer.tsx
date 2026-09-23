@@ -51,9 +51,9 @@ export default function GoToMarketExplainer() {
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {GO_TO_MARKET_STEPS.map((step) => (
-          <div key={step.stepNumber} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <div key={step.stepNumber} className="rounded-2xl border border-outline-variant/60 p-4">
             <p className="text-xs text-muted-foreground">{step.stepNumber}</p>
-            <div className="mt-2 grid size-10 place-items-center rounded-full bg-[#00696E]/10">
+            <div className="mt-2 grid size-10 place-items-center rounded-full bg-primary-imprint/10">
               <Image src={step.iconSrc} width={24} height={24} alt="" />
             </div>
             <p className="mt-3 font-medium">{step.title}</p>

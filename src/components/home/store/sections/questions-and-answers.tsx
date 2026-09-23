@@ -105,9 +105,9 @@ export default function QuestionsAndAnswers({
   const isViewerSignedIn = contactAffordance !== "sign_in";
 
   return (
-    <details open className="group/section border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+    <details open className="group/section border-t border-outline-variant/60 px-4 py-2 lg:px-6">
       <summary className="flex cursor-pointer list-none items-center gap-2 py-2 [&::-webkit-details-marker]:hidden">
-        <h2 className="flex-1 text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
+        <h2 className="flex-1 text-sm tracking-normal text-foreground">Questions and answers</h2>
         <Image
           src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           width={24}
@@ -122,12 +122,12 @@ export default function QuestionsAndAnswers({
             link rather than a form that would 401, and the middle rung — signed in, no buyer
             organization — is exactly who Q&A was built to admit. */}
         {isViewerSignedIn ? (
-          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+          <p className="pb-3 text-xs leading-4 text-outline-strong">
             Questions are answered by the seller or by buyers who have purchased this product.
           </p>
         ) : (
-          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
-            <Link href="/sign-in" className="font-medium text-[#00696E]">
+          <p className="pb-3 text-xs leading-4 text-outline-strong">
+            <Link href="/sign-in" className="font-medium text-primary-imprint">
               Sign in
             </Link>{" "}
             to ask this seller a question.
@@ -143,11 +143,11 @@ export default function QuestionsAndAnswers({
         )}
 
         {result === undefined ? (
-          <p className="text-xs text-[#6F7979]">Loading questions…</p>
+          <p className="text-xs text-outline-strong">Loading questions…</p>
         ) : !result.success ? (
           <StoreErrorPanel message={result.error.message} />
         ) : result.data.items.length === 0 ? (
-          <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+          <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
             No questions about this product yet.
           </p>
         ) : (
@@ -221,7 +221,7 @@ function AskQuestionComposer({
     >
       <label
         htmlFor="product-question-body"
-        className="text-xs leading-4 font-medium text-[#191C1C]"
+        className="text-xs leading-4 font-medium text-foreground"
       >
         Ask a question
       </label>
@@ -232,17 +232,17 @@ function AskQuestionComposer({
         rows={3}
         maxLength={PRODUCT_QUESTION_BODY_MAX_LENGTH}
         placeholder="What would you like to know about this product?"
-        className="mt-1 w-full rounded-lg border border-[#CAC4D0] px-3 py-2 text-sm leading-5 text-[#191C1C]"
+        className="mt-1 w-full rounded-lg border border-outline-variant px-3 py-2 text-sm leading-5 text-foreground"
       />
       <div className="mt-1 flex items-center gap-3">
         <button
           type="submit"
           disabled={!isSubmittable}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {askQuestion.isPending ? "Posting…" : "Post question"}
         </button>
-        <span className="text-[11px] leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           Your question is public. {trimmedBody.length}/{PRODUCT_QUESTION_BODY_MAX_LENGTH}
         </span>
       </div>
@@ -282,9 +282,9 @@ function QuestionRow({
   const canRetractQuestion = authoredThisSession.questionIds.has(question.id);
 
   return (
-    <article className="border-b border-[#CAC4D0]/60 pb-3">
-      <p className="text-sm leading-5 font-medium text-[#191C1C]">Q. {question.bodyText}</p>
-      <p className="pt-0.5 text-[11px] leading-4 text-[#6F7979]">
+    <article className="border-b border-outline-variant/60 pb-3">
+      <p className="text-sm leading-5 font-medium text-foreground">Q. {question.bodyText}</p>
+      <p className="pt-0.5 text-xs leading-4 text-outline-strong">
         {question.askedBy?.name ?? "A buyer"} · {formatIsoInstantLabel(question.createdAt)}
         {canRetractQuestion && (
           <>
@@ -293,7 +293,7 @@ function QuestionRow({
               type="button"
               disabled={retractQuestion.isPending}
               onClick={() => retractQuestion.mutate({ questionId: question.id })}
-              className="cursor-pointer font-medium text-[#8C1D18] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer font-medium text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             >
               {retractQuestion.isPending ? "Withdrawing…" : "Withdraw"}
             </button>
@@ -318,7 +318,7 @@ function QuestionRow({
       />
 
       {question.topAnswer === null ? (
-        <p className="pt-1 text-xs leading-4 text-[#6F7979]">Not answered yet.</p>
+        <p className="pt-1 text-xs leading-4 text-outline-strong">Not answered yet.</p>
       ) : (
         <AnswerBlock
           productSlug={productSlug}
@@ -332,7 +332,7 @@ function QuestionRow({
         <button
           type="button"
           onClick={() => setIsExpanded(true)}
-          className="pt-1 text-xs font-medium text-[#2A76FD]"
+          className="pt-1 text-xs font-medium text-blue-600"
         >
           Read {question.answerCount - 1} more{" "}
           {question.answerCount - 1 === 1 ? "answer" : "answers"}
@@ -342,9 +342,9 @@ function QuestionRow({
       {isExpanded && (
         <div className="pt-1">
           {answersResult === undefined ? (
-            <p className="text-xs text-[#6F7979]">Loading answers…</p>
+            <p className="text-xs text-outline-strong">Loading answers…</p>
           ) : !answersResult.success ? (
-            <p className="text-xs text-[#8C1D18]">{answersResult.error.message}</p>
+            <p className="text-xs text-destructive">{answersResult.error.message}</p>
           ) : (
             <ul>
               {answersResult.data.items
@@ -380,7 +380,7 @@ function QuestionRow({
           <button
             type="button"
             onClick={() => setIsAnswering(true)}
-            className="pt-1 text-xs font-medium text-[#00696E]"
+            className="pt-1 text-xs font-medium text-primary-imprint"
           >
             Answer this question
           </button>
@@ -440,11 +440,11 @@ function AnswerComposer({
     >
       <label
         htmlFor={`product-answer-body-${questionId}`}
-        className="text-xs leading-4 font-medium text-[#191C1C]"
+        className="text-xs leading-4 font-medium text-foreground"
       >
         Your answer
       </label>
-      <p className="text-[11px] leading-4 text-[#6F7979]">
+      <p className="text-xs leading-4 text-outline-strong">
         Only the seller or a buyer who has completed an order for this product can answer.
       </p>
       <textarea
@@ -453,20 +453,20 @@ function AnswerComposer({
         onChange={(event) => setBodyText(event.target.value)}
         rows={3}
         maxLength={PRODUCT_ANSWER_BODY_MAX_LENGTH}
-        className="mt-1 w-full rounded-lg border border-[#CAC4D0] px-3 py-2 text-sm leading-5 text-[#191C1C]"
+        className="mt-1 w-full rounded-lg border border-outline-variant px-3 py-2 text-sm leading-5 text-foreground"
       />
       <div className="mt-1 flex items-center gap-3">
         <button
           type="submit"
           disabled={!isSubmittable}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {answerQuestion.isPending ? "Posting…" : "Post answer"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer text-xs font-medium text-[#6F7979]"
+          className="cursor-pointer text-xs font-medium text-outline-strong"
         >
           Cancel
         </button>
@@ -503,9 +503,9 @@ function AnswerBlock({
 
   return (
     <div className="pt-1.5">
-      <p className="text-xs leading-4 whitespace-pre-line text-[#191C1C]">A. {answer.bodyText}</p>
-      <p className="pt-0.5 text-[11px] leading-4 text-[#6F7979]">
-        <span className="font-medium text-[#00696E]">
+      <p className="text-xs leading-4 whitespace-pre-line text-foreground">A. {answer.bodyText}</p>
+      <p className="pt-0.5 text-xs leading-4 text-outline-strong">
+        <span className="font-medium text-primary-imprint">
           {PRODUCT_ANSWER_AUTHOR_KIND_LABELS[answer.authorKind]}
         </span>
         {answer.author !== null && <span> · {answer.author.displayName}</span>}
@@ -526,7 +526,7 @@ function AnswerBlock({
                   isHelpful: !hasVotedHelpful,
                 })
               }
-              className="cursor-pointer font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             >
               {hasVotedHelpful ? "Helpful" : "Mark helpful"}
             </button>
@@ -539,7 +539,7 @@ function AnswerBlock({
               type="button"
               disabled={retractAnswer.isPending}
               onClick={() => retractAnswer.mutate({ answerId: answer.id, questionId })}
-              className="cursor-pointer font-medium text-[#8C1D18] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer font-medium text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             >
               {retractAnswer.isPending ? "Withdrawing…" : "Withdraw"}
             </button>

@@ -46,7 +46,7 @@ export default function LogStreakLeaderboard({
         )}
       </div>
       {standings.length > 0 ? (
-        <div className="overflow-x-auto rounded-2xl border border-[#CAC4D0]/60">
+        <div className="overflow-x-auto rounded-2xl border border-outline-variant/60">
           <table className="w-full min-w-md text-left text-sm">
             <thead className="bg-muted/50 text-xs text-muted-foreground">
               <tr>
@@ -66,7 +66,7 @@ export default function LogStreakLeaderboard({
             </thead>
             <tbody>
               {standings.map((standing, rankIndex) => (
-                <tr key={standing.projectSlug} className="border-t border-[#CAC4D0]/40">
+                <tr key={standing.projectSlug} className="border-t border-outline-variant/40">
                   <td className="px-4 py-3 text-muted-foreground">{rankIndex + 1}</td>
                   <td className="px-4 py-3">
                     <Link
@@ -79,7 +79,7 @@ export default function LogStreakLeaderboard({
                       {PROJECT_STAGE_LABELS[standing.projectStage]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-[#00696E]">
+                  <td className="px-4 py-3 text-right font-medium text-primary-imprint">
                     {standing.dailyLogStreakDays} day
                     {standing.dailyLogStreakDays === 1 ? "" : "s"}
                   </td>

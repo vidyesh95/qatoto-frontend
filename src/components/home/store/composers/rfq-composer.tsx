@@ -295,7 +295,7 @@ export default function RfqComposer({
             />
             <label className="block">
               <span className="text-xs font-medium text-muted-foreground">Quotes due by</span>
-              <span className="block text-[11px] leading-4 text-muted-foreground">
+              <span className="block text-xs leading-4 text-muted-foreground">
                 Your local time. Providers see it in UTC.
               </span>
               <input
@@ -373,7 +373,7 @@ export default function RfqComposer({
               />
             </div>
             {/* Country and city only, and the reason is worth stating where the fields are. */}
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               A city is enough for a provider to quote a lane. Street lines are never put on a
               request — every invited provider can read this.
             </p>
@@ -485,7 +485,7 @@ export default function RfqComposer({
                     <span className="text-xs font-medium text-muted-foreground">
                       Related goods line
                     </span>
-                    <span className="block text-[11px] leading-4 text-muted-foreground">
+                    <span className="block text-xs leading-4 text-muted-foreground">
                       Optional. Linking does not make the service a child of the goods — cancelling
                       one does not cancel the other.
                     </span>
@@ -855,7 +855,7 @@ function ReviewStep({
             {RFQ_VISIBILITY_LABELS[input.visibility]}
           </p>
           {input.desiredDeliveryStartsAt === undefined && (
-            <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">
               No delivery window on this request.
             </p>
           )}
@@ -863,13 +863,13 @@ function ReviewStep({
       )}
 
       {/* THE ATTACHMENT GAP, said out loud rather than hidden behind a control that could not work. */}
-      <p className="rounded-lg bg-muted px-3 py-2 text-[11px] leading-4 text-muted-foreground">
+      <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
         Attachments cannot be added yet. The request format supports them, but there is no route for
         a buyer to upload a file, so any control here would produce an attachment the server
         rejects. Put drawings and specifications into the specification text for now.
       </p>
 
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Saving creates a private draft. Providers see nothing until you open it from the
         request&apos;s own page, and opening runs its own checks.
       </p>

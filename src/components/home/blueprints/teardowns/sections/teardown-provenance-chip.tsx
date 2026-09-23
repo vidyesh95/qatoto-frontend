@@ -61,7 +61,8 @@ function ReportedGlyph() {
  * state here that is an affirmative claim rather than a description.
  */
 const PROVENANCE_CHIP_CLASSES: Record<TeardownProvenanceChip, string> = {
-  authorized_or_open_source: "border-transparent bg-[#00696E] text-white",
+  authorized_or_open_source:
+    "border-transparent bg-primary-imprint text-primary-imprint-foreground",
   community_reverse_engineered: "border-border bg-card text-foreground",
   ip_concern_reported: "border-destructive/40 bg-destructive/10 text-destructive",
 };

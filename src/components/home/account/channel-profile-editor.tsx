@@ -188,7 +188,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
       <section>
         <label className="block">
           <span className="text-xs font-medium text-muted-foreground">Description</span>
-          <span className="block text-[11px] leading-4 text-muted-foreground">
+          <span className="block text-xs leading-4 text-muted-foreground">
             Shown in the About panel on your channel. Anyone can read it.
           </span>
           <textarea
@@ -207,7 +207,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
             A description needs at least {CHANNEL_BIO_MINIMUM_LENGTH} characters, or leave it empty.
           </p>
         ) : (
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {trimmedBio.length} of {CHANNEL_BIO_MAXIMUM_LENGTH}
           </p>
         )}
@@ -216,7 +216,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
       <section>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs font-medium text-muted-foreground">Links</span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {linkRows.length} of {MAXIMUM_CHANNEL_LINKS}
           </span>
         </div>

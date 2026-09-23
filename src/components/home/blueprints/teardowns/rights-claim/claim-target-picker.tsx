@@ -139,9 +139,7 @@ export default function ClaimTargetPicker({
       <div className="mt-3 space-y-4">
         {[...optionsByGroup].map(([groupLabel, groupOptions]) => (
           <div key={groupLabel}>
-            <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-              {groupLabel}
-            </p>
+            <p className="text-xs tracking-wider text-muted-foreground uppercase">{groupLabel}</p>
             <div className="mt-1 space-y-1">
               {groupOptions.map((option) => (
                 <label key={option.optionKey} className="flex cursor-pointer items-start gap-3">
@@ -151,7 +149,7 @@ export default function ClaimTargetPicker({
                     value={option.optionKey}
                     checked={selectedOptionKey === option.optionKey}
                     onChange={() => onTargetSelect(option.optionKey, option.target)}
-                    className="mt-0.5 size-4 shrink-0 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="mt-0.5 size-4 shrink-0 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   />
                   <span className="text-sm text-foreground">{option.label}</span>
                 </label>

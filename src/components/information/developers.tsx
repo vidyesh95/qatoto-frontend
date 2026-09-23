@@ -124,11 +124,11 @@ export default function Developers() {
         />
         <div className="mx-auto grid max-w-6xl gap-12 px-6 pt-24 pb-28 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-eyebrow text-muted-foreground uppercase backdrop-blur">
               <span className="size-1.5 rounded-full bg-primary" />
               For developers
             </span>
-            <h1 className="mt-8 font-serif text-5xl leading-[1.04] font-semibold tracking-tight sm:text-7xl">
+            <h1 className="mt-8 font-serif text-5xl leading-tight font-semibold tracking-tight sm:text-7xl">
               Build on
               <br />
               <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -176,15 +176,15 @@ export default function Developers() {
                 <div className="flex items-center gap-2">
                   <span
                     aria-label="close"
-                    className="size-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10 ring-inset"
+                    className="size-3 rounded-full bg-red-500 ring-1 ring-black/10 ring-inset"
                   />
                   <span
                     aria-label="minimize"
-                    className="size-3 rounded-full bg-[#febc2e] ring-1 ring-black/10 ring-inset"
+                    className="size-3 rounded-full bg-amber-500 ring-1 ring-black/10 ring-inset"
                   />
                   <span
                     aria-label="expand"
-                    className="size-3 rounded-full bg-[#28c840] ring-1 ring-black/10 ring-inset"
+                    className="size-3 rounded-full bg-emerald-500 ring-1 ring-black/10 ring-inset"
                   />
                 </div>
                 <span className="absolute left-1/2 -translate-x-1/2 font-mono text-background/60">
@@ -192,13 +192,13 @@ export default function Developers() {
                 </span>
               </div>
               <div className="p-5">
-                <div className="text-xs font-medium tracking-[0.2em] text-background/50 uppercase">
+                <div className="text-xs font-medium tracking-eyebrow text-background/50 uppercase">
                   Fetch product
                 </div>
                 <pre className="mt-2 overflow-x-auto font-mono text-xs leading-relaxed text-background/90">
                   {CODE_CURL}
                 </pre>
-                <div className="mt-6 text-xs font-medium tracking-[0.2em] text-background/50 uppercase">
+                <div className="mt-6 text-xs font-medium tracking-eyebrow text-background/50 uppercase">
                   Upload + analytics
                 </div>
                 <pre className="mt-2 overflow-x-auto font-mono text-xs leading-relaxed text-background/90">
@@ -225,7 +225,7 @@ export default function Developers() {
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
                   <Image src={c.icon} alt="" width={28} height={28} />
                 </div>
-                <span className="mt-7 block text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                <span className="mt-7 block text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
                   {c.eyebrow}
                 </span>
                 <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -240,7 +240,7 @@ export default function Developers() {
 
       <section id="endpoints" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
             API surface
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -285,7 +285,7 @@ export default function Developers() {
         />
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+            <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
               SDKs + embeds
             </span>
             <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -321,7 +321,7 @@ export default function Developers() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+          <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
             Pricing
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -344,7 +344,7 @@ export default function Developers() {
               }`}
             >
               <div
-                className={`text-xs font-medium tracking-[0.2em] uppercase ${
+                className={`text-xs font-medium tracking-eyebrow uppercase ${
                   tier.highlight ? "text-background/60" : "text-muted-foreground"
                 }`}
               >
@@ -369,7 +369,7 @@ export default function Developers() {
                   <li key={perk} className="flex items-start gap-2">
                     <span
                       aria-hidden
-                      className={`mt-1 inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                      className={`mt-1 inline-flex size-4 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                         tier.highlight
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/40 text-foreground"
@@ -400,7 +400,7 @@ export default function Developers() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[2fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
+              <span className="text-xs font-medium tracking-eyebrow text-background/60 uppercase">
                 Infrastructure as a service
               </span>
               <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">

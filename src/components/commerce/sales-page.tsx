@@ -64,14 +64,14 @@ export default function SalesPage() {
       </header>
 
       <section aria-label="Ready to dispatch" className="mt-4 px-4 lg:px-6">
-        <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Ready to dispatch
         </h2>
         <div className="mt-2">{renderDispatchQueue(dispatchQueueQuery)}</div>
       </section>
 
       <section aria-label="All orders received" className="mt-6">
-        <h2 className="px-4 text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase lg:px-6">
+        <h2 className="px-4 text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase lg:px-6">
           All orders received
         </h2>
         {/* `OrderList` RATHER THAN A LOCAL LIST. This was the entire body of `/studio/orders` until

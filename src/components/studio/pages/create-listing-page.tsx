@@ -428,7 +428,7 @@ function RelationRows({
               onClick={() =>
                 onRelationsChange(relations.filter((_, index) => index !== relationIndex))
               }
-              className="cursor-pointer text-xs text-[#8C1D18]"
+              className="cursor-pointer text-xs text-destructive"
             >
               Remove
             </button>
@@ -451,7 +451,7 @@ function RelationRows({
               </li>
             ))}
           </ul>
-          <p className="mt-1 text-[11px] text-muted-foreground">These stay whatever you do here.</p>
+          <p className="mt-1 text-xs text-muted-foreground">These stay whatever you do here.</p>
         </div>
       )}
 
@@ -1194,7 +1194,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
               <button
                 type="button"
                 onClick={handleRemoveModelClick}
-                className="cursor-pointer text-xs text-[#8C1D18] underline"
+                className="cursor-pointer text-xs text-destructive underline"
               >
                 Remove
               </button>
@@ -1213,7 +1213,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             <button
               type="button"
               onClick={handleRemoveModelClick}
-              className="cursor-pointer text-xs text-[#8C1D18] underline"
+              className="cursor-pointer text-xs text-destructive underline"
             >
               Remove
             </button>
@@ -2146,7 +2146,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 className="text-sm font-medium text-foreground"
               >
                 {attribute.label}
-                {attribute.isRequiredForPublish && <span className="text-[#8C1D18]"> *</span>}
+                {attribute.isRequiredForPublish && <span className="text-destructive"> *</span>}
               </label>
               {renderAttributeControl(attribute)}
               {attribute.groupLabel !== null && (
@@ -2176,7 +2176,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             id={controlId}
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
-            className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+            className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
           >
             <option value="">Not stated</option>
             {attribute.choices.map((choice) => (
@@ -2188,7 +2188,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         );
       case "number":
         return (
-          <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+          <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
             <input
               id={controlId}
               type="number"
@@ -2214,7 +2214,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
             placeholder="Not stated"
-            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
         );
       default: {
@@ -2243,7 +2243,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 maxLength={PRODUCT_TITLE_MAX_LENGTH}
                 onChange={(event) => setProductTitle(event.target.value)}
                 placeholder="e.g. Wireless Noise-Cancelling Headphones, Black"
-                className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
               />
               <p className="text-xs text-muted-foreground">
                 {productTitle.length}/{PRODUCT_TITLE_MAX_LENGTH} characters
@@ -2261,7 +2261,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value={brandName}
                   onChange={(event) => setBrandName(event.target.value)}
                   placeholder="e.g. Qatoto Originals"
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
               </div>
 
@@ -2293,7 +2293,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   maxLength={PRODUCT_MODEL_NUMBER_MAX_LENGTH}
                   onChange={(event) => setModelNumber(event.target.value)}
                   placeholder="e.g. LM358, DC-4420, SS24-1180"
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 <p className="text-xs text-muted-foreground">
                   The manufacturer&apos;s own code — a part number, a model number, a style code.
@@ -2313,7 +2313,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   list="unit-of-measure-suggestions"
                   onChange={(event) => setUnitOfMeasure(event.target.value)}
                   placeholder="e.g. piece"
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 {/* SUGGESTS, NEVER CONSTRAINS. There is no unit enum on the wire — the backend takes
                     free text up to 40 characters — so a <select> here would refuse units it accepts. */}
@@ -2339,7 +2339,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 id="country-of-origin"
                 value={countryOfOriginCode}
                 onChange={(event) => setCountryOfOriginCode(event.target.value)}
-                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
               >
                 <option value="">Not stated</option>
                 {COUNTRY_OPTIONS.map((country) => (
@@ -2387,7 +2387,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
               onDragOver={handleImageDragOver}
               onDragLeave={handleImageDragLeave}
               className={`flex flex-col items-center justify-center gap-4 rounded-2xl border py-16 transition-colors ${
-                isDraggingOver ? "border-[#1DBDC5] bg-secondary/50" : "border-border"
+                isDraggingOver ? "border-primary-imprint bg-secondary/50" : "border-border"
               }`}
             >
               <span className="flex size-24 items-center justify-center rounded-full bg-secondary">
@@ -2432,7 +2432,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary/30"
                   >
                     {imageIndex === 0 && (
-                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
                         Main image
                       </span>
                     )}
@@ -2472,7 +2472,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         <button
                           type="button"
                           onClick={() => handleMakeMainImageClick(imageIndex)}
-                          className="cursor-pointer rounded px-1 text-[10px] font-medium text-primary"
+                          className="cursor-pointer rounded px-1 text-xs font-medium text-primary"
                         >
                           Make main
                         </button>
@@ -2495,7 +2495,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary/30"
                   >
                     {existingImages.length === 0 && imageIndex === 0 && (
-                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
                         Main image
                       </span>
                     )}
@@ -2575,7 +2575,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
               />
               {renderListingModelRow()}
               {modelFileRejectionMessage !== null && (
-                <p className="text-xs text-[#8C1D18]">{modelFileRejectionMessage}</p>
+                <p className="text-xs text-destructive">{modelFileRejectionMessage}</p>
               )}
             </div>
           </StepCard>
@@ -2597,7 +2597,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 onChange={(event) => setProductDescription(event.target.value)}
                 placeholder="Describe materials, dimensions, use cases, and anything a buyer should know."
                 rows={6}
-                className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
               />
             </div>
 
@@ -2618,7 +2618,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     }
                   }}
                   placeholder="e.g. 30-hour battery life"
-                  className="h-12 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 <button
                   type="button"
@@ -2727,7 +2727,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                             handleSpecificationChange(specificationIndex, "key", event.target.value)
                           }
                           placeholder="e.g. Material"
-                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
@@ -2744,7 +2744,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                             )
                           }
                           placeholder="e.g. Solid oak"
-                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
@@ -2766,7 +2766,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                             )
                           }
                           placeholder="e.g. Materials"
-                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                         />
                       </div>
                       <button
@@ -2917,7 +2917,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           }
                           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none read-only:cursor-not-allowed read-only:opacity-60 focus:border-foreground"
                         />
-                        <span className="text-[11px] leading-4 text-muted-foreground">
+                        <span className="text-xs leading-4 text-muted-foreground">
                           {variant.savedId === null
                             ? "Set once. It identifies this variant afterwards, so it cannot be changed later."
                             : "Fixed — past orders name this variant by its slug."}
@@ -3004,7 +3004,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                             <span className="text-xs font-medium text-foreground">
                               Volume pricing for this variant
                             </span>
-                            <p className="text-[11px] leading-4 text-muted-foreground">
+                            <p className="text-xs leading-4 text-muted-foreground">
                               Optional. With none, this variant uses the listing&apos;s bulk tiers.
                             </p>
                           </div>
@@ -3130,7 +3130,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           handleHighlightTextChange(highlightIndex, "title", event.target.value)
                         }
                         placeholder="Heading — e.g. Solid oak, not veneer"
-                        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                       />
                       <textarea
                         value={highlight.bodyText}
@@ -3140,7 +3140,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         }
                         rows={3}
                         placeholder="What a buyer should know about this point."
-                        className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                       />
 
                       <div className="flex items-center gap-3">
@@ -3156,7 +3156,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                             />
                           </div>
                         )}
-                        <label className="cursor-pointer text-xs font-medium text-[#1DBDC5] underline-offset-2 hover:underline">
+                        <label className="cursor-pointer text-xs font-medium text-primary-imprint underline-offset-2 hover:underline">
                           {(highlight.imagePreviewUrl ?? highlight.imageUrl) === null
                             ? "Add an image"
                             : "Replace image"}
@@ -3202,7 +3202,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 virus scan on this path — see migration `0155`. Telling a seller their upload is
                 "being checked" would be a claim about a check nobody performs.
               */}
-              <p className="rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+              <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
                 Buyers download these straight from the listing, so upload only what you are happy
                 to publish. Up to {String(PRODUCT_DOCUMENT_MAX_COUNT)} files.
               </p>
@@ -3227,7 +3227,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       onClick={() =>
                         setRemovedDocumentIds((previous) => [...previous, document.id])
                       }
-                      className="cursor-pointer text-xs text-[#8C1D18] underline"
+                      className="cursor-pointer text-xs text-destructive underline"
                     >
                       Remove
                     </button>
@@ -3280,7 +3280,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           previous.filter((_, entryIndex) => entryIndex !== pendingIndex),
                         )
                       }
-                      className="cursor-pointer text-xs text-[#8C1D18] underline"
+                      className="cursor-pointer text-xs text-destructive underline"
                     >
                       Remove
                     </button>
@@ -3328,7 +3328,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 <label htmlFor="product-price" className="text-sm font-medium text-foreground">
                   Price
                 </label>
-                <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+                <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
                   <span className="mr-2 text-sm text-muted-foreground">$</span>
                   <input
                     id="product-price"
@@ -3347,7 +3347,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 <label htmlFor="compare-at-price" className="text-sm font-medium text-foreground">
                   Compare-at price
                 </label>
-                <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+                <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
                   <span className="mr-2 text-sm text-muted-foreground">$</span>
                   <input
                     id="compare-at-price"
@@ -3376,7 +3376,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value={stockQuantity}
                   onChange={(event) => setStockQuantity(event.target.value)}
                   placeholder="0"
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
               </div>
 
@@ -3390,7 +3390,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value={skuCode}
                   onChange={(event) => setSkuCode(event.target.value)}
                   placeholder="e.g. QT-AUDIO-001"
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 <p className="text-xs text-muted-foreground">
                   Your internal identifier for tracking this product.
@@ -3425,7 +3425,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   if (!parsedState.success) return;
                   setSellingState(parsedState.data);
                 }}
-                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
               >
                 {PRODUCT_SELLING_STATES.map((state) => (
                   <option key={state} value={state}>
@@ -3507,7 +3507,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     if (!parsedPolicy.success) return;
                     setSamplePolicy(parsedPolicy.data);
                   }}
-                  className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                  className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
                 >
                   {PRODUCT_SAMPLE_POLICIES.map((policy) => (
                     <option key={policy} value={policy}>
@@ -3526,7 +3526,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     <label htmlFor="sample-price" className="text-sm font-medium text-foreground">
                       Sample price
                     </label>
-                    <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+                    <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
                       <span className="mr-2 text-sm text-muted-foreground">$</span>
                       <input
                         id="sample-price"
@@ -3560,7 +3560,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       value={maximumSampleQuantity}
                       onChange={(event) => setMaximumSampleQuantity(event.target.value)}
                       placeholder="1"
-                      className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                      className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                     />
                     <p className="text-xs text-muted-foreground">
                       The most a buyer can take at the sample price in one order. 1 to 20 — leave it
@@ -3732,7 +3732,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           placeholder="packaging_material"
                           className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none read-only:text-muted-foreground focus:border-primary"
                         />
-                        <span className="text-[11px] leading-4 text-muted-foreground">
+                        <span className="text-xs leading-4 text-muted-foreground">
                           {slot.savedId === null
                             ? "Lower-case words joined by underscores. Follows the label until you edit it."
                             : "Fixed once saved — buyers' past orders name this key."}
@@ -3802,7 +3802,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           placeholder="Any quantity"
                           className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
-                        <span className="text-[11px] leading-4 text-muted-foreground">
+                        <span className="text-xs leading-4 text-muted-foreground">
                           Leave blank if this applies at any quantity.
                         </span>
                       </label>
@@ -4237,7 +4237,7 @@ function ListingCompletenessChecklist({
             <li key={requirement.key} className="flex items-center gap-2 text-sm">
               <span
                 aria-hidden
-                className={`flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex size-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isSatisfied ? "bg-primary text-background" : "border border-red-500/60"
                 }`}
               >
@@ -4252,7 +4252,7 @@ function ListingCompletenessChecklist({
                   onClick={() =>
                     onEditClick(stepIndexOf(stepIdByRequirementKey[requirement.key] ?? "identity"))
                   }
-                  className="cursor-pointer text-xs text-[#1DBDC5] underline-offset-2 hover:underline"
+                  className="cursor-pointer text-xs text-primary-imprint underline-offset-2 hover:underline"
                 >
                   Add
                 </button>
@@ -4448,7 +4448,7 @@ function PricingTierRows({
         >
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Unit price</span>
-            <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+            <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
               <span className="mr-2 text-sm text-muted-foreground">$</span>
               <input
                 type="number"
@@ -4473,7 +4473,7 @@ function PricingTierRows({
                 onTierChange(tierIndex, "minimumOrderQuantity", event.target.value)
               }
               placeholder="e.g. 10"
-              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
             />
           </div>
           {/* A27. Blank is a real answer — it means the listing's own lead time applies. */}
@@ -4486,7 +4486,7 @@ function PricingTierRows({
               value={tier.leadTimeDays}
               onChange={(event) => onTierChange(tierIndex, "leadTimeDays", event.target.value)}
               placeholder="Listing's"
-              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
             />
           </div>
           <button
@@ -4536,7 +4536,7 @@ function PackagingInput({
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={field.key === "unitsPerPackage" ? "e.g. 24" : "0"}
-        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
       />
     </div>
   );
@@ -4690,7 +4690,7 @@ function ReviewSection({
         <button
           type="button"
           onClick={onEditClick}
-          className="cursor-pointer text-sm text-[#1DBDC5] hover:underline"
+          className="cursor-pointer text-sm text-primary-imprint hover:underline"
         >
           Edit
         </button>

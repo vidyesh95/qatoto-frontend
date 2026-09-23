@@ -42,7 +42,7 @@ export default function StorefrontStakeholders({
         {orderedStakeholders.map((stakeholder) => (
           <li key={stakeholder.id} className="flex items-center gap-3">
             {stakeholder.photoUrl ? (
-              <div className="relative size-10 shrink-0 overflow-hidden rounded-full bg-[#F5F5F5]">
+              <div className="relative size-10 shrink-0 overflow-hidden rounded-full bg-muted">
                 <Image
                   src={stakeholder.photoUrl}
                   fill
@@ -52,15 +52,15 @@ export default function StorefrontStakeholders({
                 />
               </div>
             ) : (
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-xs font-medium text-[#00696E]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-xs font-medium text-primary-imprint">
                 {initialsFromName(stakeholder.fullName)}
               </span>
             )}
             <div className="min-w-0">
-              <p className="truncate text-sm leading-5 font-medium text-[#191C1C]">
+              <p className="truncate text-sm leading-5 font-medium text-foreground">
                 {stakeholder.fullName}
               </p>
-              <p className="truncate text-xs leading-4 tracking-[0.4px] text-[#6F7979]">
+              <p className="truncate text-xs leading-4 tracking-wider text-outline-strong">
                 {stakeholder.roleTitle}
               </p>
             </div>

@@ -52,8 +52,8 @@ export default function PartBrowserRail({
                 onClick={() => store.selectPart(isSelected ? null : part.id)}
                 className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   isSelected
-                    ? "border-[#00696E] bg-[#00696E]/8"
-                    : "border-[#CAC4D0]/60 hover:border-[#00696E]/40"
+                    ? "border-primary-imprint bg-primary-imprint/8"
+                    : "border-outline-variant/60 hover:border-primary-imprint/40"
                 }`}
               >
                 <span className="flex items-center gap-2.5">
@@ -63,7 +63,7 @@ export default function PartBrowserRail({
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-foreground">{part.label}</span>
-                    <span className="mt-0.5 block truncate text-[11px] text-[#6F7979]">
+                    <span className="mt-0.5 block truncate text-xs text-outline-strong">
                       {manufacturingMethodLabel(part.manufacturingMethod)}
                     </span>
                   </span>
@@ -74,20 +74,20 @@ export default function PartBrowserRail({
         })}
       </ul>
 
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
         {selectedPart === undefined ? (
-          <p className="text-sm text-[#6F7979]">
+          <p className="text-sm text-outline-strong">
             Pick a component to see it on its own, with what it is made from and how.
           </p>
         ) : (
           <>
-            <p className="font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase">
+            <p className="font-mono text-xs tracking-eyebrow text-outline-strong uppercase">
               {manufacturingMethodLabel(selectedPart.manufacturingMethod)}
             </p>
             <p className="mt-1 text-base font-medium text-foreground">{selectedPart.label}</p>
             <p className="mt-0.5 text-sm leading-6 text-foreground">{selectedPart.material}</p>
             {/* `null` is "nobody rated it", which is not the same as a rating of zero. */}
-            <p className="mt-2 font-mono text-[11px] text-[#6F7979] tabular-nums">
+            <p className="mt-2 font-mono text-xs text-outline-strong tabular-nums">
               {selectedPart.stressRating === null
                 ? "Not simulated"
                 : `${Math.round(selectedPart.stressRating * 100)}% of yield, author-reported`}
@@ -120,7 +120,7 @@ function PartThumbnail({
   readonly label: string;
 }) {
   return (
-    <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-md border border-[#CAC4D0]/50 bg-[#F4F6F6]">
+    <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-md border border-outline-variant/50 bg-muted">
       {thumbnailDataUrl === null ? null : (
         // oxlint-disable-next-line no-img-element
         <img src={thumbnailDataUrl} alt="" aria-hidden width={40} height={40} loading="lazy" />

@@ -6,7 +6,7 @@ import type { ShowcaseLaunchRefusal } from "@/components/home/blueprints/showcas
 
 const NOTICE_CLASS = "rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800";
 const NOTICE_LINK_CLASS =
-  "font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]";
+  "font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
 
 /**
  * What went wrong with a post, and what to do about it.

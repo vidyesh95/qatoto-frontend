@@ -61,7 +61,7 @@ export default function CatalogFacetSummary({ facets }: { facets: StoreCategoryF
   return (
     <section
       aria-label="What is in this category"
-      className="mx-4 mt-4 rounded-xl bg-[#F2F4F4] px-4 py-3 lg:mx-6"
+      className="mx-4 mt-4 rounded-xl bg-muted px-4 py-3 lg:mx-6"
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {priceRangeLabel !== null && (
@@ -117,12 +117,12 @@ export default function CatalogFacetSummary({ facets }: { facets: StoreCategoryF
 function FacetBlock({ title, lines }: { title: string; lines: readonly string[] }) {
   return (
     <div>
-      <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+      <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
         {title}
       </p>
       <ul className="mt-1 space-y-0.5">
         {lines.map((line) => (
-          <li key={line} className="text-xs leading-4 text-[#191C1C]">
+          <li key={line} className="text-xs leading-4 text-foreground">
             {line}
           </li>
         ))}

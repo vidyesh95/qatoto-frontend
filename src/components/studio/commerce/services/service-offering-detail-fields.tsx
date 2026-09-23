@@ -301,7 +301,7 @@ export default function ServiceOfferingDetailFields({
             }
           />
           {/* Said once, above the checkboxes: an unticked box is a published "no", not a silence. */}
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Buyers filter on these. Leaving one unticked publishes that you do not offer it.
           </p>
           <CheckboxField
@@ -368,7 +368,7 @@ export default function ServiceOfferingDetailFields({
             placeholder="All risks"
             maxEntries={50}
           />
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Give both ends of the cover limit or neither. One end alone is refused, and a maximum
             below the minimum is dropped rather than swapped.
           </p>
@@ -410,7 +410,7 @@ export default function ServiceOfferingDetailFields({
     case "inspection_agency":
       return (
         <div className="space-y-3">
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Tick every stage you carry out. An unticked stage is published as one you do not offer.
           </p>
           <CheckboxField
@@ -567,7 +567,7 @@ export default function ServiceOfferingDetailFields({
             placeholder="SWIFT"
             maxEntries={50}
           />
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Give both ends of the notional band or neither.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">

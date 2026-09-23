@@ -20,7 +20,7 @@ import type { MerchandisingItem } from "@/lib/store/merchandising.schemas";
 import { SERVICE_PRICING_MODEL_LABELS } from "@/lib/store/providers.schemas";
 
 const TILE_CLASS =
-  "flex h-full flex-col rounded-xl border border-[#CAC4D0]/60 p-3 transition-colors hover:border-[#2A76FD]";
+  "flex h-full flex-col rounded-xl border border-outline-variant/60 p-3 transition-colors hover:border-blue-600";
 
 export default function MerchandisingItemCard({ item }: { item: MerchandisingItem }) {
   switch (item.entityKind) {
@@ -32,7 +32,7 @@ export default function MerchandisingItemCard({ item }: { item: MerchandisingIte
     case "category":
       return (
         <Link href={`/store/categories/${item.category.slug}`} className={TILE_CLASS}>
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
             {item.category.imageUrl !== null && (
               <Image
                 src={item.category.imageUrl}
@@ -43,10 +43,10 @@ export default function MerchandisingItemCard({ item }: { item: MerchandisingIte
               />
             )}
           </div>
-          <p className="mt-2 text-[11px] leading-4 font-medium tracking-[0.4px] text-[#6F7979] uppercase">
+          <p className="mt-2 text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
             Category
           </p>
-          <p className="text-sm leading-5 font-medium text-[#191C1C]">{item.category.name}</p>
+          <p className="text-sm leading-5 font-medium text-foreground">{item.category.name}</p>
         </Link>
       );
 
@@ -55,7 +55,7 @@ export default function MerchandisingItemCard({ item }: { item: MerchandisingIte
         <Link href={`/store/organizations/${item.organization.slug}`} className={TILE_CLASS}>
           <div className="flex items-center gap-2">
             {item.organization.logoUrl === null ? (
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-xs font-medium text-[#00696E]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-xs font-medium text-primary-imprint">
                 {item.organization.displayName.slice(0, 2).toUpperCase()}
               </span>
             ) : (
@@ -67,18 +67,18 @@ export default function MerchandisingItemCard({ item }: { item: MerchandisingIte
                 className="size-10 shrink-0 rounded-full object-cover"
               />
             )}
-            <p className="text-[11px] leading-4 font-medium tracking-[0.4px] text-[#6F7979] uppercase">
+            <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
               Seller
             </p>
           </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-5 font-medium text-[#191C1C]">
+          <p className="mt-2 line-clamp-2 text-sm leading-5 font-medium text-foreground">
             {item.organization.displayName}
           </p>
-          <p className="text-[11px] leading-4 text-[#6F7979]">
+          <p className="text-xs leading-4 text-outline-strong">
             {countryLabelFromCode(item.organization.countryCode)}
           </p>
           {item.organization.summary !== null && (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[#6F7979]">
+            <p className="mt-1 line-clamp-2 text-xs leading-4 text-outline-strong">
               {item.organization.summary}
             </p>
           )}
@@ -94,11 +94,11 @@ export default function MerchandisingItemCard({ item }: { item: MerchandisingIte
       return (
         <Link href={`/store/services/${item.offering.slug}`} className={TILE_CLASS}>
           <ProviderKindBadge providerKind={item.offering.providerKind} isCompact />
-          <p className="mt-1 line-clamp-2 text-sm leading-5 font-medium text-[#191C1C]">
+          <p className="mt-1 line-clamp-2 text-sm leading-5 font-medium text-foreground">
             {item.offering.title}
           </p>
-          <p className="text-[11px] leading-4 text-[#6F7979]">{item.provider.displayName}</p>
-          <p className="mt-auto pt-2 text-xs leading-4 font-medium text-[#191C1C]">
+          <p className="text-xs leading-4 text-outline-strong">{item.provider.displayName}</p>
+          <p className="mt-auto pt-2 text-xs leading-4 font-medium text-foreground">
             {/* A quote-only offering has no range at all — the model's own label is the honest
                 answer, and a `$0` would be an invented price. */}
             {priceRangeLabel ?? SERVICE_PRICING_MODEL_LABELS[item.offering.pricingModel]}

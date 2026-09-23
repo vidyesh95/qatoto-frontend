@@ -103,7 +103,7 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
       <header className="space-y-2">
         <Link
           href="/research-and-development/talent"
-          className="text-xs font-medium text-[#00696E]"
+          className="text-xs font-medium text-primary-imprint"
         >
           ← Talent
         </Link>
@@ -151,8 +151,8 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
                 key={skill.slug}
                 className={`rounded-full px-3 py-1.5 text-xs ${
                   skill.isVerified
-                    ? "bg-[#00696E]/10 font-medium text-[#00696E]"
-                    : "border border-[#CAC4D0]"
+                    ? "bg-primary-imprint/10 font-medium text-primary-imprint"
+                    : "border border-outline-variant"
                 }`}
               >
                 {skill.displayLabel}

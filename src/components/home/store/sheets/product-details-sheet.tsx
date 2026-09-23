@@ -301,8 +301,8 @@ export default function ProductDetailsSheet({
                 }}
                 className={`shrink-0 cursor-pointer rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition-colors ${
                   isActive
-                    ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
-                    : "border-[#CAC4D0] text-[#6F7979]"
+                    ? "border-blue-600 bg-secondary font-medium text-foreground"
+                    : "border-outline-variant text-outline-strong"
                 }`}
               >
                 {tab.label}
@@ -335,10 +335,12 @@ export default function ProductDetailsSheet({
           {(activeTab?.rows ?? []).map((row) => (
             <div
               key={row.label}
-              className="flex gap-4 border-b border-[#CAC4D0]/60 py-3 last:border-b-0"
+              className="flex gap-4 border-b border-outline-variant/60 py-3 last:border-b-0"
             >
-              <dt className="w-2/5 shrink-0 text-sm font-medium text-[#6F7979]">{row.label}</dt>
-              <dd className="flex-1 text-sm text-[#191C1C]">{row.value}</dd>
+              <dt className="w-2/5 shrink-0 text-sm font-medium text-outline-strong">
+                {row.label}
+              </dt>
+              <dd className="flex-1 text-sm text-foreground">{row.value}</dd>
             </div>
           ))}
         </dl>

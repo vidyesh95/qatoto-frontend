@@ -129,7 +129,7 @@ export default async function FeedShell({
         Without it both render as five mode chips and no tile grid.
       */}
       {didCategoriesFail && (
-        <p className="px-4 pb-2 text-xs text-[#6F7979] lg:px-6">
+        <p className="px-4 pb-2 text-xs text-outline-strong lg:px-6">
           Topic filters are unavailable right now.
         </p>
       )}

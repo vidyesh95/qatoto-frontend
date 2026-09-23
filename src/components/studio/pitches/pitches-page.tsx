@@ -184,7 +184,7 @@ function PitchCard({ pitch }: { readonly pitch: Pitch }) {
               />
             )}
             {formatDurationLabel(pitch.pitchVideo.durationSeconds) !== null && (
-              <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-[11px] font-medium text-white">
+              <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-xs font-medium text-white">
                 {formatDurationLabel(pitch.pitchVideo.durationSeconds)}
               </span>
             )}

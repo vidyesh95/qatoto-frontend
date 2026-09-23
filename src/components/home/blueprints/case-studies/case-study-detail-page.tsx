@@ -69,7 +69,7 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
       */}
       <BlueprintViewBeacon arm="case_study" slug={caseStudy.slug} />
       <header>
-        <p className="text-[11px] font-medium tracking-[0.2em] text-[#6F7979] uppercase">
+        <p className="text-xs font-medium tracking-eyebrow text-outline-strong uppercase">
           {caseStudy.sector} · {BLUEPRINT_DISCIPLINE_LABELS[caseStudy.discipline]}
         </p>
         <h1 className="mt-1 max-w-2xl text-xl font-medium text-foreground lg:text-2xl">
@@ -84,7 +84,7 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
         </p>
 
         {caseStudy.outcomeSummary === null ? null : (
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6F7979]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-outline-strong">
             {caseStudy.outcomeSummary}
           </p>
         )}
@@ -93,7 +93,7 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
       <BlueprintAuthorLine author={caseStudy.author} />
       {/* HOW THE WRITER KNOWS THIS, said once under their name, because a figure from somebody who
           was there and a figure retold from a build log are different claims. */}
-      <p className="mt-1 text-xs text-[#6F7979]">
+      <p className="mt-1 text-xs text-outline-strong">
         {CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES[caseStudy.authorRelationship]}
       </p>
 
@@ -115,10 +115,10 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-black/5 pt-4">
         <div className="flex items-center gap-3">
-          <p className="text-[11px] text-[#6F7979]">
+          <p className="text-xs text-outline-strong">
             {formatCountLabel(caseStudy.viewCount)} views
           </p>
-          <span className="text-xs text-[#6F7979]" aria-hidden="true">
+          <span className="text-xs text-outline-strong" aria-hidden="true">
             ·
           </span>
           <CaseStudyLikeButton
@@ -171,7 +171,7 @@ function CaseStudySteps({
   // and read as no marker at all, so the pitfalls looked like one wrapped paragraph.
   const rows = items.map((item, index) => (
     <li key={item} className="flex gap-3 text-sm leading-6 text-foreground">
-      <span className="shrink-0 text-[#6F7979] tabular-nums" aria-hidden="true">
+      <span className="shrink-0 text-outline-strong tabular-nums" aria-hidden="true">
         {isOrdered ? `${index + 1}.` : "•"}
       </span>
       <span>{item}</span>
@@ -282,7 +282,7 @@ function Sources({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
       <h2 className="text-sm font-medium text-foreground">Sources</h2>
 
       {caseStudy.sources.length === 0 ? (
-        <p className="mt-2 text-sm leading-6 text-[#6F7979]">No public source for this one.</p>
+        <p className="mt-2 text-sm leading-6 text-outline-strong">No public source for this one.</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {caseStudy.sources.map((source) => (
@@ -291,11 +291,11 @@ function Sources({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
                 href={source.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#00696E] transition-colors hover:underline"
+                className="text-primary-imprint transition-colors hover:underline"
               >
                 {source.label}
               </a>
-              <span className="block text-xs text-[#6F7979]">{source.publisherLabel}</span>
+              <span className="block text-xs text-outline-strong">{source.publisherLabel}</span>
             </li>
           ))}
         </ul>
@@ -328,12 +328,12 @@ function RelatedLessons({ lessons }: { lessons: readonly CaseStudyOption[] }) {
               // `buildBlueprintHref` is the only thing that mints a blueprint URL, and it needs
               // exactly the two fields the server sends.
               href={buildBlueprintHref({ category: "case_study", slug: lesson.slug })}
-              className="flex items-center justify-between gap-4 py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="flex items-center justify-between gap-4 py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             >
               {lesson.title}
               {/* The arrow says the row goes somewhere; decorative, so hidden from screen readers,
                   which already announce the row as a link. */}
-              <span aria-hidden="true" className="shrink-0 text-[#6F7979]">
+              <span aria-hidden="true" className="shrink-0 text-outline-strong">
                 &rarr;
               </span>
             </Link>

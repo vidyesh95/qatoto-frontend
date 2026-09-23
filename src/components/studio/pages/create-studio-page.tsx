@@ -117,7 +117,7 @@ export default function CreateStudioPage() {
             placeholder="https://www.youtube.com/watch?v=…"
             aria-label="YouTube video link"
             aria-invalid={shouldShowYoutubeUrlError}
-            className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
           <button
             type="submit"
@@ -158,7 +158,7 @@ export default function CreateStudioPage() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`flex flex-col items-center justify-center gap-4 rounded-2xl border py-12 opacity-50 transition-colors ${
-          isDraggingOver ? "border-[#1DBDC5] bg-secondary/50" : "border-border"
+          isDraggingOver ? "border-primary-imprint bg-secondary/50" : "border-border"
         }`}
       >
         <span className="flex size-32 items-center justify-center rounded-full bg-secondary">
@@ -263,5 +263,5 @@ function formatFileSizeLabel(fileSizeInBytes: number) {
 
 // Inline teal accent link used across the acknowledgement copy.
 function TermsLink({ children }: { children: React.ReactNode }) {
-  return <span className="cursor-pointer text-[#1DBDC5] hover:underline">{children}</span>;
+  return <span className="cursor-pointer text-primary-imprint hover:underline">{children}</span>;
 }

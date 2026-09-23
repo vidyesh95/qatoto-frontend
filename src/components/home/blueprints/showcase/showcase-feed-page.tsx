@@ -94,7 +94,7 @@ export default async function ShowcaseFeedPage({
           <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
             Showcase
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#6F7979] lg:text-base">
+          <p className="mt-2 max-w-2xl text-sm text-outline-strong lg:text-base">
             Working prototypes and finished builds, launched from the teardowns.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default async function ShowcaseFeedPage({
             phone rather than squeezing it. */}
         <Link
           href="/blueprints/showcase/new"
-          className="shrink-0 rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="shrink-0 rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Post a launch
         </Link>
@@ -130,7 +130,7 @@ function renderShowcaseFeed(viewState: ShowcaseViewState, searchParams: RawSearc
   switch (viewState.status) {
     case "empty":
       return (
-        <p className="mt-8 px-4 text-sm text-[#6F7979] lg:px-6">
+        <p className="mt-8 px-4 text-sm text-outline-strong lg:px-6">
           {viewState.appliedFilterCount === 0
             ? "Nothing has been launched yet."
             : "No launch matches that tag."}
@@ -143,7 +143,7 @@ function renderShowcaseFeed(viewState: ShowcaseViewState, searchParams: RawSearc
        * tell a visitor they are looking at nothing.
        */
       return (
-        <p className="mt-8 px-4 text-sm text-[#6F7979] lg:px-6">
+        <p className="mt-8 px-4 text-sm text-outline-strong lg:px-6">
           Launches couldn&apos;t be loaded. Please try again. {viewState.message}
         </p>
       );

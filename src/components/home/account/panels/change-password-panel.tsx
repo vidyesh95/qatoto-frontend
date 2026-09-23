@@ -286,10 +286,10 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
                 aria-label="Remember me toggle switch"
               />
               {/* Track */}
-              <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
+              <div className="h-8 w-13 rounded-full border-2 border-outline-strong bg-muted transition-colors duration-200 ease-in-out peer-checked:border-primary-imprint peer-checked:bg-primary-imprint"></div>
 
               {/* Thumb */}
-              <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
+              <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-outline-strong shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
                 {/* X Icon - shown when unchecked */}
                 <svg
                   className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
@@ -306,7 +306,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
                 </svg>
                 {/* Checkmark Icon - shown when checked */}
                 <svg
-                  className="check-icon absolute h-4 w-4 text-[#00696E] opacity-0 transition-opacity duration-200"
+                  className="check-icon absolute h-4 w-4 text-primary-imprint opacity-0 transition-opacity duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -337,7 +337,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
           <button
             type="button"
             onClick={switchToOtpMode}
-            className="cursor-pointer text-center text-sm font-medium text-[#00696E]"
+            className="cursor-pointer text-center text-sm font-medium text-primary-imprint"
           >
             Forgot password?
           </button>
@@ -433,7 +433,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
           <button
             type="button"
             onClick={handleSendResetCode}
-            className="cursor-pointer text-center text-sm font-medium text-[#00696E]"
+            className="cursor-pointer text-center text-sm font-medium text-primary-imprint"
           >
             Resend code
           </button>

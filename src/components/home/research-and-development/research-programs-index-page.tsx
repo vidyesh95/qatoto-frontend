@@ -43,8 +43,8 @@ export default async function ResearchProgramsIndexPage({
 
   return (
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
-      <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
-        <p className="text-xs tracking-widest">OPEN RESEARCH</p>
+      <section className="mx-4 rounded-2xl bg-linear-to-r from-band-ink via-band-deep to-band-imprint p-6 text-white md:p-10 lg:mx-6">
+        <p className="text-xs tracking-eyebrow">OPEN RESEARCH</p>
         <h1 className="mt-1 text-2xl font-medium tracking-tight lg:text-3xl">
           Research programmes
         </h1>
@@ -55,7 +55,7 @@ export default async function ResearchProgramsIndexPage({
         </p>
         <Link
           href="/research-and-development/programs/new"
-          className="mt-6 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#00393C] transition-colors hover:bg-white/90"
+          className="mt-6 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-medium text-primary-imprint transition-colors hover:bg-white/90"
         >
           Propose a programme
         </Link>
@@ -70,11 +70,11 @@ export default async function ResearchProgramsIndexPage({
             name="q"
             defaultValue={searchText ?? ""}
             placeholder="Search programmes"
-            className="w-full rounded-full border border-[#CAC4D0]/60 px-4 py-2 text-sm"
+            className="w-full rounded-full border border-outline-variant/60 px-4 py-2 text-sm"
           />
           <button
             type="submit"
-            className="shrink-0 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C]"
+            className="shrink-0 cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep"
           >
             Search
           </button>
@@ -99,7 +99,7 @@ export default async function ResearchProgramsIndexPage({
               <li key={program.programId}>
                 <Link
                   href={`/research-and-development/programs/${program.slug}`}
-                  className="flex h-full flex-col gap-2 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4 transition-colors hover:border-[#00696E]"
+                  className="flex h-full flex-col gap-2 rounded-2xl border border-outline-variant/60 bg-card p-4 transition-colors hover:border-primary-imprint"
                 >
                   <p className="text-sm font-medium text-foreground">{program.title}</p>
                   <p className="flex-1 text-sm text-muted-foreground">{program.tagline}</p>
@@ -112,7 +112,7 @@ export default async function ResearchProgramsIndexPage({
                     </p>
                   )}
                   {program.status === "archived" && (
-                    <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-[10px]">
+                    <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-xs">
                       Archived
                     </span>
                   )}

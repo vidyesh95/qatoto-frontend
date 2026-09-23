@@ -63,7 +63,7 @@ function renderCategoryIndex(viewState: CategoryIndexViewState) {
     case "ready":
       return (
         <>
-          <p className="px-4 pb-4 text-sm leading-5 text-[#6F7979] lg:px-6">
+          <p className="px-4 pb-4 text-sm leading-5 text-outline-strong lg:px-6">
             Every category on Qatoto. Drill in to filter by seller country, stock and sample policy.
           </p>
           {/* The card takes the wire shape directly now, and links straight to
@@ -76,9 +76,9 @@ function renderCategoryIndex(viewState: CategoryIndexViewState) {
               <CategoryCard key={category.id} category={category} />
             ))}
           </div>
-          <p className="px-4 pt-6 text-xs leading-4 text-[#6F7979] lg:px-6">
+          <p className="px-4 pt-6 text-xs leading-4 text-outline-strong lg:px-6">
             Looking for a service rather than a product?{" "}
-            <Link href="/store/providers" className="text-[#00696E] underline">
+            <Link href="/store/providers" className="text-primary-imprint underline">
               Browse freight, customs, inspection and warehousing providers
             </Link>
             .

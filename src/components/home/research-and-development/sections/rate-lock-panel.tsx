@@ -73,7 +73,7 @@ export default function RateLockPanel({
   const acknowledgementMatches = typedAcknowledgement === RATE_LOCK_ACKNOWLEDGEMENT;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Fair market rates</h3>
         <p className="text-xs text-muted-foreground">
@@ -101,7 +101,7 @@ export default function RateLockPanel({
       {rates.length > 0 ? (
         <ul className="space-y-2">
           {rates.map((rate) => (
-            <li key={rate.id} className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3">
+            <li key={rate.id} className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
               <p className="text-sm">
                 {formatHourlyRateFromCents(
                   BigInt(rate.fairMarketRateCentsPerHour),
@@ -142,7 +142,7 @@ export default function RateLockPanel({
                       rateId: rate.id,
                     })
                   }
-                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                 >
                   Accept it — only {rate.memberName} can
                 </button>
@@ -175,7 +175,7 @@ export default function RateLockPanel({
                         acknowledgement: RATE_LOCK_ACKNOWLEDGEMENT,
                       })
                     }
-                    className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                    className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                   >
                     Lock it
                   </button>
@@ -193,7 +193,7 @@ export default function RateLockPanel({
 
       {isFounder && (
         <form
-          className="space-y-2 border-t border-[#CAC4D0]/40 pt-3"
+          className="space-y-2 border-t border-outline-variant/40 pt-3"
           onSubmit={(submitEvent) => {
             submitEvent.preventDefault();
             proposeMutation.mutate({
@@ -258,7 +258,7 @@ export default function RateLockPanel({
           <button
             type="submit"
             disabled={proposeMutation.isPending}
-            className="cursor-pointer rounded-full border border-[#00696E]/40 px-3 py-1.5 text-xs font-medium text-[#00696E] disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
           >
             {proposeMutation.isPending ? "Proposing…" : "Propose it"}
           </button>

@@ -123,7 +123,7 @@ export default function BlueprintYoutubePlayer({
       <div ref={containerRef} className="size-full" title={title} />
       {playerState.status === "unavailable" ? (
         <div className="absolute inset-0 grid place-content-center justify-items-center gap-2 bg-muted p-4">
-          <p className="max-w-xs text-center text-xs leading-5 text-[#6F7979]">
+          <p className="max-w-xs text-center text-xs leading-5 text-outline-strong">
             {playerState.message}
           </p>
           {/*
@@ -134,7 +134,7 @@ export default function BlueprintYoutubePlayer({
             href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-xs text-foreground underline hover:text-[#00696E]"
+            className="text-xs text-foreground underline hover:text-primary-imprint"
           >
             Watch on YouTube
           </a>

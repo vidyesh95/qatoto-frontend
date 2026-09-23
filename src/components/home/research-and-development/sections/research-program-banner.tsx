@@ -26,14 +26,14 @@ const FLAGSHIP_PROGRAM_SLUG = "project-immortal";
  */
 export default function ResearchProgramBanner() {
   return (
-    <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
+    <section className="mx-4 rounded-2xl bg-linear-to-r from-band-ink via-band-deep to-band-imprint p-6 text-white md:p-10 lg:mx-6">
       <Image
         src="/icons/diamond_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
         width={24}
         height={24}
         alt=""
       />
-      <p className="mt-4 text-xs tracking-widest">OPEN RESEARCH PROGRAMME</p>
+      <p className="mt-4 text-xs tracking-eyebrow">OPEN RESEARCH PROGRAMME</p>
       <h2 className="mt-1 text-2xl font-medium tracking-tight lg:text-3xl">PROJECT IMMORTAL</h2>
       <p className="mt-3 max-w-xl text-sm text-white/80">
         Qatoto&apos;s open, long-horizon research programme into extending healthy human life.
@@ -42,7 +42,7 @@ export default function ResearchProgramBanner() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
           href={`/research-and-development/programs/${FLAGSHIP_PROGRAM_SLUG}`}
-          className="inline-block cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="inline-block cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           Explore Project Immortal
         </Link>

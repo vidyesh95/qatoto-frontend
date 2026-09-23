@@ -166,7 +166,7 @@ export default function ReviewComposer({
                 onValueChange={setEditBody}
                 maxLength={4000}
               />
-              <p className="text-[11px] leading-4 text-muted-foreground">
+              <p className="text-xs leading-4 text-muted-foreground">
                 This is your only edit, and it replaces both the rating and the words. The review
                 will be publicly marked as edited.
               </p>
@@ -212,7 +212,7 @@ export default function ReviewComposer({
               >
                 Edit this review
               </button>
-              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+              <p className="mt-2 text-xs leading-4 text-muted-foreground">
                 You get one edit, within 30 days. It replaces both the rating and the words, and the
                 review is publicly marked as edited afterwards.
               </p>
@@ -324,7 +324,7 @@ export default function ReviewComposer({
         >
           {createReviewMutation.isPending ? "Publishing…" : "Publish review"}
         </button>
-        <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-2 text-xs leading-4 text-muted-foreground">
           Photos and video can be attached once the review exists.
         </p>
         <MutationNotice

@@ -18,9 +18,9 @@ import StorefrontSection, {
 } from "@/components/home/store/sections/organization/storefront-section";
 
 const VISIT_POLICY_CHIP_CLASS: Record<VisitPolicy, string> = {
-  welcome: "bg-[#D6E3FF] text-[#00696E]",
-  by_appointment: "bg-[#D6E3FF]/50 text-[#00696E]",
-  not_available: "bg-[#F2F4F4] text-[#6F7979]",
+  welcome: "bg-secondary text-primary-imprint",
+  by_appointment: "bg-secondary text-primary-imprint",
+  not_available: "bg-muted text-outline-strong",
 };
 
 export default function StorefrontFactoryTour({
@@ -43,7 +43,7 @@ export default function StorefrontFactoryTour({
     >
       {visitPolicy !== null && (
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm leading-5 font-medium tracking-[0.1px] ${VISIT_POLICY_CHIP_CLASS[visitPolicy]}`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm leading-5 font-medium tracking-normal ${VISIT_POLICY_CHIP_CLASS[visitPolicy]}`}
         >
           <Image
             src="/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -60,24 +60,28 @@ export default function StorefrontFactoryTour({
         <>
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-4">
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Open days</dt>
-              <dd className="text-sm leading-5 font-medium text-[#191C1C]">{tour.availableDays}</dd>
+              <dt className="text-xs leading-4 text-outline-strong">Open days</dt>
+              <dd className="text-sm leading-5 font-medium text-foreground">
+                {tour.availableDays}
+              </dd>
             </div>
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Visiting hours</dt>
-              <dd className="text-sm leading-5 font-medium text-[#191C1C]">{tour.visitingHours}</dd>
+              <dt className="text-xs leading-4 text-outline-strong">Visiting hours</dt>
+              <dd className="text-sm leading-5 font-medium text-foreground">
+                {tour.visitingHours}
+              </dd>
             </div>
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Book ahead</dt>
-              <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+              <dt className="text-xs leading-4 text-outline-strong">Book ahead</dt>
+              <dd className="text-sm leading-5 font-medium text-foreground">
                 {tour.bookingLeadDays} working days
               </dd>
             </div>
             <div className="flex flex-col gap-0.5">
-              <dt className="text-[11px] leading-4 text-[#6F7979]">Visit fee</dt>
+              <dt className="text-xs leading-4 text-outline-strong">Visit fee</dt>
               <dd
                 className={`flex items-center gap-1 text-sm leading-5 font-medium ${
-                  isTourFree ? "text-[#00696E]" : "text-[#191C1C]"
+                  isTourFree ? "text-primary-imprint" : "text-foreground"
                 }`}
               >
                 <Image
@@ -94,7 +98,7 @@ export default function StorefrontFactoryTour({
 
           {tour.inclusions.length > 0 && (
             <>
-              <p className="mt-4 mb-1.5 text-sm leading-5 font-medium text-[#191C1C]">
+              <p className="mt-4 mb-1.5 text-sm leading-5 font-medium text-foreground">
                 What the visit includes
               </p>
               <ul className="flex flex-col gap-1.5">
@@ -107,7 +111,7 @@ export default function StorefrontFactoryTour({
                       alt=""
                       className="mt-0.5 shrink-0 opacity-60"
                     />
-                    <span className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
+                    <span className="text-xs leading-4 tracking-wider text-foreground">
                       {inclusion}
                     </span>
                   </li>
@@ -117,7 +121,7 @@ export default function StorefrontFactoryTour({
           )}
 
           {tour.interpreterLanguages.length > 0 && (
-            <p className="mt-3 text-xs leading-4 tracking-[0.4px] text-[#6F7979]">
+            <p className="mt-3 text-xs leading-4 tracking-wider text-outline-strong">
               Interpreters available in {tour.interpreterLanguages.join(", ")}.
             </p>
           )}

@@ -108,7 +108,7 @@ export default function PathwaySlotEditor({
               onClick={() =>
                 onSlotsChange(slots.filter((other) => other.localKey !== slot.localKey))
               }
-              className="mt-4 cursor-pointer text-xs text-[#8C1D18] disabled:opacity-40"
+              className="mt-4 cursor-pointer text-xs text-destructive disabled:opacity-40"
             >
               Remove
             </button>
@@ -183,7 +183,7 @@ export default function PathwaySlotEditor({
                   */}
                   {candidate.minimumOrderQuantity !== null &&
                     candidate.minimumOrderQuantity > slot.quantity && (
-                      <span className="block text-[11px] text-[#8C1D18]">
+                      <span className="block text-xs text-destructive">
                         Sold in {candidate.minimumOrderQuantity} at a time — raise this
                         piece&rsquo;s count to at least that, or it cannot be saved.
                       </span>
@@ -201,7 +201,7 @@ export default function PathwaySlotEditor({
                       ),
                     })
                   }
-                  className="cursor-pointer text-xs text-[#8C1D18] disabled:opacity-40"
+                  className="cursor-pointer text-xs text-destructive disabled:opacity-40"
                 >
                   Remove
                 </button>
@@ -249,7 +249,7 @@ export default function PathwaySlotEditor({
             </p>
           )}
 
-          <p className="mt-2 text-[11px] text-muted-foreground">Piece {slotIndex + 1}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Piece {slotIndex + 1}</p>
         </article>
       ))}
 

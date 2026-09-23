@@ -394,7 +394,7 @@ export default function RfqRequirementDetailFields({
         <div className="space-y-3">
           {/* THE ONLY ARM WITH NO REQUIRED FIELD. Leaving all four unspecified is legal, and the prose
               summary on the line is then the whole requirement. */}
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Every stage below is optional. Leaving one unspecified means you have not asked about it
             — it does not mean No.
           </p>

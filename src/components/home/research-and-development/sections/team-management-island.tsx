@@ -119,7 +119,10 @@ export default function TeamManagementIsland({
     return (
       <ul className="space-y-3">
         {applicationsQuery.data.map((application) => (
-          <li key={application.id} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <li
+            key={application.id}
+            className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
+          >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-medium">{application.applicantName}</p>
@@ -170,7 +173,7 @@ export default function TeamManagementIsland({
                     reviewNote: reviewNotes[application.id],
                   })
                 }
-                className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
               >
                 Accept and add to the team
               </button>
@@ -184,7 +187,7 @@ export default function TeamManagementIsland({
                     reviewNote: reviewNotes[application.id],
                   })
                 }
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               >
                 Decline
               </button>
@@ -216,7 +219,7 @@ export default function TeamManagementIsland({
   function renderInviteForm() {
     return (
       <form
-        className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+        className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
         onSubmit={(submitEvent) => {
           submitEvent.preventDefault();
           inviteMutation.mutate(
@@ -275,12 +278,12 @@ export default function TeamManagementIsland({
         <button
           type="submit"
           disabled={inviteMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {inviteMutation.isPending ? "Sending…" : "Send the invite"}
         </button>
         {inviteMutation.isSuccess && (
-          <p className="text-xs text-[#00696E]">
+          <p className="text-xs text-primary-imprint">
             Sent. They will see it on their own applications page — that is the only place an
             invitee can find it.
           </p>
@@ -297,7 +300,7 @@ export default function TeamManagementIsland({
             {openRoles.map((role) => (
               <li
                 key={role.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
               >
                 <span>
                   {role.roleTitle}
@@ -315,7 +318,7 @@ export default function TeamManagementIsland({
                         roleId: role.id,
                       })
                     }
-                    className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                    className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   >
                     {role.status === "open" ? "Close" : "Reopen"}
                   </button>
@@ -326,7 +329,7 @@ export default function TeamManagementIsland({
         )}
 
         <form
-          className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+          className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
           onSubmit={(submitEvent) => {
             submitEvent.preventDefault();
             roleMutation.mutate(
@@ -397,7 +400,7 @@ export default function TeamManagementIsland({
             // maximum below its minimum. Refusing here is friendlier than sending something
             // `open_role_compensation_ranges_ck` would refuse anyway.
             disabled={roleMutation.isPending || compensationStrands === null}
-            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             Advertise it
           </button>
@@ -418,7 +421,7 @@ export default function TeamManagementIsland({
         {team.map((member) => (
           <li
             key={member.memberId}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
           >
             <span>
               {member.name}
@@ -442,7 +445,7 @@ export default function TeamManagementIsland({
                         changeEvent.target.value === "maintainer" ? "maintainer" : "contributor",
                     })
                   }
-                  className="rounded-xl border border-[#CAC4D0] p-1.5 text-xs"
+                  className="rounded-xl border border-outline-variant p-1.5 text-xs"
                 >
                   <option value="contributor">Contributor</option>
                   <option value="maintainer">Maintainer</option>
@@ -453,7 +456,7 @@ export default function TeamManagementIsland({
                   onClick={() =>
                     memberMutation.mutate({ action: "remove", memberId: member.memberId })
                   }
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                  className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                 >
                   Remove
                 </button>
@@ -466,7 +469,7 @@ export default function TeamManagementIsland({
   }
 
   return (
-    <div className="space-y-6 border-t border-[#CAC4D0]/40 pt-6">
+    <div className="space-y-6 border-t border-outline-variant/40 pt-6">
       {canManage && (
         <>
           <section className="space-y-3">
@@ -500,7 +503,7 @@ export default function TeamManagementIsland({
             type="button"
             disabled={memberMutation.isPending}
             onClick={() => memberMutation.mutate({ action: "leave" })}
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             Leave this project
           </button>

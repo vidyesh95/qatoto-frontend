@@ -16,10 +16,10 @@ import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
 
-const STORE_PANEL_CLASS = "border border-[#CAC4D0]/60 px-6 py-16";
+const STORE_PANEL_CLASS = "border border-outline-variant/60 px-6 py-16";
 
 const ACTION_LINK_CLASS =
-  "rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90";
+  "rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90";
 
 /** Nothing exists here yet. No action, because there is nothing for a buyer to undo. */
 export function StoreEmptyPanel({ message }: { message: string }) {

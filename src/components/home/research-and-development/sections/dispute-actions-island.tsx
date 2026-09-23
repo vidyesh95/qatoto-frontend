@@ -102,7 +102,7 @@ export default function DisputeActionsIsland({
   );
 
   return (
-    <div className="mt-3 space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+    <div className="mt-3 space-y-3 border-t border-outline-variant/40 pt-3">
       <form
         className="space-y-2"
         onSubmit={(submitEvent) => {
@@ -122,7 +122,7 @@ export default function DisputeActionsIsland({
               const parsed = DisputeVotePositionSchema.safeParse(changeEvent.target.value);
               if (parsed.success) setVotePosition(parsed.data);
             }}
-            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
           >
             {DISPUTE_VOTE_POSITIONS.map((position) => (
               <option key={position} value={position}>
@@ -135,7 +135,7 @@ export default function DisputeActionsIsland({
           value={voteNote}
           onChange={(changeEvent) => setVoteNote(changeEvent.target.value)}
           placeholder="Why (optional)"
-          className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
         />
         <p className="text-xs text-muted-foreground">
           One vote each. A simple majority of the frozen quorum settles the dispute immediately, so
@@ -144,7 +144,7 @@ export default function DisputeActionsIsland({
         <button
           type="submit"
           disabled={voteMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {voteMutation.isPending ? "Casting…" : "Cast your vote"}
         </button>
@@ -154,7 +154,7 @@ export default function DisputeActionsIsland({
         type="button"
         onClick={() => withdrawMutation.mutate(disputeId)}
         disabled={withdrawMutation.isPending}
-        className="cursor-pointer text-xs font-medium text-[#00696E] disabled:opacity-50"
+        className="cursor-pointer text-xs font-medium text-primary-imprint disabled:opacity-50"
       >
         {withdrawMutation.isPending
           ? "Withdrawing…"
@@ -185,7 +185,7 @@ export default function DisputeActionsIsland({
                 const parsed = DisputeResolutionSchema.safeParse(changeEvent.target.value);
                 if (parsed.success) setResolution(parsed.data);
               }}
-              className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
             >
               {DISPUTE_RESOLUTIONS.map((resolutionOption) => (
                 <option key={resolutionOption} value={resolutionOption}>
@@ -201,7 +201,7 @@ export default function DisputeActionsIsland({
             value={resolutionNote}
             onChange={(changeEvent) => setResolutionNote(changeEvent.target.value)}
             placeholder="What did the team decide, and why?"
-            className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
           />
 
           {resolution === "re_verified" && (
@@ -212,7 +212,7 @@ export default function DisputeActionsIsland({
                   type="datetime-local"
                   value={scopedWindowStart}
                   onChange={(changeEvent) => setScopedWindowStart(changeEvent.target.value)}
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                 />
               </label>
               <label className="block space-y-1">
@@ -221,7 +221,7 @@ export default function DisputeActionsIsland({
                   type="datetime-local"
                   value={scopedWindowEnd}
                   onChange={(changeEvent) => setScopedWindowEnd(changeEvent.target.value)}
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                 />
               </label>
             </div>
@@ -235,7 +235,7 @@ export default function DisputeActionsIsland({
           <button
             type="submit"
             disabled={resolveMutation.isPending}
-            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             {resolveMutation.isPending ? "Resolving…" : "Record the resolution"}
           </button>

@@ -129,7 +129,7 @@ export default function CompensationPeriodIsland({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="mt-3 cursor-pointer text-xs font-medium text-[#00696E]"
+        className="mt-3 cursor-pointer text-xs font-medium text-primary-imprint"
       >
         Open this statement
       </button>
@@ -177,8 +177,8 @@ export default function CompensationPeriodIsland({
     if (verification === undefined) return null;
 
     return (
-      <div className="space-y-1 rounded-2xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm">
-        <p className="font-medium text-[#00696E]">
+      <div className="space-y-1 rounded-2xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm">
+        <p className="font-medium text-primary-imprint">
           {verification.periodsChecked} statement
           {verification.periodsChecked === 1 ? "" : "s"} re-walked, and every one checked out.
         </p>
@@ -192,11 +192,11 @@ export default function CompensationPeriodIsland({
   }
 
   return (
-    <div className="mt-3 space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+    <div className="mt-3 space-y-3 border-t border-outline-variant/40 pt-3">
       <button
         type="button"
         onClick={() => setIsOpen(false)}
-        className="cursor-pointer text-xs font-medium text-[#00696E]"
+        className="cursor-pointer text-xs font-medium text-primary-imprint"
       >
         Close this statement
       </button>
@@ -221,7 +221,10 @@ export default function CompensationPeriodIsland({
               );
 
               return (
-                <li key={line.id} className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3">
+                <li
+                  key={line.id}
+                  className="space-y-2 rounded-xl border border-outline-variant/60 p-3"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-2 text-sm">
                     <span className="min-w-0">
                       <span className="font-medium">{line.memberName}</span>
@@ -275,7 +278,7 @@ export default function CompensationPeriodIsland({
                                 })
                               }
                               disabled={confirmPaymentMutation.isPending}
-                              className="ml-2 cursor-pointer font-medium text-[#00696E] disabled:opacity-50"
+                              className="ml-2 cursor-pointer font-medium text-primary-imprint disabled:opacity-50"
                             >
                               I received this
                             </button>
@@ -292,7 +295,7 @@ export default function CompensationPeriodIsland({
                       <button
                         type="button"
                         onClick={() => setPayingLineId(payingLineId === line.id ? null : line.id)}
-                        className="cursor-pointer text-xs font-medium text-[#00696E]"
+                        className="cursor-pointer text-xs font-medium text-primary-imprint"
                       >
                         {payingLineId === line.id ? "Cancel" : "Record a payment you already made"}
                       </button>
@@ -323,14 +326,14 @@ export default function CompensationPeriodIsland({
                               setPaidAmountInCents(changeEvent.target.value)
                             }
                             placeholder="Amount in whole cents"
-                            className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                           />
                           <input
                             required
                             type="date"
                             value={paidOnDate}
                             onChange={(changeEvent) => setPaidOnDate(changeEvent.target.value)}
-                            className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                           />
                           <select
                             value={methodKey}
@@ -340,7 +343,7 @@ export default function CompensationPeriodIsland({
                               );
                               if (parsed.success) setMethodKey(parsed.data);
                             }}
-                            className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                           >
                             {COMPENSATION_PAYMENT_METHOD_KEYS.map((method) => (
                               <option key={method} value={method}>
@@ -352,7 +355,7 @@ export default function CompensationPeriodIsland({
                             value={referenceNote}
                             onChange={(changeEvent) => setReferenceNote(changeEvent.target.value)}
                             placeholder="Your own reference (optional)"
-                            className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                           />
                           {/* Said plainly, because the form looks like a payment form and
                               is not one. */}
@@ -363,7 +366,7 @@ export default function CompensationPeriodIsland({
                           <button
                             type="submit"
                             disabled={recordPaymentMutation.isPending}
-                            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                           >
                             {recordPaymentMutation.isPending ? "Recording…" : "Record it"}
                           </button>
@@ -382,7 +385,7 @@ export default function CompensationPeriodIsland({
                 type="button"
                 onClick={() => finalizeMutation.mutate(periodId)}
                 disabled={finalizeMutation.isPending}
-                className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
               >
                 {finalizeMutation.isPending ? "Finalizing…" : "Finalize this statement"}
               </button>
@@ -393,7 +396,7 @@ export default function CompensationPeriodIsland({
                 type="button"
                 onClick={() => countersignMutation.mutate({ periodId })}
                 disabled={countersignMutation.isPending}
-                className="cursor-pointer rounded-full border border-[#00696E]/40 px-3 py-1.5 text-xs font-medium text-[#00696E] disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
               >
                 {countersignMutation.isPending ? "Signing…" : "Countersign it"}
               </button>
@@ -402,7 +405,7 @@ export default function CompensationPeriodIsland({
             {isAdmin && periodStatus === "finalized" && (
               <a
                 href={`${API_BASE_URL}${buildCompensationExportPath(projectSlug, periodId, "csv")}`}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
               >
                 Export CSV for payroll
               </a>
@@ -418,7 +421,7 @@ export default function CompensationPeriodIsland({
             {isAdmin && periodStatus === "finalized" && (
               <a
                 href={`${API_BASE_URL}${buildCompensationExportPath(projectSlug, periodId, "json")}`}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
               >
                 Export JSON
               </a>
@@ -428,7 +431,7 @@ export default function CompensationPeriodIsland({
               <button
                 type="button"
                 onClick={() => setIsChainVerificationRequested(true)}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
               >
                 Verify the statement chain
               </button>
@@ -454,13 +457,13 @@ export default function CompensationPeriodIsland({
                   value={supersedeReason}
                   onChange={(changeEvent) => setSupersedeReason(changeEvent.target.value)}
                   placeholder="What was wrong?"
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
                 />
               </label>
               <button
                 type="submit"
                 disabled={supersedeMutation.isPending}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               >
                 {supersedeMutation.isPending ? "Superseding…" : "Supersede with a correction"}
               </button>

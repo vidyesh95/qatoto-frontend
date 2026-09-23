@@ -396,7 +396,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         // the archive is or when it lands would be inventing a verdict the server has not
         // reached.
         return (
-          <output className="block self-start rounded-2xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm text-[#00696E]">
+          <output className="block self-start rounded-2xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm text-primary-imprint">
             We are building your file. This can take a few minutes — you can close this panel and
             come back.
           </output>
@@ -409,7 +409,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
               href={view.downloadUrl}
               download
               rel="noopener"
-              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-[#00696E] px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5"
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5"
             >
               <DownloadIcon />
               Download your data
@@ -467,7 +467,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
                 accountHandle,
                 note: `The in-app download failed with code ${view.error.code}.`,
               })}
-              className="self-start text-sm font-medium text-[#00696E] underline"
+              className="self-start text-sm font-medium text-primary-imprint underline"
             >
               Ask {PRIVACY_CONTACT_EMAIL} for it instead — we answer within{" "}
               {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}
@@ -511,7 +511,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         );
       case "cleared":
         return (
-          <span className="flex flex-row items-center gap-1 text-sm font-medium text-[#00696E]">
+          <span className="flex flex-row items-center gap-1 text-sm font-medium text-primary-imprint">
             <Image
               src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""
@@ -683,7 +683,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
                 accountId,
                 accountHandle,
               })}
-              className="self-start text-sm font-medium text-[#00696E] underline"
+              className="self-start text-sm font-medium text-primary-imprint underline"
             >
               Email {PRIVACY_CONTACT_EMAIL}
             </a>

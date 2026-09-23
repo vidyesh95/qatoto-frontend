@@ -31,7 +31,7 @@ export default function StorefrontCapabilities({
     >
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {orderedCapabilities.map((capability) => (
-          <li key={capability.id} className="flex gap-2 rounded-lg bg-[#F2F4F4] px-3 py-2">
+          <li key={capability.id} className="flex gap-2 rounded-lg bg-muted px-3 py-2">
             <Image
               src="/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               width={18}
@@ -42,11 +42,11 @@ export default function StorefrontCapabilities({
               className="mt-0.5 shrink-0 self-start opacity-70"
             />
             <div className="min-w-0">
-              <p className="text-sm leading-5 font-medium text-[#191C1C]">
+              <p className="text-sm leading-5 font-medium text-foreground">
                 {CAPABILITY_KIND_LABELS[capability.capabilityKind]}
               </p>
               {capability.detail && (
-                <p className="text-xs leading-4 tracking-[0.4px] text-[#6F7979]">
+                <p className="text-xs leading-4 tracking-wider text-outline-strong">
                   {capability.detail}
                 </p>
               )}

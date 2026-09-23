@@ -199,14 +199,14 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                       }
                       productTitle={product.title}
                     >
-                      <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-[#2A76FD]">
+                      <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-blue-600">
                         <div className="flex flex-1 flex-col gap-1">
-                          <p className="text-sm font-medium text-[#191C1C]">View in 360º</p>
-                          <p className="text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
+                          <p className="text-sm font-medium text-foreground">View in 360º</p>
+                          <p className="text-xs font-medium tracking-wider text-outline-strong">
                             Check how this looks from all angles
                           </p>
                         </div>
-                        <span className="grid size-10 place-items-center rounded-full bg-[#D6E3FF]">
+                        <span className="grid size-10 place-items-center rounded-full bg-secondary">
                           <Icon src="360_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={24} />
                         </span>
                       </div>
@@ -229,7 +229,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                         made the one link a buyer uses to vet a supplier go somewhere else. */}
                     <Link
                       href={`/store/organizations/${product.seller.slug}`}
-                      className="text-xs font-medium tracking-wide text-[#2A76FD]"
+                      className="text-xs font-medium tracking-wide text-blue-600"
                     >
                       {product.seller.displayName}
                     </Link>
@@ -238,7 +238,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                     {product.reviewMetrics.averageRating !== null && (
                       <div className="flex items-center gap-2 pt-1">
                         <RatingBadge value={product.reviewMetrics.averageRating.toFixed(1)} />
-                        <p className="text-sm font-medium tracking-tight text-[#6F7979]">
+                        <p className="text-sm font-medium tracking-tight text-outline-strong">
                           {product.reviewMetrics.reviewCount.toLocaleString("en-US")}{" "}
                           {product.reviewMetrics.reviewCount === 1 ? "review" : "reviews"}
                         </p>

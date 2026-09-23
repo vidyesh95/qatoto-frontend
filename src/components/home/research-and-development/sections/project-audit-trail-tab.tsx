@@ -66,8 +66,8 @@ export default function ProjectAuditTrailTab({
       case "ready": {
         const verification = chainVerificationState.item;
         return (
-          <div className="space-y-1 rounded-2xl border border-[#00696E]/30 bg-[#00696E]/5 p-4 text-sm">
-            <p className="font-medium text-[#00696E]">
+          <div className="space-y-1 rounded-2xl border border-primary-imprint/30 bg-primary-imprint/5 p-4 text-sm">
+            <p className="font-medium text-primary-imprint">
               {verification.entriesChecked} entries re-walked, and every one checked out.
             </p>
             <p className="text-xs text-muted-foreground">

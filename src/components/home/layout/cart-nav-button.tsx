@@ -55,7 +55,7 @@ export default function CartNavButton() {
       {lineCount !== null && (
         <span
           aria-hidden
-          className="absolute -top-1 -right-1 grid min-w-4.5 place-items-center rounded-full bg-[#00696E] px-1 text-[10px] leading-4 font-medium text-white"
+          className="absolute -top-1 -right-1 grid min-w-4.5 place-items-center rounded-full bg-primary-imprint px-1 text-xs leading-4 font-medium text-primary-imprint-foreground"
         >
           {lineCount > MAXIMUM_DISPLAYED_LINE_COUNT
             ? `${formatCountLabel(MAXIMUM_DISPLAYED_LINE_COUNT)}+`

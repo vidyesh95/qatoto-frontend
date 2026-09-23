@@ -65,7 +65,7 @@ export default function PlatformMetricsPage() {
     return (
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Metrics</h1>
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Platform metrics need the admin role. Your role is{" "}
           {ownStaffContextQuery.data?.platformRole ?? "none"}.
         </output>
@@ -97,7 +97,7 @@ export default function PlatformMetricsPage() {
               className={`cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${
                 presetDays === windowDays
                   ? "border-transparent bg-primary text-primary-foreground"
-                  : "border-[#CAC4D0]/60 hover:bg-muted"
+                  : "border-outline-variant/60 hover:bg-muted"
               }`}
             >
               {presetDays} days
@@ -112,7 +112,7 @@ export default function PlatformMetricsPage() {
             onChange={(changeEvent) =>
               setActiveUserWindow(parseActiveUserWindow(changeEvent.target.value))
             }
-            className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+            className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
           >
             {ACTIVE_USER_WINDOWS.map((window) => (
               <option key={window} value={window}>
@@ -127,7 +127,7 @@ export default function PlatformMetricsPage() {
           <select
             value={retentionMonthCount}
             onChange={(changeEvent) => setRetentionMonthCount(Number(changeEvent.target.value))}
-            className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+            className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
           >
             {RETENTION_MONTH_CHOICES.map((monthCount) => (
               <option key={monthCount} value={monthCount}>

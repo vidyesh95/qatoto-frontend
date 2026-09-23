@@ -78,10 +78,10 @@ export default function CaseStudyLessonRow({
 
   return (
     <details className="group/lesson -mx-3 my-1 rounded-lg px-3 transition-colors open:bg-muted/40 hover:bg-muted/50">
-      <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] sm:grid-cols-[minmax(0,36rem)_16rem_minmax(0,1fr)_auto] sm:gap-x-6 [&::-webkit-details-marker]:hidden">
+      <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint sm:grid-cols-[minmax(0,36rem)_16rem_minmax(0,1fr)_auto] sm:gap-x-6 [&::-webkit-details-marker]:hidden">
         <div className="col-start-1 row-start-1 min-w-0">
           <h3 className="text-sm leading-5 font-medium text-foreground">{lesson.title}</h3>
-          <p className="mt-1 text-xs leading-4 text-[#6F7979]">{evidenceLabel}</p>
+          <p className="mt-1 text-xs leading-4 text-outline-strong">{evidenceLabel}</p>
         </div>
 
         {lesson.outcomeSummary === null ? null : (
@@ -105,12 +105,12 @@ export default function CaseStudyLessonRow({
         <p className="max-w-2xl text-sm leading-5 font-medium text-foreground">
           {lesson.oneLineAction}
         </p>
-        <p className="mt-2 max-w-2xl text-sm leading-5 text-[#6F7979]">{lesson.summary}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-5 text-outline-strong">{lesson.summary}</p>
 
         {recordHref === null ? null : (
           <Link
             href={recordHref}
-            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           >
             Read the full record
             <span aria-hidden="true">&rarr;</span>

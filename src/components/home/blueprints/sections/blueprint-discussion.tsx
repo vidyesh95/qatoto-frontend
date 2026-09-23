@@ -62,7 +62,7 @@ export default function BlueprintDiscussion({
             thread.loadNextPage();
           }}
           disabled={thread.isFetchingNextPage}
-          className="mt-3 cursor-pointer text-sm font-medium text-[#00696E] transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default disabled:opacity-50"
+          className="mt-3 cursor-pointer text-sm font-medium text-primary-imprint transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default disabled:opacity-50"
         >
           {thread.isFetchingNextPage ? "Loading…" : "Load more comments"}
         </button>

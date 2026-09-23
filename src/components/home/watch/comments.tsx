@@ -68,7 +68,7 @@ export default function Comments({
   const [tab, setTab] = useState<CommentsTab>("comments");
 
   return (
-    <section className={`rounded-xl border border-[#E5E7E7] bg-background ${className}`}>
+    <section className={`rounded-xl border border-border bg-background ${className}`}>
       {reviewedProduct !== null ? (
         <>
           {/*
@@ -86,7 +86,7 @@ export default function Comments({
             ))}
           </div>
           {/* Tabs */}
-          <div className="flex flex-row border-b border-[#DAE4E5]">
+          <div className="flex flex-row border-b border-border">
             <TabButton active={tab === "comments"} onClick={() => setTab("comments")}>
               {formatCompactCountLabel(commentCount)} Comments
             </TabButton>
@@ -105,10 +105,10 @@ export default function Comments({
           {PLACEHOLDER_TRENDING_SEARCH !== undefined && (
             <div className="px-4 py-3">
               <p className="text-sm font-medium">Everyone is searching for:</p>
-              <p className="text-sm text-[#1DBDC5]">{PLACEHOLDER_TRENDING_SEARCH}</p>
+              <p className="text-sm text-primary-imprint">{PLACEHOLDER_TRENDING_SEARCH}</p>
             </div>
           )}
-          <div className="border-b-2 border-[#1DBDC5] px-4 pt-1 pb-3 text-center">
+          <div className="border-b-2 border-primary-imprint px-4 pt-1 pb-3 text-center">
             <h2 className="text-base font-medium">
               {formatCompactCountLabel(commentCount)} Comments
             </h2>
@@ -157,7 +157,7 @@ function TabButton({
       onClick={onClick}
       aria-pressed={active}
       className={`flex-1 cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
-        active ? "border-b-2 border-[#1DBDC5] text-foreground" : "text-[#6F7979]"
+        active ? "border-b-2 border-primary-imprint text-foreground" : "text-outline-strong"
       }`}
     >
       {children}

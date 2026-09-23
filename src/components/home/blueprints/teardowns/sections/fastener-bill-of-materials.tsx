@@ -24,13 +24,13 @@ export default function FastenerBillOfMaterials({
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Fasteners</h2>
-      <p className="mt-0.5 text-[11px] text-[#6F7979]">
+      <p className="mt-0.5 text-xs text-outline-strong">
         {formatCountLabel(fasteners.length)} line items
       </p>
 
-      <div className="mt-2 max-w-2xl overflow-x-auto rounded-xl border border-[#CAC4D0]/60">
+      <div className="mt-2 max-w-2xl overflow-x-auto rounded-xl border border-outline-variant/60">
         <table className="w-full min-w-xl text-sm">
-          <thead className="border-b border-[#CAC4D0]/60 text-left text-xs text-[#6F7979]">
+          <thead className="border-b border-outline-variant/60 text-left text-xs text-outline-strong">
             <tr>
               <th scope="col" className={HEADER_CELL_CLASS}>
                 Standard
@@ -49,7 +49,7 @@ export default function FastenerBillOfMaterials({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#CAC4D0]/60">
+          <tbody className="divide-y divide-outline-variant/60">
             {fasteners.map((fastener) => (
               <tr
                 key={`${fastener.standardCode ?? "none"}-${fastener.sizeLabel}-${fastener.drive}`}
@@ -60,7 +60,9 @@ export default function FastenerBillOfMaterials({
                   a fact about the fastener rather than a gap in the data.
                 */}
                 <td className={`${BODY_CELL_CLASS} text-foreground`}>
-                  {fastener.standardCode ?? <span className="text-[#6F7979]">Proprietary</span>}
+                  {fastener.standardCode ?? (
+                    <span className="text-outline-strong">Proprietary</span>
+                  )}
                 </td>
                 <td className={`${BODY_CELL_CLASS} text-foreground`}>{fastener.sizeLabel}</td>
                 <td className={`${BODY_CELL_CLASS} text-foreground`}>
@@ -75,7 +77,7 @@ export default function FastenerBillOfMaterials({
                       href={fastener.supplier.url}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="text-foreground underline hover:text-[#00696E]"
+                      className="text-foreground underline hover:text-primary-imprint"
                     >
                       {fastener.supplier.label}
                     </a>

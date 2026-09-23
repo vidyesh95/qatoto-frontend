@@ -140,7 +140,7 @@ function CreatePathwayForm() {
         />
         {/* ⚠️ Said before the press, not after: `slug` is absent from the update body and
             `.strict()` refuses it, so this is genuinely the only chance to choose. */}
-        <span className="mt-1 block text-[11px]">
+        <span className="mt-1 block text-xs">
           Lower case and hyphens. <strong>This cannot be changed later</strong> — it becomes the
           set&rsquo;s public address.
         </span>
@@ -287,7 +287,7 @@ function MetadataSection({
         />
         {/* ⚠️ The one lever that can ever remove a PUBLISHED set from the storefront, and it can
             only be set while the set is still editable — i.e. before it is submitted. */}
-        <span className="mt-1 block text-[11px]">
+        <span className="mt-1 block text-xs">
           Optional, and worth setting now: once a set is published it cannot be taken down, and this
           date is the only thing that will retire it.
         </span>
@@ -465,7 +465,7 @@ function PlanSection({
             not possible: the server rewrites the entire plan on every save, so the products on
             every piece are re-sent together or they are lost.
           */}
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             The whole set saves together — pieces and products in one go.
           </p>
         </>

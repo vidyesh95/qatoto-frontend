@@ -96,7 +96,7 @@ export default function BlueprintVideoBlock({
               </svg>
             </span>
             {durationLabel === null ? null : (
-              <span className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-[11px] font-medium text-white">
+              <span className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
                 {durationLabel}
               </span>
             )}

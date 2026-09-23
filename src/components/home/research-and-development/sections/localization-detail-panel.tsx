@@ -112,7 +112,7 @@ export default function LocalizationDetailPanel({
 
   if (assessment === null) {
     return (
-      <p className="rounded-2xl border border-dashed border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
+      <p className="rounded-2xl border border-dashed border-outline-variant/60 p-4 text-sm text-muted-foreground">
         Pick a dot to see what that product would take to make here.
       </p>
     );
@@ -169,7 +169,7 @@ export default function LocalizationDetailPanel({
       BigInt(assessment.observedImportValueInCents) * BigInt(10);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-4 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">HS {assessment.hsCode}</p>
         <h3 className="text-sm leading-snug font-medium text-foreground">
@@ -184,7 +184,7 @@ export default function LocalizationDetailPanel({
         <MeasuredFigures assessment={assessment} />
       </div>
 
-      <div className="space-y-2 border-t border-[#CAC4D0]/60 pt-4">
+      <div className="space-y-2 border-t border-outline-variant/60 pt-4">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Capital to start — a model estimate, not a quote
         </p>
@@ -210,7 +210,7 @@ export default function LocalizationDetailPanel({
                       setGiveUpAtMs(Date.now() + NARRATIVE_POLL_GIVE_UP_MS);
                       pathwayMutation.mutate(assessment.id);
                     }}
-                    className="rounded-full bg-[#00696E] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#00565A]"
+                    className="rounded-full bg-primary-imprint px-4 py-1.5 text-sm font-medium text-primary-imprint-foreground hover:bg-primary-imprint-deep"
                   >
                     Write the pathway
                   </button>
@@ -298,7 +298,7 @@ export default function LocalizationDetailPanel({
                     </p>
                   )}
 
-                  <div className="space-y-1 border-t border-[#CAC4D0]/60 pt-3">
+                  <div className="space-y-1 border-t border-outline-variant/60 pt-3">
                     <p className="text-sm font-medium">{panelState.title}</p>
                     {/* The steps and risks, as the generator joined them. Rendered per paragraph
                         rather than through a markdown parser — the writer is a model and this is
@@ -320,12 +320,12 @@ export default function LocalizationDetailPanel({
         })()}
       </div>
 
-      <p className="border-t border-[#CAC4D0]/60 pt-3 text-xs text-muted-foreground">
+      <p className="border-t border-outline-variant/60 pt-3 text-xs text-muted-foreground">
         No supplier has priced this and nothing on Qatoto will honour the figure. Treat it as a
         starting point for your own quotes.{" "}
         <Link
           href={`/research-and-development/import-intelligence/${assessment.hsCode}`}
-          className="text-[#00696E] hover:underline"
+          className="text-primary-imprint hover:underline"
         >
           Full trade history and substitutes →
         </Link>

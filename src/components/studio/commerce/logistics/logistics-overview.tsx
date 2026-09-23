@@ -107,7 +107,7 @@ function StateChip({
       aria-pressed={isSelected}
       className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium ${
         isSelected
-          ? "border-transparent bg-[#00696E] text-white"
+          ? "border-transparent bg-primary-imprint text-primary-imprint-foreground"
           : "border-border text-muted-foreground"
       }`}
     >

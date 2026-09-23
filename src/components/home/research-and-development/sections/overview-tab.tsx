@@ -79,7 +79,7 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
       {/* The founder's OWN assertion, kept visually distinct from anything the platform
           computed. An assertion must never read as verified evidence. */}
       {project.demandEvidenceNotes && (
-        <section className="space-y-2 rounded-2xl border border-dashed border-[#CAC4D0] p-4">
+        <section className="space-y-2 rounded-2xl border border-dashed border-outline-variant p-4">
           <h3 className="text-sm font-medium tracking-wide xl:text-lg">
             Demand evidence, as stated by the founder
           </h3>
@@ -98,7 +98,7 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
           {project.originCluster && (
             <Link
               href={`/research-and-development/problem-map/cluster/${project.originCluster.clusterId}`}
-              className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+              className="inline-flex items-center gap-2 rounded-full bg-primary-imprint/10 px-3 py-1.5 text-xs font-medium text-primary-imprint transition hover:bg-primary-imprint/20"
             >
               Grew out of Civic Pulse: {project.originCluster.title} →
             </Link>
@@ -113,7 +113,7 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
                   <li key={insight.insightId}>
                     <Link
                       href={`/research-and-development/market-research/insight/${insight.insightId}`}
-                      className="inline-flex rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition hover:bg-muted"
+                      className="inline-flex rounded-full border border-outline-variant px-3 py-1.5 text-xs transition hover:bg-muted"
                     >
                       {insight.headline} →
                     </Link>
@@ -127,7 +127,7 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/research-and-development/project/${project.slug}/workshop`}
-          className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+          className="inline-flex items-center gap-2 rounded-full bg-primary-imprint/10 px-3 py-1.5 text-xs font-medium text-primary-imprint transition hover:bg-primary-imprint/20"
         >
           Open the Virtual Workshop — boards, files, and team chat →
         </Link>

@@ -180,8 +180,8 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
   function renderCreateOutcome(card: AdminFreightRateCard, supersededRateCardId: string | null) {
     return (
       <div className="space-y-3">
-        <div className="space-y-1 rounded-xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm">
-          <p className="font-medium text-[#00696E]">Card created.</p>
+        <div className="space-y-1 rounded-xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm">
+          <p className="font-medium text-primary-imprint">Card created.</p>
           <p className="text-xs text-muted-foreground">
             {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
             {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency} · starts{" "}
@@ -335,7 +335,7 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
 
           {/* THE FIELD THIS WHOLE FORM IS SHAPED AROUND. Given its own block, above the bands it
               controls the editability of. */}
-          <div className="space-y-1 rounded-xl border border-[#00696E]/30 bg-[#00696E]/5 p-3">
+          <div className="space-y-1 rounded-xl border border-primary-imprint/30 bg-primary-imprint/5 p-3">
             <label className="block space-y-1">
               <span className="text-sm font-medium">Starts (must be in the future)</span>
               <input

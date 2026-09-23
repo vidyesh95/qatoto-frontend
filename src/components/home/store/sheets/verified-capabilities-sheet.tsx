@@ -36,13 +36,13 @@ export default function VerifiedCapabilitiesSheet({
 
   return (
     <ModalSheet title="Capabilities and certifications" onClose={onClose}>
-      <p className="px-4 pb-2 text-xs text-[#6F7979]">
+      <p className="px-4 pb-2 text-xs text-outline-strong">
         What this factory says it can produce, and the certificates it has submitted.
       </p>
 
       <div className="px-4 pb-5">
         {productionCapabilities.length === 0 && (
-          <p className="rounded-lg bg-[#F2F4F4] px-3 py-3 text-xs leading-4 text-[#6F7979]">
+          <p className="rounded-lg bg-muted px-3 py-3 text-xs leading-4 text-outline-strong">
             {declaredProfile === null
               ? "This seller has not published a company profile yet."
               : "This seller has not listed any production capabilities."}
@@ -51,7 +51,7 @@ export default function VerifiedCapabilitiesSheet({
         <ul className="flex flex-col gap-4">
           {productionCapabilities.map((capability) => (
             <li key={capability.id} className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF]">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary">
                 <Image
                   src={`/icons/${CAPABILITY_KIND_ICONS[capability.capabilityKind]}`}
                   width={20}
@@ -60,11 +60,13 @@ export default function VerifiedCapabilitiesSheet({
                 />
               </span>
               <div className="flex-1">
-                <p className="text-sm font-medium text-[#191C1C]">
+                <p className="text-sm font-medium text-foreground">
                   {CAPABILITY_KIND_LABELS[capability.capabilityKind]}
                 </p>
                 {capability.detail && (
-                  <p className="mt-0.5 text-xs leading-5 text-[#6F7979]">{capability.detail}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-outline-strong">
+                    {capability.detail}
+                  </p>
                 )}
               </div>
             </li>
@@ -78,10 +80,10 @@ export default function VerifiedCapabilitiesSheet({
             height={20}
             alt=""
           />
-          <p className="text-sm font-medium text-[#191C1C]">Certifications</p>
+          <p className="text-sm font-medium text-foreground">Certifications</p>
         </div>
         {certifications.length === 0 && (
-          <p className="rounded-lg bg-[#F2F4F4] px-3 py-3 text-xs leading-4 text-[#6F7979]">
+          <p className="rounded-lg bg-muted px-3 py-3 text-xs leading-4 text-outline-strong">
             No certificates submitted.
           </p>
         )}
@@ -89,12 +91,12 @@ export default function VerifiedCapabilitiesSheet({
           {certifications.map((certification) => (
             <li
               key={certification.id}
-              className="flex items-center gap-2 rounded-lg bg-[#F2F4F4] px-3 py-2"
+              className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2"
             >
-              <span className="shrink-0 rounded-sm bg-[#4A6364] px-1.5 py-0.5 text-[11px] font-medium text-white">
+              <span className="shrink-0 rounded-sm bg-muted-foreground px-1.5 py-0.5 text-xs font-medium text-white">
                 {certification.standardName}
               </span>
-              <span className="flex-1 text-xs text-[#191C1C]">
+              <span className="flex-1 text-xs text-foreground">
                 {certification.scopeSummary ?? `Issued by ${certification.issuerName}`}
               </span>
               {/* The verified mark belongs only to a document a reviewer approved. */}
@@ -111,7 +113,7 @@ export default function VerifiedCapabilitiesSheet({
           ))}
         </ul>
 
-        <p className="mt-3 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-3 text-xs leading-4 text-outline-strong">
           A checked certificate is one a Qatoto reviewer approved. Capabilities above are the
           seller&apos;s own claims and are not verified.
         </p>

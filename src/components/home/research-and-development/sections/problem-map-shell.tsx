@@ -325,7 +325,7 @@ export default function ProblemMapShell({
           behind it. The offsets clear the panel at each of its two widths (320px at `md`, 360px at
           `lg`, both inset 16px). When the tablet panel is collapsed to its tab the legend simply
           starts further right than it needs to, which costs nothing. */}
-      <p className="pointer-events-none absolute bottom-3 left-4 z-10 hidden items-center gap-3 text-xs text-muted-foreground md:left-[22rem] md:flex lg:left-[24.5rem]">
+      <p className="pointer-events-none absolute bottom-3 left-4 z-10 hidden items-center gap-3 text-xs text-muted-foreground md:left-88 md:flex lg:left-98">
         {LEGEND_BANDS.map((legendBand) => (
           <span key={legendBand.band} className="flex items-center gap-1.5">
             <span
@@ -405,7 +405,9 @@ function MapViewModeControl({
             aria-current={isSelected ? "true" : undefined}
             onClick={() => onViewModeChange(mode)}
             className={`cursor-pointer px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              isSelected ? "bg-primary-imprint text-white" : "text-foreground hover:bg-muted"
+              isSelected
+                ? "bg-primary-imprint text-primary-imprint-foreground"
+                : "text-foreground hover:bg-muted"
             }`}
           >
             {MAP_VIEW_MODE_LABELS[mode]}
@@ -449,7 +451,7 @@ function DockedPanel({
         className="absolute top-4 left-4 z-10 flex w-11 cursor-pointer flex-col items-center gap-2 rounded-2xl border border-outline-variant/60 bg-card py-3 text-xs font-medium shadow-lg"
       >
         <span aria-hidden="true">›</span>
-        <span className="[writing-mode:vertical-rl]">Clusters</span>
+        <span style={{ writingMode: "vertical-rl" }}>Clusters</span>
       </button>
     );
   }

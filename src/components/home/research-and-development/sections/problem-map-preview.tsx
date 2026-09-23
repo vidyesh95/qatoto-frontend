@@ -85,7 +85,7 @@ export default function ProblemMapPreview({ clusters }: { clusters: ProblemClust
         </ul>
         <Link
           href="/research-and-development/problem-map"
-          className="inline-block cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-primary-imprint"
+          className="inline-block cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           Open problem map
         </Link>

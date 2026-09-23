@@ -512,7 +512,7 @@ export default function CivicPulseVectorMap({
             aria-label={`${cluster.title} — ${cluster.locationLabel ?? "location not resolved"}`}
             aria-pressed={isSelected}
             className={`cursor-pointer overflow-hidden rounded-full bg-white ring-2 ${PIN_SIZE_CLASS[opportunityBand]} ${PIN_RING_CLASS[opportunityBand]} ${
-              isSelected ? "z-10 ring-[3px] ring-offset-2" : ""
+              isSelected ? "z-10 ring-4 ring-offset-2" : ""
             }`}
           >
             <Image

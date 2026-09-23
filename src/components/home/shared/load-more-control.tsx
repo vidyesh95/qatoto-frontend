@@ -39,7 +39,7 @@ export default function LoadMoreControl({
           type="button"
           onClick={onLoadNextPage}
           disabled={isFetchingNextPage}
-          className="w-full rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 disabled:opacity-50"
+          className="w-full rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 disabled:opacity-50"
         >
           {isFetchingNextPage ? "Loading…" : label}
         </button>

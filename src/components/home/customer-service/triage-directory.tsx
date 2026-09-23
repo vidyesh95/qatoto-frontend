@@ -196,7 +196,7 @@ export default function TriageDirectory() {
 
       {TRIAGE_GROUPS.map((group) => (
         <section key={group.heading} aria-label={group.heading}>
-          <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
             {group.heading}
           </h2>
           <dl className="mt-2 space-y-3">

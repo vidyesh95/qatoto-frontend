@@ -121,7 +121,7 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
   return (
     <div className="pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           {isBuyer ? "Your request" : "Request you can quote"}
         </p>
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">{rfq.title}</h1>
@@ -338,7 +338,7 @@ function ProductLineRow({ line }: { line: RfqProductLine }) {
       {/* A null `productId` is the ordinary case here and worth stating: it means the buyer is sourcing
           something that is not a listing, which is what an RFQ is for. */}
       {line.productId === null && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           Not an existing listing — quote against the specification.
         </p>
       )}
@@ -353,7 +353,7 @@ function ServiceLineRow({ line }: { line: RfqServiceLine }) {
       <p className="mt-1 text-sm leading-5 text-foreground">{line.requirementSummary}</p>
 
       {line.serviceOfferingId !== null && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           The buyer named a specific service for this line.
         </p>
       )}
@@ -361,7 +361,7 @@ function ServiceLineRow({ line }: { line: RfqServiceLine }) {
       {/* A service line may point at a product line WITHOUT being its child: cancelling the goods does
           not cancel the freight, and each engagement runs its own state machine. */}
       {line.linkedProductLineId !== null && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           Relates to one of the goods lines above.
         </p>
       )}
@@ -370,7 +370,7 @@ function ServiceLineRow({ line }: { line: RfqServiceLine }) {
         {line.requirementDetail === null ? (
           // NULL IS A REAL STATE: the buyer described this in prose and filled no typed form. The summary
           // above IS the requirement, so saying "no requirement" here would contradict the line itself.
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Described in words only — no structured requirement was filled in.
           </p>
         ) : (
@@ -671,7 +671,7 @@ function BuyerControls({
         // Opening is a VALIDATION GATE, not a flip: the server checks the deadline, the lines, document
         // ownership and every required service field. Saying so before the press means a refusal reads as
         // "something is missing" rather than "it broke".
-        <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
           Opening checks the deadline, the lines and the attachments. It can come back with things
           to fix.
           {rfq.visibility === "matched_providers" &&
@@ -680,7 +680,7 @@ function BuyerControls({
       )}
 
       {canClose && (
-        <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
           Closing stops new quotes. Quotes you already have stay valid until they expire.
         </p>
       )}

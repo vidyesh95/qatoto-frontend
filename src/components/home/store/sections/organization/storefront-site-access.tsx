@@ -28,10 +28,7 @@ export default function StorefrontSiteAccess({
     >
       <ul className="grid gap-2 lg:grid-cols-3">
         {orderedAccess.map((access) => (
-          <li
-            key={access.id}
-            className="flex items-start gap-3 rounded-lg bg-[#F2F4F4] px-3 py-2.5"
-          >
+          <li key={access.id} className="flex items-start gap-3 rounded-lg bg-muted px-3 py-2.5">
             <Image
               src={`/icons/${SITE_ACCESS_MODE_ICONS[access.accessMode]}`}
               width={22}
@@ -40,16 +37,16 @@ export default function StorefrontSiteAccess({
               className="mt-0.5 shrink-0 opacity-70"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm leading-5 font-medium text-[#191C1C]">
+              <p className="text-sm leading-5 font-medium text-foreground">
                 {SITE_ACCESS_MODE_LABELS[access.accessMode]}
               </p>
-              <p className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
+              <p className="text-xs leading-4 tracking-wider text-foreground">
                 {access.facilityName}
                 {access.distanceKm !== null &&
                   (access.distanceKm === 0 ? " · on site" : ` · ${access.distanceKm} km away`)}
               </p>
               {access.notes && (
-                <p className="mt-0.5 text-[11px] leading-4 text-[#6F7979]">{access.notes}</p>
+                <p className="mt-0.5 text-xs leading-4 text-outline-strong">{access.notes}</p>
               )}
             </div>
           </li>

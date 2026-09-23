@@ -62,7 +62,7 @@ export default async function PathwaysIndexPage({
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Pathways
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Sourcing sets rather than single listings — everything one job needs, priced per piece and
           added to your cart together.
         </p>
@@ -114,7 +114,7 @@ function PathwayCard({ pathway }: { pathway: StorePathwayCard }) {
   return (
     <Link
       href={`/store/pathways/${pathway.slug}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-[#CAC4D0]/60 transition-colors hover:border-[#2A76FD]"
+      className="group flex flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-blue-600"
     >
       {/* No image falls back to the accent tint — a real server-owned token mapped to classes on
           this side, never a class name from the API. */}
@@ -134,23 +134,23 @@ function PathwayCard({ pathway }: { pathway: StorePathwayCard }) {
 
       <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] leading-4 font-medium tracking-[0.4px] text-[#6F7979]">
+          <span className="text-xs leading-4 font-medium tracking-wider text-outline-strong">
             {pathway.slotCount} {pathway.slotCount === 1 ? "piece" : "pieces"}
           </span>
           {/* One model, two shapes. An anchored set's slots were RESOLVED from the relation graph
               against one product rather than typed by a merchandiser, and saying so tells the buyer
               why these pieces are here. */}
           {pathway.isAnchored && (
-            <span className="rounded bg-[#F2F4F4] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
               Built around one product
             </span>
           )}
         </div>
 
-        <p className="text-sm leading-5 font-medium text-[#191C1C]">{pathway.title}</p>
+        <p className="text-sm leading-5 font-medium text-foreground">{pathway.title}</p>
 
         {pathway.summary !== null && (
-          <p className="line-clamp-2 text-xs leading-4 text-[#6F7979]">{pathway.summary}</p>
+          <p className="line-clamp-2 text-xs leading-4 text-outline-strong">{pathway.summary}</p>
         )}
       </div>
     </Link>

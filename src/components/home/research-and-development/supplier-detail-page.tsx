@@ -20,7 +20,7 @@ import { callerRequestOptions } from "@/lib/server-http";
 // `documents_pending` is amber rather than red — a moderator asking for paperwork is a
 // step in progress, not a finding against the partner. Same mapping as the card.
 const VERIFICATION_STATE_BADGE_CLASS: Record<SupplierVerificationState, string> = {
-  verified: "bg-[#00696E]/10 text-[#00696E]",
+  verified: "bg-primary-imprint/10 text-primary-imprint",
   documents_pending: "bg-amber-100 text-amber-800",
   unverified: "bg-muted text-muted-foreground",
   suspended: "bg-red-100 text-red-800",
@@ -97,7 +97,7 @@ export default async function SupplierDetailPage({ supplierSlug }: { supplierSlu
       <header className="space-y-2">
         <Link
           href="/research-and-development/go-to-market#supplier-directory"
-          className="text-xs font-medium text-[#00696E]"
+          className="text-xs font-medium text-primary-imprint"
         >
           ← Manufacturing &amp; ODM partners
         </Link>
@@ -133,7 +133,7 @@ export default async function SupplierDetailPage({ supplierSlug }: { supplierSlu
             {supplier.capabilities.map((capability) => (
               <li
                 key={capability.id}
-                className="rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs"
+                className="rounded-full border border-outline-variant px-3 py-1.5 text-xs"
               >
                 {capability.displayLabel}
               </li>
@@ -150,7 +150,7 @@ export default async function SupplierDetailPage({ supplierSlug }: { supplierSlu
           href={supplier.websiteUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E]"
+          className="inline-flex items-center gap-2 rounded-full bg-primary-imprint/10 px-3 py-1.5 text-xs font-medium text-primary-imprint"
         >
           Visit their website →
         </a>

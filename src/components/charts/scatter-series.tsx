@@ -106,10 +106,10 @@ export function ScatterSeries({
         // A ring for a floored point, a filled dot otherwise; the selected one gets a halo
         // rather than a different colour, so selection reads at any palette.
         const appearanceClassName = isFloored
-          ? `border-2 border-[#00696E]/70 bg-transparent`
+          ? `border-2 border-primary-imprint/70 bg-transparent`
           : `${colorClassName} border border-white/60`;
         const selectionClassName = isSelected
-          ? "z-10 ring-2 ring-[#00696E] ring-offset-1 ring-offset-background opacity-100"
+          ? "z-10 ring-2 ring-primary-imprint ring-offset-1 ring-offset-background opacity-100"
           : "opacity-70";
 
         const className = `absolute rounded-full ${appearanceClassName} ${selectionClassName}`;
@@ -133,7 +133,7 @@ export function ScatterSeries({
               onSelect(point);
             }}
             style={positionStyle}
-            className={`${className} cursor-pointer transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+            className={`${className} cursor-pointer transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
           />
         );
       })}

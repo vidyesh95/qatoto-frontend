@@ -99,12 +99,12 @@ function renderCart(viewState: CartViewState) {
         <div className="px-4 pt-6 lg:px-6">
           <StatusPanel
             message={viewState.message}
-            className="border border-[#CAC4D0]/60 px-6 py-16"
+            className="border border-outline-variant/60 px-6 py-16"
             action={
               viewState.isSignInRequired ? (
                 <Link
                   href="/sign-in"
-                  className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                  className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
                 >
                   Sign in
                 </Link>
@@ -118,11 +118,11 @@ function renderCart(viewState: CartViewState) {
         <div className="px-4 pt-6 lg:px-6">
           <StatusPanel
             message="Your cart is empty."
-            className="border border-[#CAC4D0]/60 px-6 py-16"
+            className="border border-outline-variant/60 px-6 py-16"
             action={
               <Link
                 href="/store"
-                className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
               >
                 Browse the store
               </Link>
@@ -173,17 +173,19 @@ function CartBody({ cart }: { cart: CommerceCart }) {
 function CartTotals({ cart, canCheckOut }: { cart: CommerceCart; canCheckOut: boolean }) {
   return (
     <section aria-label="Cart totals" className="px-4 pt-6 lg:px-6">
-      <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+      <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
         {cart.currencyTotals.length === 0 ? (
-          <p className="text-sm leading-5 text-[#6F7979]">
+          <p className="text-sm leading-5 text-outline-strong">
             Nothing in this cart can be priced right now.
           </p>
         ) : (
           <dl className="space-y-1">
             {cart.currencyTotals.map((total) => (
               <div key={total.currency} className="flex items-baseline justify-between gap-4">
-                <dt className="text-xs leading-4 text-[#6F7979]">Subtotal, {total.currency}</dt>
-                <dd className="text-sm leading-5 font-medium text-[#191C1C]">
+                <dt className="text-xs leading-4 text-outline-strong">
+                  Subtotal, {total.currency}
+                </dt>
+                <dd className="text-sm leading-5 font-medium text-foreground">
                   {formatCentsLabel(total.totalInCents, total.currency)}
                 </dd>
               </div>
@@ -192,7 +194,7 @@ function CartTotals({ cart, canCheckOut }: { cart: CommerceCart; canCheckOut: bo
         )}
 
         {cart.currencyTotals.length > 1 && (
-          <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+          <p className="mt-2 text-xs leading-4 text-outline-strong">
             Separate subtotals, not a sum — these sellers price in different currencies and Qatoto
             does not convert between them. You will get one order per seller.
           </p>
@@ -201,16 +203,16 @@ function CartTotals({ cart, canCheckOut }: { cart: CommerceCart; canCheckOut: bo
         {/* Said before checkout rather than after, because these are the costs that surprise people.
             Nothing is charged for freight at all today, which is why it is listed among the things
             that are not included rather than shown as a zero line. */}
-        <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-2 text-xs leading-4 text-outline-strong">
           Taxes, duties, freight, insurance and any currency conversion are not included and are
           arranged separately.
         </p>
 
-        <div className="mt-3 border-t border-[#CAC4D0]/60 pt-3">
+        <div className="mt-3 border-t border-outline-variant/60 pt-3">
           {canCheckOut ? (
             <Link
               href="/checkout"
-              className="block rounded-full bg-[#00696E] px-5 py-2.5 text-center text-sm font-medium text-white"
+              className="block rounded-full bg-primary-imprint px-5 py-2.5 text-center text-sm font-medium text-primary-imprint-foreground"
             >
               Continue to checkout
             </Link>
@@ -222,11 +224,11 @@ function CartTotals({ cart, canCheckOut }: { cart: CommerceCart; canCheckOut: bo
               <button
                 type="button"
                 disabled
-                className="w-full rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+                className="w-full rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
               >
                 Continue to checkout
               </button>
-              <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+              <p className="mt-1.5 text-xs leading-4 text-outline-strong">
                 Every item has to be available before you can check out.
               </p>
             </>

@@ -35,13 +35,13 @@ export default function BlueprintStatReadout({
   readonly noun: string;
 }) {
   return (
-    <span className="flex w-full flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] px-2.5 py-1.5 text-sm font-medium text-[#041F21] select-none lg:w-24">
+    <span className="flex w-full flex-row items-center justify-center gap-2 rounded-full bg-primary px-2.5 py-1.5 text-sm font-medium text-foreground select-none lg:w-24">
       <Image
         src={`/icons/${icon}_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg`}
         alt=""
         width={18}
         height={18}
-        className="size-[18px] shrink-0"
+        className="size-4.5 shrink-0"
       />
       <span className="tabular-nums">
         <span aria-hidden="true">{formatCompactCountLabel(count)}</span>

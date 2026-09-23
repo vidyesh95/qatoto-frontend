@@ -52,7 +52,7 @@ export default function ClearWatchHistoryControl() {
           onClick={() => {
             setConfirmState({ status: "confirming" });
           }}
-          className="text-xs font-medium text-[#6F7979] hover:text-foreground"
+          className="text-xs font-medium text-outline-strong hover:text-foreground"
         >
           Clear all watch history
         </button>
@@ -61,14 +61,14 @@ export default function ClearWatchHistoryControl() {
     case "clearing":
       return (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-xs text-[#6F7979]">
+          <p className="text-xs text-outline-strong">
             Clear your whole watch history? This can’t be undone.
           </p>
           <button
             type="button"
             onClick={handleClearConfirmed}
             disabled={confirmState.status === "clearing"}
-            className="rounded-full bg-[#00696E] px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-full bg-primary-imprint px-3 py-1 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             {confirmState.status === "clearing" ? "Clearing…" : "Clear"}
           </button>
@@ -78,24 +78,24 @@ export default function ClearWatchHistoryControl() {
               setConfirmState({ status: "idle" });
             }}
             disabled={confirmState.status === "clearing"}
-            className="text-xs font-medium text-[#6F7979] hover:text-foreground disabled:opacity-50"
+            className="text-xs font-medium text-outline-strong hover:text-foreground disabled:opacity-50"
           >
             Cancel
           </button>
         </div>
       );
     case "cleared":
-      return <p className="text-xs text-[#6F7979]">Watch history cleared.</p>;
+      return <p className="text-xs text-outline-strong">Watch history cleared.</p>;
     case "failed":
       return (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-xs text-[#6F7979]">{confirmState.message}</p>
+          <p className="text-xs text-outline-strong">{confirmState.message}</p>
           <button
             type="button"
             onClick={() => {
               setConfirmState({ status: "confirming" });
             }}
-            className="text-xs font-medium text-[#00696E]"
+            className="text-xs font-medium text-primary-imprint"
           >
             Try again
           </button>

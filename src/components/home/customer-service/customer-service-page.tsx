@@ -44,7 +44,7 @@ export default function CustomerServicePage() {
       </section>
 
       <section aria-label="Your support cases" className="mt-8 px-4 lg:px-6">
-        <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Your support cases
         </h2>
         <div className="mt-2">

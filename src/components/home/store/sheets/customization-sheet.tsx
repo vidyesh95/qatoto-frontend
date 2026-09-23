@@ -31,7 +31,7 @@ import type { ProductCustomizationOption } from "@/lib/store/products.schemas";
 /** Small pill stating how many units unlock a customization. */
 function MinimumOrderBadge({ minimumOrderQuantity }: { minimumOrderQuantity: number }) {
   return (
-    <span className="rounded bg-[#D6E3FF] px-1.5 py-0.5 text-[11px] font-medium text-[#191C1C]">
+    <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-foreground">
       Min. {minimumOrderQuantity} units
     </span>
   );
@@ -39,7 +39,7 @@ function MinimumOrderBadge({ minimumOrderQuantity }: { minimumOrderQuantity: num
 
 function RequiredBadge() {
   return (
-    <span className="rounded bg-[#FFE3E1] px-1.5 py-0.5 text-[11px] font-medium text-[#8C1D18]">
+    <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-medium text-destructive">
       Required
     </span>
   );
@@ -48,7 +48,7 @@ function RequiredBadge() {
 function SlotHeading({ option }: { readonly option: ProductCustomizationOption }) {
   return (
     <div className="mb-1 flex flex-wrap items-center gap-2">
-      <p className="text-xs font-medium text-[#191C1C]">{option.label}</p>
+      <p className="text-xs font-medium text-foreground">{option.label}</p>
       {option.isRequired && <RequiredBadge />}
       {option.minimumOrderQuantity > 0 && (
         <MinimumOrderBadge minimumOrderQuantity={option.minimumOrderQuantity} />
@@ -78,7 +78,9 @@ function UploadField({
       <SlotHeading option={option} />
       <div
         className={`flex w-full items-center gap-3 rounded-lg border border-dashed px-3 py-3 ${
-          fileName === null ? "border-[#6F7979]" : "border-[#00696E] bg-[#00696E]/5"
+          fileName === null
+            ? "border-outline-strong"
+            : "border-primary-imprint bg-primary-imprint/5"
         }`}
       >
         <button
@@ -93,11 +95,11 @@ function UploadField({
             alt=""
           />
           <span className="flex-1">
-            <span className="block truncate text-xs font-medium text-[#191C1C]">
+            <span className="block truncate text-xs font-medium text-foreground">
               {fileName ?? `Upload ${option.label.toLowerCase()}`}
             </span>
             {acceptAttribute !== undefined && (
-              <span className="block text-[11px] text-[#6F7979]">
+              <span className="block text-xs text-outline-strong">
                 Accepted: {option.acceptedMediaTypes.join(", ")}
               </span>
             )}
@@ -157,8 +159,8 @@ function ChoiceField({
               onClick={() => onSelect(choiceValue)}
               className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                 isSelected
-                  ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
-                  : "border-[#CAC4D0] text-[#191C1C]"
+                  ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                  : "border-outline-variant text-foreground"
               }`}
             >
               {choiceValue}
@@ -194,7 +196,7 @@ export default function CustomizationSheet({
       onClose={onClose}
       footer={
         <div className="flex items-center gap-3">
-          <p className="flex-1 text-xs text-[#6F7979]">
+          <p className="flex-1 text-xs text-outline-strong">
             {unfilledRequiredCount > 0
               ? `${unfilledRequiredCount} required ${unfilledRequiredCount === 1 ? "option" : "options"} still to fill in`
               : "Applies to this order only"}
@@ -202,19 +204,19 @@ export default function CustomizationSheet({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-[#00696E] px-6 py-2 text-sm font-medium text-white"
+            className="rounded-full bg-primary-imprint px-6 py-2 text-sm font-medium text-primary-imprint-foreground"
           >
             Done
           </button>
         </div>
       }
     >
-      <p className="px-4 pb-2 text-xs text-[#6F7979]">
+      <p className="px-4 pb-2 text-xs text-outline-strong">
         What this seller lets you customize. Applied to every unit in the order.
       </p>
 
       {/* Said plainly rather than implied by a "Save" button that saves nothing. See the header. */}
-      <p className="mx-4 mb-3 rounded-lg bg-[#F2F4F4] px-3 py-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mx-4 mb-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
         Artwork files are checked for malware before they can be attached to an order, so uploads
         are not sent from here yet. Your choices are recorded for this order.
       </p>

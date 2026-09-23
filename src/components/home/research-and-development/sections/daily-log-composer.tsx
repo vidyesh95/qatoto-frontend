@@ -67,7 +67,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
       >
         Write today&apos;s log
       </button>
@@ -75,7 +75,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
       <form
         className="space-y-2"
         onSubmit={(submitEvent) => {
@@ -161,7 +161,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
           <button
             type="submit"
             disabled={logMutation.isPending}
-            className="cursor-pointer rounded-full border border-[#00696E]/40 px-3 py-1.5 text-xs font-medium text-[#00696E] disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
           >
             {draftLogId === null ? "Save as a draft" : "Save changes"}
           </button>
@@ -169,7 +169,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
       </form>
 
       {draftLogId !== null && !hasSubmitted && (
-        <div className="space-y-2 border-t border-[#CAC4D0]/40 pt-3">
+        <div className="space-y-2 border-t border-outline-variant/40 pt-3">
           <p className="text-xs text-muted-foreground">
             Submitting freezes this log, moves your streak and queues it for analysis. You cannot
             edit it afterwards.
@@ -184,7 +184,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
                 idempotencyKey: submitIdempotencyKey,
               })
             }
-            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             {logMutation.isPending ? "Submitting…" : "Submit it"}
           </button>
@@ -193,7 +193,7 @@ export default function DailyLogComposer({ projectSlug }: { projectSlug: string 
 
       {/* The 202 made visible: the log is filed, the reading of it has not happened. */}
       {hasSubmitted && draftQuery.data && (
-        <div className="space-y-1 border-t border-[#CAC4D0]/40 pt-3">
+        <div className="space-y-1 border-t border-outline-variant/40 pt-3">
           <MutationAcceptedNotice
             message={`Submitted. ${ANALYSIS_STATUS_MESSAGES[draftQuery.data.analysisStatus]}`}
           />

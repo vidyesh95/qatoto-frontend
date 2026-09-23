@@ -52,7 +52,7 @@ import {
   type ForumThreadDetail,
 } from "@/lib/store/forum.schemas";
 
-const PANEL_CLASS = "rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]";
+const PANEL_CLASS = "rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong";
 
 /**
  * A `<select>` value narrowed to the enum, by LOOKUP rather than by assertion.
@@ -66,10 +66,10 @@ function toReportReason(candidate: string): CommunityReportReason {
 }
 
 const PRIMARY_BUTTON_CLASS =
-  "rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
+  "rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90 disabled:opacity-50";
 
 const QUIET_BUTTON_CLASS =
-  "rounded-full px-3 py-1 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted disabled:opacity-50";
+  "rounded-full px-3 py-1 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted disabled:opacity-50";
 
 export default function ForumThreadConversation({ detail }: { detail: ForumThreadDetail }) {
   const { thread, replies } = detail;
@@ -81,14 +81,14 @@ export default function ForumThreadConversation({ detail }: { detail: ForumThrea
 
   return (
     <section className="px-4 pt-6 lg:px-6" aria-label="Replies">
-      <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">
+      <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">
         {replies.items.length === 0
           ? "No replies yet"
           : `${formatCountLabel(thread.replyCount)} ${thread.replyCount === 1 ? "reply" : "replies"}`}
       </h2>
 
       {replies.items.length === 0 ? (
-        <p className="text-sm leading-5 text-[#6F7979]">
+        <p className="text-sm leading-5 text-outline-strong">
           Nobody has answered this one. It is still open.
         </p>
       ) : (
@@ -141,10 +141,10 @@ function ReplyCard({
   return (
     <div
       className={`rounded-xl border px-4 py-3 ${
-        isAccepted ? "border-[#00696E]/50 bg-[#00696E]/5" : "border-[#CAC4D0]/60"
+        isAccepted ? "border-primary-imprint/50 bg-primary-imprint/5" : "border-outline-variant/60"
       }`}
     >
-      <p className="text-xs leading-4 text-[#6F7979]">
+      <p className="text-xs leading-4 text-outline-strong">
         {reply.authorDisplayName}
         {reply.authorOrganizationName === null
           ? " · posting as an individual"
@@ -152,7 +152,7 @@ function ReplyCard({
         {" · "}
         {formatIsoInstantLabel(reply.createdAt)}
       </p>
-      <p className="mt-1.5 text-sm leading-6 whitespace-pre-line text-[#191C1C]">{reply.body}</p>
+      <p className="mt-1.5 text-sm leading-6 whitespace-pre-line text-foreground">{reply.body}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <HelpfulControl reply={reply} />
@@ -182,11 +182,11 @@ function HelpfulControl({ reply }: { reply: ForumReply }) {
 
   if (reply.viewer === null) {
     return (
-      <span className="text-[11px] leading-4 text-[#6F7979]">
+      <span className="text-xs leading-4 text-outline-strong">
         {/* Zero renders as zero — see `ForumReplySchema`. */}
         {countLabel}
         {" · "}
-        <Link href="/sign-in" className="text-[#00696E] hover:underline">
+        <Link href="/sign-in" className="text-primary-imprint hover:underline">
           Sign in to endorse
         </Link>
       </span>
@@ -205,7 +205,7 @@ function HelpfulControl({ reply }: { reply: ForumReply }) {
         {/* Two positions and no third. Withdrawing an endorsement is not a downvote. */}
         {hasMarkedHelpful ? "Endorsed" : "Helpful"}
       </button>
-      <span className="text-[11px] leading-4 text-[#6F7979]">{countLabel}</span>
+      <span className="text-xs leading-4 text-outline-strong">{countLabel}</span>
       <MutationNotice
         result={setHelpful.data}
         fallbackMessage="That did not save. Try again."
@@ -298,7 +298,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
         );
       }}
     >
-      <label htmlFor="forum-reply-body" className="text-sm font-medium text-[#191C1C]">
+      <label htmlFor="forum-reply-body" className="text-sm font-medium text-foreground">
         Add a reply
       </label>
       <textarea
@@ -306,7 +306,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
         value={body}
         onChange={(event) => setBody(event.target.value)}
         rows={5}
-        className="mt-1.5 w-full rounded-xl border border-[#CAC4D0]/60 px-3 py-2 text-sm leading-6 text-[#191C1C] outline-none focus:border-[#00696E]"
+        className="mt-1.5 w-full rounded-xl border border-outline-variant/60 px-3 py-2 text-sm leading-6 text-foreground outline-none focus:border-primary-imprint"
         placeholder="Answer from what you have actually done. Say what you are unsure about."
       />
       <div className="mt-2 flex items-center gap-3">
@@ -314,7 +314,9 @@ function ReplyComposer({ threadId }: { threadId: string }) {
           Post reply
         </button>
         {hasPosted && (
-          <span className="text-xs leading-4 text-[#4A6364]">Posted. Thanks for answering.</span>
+          <span className="text-xs leading-4 text-muted-foreground">
+            Posted. Thanks for answering.
+          </span>
         )}
       </div>
       <MutationNotice
@@ -359,7 +361,7 @@ function ReportControl({
 
   if (hasReported) {
     return (
-      <span className="text-[11px] leading-4 text-[#6F7979]">
+      <span className="text-xs leading-4 text-outline-strong">
         Report received. A moderator will look at it.
       </span>
     );
@@ -369,7 +371,7 @@ function ReportControl({
     return (
       <button
         type="button"
-        className="text-[11px] leading-4 text-[#6F7979] hover:underline"
+        className="text-xs leading-4 text-outline-strong hover:underline"
         onClick={() => setIsOpen(true)}
       >
         {label}
@@ -379,7 +381,7 @@ function ReportControl({
 
   return (
     <form
-      className="mt-2 w-full rounded-xl border border-[#CAC4D0]/60 px-3 py-2"
+      className="mt-2 w-full rounded-xl border border-outline-variant/60 px-3 py-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (!isSubmittable) return;
@@ -394,14 +396,14 @@ function ReportControl({
         });
       }}
     >
-      <label htmlFor={`report-reason-${targetId}`} className="text-xs font-medium text-[#191C1C]">
+      <label htmlFor={`report-reason-${targetId}`} className="text-xs font-medium text-foreground">
         Why are you reporting this?
       </label>
       <select
         id={`report-reason-${targetId}`}
         value={reason}
         onChange={(event) => setReason(toReportReason(event.target.value))}
-        className="mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-xs text-[#191C1C]"
+        className="mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-xs text-foreground"
       >
         {COMMUNITY_REPORT_REASONS.map((reportReason) => (
           <option key={reportReason} value={reportReason}>
@@ -414,7 +416,7 @@ function ReportControl({
         value={note}
         onChange={(event) => setNote(event.target.value)}
         rows={2}
-        className="mt-2 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-xs leading-5 text-[#191C1C]"
+        className="mt-2 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-xs leading-5 text-foreground"
         placeholder={isNoteRequired ? "Required — say what is wrong." : "Optional context."}
       />
 
@@ -424,7 +426,7 @@ function ReportControl({
         </button>
         <button
           type="button"
-          className="text-[11px] leading-4 text-[#6F7979] hover:underline"
+          className="text-xs leading-4 text-outline-strong hover:underline"
           onClick={() => setIsOpen(false)}
         >
           Cancel

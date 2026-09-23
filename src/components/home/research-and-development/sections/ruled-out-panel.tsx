@@ -25,7 +25,7 @@ export default function RuledOutPanel({
   const excludedForNoImports = Math.max(0, catalogueTotal - rankedTotal);
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="space-y-1">
         <h2 className="text-sm font-medium text-foreground">Ruled out, and why</h2>
         <p className="text-sm text-muted-foreground">

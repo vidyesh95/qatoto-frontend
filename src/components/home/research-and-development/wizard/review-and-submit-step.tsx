@@ -25,10 +25,10 @@ export default function ReviewAndSubmitStep({ draft }: { draft: NewIdeaDraft }) 
   ];
 
   return (
-    <dl className="divide-y divide-border/50 rounded-2xl border border-[#CAC4D0]/60">
+    <dl className="divide-y divide-border/50 rounded-2xl border border-outline-variant/60">
       {reviewRows.map((reviewRow) => (
         <div key={reviewRow.label} className="flex flex-col gap-0.5 p-3">
-          <dt className="text-xs font-medium text-[#6F7979]">{reviewRow.label}</dt>
+          <dt className="text-xs font-medium text-outline-strong">{reviewRow.label}</dt>
           <dd className="text-sm">
             {reviewRow.value.trim() !== "" ? reviewRow.value : EMPTY_VALUE_PLACEHOLDER}
           </dd>

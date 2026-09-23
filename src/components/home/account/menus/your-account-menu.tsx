@@ -326,7 +326,7 @@ function AccountDetailRowBody({ row }: { row: AccountDetailRow }) {
         <span className="truncate text-xs text-muted-foreground">{row.value}</span>
       </span>
       {row.kind !== "copy" && row.badge ? (
-        <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
+        <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-primary-imprint">
           <Image
             src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt=""

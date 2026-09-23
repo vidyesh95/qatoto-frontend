@@ -69,7 +69,7 @@ export default function CaseStudyLikeButton({
 
   if (!isSignedIn) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#CCE8E9] px-2.5 py-1 text-xs font-medium text-[#041F21] select-none">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-foreground select-none">
         <Image
           src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           alt=""
@@ -92,8 +92,10 @@ export default function CaseStudyLikeButton({
         onClick={handleToggle}
         aria-pressed={isSet}
         disabled={like.isPending}
-        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default ${
-          isSet ? "bg-[#00696E] text-white" : "bg-[#CCE8E9] text-[#041F21] hover:bg-[#BCDEDF]"
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default ${
+          isSet
+            ? "bg-primary-imprint text-primary-imprint-foreground"
+            : "bg-primary text-foreground hover:bg-primary/80"
         }`}
       >
         <Image
@@ -112,7 +114,7 @@ export default function CaseStudyLikeButton({
         </span>
       </button>
       {refusal === null ? null : (
-        <output className="mt-1 block max-w-48 text-[11px] text-destructive">{refusal}</output>
+        <output className="mt-1 block max-w-48 text-xs text-destructive">{refusal}</output>
       )}
     </div>
   );

@@ -40,7 +40,7 @@ export function FieldShell({
     <label className="block">
       <span className={FIELD_LABEL_CLASS}>{label}</span>
       {hint !== undefined && (
-        <span className="block text-[11px] leading-4 text-muted-foreground">{hint}</span>
+        <span className="block text-xs leading-4 text-muted-foreground">{hint}</span>
       )}
       <span className="mt-1 block">{children}</span>
     </label>
@@ -194,7 +194,7 @@ export function ChipMultiSelectField<TValue extends string>({
     <div>
       <span className={FIELD_LABEL_CLASS}>{label}</span>
       {hint !== undefined && (
-        <span className="block text-[11px] leading-4 text-muted-foreground">{hint}</span>
+        <span className="block text-xs leading-4 text-muted-foreground">{hint}</span>
       )}
       <div className="mt-1 flex flex-wrap gap-2">
         {options.map((option) => {
@@ -268,7 +268,7 @@ export function TokenListField({
     <div>
       <span className={FIELD_LABEL_CLASS}>{label}</span>
       {hint !== undefined && (
-        <span className="block text-[11px] leading-4 text-muted-foreground">{hint}</span>
+        <span className="block text-xs leading-4 text-muted-foreground">{hint}</span>
       )}
 
       <div className="mt-1 flex gap-2">
@@ -314,7 +314,7 @@ export function TokenListField({
       )}
 
       {isAtLimit && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           That is the most this field accepts.
         </p>
       )}
@@ -352,7 +352,7 @@ export function TriStateBooleanField({
     <div>
       <span className={FIELD_LABEL_CLASS}>{label}</span>
       {hint !== undefined && (
-        <span className="block text-[11px] leading-4 text-muted-foreground">{hint}</span>
+        <span className="block text-xs leading-4 text-muted-foreground">{hint}</span>
       )}
       {/* A `fieldset` rather than `div role="group"` — the semantic element carries the grouping natively. */}
       <fieldset className="mt-1 flex flex-wrap gap-2">
@@ -405,7 +405,7 @@ export function CheckboxField({
       <span>
         <span className="block text-sm leading-5 text-foreground">{label}</span>
         {hint !== undefined && (
-          <span className="block text-[11px] leading-4 text-muted-foreground">{hint}</span>
+          <span className="block text-xs leading-4 text-muted-foreground">{hint}</span>
         )}
       </span>
     </label>

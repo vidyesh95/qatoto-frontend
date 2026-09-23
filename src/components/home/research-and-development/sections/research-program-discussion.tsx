@@ -94,7 +94,7 @@ export default function ResearchProgramDiscussion({
       {canPost ? (
         <form
           onSubmit={handleSubmit}
-          className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           {isTitled && (
             <input
@@ -103,7 +103,7 @@ export default function ResearchProgramDiscussion({
               onChange={(event) => setTitle(event.target.value)}
               maxLength={200}
               placeholder="A title for your post"
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           )}
 
@@ -114,7 +114,7 @@ export default function ResearchProgramDiscussion({
             maxLength={10_000}
             rows={3}
             placeholder={isTitled ? "What are you arguing?" : "What should we try?"}
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
 
           {/* No `branches.length > 0` gate: an empty tree is exactly when creating one matters. */}
@@ -134,7 +134,7 @@ export default function ResearchProgramDiscussion({
           <button
             type="submit"
             disabled={postMutation.isPending || !bodyText.trim() || (isTitled && !title.trim())}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
           >
             {postMutation.isPending ? "Posting…" : isTitled ? "Publish post" : "Post idea"}
           </button>

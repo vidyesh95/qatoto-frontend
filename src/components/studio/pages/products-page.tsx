@@ -136,7 +136,7 @@ export default function ProductsPage() {
                 <span className="flex items-center gap-6">
                   <Link
                     href={`/studio/products/create?id=${product.id}`}
-                    className="cursor-pointer text-sm text-[#1DBDC5] hover:underline"
+                    className="cursor-pointer text-sm text-primary-imprint hover:underline"
                   >
                     Edit
                   </Link>

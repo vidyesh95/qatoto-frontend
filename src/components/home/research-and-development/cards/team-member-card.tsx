@@ -27,7 +27,7 @@ const PROJECT_MEMBER_ROLE_LABELS: Record<ProjectMemberRole, string> = {
  */
 export default function TeamMemberCard({ member }: { member: ProjectTeamMember }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="flex items-center gap-3">
         {member.avatarImageUrl ? (
           <Image
@@ -46,7 +46,7 @@ export default function TeamMemberCard({ member }: { member: ProjectTeamMember }
           <p className="flex items-center gap-2 font-semibold">
             <span className="truncate">{member.name}</span>
             {member.isFounder && (
-              <span className="shrink-0 rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+              <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                 Founder
               </span>
             )}

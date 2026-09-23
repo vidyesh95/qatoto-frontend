@@ -63,7 +63,7 @@ export default function NewProgramWizardPage() {
   if (submittedSlugTitle !== null) {
     return (
       <div className="space-y-6 px-4 pt-6 pb-6 lg:px-6">
-        <div className="max-w-2xl space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-6">
+        <div className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-6">
           <h1 className="text-xl font-medium text-foreground lg:text-2xl">Submitted for review</h1>
           {/*
             Says the whole truth. The programme exists, it is not public, and nobody — including
@@ -85,7 +85,7 @@ export default function NewProgramWizardPage() {
           <div className="flex flex-wrap gap-2 pt-2">
             <Link
               href="/research-and-development/programs"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C]"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep"
             >
               Back to programmes
             </Link>
@@ -131,7 +131,7 @@ export default function NewProgramWizardPage() {
             minLength={3}
             maxLength={120}
             placeholder="Project Immortal"
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
           <span className="text-xs text-muted-foreground">
             {/* The slug is server-derived and unwritable afterwards, so this is worth saying now. */}
@@ -148,7 +148,7 @@ export default function NewProgramWizardPage() {
             minLength={3}
             maxLength={200}
             placeholder="Open research toward extending healthy human life"
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
         </label>
 
@@ -162,14 +162,14 @@ export default function NewProgramWizardPage() {
             maxLength={4000}
             rows={6}
             placeholder="What question is this programme trying to answer, and how will contributors know whether it is working?"
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
           <span className="text-xs text-muted-foreground">
             {missionStatement.trim().length} / 4000 · at least 20 characters
           </span>
         </label>
 
-        <fieldset className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <fieldset className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
           <legend className="px-1 text-sm font-medium">Sketch the first branches (optional)</legend>
           <p className="text-xs text-muted-foreground">
             The questions the programme starts from. You can add these after it is published —
@@ -182,7 +182,7 @@ export default function NewProgramWizardPage() {
                 onChange={(event) => updateSeedBranch(index, { title: event.target.value })}
                 maxLength={120}
                 placeholder="Branch title"
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
               <textarea
                 value={branch.summary}
@@ -190,14 +190,14 @@ export default function NewProgramWizardPage() {
                 maxLength={2000}
                 rows={2}
                 placeholder="What this branch is asking"
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
             </div>
           ))}
           <button
             type="button"
             onClick={() => setSeedBranches((branches) => [...branches, EMPTY_SEED_BRANCH])}
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition-colors hover:bg-muted"
+            className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs transition-colors hover:bg-muted"
           >
             Add another branch
           </button>
@@ -213,7 +213,7 @@ export default function NewProgramWizardPage() {
         <button
           type="submit"
           disabled={createMutation.isPending || !isSubmittable}
-          className="cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
         >
           {createMutation.isPending ? "Submitting…" : "Submit for review"}
         </button>

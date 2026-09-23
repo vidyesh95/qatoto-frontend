@@ -100,7 +100,7 @@ export default function StaffRolePage() {
     return (
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Staff</h1>
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Managing roles needs the admin role. Your role is{" "}
           {ownStaffContextQuery.data?.platformRole ?? "none"}.
         </output>
@@ -135,20 +135,20 @@ export default function StaffRolePage() {
               value={emailDraft}
               onChange={(changeEvent) => setEmailDraft(changeEvent.target.value)}
               placeholder="someone@example.com"
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
           <button
             type="submit"
             disabled={emailDraft.trim() === "" || subjectQuery.isFetching}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
           >
             {subjectQuery.isFetching ? "Looking up…" : "Look up"}
           </button>
         </form>
 
         {subject !== undefined && (
-          <div className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+          <div className="space-y-4 rounded-2xl border border-outline-variant/60 bg-card p-4">
             <div className="space-y-0.5">
               <p className="text-sm font-medium">{subject.name}</p>
               <p className="text-xs text-muted-foreground">{subject.email}</p>
@@ -158,7 +158,7 @@ export default function StaffRolePage() {
             </div>
 
             {isSubjectSelf ? (
-              <output className="block rounded-xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+              <output className="block rounded-xl border border-outline-variant/60 bg-muted/40 p-3 text-xs text-muted-foreground">
                 This is your own account. You cannot change your own role — ask another admin.
               </output>
             ) : (
@@ -210,7 +210,7 @@ export default function StaffRolePage() {
                     type="button"
                     onClick={handleProposeClick}
                     disabled={selectedRole === null || proposeMutation.isPending}
-                    className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {proposeMutation.isPending ? "Proposing…" : "Propose"}
                   </button>
@@ -244,7 +244,7 @@ export default function StaffRolePage() {
               return (
                 <li
                   key={proposal.proposalId}
-                  className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+                  className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
                 >
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium">
@@ -271,7 +271,7 @@ export default function StaffRolePage() {
                       onClick={() =>
                         countersignMutation.mutate({ proposalId: proposal.proposalId })
                       }
-                      className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Countersign
                     </button>
@@ -279,17 +279,17 @@ export default function StaffRolePage() {
                       type="button"
                       disabled={cancelMutation.isPending}
                       onClick={() => cancelMutation.mutate(proposal.proposalId)}
-                      className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                      className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Withdraw
                     </button>
                     {isOwnProposal && (
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         You proposed this, so another admin has to countersign it.
                       </span>
                     )}
                     {isAboutSelf && !isOwnProposal && (
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         This is about your own account.
                       </span>
                     )}

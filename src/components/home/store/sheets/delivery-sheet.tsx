@@ -75,7 +75,7 @@ export default function DeliverySheet({
     return (
       <ModalSheet title="How this ships" onClose={onClose}>
         <div className="px-4 pb-6">
-          <p className="text-sm leading-5 text-[#6F7979]">
+          <p className="text-sm leading-5 text-outline-strong">
             This seller hasn&apos;t published a dispatch country, so the route can&apos;t be worked
             out. Shipping has to be arranged with the seller directly.
           </p>
@@ -106,7 +106,7 @@ export default function DeliverySheet({
         {/* THE PRICED PATH, and today the rare one. Totals are the server's, never a reduce. */}
         {journeys.length > 0 && (
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium text-[#191C1C]">Priced end to end</h3>
+            <h3 className="text-sm font-medium text-foreground">Priced end to end</h3>
             {journeys.map((journey) => (
               <JourneyCard
                 key={`${journey.currency}-${journey.primaryMode}`}
@@ -125,8 +125,8 @@ export default function DeliverySheet({
             leg of the route, not a rounding. */}
         {partialJourneys.length > 0 && (
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium text-[#191C1C]">Priced as far as rates exist</h3>
-            <p className="text-xs leading-4 text-[#6F7979]">
+            <h3 className="text-sm font-medium text-foreground">Priced as far as rates exist</h3>
+            <p className="text-xs leading-4 text-outline-strong">
               {excludedLegsLabel === null
                 ? "This covers only part of the route, so it is not a delivered price."
                 : `This is not a delivered price — ${excludedLegsLabel} is not included, and you arrange that part yourself.`}
@@ -144,8 +144,8 @@ export default function DeliverySheet({
 
         {/* WHY NOTHING PRICED END TO END. Named, never defaulted. */}
         {unpriceableReasons.length > 0 && (
-          <section className="flex flex-col gap-1.5 rounded-lg bg-[#F5F5F5] p-3">
-            <h3 className="text-sm font-medium text-[#191C1C]">
+          <section className="flex flex-col gap-1.5 rounded-lg bg-muted p-3">
+            <h3 className="text-sm font-medium text-foreground">
               No end-to-end price for this route
             </h3>
             <ul className="flex flex-col gap-1">
@@ -156,7 +156,7 @@ export default function DeliverySheet({
                       ? `${reason.kind}-${reason.legSequence}`
                       : reason.kind
                   }
-                  className="text-xs leading-4 text-[#6F7979]"
+                  className="text-xs leading-4 text-outline-strong"
                 >
                   {describeUnpriceableReason(reason, legs)}
                 </li>
@@ -166,7 +166,7 @@ export default function DeliverySheet({
         )}
 
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-medium text-[#191C1C]">
+          <h3 className="text-sm font-medium text-foreground">
             {legs.length === 1 ? "The route" : "The route, leg by leg"}
           </h3>
           {legs.map((leg) => (
@@ -186,7 +186,7 @@ export default function DeliverySheet({
 
         <QuotableProviders providers={quotableProviders} />
 
-        <p className="text-[11px] leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           Qatoto doesn&apos;t sell freight. Every price above is a named forwarder&apos;s, and you
           contract with them directly. No delivery date is implied.
         </p>
@@ -217,16 +217,16 @@ function JourneyCard({
   const legPlural = legCount === 1 ? "" : "s";
 
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3">
+    <div className="flex flex-col gap-1 rounded-lg border border-outline-variant/60 p-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium text-[#191C1C]">
+        <span className="text-xs font-medium text-foreground">
           {FREIGHT_TRANSPORT_MODE_LABELS[journey.primaryMode]}
         </span>
-        <span className="text-sm font-medium text-[#191C1C]">
+        <span className="text-sm font-medium text-foreground">
           {formatCentsLabel(journey.totalInCents, journey.currency)}
         </span>
       </div>
-      <span className="text-[11px] leading-4 text-[#6F7979]">
+      <span className="text-xs leading-4 text-outline-strong">
         {coverage === "end_to_end"
           ? `${journey.transitDaysMin}–${journey.transitDaysMax} days in transit, across ${legCount} leg${legPlural}`
           : `${journey.transitDaysMin}–${journey.transitDaysMax} days in transit on the ${legCount} priced leg${legPlural}`}
@@ -234,7 +234,7 @@ function JourneyCard({
       {/* Per leg, because two forwarders' divisors legitimately disagree on one journey. */}
       <ul className="mt-1 flex flex-col gap-0.5">
         {journey.legSelections.map((legSelection) => (
-          <li key={legSelection.legSequence} className="text-[11px] leading-4 text-[#6F7979]">
+          <li key={legSelection.legSequence} className="text-xs leading-4 text-outline-strong">
             {/* Named by KIND, never by `legSequence` — that is zero-indexed on the wire,
                 and "Leg 0" shows a buyer an array index. */}
             {legLabelForSequence(legs, legSelection.legSequence)}:{" "}
@@ -256,19 +256,19 @@ function RouteSummary({ lanePlan }: { readonly lanePlan: FreightLanePlan }) {
   const { origin, destination, consignment } = lanePlan;
 
   return (
-    <section className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3">
-      <span className="text-xs font-medium text-[#191C1C]">
+    <section className="flex flex-col gap-1 rounded-lg border border-outline-variant/60 p-3">
+      <span className="text-xs font-medium text-foreground">
         {/* Localities are LABELS. They render; they select no rate card. */}
         {formatPlaceLabel(origin.countryCode, origin.locality)} →{" "}
         {formatPlaceLabel(destination.countryCode, destination.locality)}
       </span>
       {consignment.hasIncompletePackageData ? (
-        <span className="text-[11px] leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           This seller hasn&apos;t published full package dimensions, so this consignment can&apos;t
           be measured for freight.
         </span>
       ) : (
-        <span className="text-[11px] leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           {consignment.packageCount === null
             ? "Package count not declared"
             : `${consignment.packageCount} package${consignment.packageCount === 1 ? "" : "s"}`}
@@ -298,12 +298,12 @@ function LegPanel({
   readonly onSelectOption: (rateCardId: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-[#CAC4D0]/60 p-3">
+    <div className="flex flex-col gap-2 rounded-lg border border-outline-variant/60 p-3">
       <div className="flex flex-col gap-0.5">
-        <span className="text-xs font-medium text-[#191C1C]">
+        <span className="text-xs font-medium text-foreground">
           {FREIGHT_LEG_KIND_LABELS[leg.kind]}
         </span>
-        <span className="text-[11px] leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           {formatPlaceLabel(leg.originCountryCode, leg.originLocality)} →{" "}
           {formatPlaceLabel(leg.destinationCountryCode, leg.destinationLocality)}
         </span>
@@ -323,13 +323,15 @@ function LegPanel({
             ))}
           </ul>
           {selectedRateCardId === null && (
-            <p className="text-[11px] leading-4 text-[#6F7979]">No mode chosen for this leg yet.</p>
+            <p className="text-xs leading-4 text-outline-strong">
+              No mode chosen for this leg yet.
+            </p>
           )}
         </>
       ) : (
         <ul className="flex flex-col gap-1">
           {leg.unavailableReasons.map((reason) => (
-            <li key={reason} className="text-xs leading-4 text-[#6F7979]">
+            <li key={reason} className="text-xs leading-4 text-outline-strong">
               {FREIGHT_UNAVAILABLE_REASON_LABELS[reason]}
             </li>
           ))}
@@ -363,7 +365,7 @@ function ModeOption({
       onClick={onSelect}
       aria-pressed={isSelected}
       className={`flex w-full flex-col gap-1 rounded-lg border px-3 py-2.5 text-left ${
-        isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
+        isSelected ? "border-primary-imprint bg-primary-imprint/5" : "border-outline-variant/60"
       }`}
     >
       <span className="flex items-center gap-2">
@@ -374,23 +376,23 @@ function ModeOption({
           alt=""
         />
         <span className="flex-1">
-          <span className="block text-xs font-medium text-[#191C1C]">
+          <span className="block text-xs font-medium text-foreground">
             {FREIGHT_TRANSPORT_MODE_LABELS[option.mode]}
           </span>
-          <span className="block text-[11px] text-[#6F7979]">
+          <span className="block text-xs text-outline-strong">
             {option.transitDaysMin}–{option.transitDaysMax} days
           </span>
         </span>
-        <span className="text-xs font-medium text-[#191C1C]">
+        <span className="text-xs font-medium text-foreground">
           {formatCentsLabel(providerQuote.priceInCents, providerQuote.currency)}
         </span>
       </span>
-      <span className="block text-[11px] leading-4 text-[#6F7979]">
+      <span className="block text-xs leading-4 text-outline-strong">
         {providerQuote.sourceForwarderName} ·{" "}
         {CHARGEABLE_WEIGHT_BASIS_LABELS[option.chargeableWeightBasis]} (
         {formatGramsLabel(option.chargeableWeightGrams)})
       </span>
-      <span className="block text-[11px] leading-4 text-[#6F7979]">
+      <span className="block text-xs leading-4 text-outline-strong">
         Subject to re-measurement at pickup.
         <ExpiryNote validUntil={providerQuote.validUntil} isInline />
       </span>
@@ -422,15 +424,15 @@ function QuotableProviders({
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-medium text-[#191C1C]">Forwarders who sell this route</h3>
+      <h3 className="text-sm font-medium text-foreground">Forwarders who sell this route</h3>
       <ul className="flex flex-col gap-1">
         {uniqueProviders.map((provider) => (
-          <li key={provider.providerOrganizationId} className="text-xs leading-4 text-[#191C1C]">
+          <li key={provider.providerOrganizationId} className="text-xs leading-4 text-foreground">
             {provider.sourceForwarderName}
           </li>
         ))}
       </ul>
-      <Link href="/store/rfqs/new" className="flex items-center gap-2 text-xs text-[#00696E]">
+      <Link href="/store/rfqs/new" className="flex items-center gap-2 text-xs text-primary-imprint">
         <span className="flex-1">Ask them for a quote</span>
         <Image
           src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -454,7 +456,7 @@ function ExpiryNote({
   if (validUntil === null) return null;
   const text = ` Quoted rate valid until ${formatIsoDayLabel(validUntil)}.`;
   if (isInline) return <>{text}</>;
-  return <span className="text-[11px] leading-4 text-[#6F7979]">{text.trim()}</span>;
+  return <span className="text-xs leading-4 text-outline-strong">{text.trim()}</span>;
 }
 
 /**

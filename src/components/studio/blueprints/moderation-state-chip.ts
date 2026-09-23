@@ -25,7 +25,7 @@ import {
 export const MODERATION_STATE_CHIP_CLASS: Record<BlueprintModerationState, string> = {
   draft: "border-border bg-card text-muted-foreground",
   pending_review: "border-border bg-card text-foreground",
-  published: "border-transparent bg-[#00696E] text-white",
+  published: "border-transparent bg-primary-imprint text-primary-imprint-foreground",
   rejected: "border-destructive/40 bg-destructive/10 text-destructive",
   flagged: "border-destructive/40 bg-destructive/10 text-destructive",
   quarantined: "border-destructive/40 bg-destructive/10 text-destructive",

@@ -45,7 +45,7 @@ export default function BlueprintCommentComposer({
 
   if (!isSignedIn) {
     return (
-      <p className="mt-4 rounded-md border border-[#CAC4D0]/60 bg-black/[0.02] px-3 py-2.5 text-sm text-muted-foreground">
+      <p className="mt-4 rounded-md border border-outline-variant/60 bg-black/[0.02] px-3 py-2.5 text-sm text-muted-foreground">
         Sign in to join the discussion.
       </p>
     );
@@ -82,7 +82,7 @@ export default function BlueprintCommentComposer({
         placeholder={placeholder}
         rows={3}
         disabled={isPending}
-        className="w-full resize-y rounded-md border border-[#CAC4D0]/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:opacity-60"
+        className="w-full resize-y rounded-md border border-outline-variant/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:opacity-60"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <output className={`text-xs ${isTooLong ? "text-destructive" : "text-muted-foreground"}`}>
@@ -102,7 +102,7 @@ export default function BlueprintCommentComposer({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="cursor-pointer rounded-md bg-[#00696E] px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-primary-imprint px-3 py-1.5 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default disabled:opacity-50"
           >
             {isPending ? "Posting…" : submitLabel}
           </button>

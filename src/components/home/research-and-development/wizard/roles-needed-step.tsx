@@ -39,7 +39,7 @@ export default function RolesNeededStep({ draft, onDraftChange }: NewIdeaStepPro
                 onClick={() => toggleRoleNeeded(roleOption)}
                 className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   isRoleSelected
-                    ? "bg-[#00696E] text-white"
+                    ? "bg-primary-imprint text-primary-imprint-foreground"
                     : "bg-muted text-foreground hover:bg-muted/70"
                 }`}
               >

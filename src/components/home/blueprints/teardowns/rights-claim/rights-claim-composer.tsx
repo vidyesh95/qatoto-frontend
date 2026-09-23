@@ -206,7 +206,7 @@ export default function RightsClaimComposer({
 
   return (
     <div className="max-w-2xl">
-      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+      <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">
         Report an IP concern
       </p>
       <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">
@@ -216,7 +216,7 @@ export default function RightsClaimComposer({
         About{" "}
         <Link
           href={teardownHref}
-          className="font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           {teardown.title}
         </Link>
@@ -257,7 +257,7 @@ export default function RightsClaimComposer({
                     value={claimKind}
                     checked={formState.claimKind === claimKind}
                     onChange={() => applyFormPatch({ claimKind })}
-                    className="mt-0.5 size-4 shrink-0 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="mt-0.5 size-4 shrink-0 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   />
                   <span className="text-sm font-medium text-foreground">
                     {RIGHTS_CLAIM_KIND_LABELS[claimKind]}
@@ -371,7 +371,7 @@ export default function RightsClaimComposer({
           type="button"
           onClick={handlePrepareClick}
           disabled={prepareBlockedReason !== null}
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
         >
           Write my notice
         </button>

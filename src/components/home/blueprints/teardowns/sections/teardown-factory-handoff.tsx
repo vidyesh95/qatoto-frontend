@@ -36,13 +36,13 @@ export default function TeardownFactoryHandoff() {
   return (
     <section className="mt-8 max-w-2xl">
       <h2 className="text-sm font-medium text-foreground">Getting it made</h2>
-      <p className="mt-2 text-sm leading-6 text-[#6F7979]">
+      <p className="mt-2 text-sm leading-6 text-outline-strong">
         Qatoto lists factories by capability and certification and carries an inquiry to them.
         Nothing here is a quote, and a factory will ask for your own files.
       </p>
       <Link
         href="/store/factories"
-        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       >
         Browse the factory directory
         <span aria-hidden="true">&rarr;</span>

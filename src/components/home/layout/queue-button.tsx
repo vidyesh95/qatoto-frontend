@@ -91,7 +91,7 @@ export default function QueueButton() {
           width={24}
           height={24}
         />
-        <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-white">
+        <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-xs font-medium text-white">
           {entries.length}
         </span>
       </button>
@@ -146,7 +146,7 @@ export default function QueueButton() {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="line-clamp-2 text-xs text-foreground">{entry.title}</span>
-                      <span className="block truncate text-[11px] text-muted-foreground">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {entry.channelName}
                       </span>
                     </span>
@@ -173,7 +173,7 @@ export default function QueueButton() {
               `queue-context.tsx` — and a list that silently empties on refresh reads as a
               bug. One line here is the whole fix.
             */}
-            <p className="shrink-0 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+            <p className="shrink-0 border-t border-border px-4 py-2 text-xs text-muted-foreground">
               Your queue is for this tab only and clears when you close it.
             </p>
           </div>

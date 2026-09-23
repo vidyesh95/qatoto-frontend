@@ -9,8 +9,8 @@ import { ROLE_COMMITMENT_LABELS, TALENT_AVAILABILITY_LABELS } from "@/lib/rnd/la
 import type { TalentAvailability, TalentProfile } from "@/lib/rnd/discovery.schemas";
 
 const AVAILABILITY_PILL_CLASSES: Record<TalentAvailability, string> = {
-  open_to_work: "bg-[#00696E]/10 text-[#00696E]",
-  open_to_offers: "bg-[#D6E3FF] text-[#191C1C]",
+  open_to_work: "bg-primary-imprint/10 text-primary-imprint",
+  open_to_offers: "bg-secondary text-foreground",
   unavailable: "bg-muted text-muted-foreground",
 };
 
@@ -41,7 +41,7 @@ export default function TalentProfileCard({ profile }: { profile: TalentProfile 
   ].filter((figure): figure is string => figure !== null);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="flex items-center gap-3">
         <Image
           src={profile.avatarImageUrl ?? FALLBACK_AVATAR_IMAGE_SRC}

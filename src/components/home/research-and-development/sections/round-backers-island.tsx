@@ -62,7 +62,7 @@ export default function RoundBackersIsland({
       <button
         type="button"
         onClick={() => setIsListOpen(true)}
-        className="cursor-pointer text-xs font-medium text-[#00696E] underline"
+        className="cursor-pointer text-xs font-medium text-primary-imprint underline"
       >
         Who backed this round?
       </button>

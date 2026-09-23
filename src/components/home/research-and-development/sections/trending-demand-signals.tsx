@@ -47,7 +47,7 @@ export default function TrendingDemandSignals({ signals }: { signals: DemandSign
             </p>
           )}
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-[#CAC4D0]/60">
+        <div className="overflow-x-auto rounded-2xl border border-outline-variant/60">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground uppercase">
@@ -72,7 +72,7 @@ export default function TrendingDemandSignals({ signals }: { signals: DemandSign
                 return (
                   <tr
                     key={`${signal.category.slug}-${signal.region.slug}`}
-                    className="border-t border-[#CAC4D0]/60"
+                    className="border-t border-outline-variant/60"
                   >
                     <td className="px-4 py-3 font-medium">#{signal.rank}</td>
                     <td className="px-4 py-3">{signal.category.displayLabel}</td>

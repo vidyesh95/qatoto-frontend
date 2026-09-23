@@ -120,7 +120,7 @@ export default async function FactoryDirectoryPage({
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Factories worldwide
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           ODM and OEM manufacturers, by what they make and how small an order they will take. Write
           to any of them directly — none requires an order on Qatoto first.
         </p>
@@ -201,11 +201,11 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
   return (
     <Link
       href={`/store/factories/${factory.slug}`}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <div className="flex items-start gap-3">
         {factory.logoUrl === null ? (
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-sm font-medium text-[#00696E]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-sm font-medium text-primary-imprint">
             {factory.displayName.slice(0, 2).toUpperCase()}
           </span>
         ) : (
@@ -219,22 +219,22 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5 font-medium text-[#191C1C]">{factory.displayName}</p>
-          <p className="text-xs leading-4 text-[#6F7979]">
+          <p className="text-sm leading-5 font-medium text-foreground">{factory.displayName}</p>
+          <p className="text-xs leading-4 text-outline-strong">
             {countryLabelFromCode(factory.countryCode)}
           </p>
         </div>
 
         {/* Not taking inquiries is worth saying; taking them is the default and is not. */}
         {!factory.acceptingInquiries && (
-          <span className="shrink-0 rounded bg-[#F2F4F4] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#6F7979]">
+          <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs leading-4 font-medium text-outline-strong">
             Not taking inquiries
           </span>
         )}
       </div>
 
       {factory.publicSummary !== null && (
-        <p className="mt-2 line-clamp-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-2 line-clamp-2 text-xs leading-4 text-outline-strong">
           {factory.publicSummary}
         </p>
       )}
@@ -244,7 +244,7 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
           {factory.capabilityKinds.map((capabilityKind) => (
             <li
               key={capabilityKind}
-              className="rounded-full bg-[#D6E3FF] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]"
+              className="rounded-full bg-secondary px-2 py-0.5 text-xs leading-4 font-medium text-primary-imprint"
             >
               {FACTORY_CAPABILITY_SHORT_LABELS[capabilityKind]}
             </li>
@@ -252,9 +252,9 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
         </ul>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] leading-4">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-4">
         {/* Says WHAT WAS CHECKED. Never "verified factory" — see the file header. */}
-        <span className="text-[#00696E]">
+        <span className="text-primary-imprint">
           {FACTORY_VERIFICATION_LABELS[factory.verificationState]}
         </span>
 
@@ -262,26 +262,26 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
             minimum anybody can act on. */}
         {factory.minimumOrderQuantity !== null &&
           factory.minimumOrderQuantityUnitLabel !== null && (
-            <span className="text-[#191C1C]">
+            <span className="text-foreground">
               from {formatCountLabel(factory.minimumOrderQuantity)}{" "}
               {factory.minimumOrderQuantityUnitLabel}
             </span>
           )}
 
-        {leadTimeLabel !== null && <span className="text-[#6F7979]">{leadTimeLabel}</span>}
+        {leadTimeLabel !== null && <span className="text-outline-strong">{leadTimeLabel}</span>}
 
         {/* A rate of `null` means BELOW THE SAMPLE THRESHOLD, so the sample size is stated instead
             of a percentage. Printing 0% would publish a failure this factory never earned; printing
             nothing at all would hide that it has delivered work. */}
         {fulfillmentMetrics.onTimeShipmentRate === null ? (
           fulfillmentMetrics.completedOrderCount > 0 && (
-            <span className="text-[#6F7979]">
+            <span className="text-outline-strong">
               {formatCountLabel(fulfillmentMetrics.completedOrderCount)} completed · not enough data
               for an on-time rate
             </span>
           )
         ) : (
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             {formatPercentageLabel(fulfillmentMetrics.onTimeShipmentRate)} on time across{" "}
             {formatCountLabel(fulfillmentMetrics.onTimeSampleSize)} orders
           </span>
@@ -289,7 +289,7 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
       </div>
 
       {factory.certifications.length > 0 && (
-        <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1.5 text-xs leading-4 text-outline-strong">
           {/* "Holds" and not "certified": this read carries no validity window, so the page cannot
               claim any of these is current. The detail page can, and does. */}
           Holds{" "}

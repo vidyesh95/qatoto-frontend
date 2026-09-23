@@ -134,8 +134,8 @@ export default function SquareImagePicker({
             isReady
               ? "border-border bg-muted"
               : isDraggingOver
-                ? "border-dashed border-[#00696E] bg-muted/60"
-                : "border-dashed border-[#CAC4D0] bg-card"
+                ? "border-dashed border-primary-imprint bg-muted/60"
+                : "border-dashed border-outline-variant bg-card"
           }`}
         >
           {pickState.status === "ready" ? (
@@ -169,7 +169,7 @@ export default function SquareImagePicker({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             >
               {isReady ? "Choose another" : "Choose image"}
             </button>

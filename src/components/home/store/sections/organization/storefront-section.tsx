@@ -18,8 +18,8 @@ const ATTRIBUTION_COPY: Record<SectionAttribution, string> = {
 };
 
 const ATTRIBUTION_CHIP_CLASS: Record<SectionAttribution, string> = {
-  measured: "bg-[#D6E3FF] text-[#00696E]",
-  declared: "bg-[#F2F4F4] text-[#6F7979]",
+  measured: "bg-secondary text-primary-imprint",
+  declared: "bg-muted text-outline-strong",
 };
 
 export default function StorefrontSection({
@@ -36,11 +36,11 @@ export default function StorefrontSection({
   return (
     <section className="px-4 py-4 lg:px-6">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <h2 className="text-base leading-6 font-medium tracking-[0.15px] text-[#191C1C] xl:text-lg">
+        <h2 className="text-base leading-6 font-medium tracking-normal text-foreground xl:text-lg">
           {title}
         </h2>
         <span
-          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] ${ATTRIBUTION_CHIP_CLASS[attribution]}`}
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs leading-4 font-medium tracking-wider ${ATTRIBUTION_CHIP_CLASS[attribution]}`}
         >
           {attribution === "measured" && (
             <Image
@@ -55,7 +55,7 @@ export default function StorefrontSection({
       </div>
 
       {description && (
-        <p className="mt-1 text-xs leading-4 tracking-[0.4px] text-[#6F7979]">{description}</p>
+        <p className="mt-1 text-xs leading-4 tracking-wider text-outline-strong">{description}</p>
       )}
 
       <div className="mt-3">{children}</div>
@@ -67,7 +67,7 @@ export default function StorefrontSection({
 export function StorefrontDivider() {
   return (
     <div className="px-4 lg:px-6">
-      <div className="h-px bg-[#CAC4D0]/60" />
+      <div className="h-px bg-outline-variant/60" />
     </div>
   );
 }
@@ -80,7 +80,7 @@ export function StorefrontDivider() {
  */
 export function UnbackedFieldNote({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-3 flex items-start gap-1.5 rounded bg-[#F2F4F4] px-2 py-1.5 text-[11px] leading-4 text-[#6F7979]">
+    <p className="mt-3 flex items-start gap-1.5 rounded bg-muted px-2 py-1.5 text-xs leading-4 text-outline-strong">
       <Image
         src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
         width={14}

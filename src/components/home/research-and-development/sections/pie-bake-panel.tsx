@@ -77,7 +77,7 @@ export default function PieBakePanel({
   if (pieBakeState.status === "ready") {
     const pieBake = pieBakeState.item;
     return (
-      <section className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <section className="space-y-2 rounded-2xl border border-outline-variant/60 p-4">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">The pie is baked</h3>
         <p className="text-sm text-muted-foreground">
           Frozen on {formatIsoInstant(pieBake.bakedAt)} — {TRIGGER_LABELS[pieBake.trigger]}.
@@ -101,7 +101,7 @@ export default function PieBakePanel({
 
   if (!canBake(viewerProjectRole)) {
     return (
-      <section className="space-y-2 rounded-2xl border border-dashed border-[#CAC4D0] p-4">
+      <section className="space-y-2 rounded-2xl border border-dashed border-outline-variant p-4">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Baking the pie</h3>
         <p className="text-sm text-muted-foreground">
           When this project reaches cash-flow breakeven or closes a priced round, the founder
@@ -117,7 +117,7 @@ export default function PieBakePanel({
     bakeMutation.error instanceof ApiRequestError ? bakeMutation.error.apiError : null;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
       <h3 className="text-sm font-medium tracking-wide xl:text-lg">Bake the pie</h3>
       <p className="text-sm text-muted-foreground">
         This freezes every percentage above, permanently. Slices stop accruing, the nightly
@@ -156,7 +156,7 @@ export default function PieBakePanel({
               const parsedTrigger = PieBakeTriggerSchema.safeParse(changeEvent.target.value);
               if (parsedTrigger.success) setTrigger(parsedTrigger.data);
             }}
-            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
           >
             {PIE_BAKE_TRIGGERS.map((triggerOption) => (
               <option key={triggerOption} value={triggerOption}>
@@ -172,7 +172,7 @@ export default function PieBakePanel({
             required
             value={triggerEvidenceNote}
             onChange={(changeEvent) => setTriggerEvidenceNote(changeEvent.target.value)}
-            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
             rows={3}
           />
         </label>
@@ -186,7 +186,7 @@ export default function PieBakePanel({
             inputMode="numeric"
             pattern="[0-9]*"
             onChange={(changeEvent) => setValuationCents(changeEvent.target.value)}
-            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
           />
         </label>
 
@@ -197,14 +197,14 @@ export default function PieBakePanel({
           <input
             value={typedAcknowledgement}
             onChange={(changeEvent) => setTypedAcknowledgement(changeEvent.target.value)}
-            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
           />
         </label>
 
         <button
           type="submit"
           disabled={!isAcknowledgementTyped || bakeMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {bakeMutation.isPending ? "Baking…" : "Bake the pie permanently"}
         </button>

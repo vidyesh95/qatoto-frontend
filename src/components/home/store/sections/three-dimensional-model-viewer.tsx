@@ -147,7 +147,7 @@ export default function ThreeDimensionalModelViewer({
   const hasModelViewerElement = viewerState.status !== "loading-library";
 
   return (
-    <div ref={wrapperRef} className="relative size-full bg-[#F5F5F5]">
+    <div ref={wrapperRef} className="relative size-full bg-muted">
       {/* The poster stands in while the LIBRARY loads; once the element exists it shows the same
           poster itself until the mesh is in. */}
       {!hasModelViewerElement && posterImageUrl !== null && (
@@ -227,7 +227,7 @@ function renderViewerOverlay(viewerState: ThreeDimensionalModelViewerState) {
     case "loading-model":
       return (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[#6F7979] shadow-sm">
+          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-outline-strong shadow-sm">
             {viewerState.status === "loading-library" ? "Loading viewer…" : "Loading 3D model…"}
           </span>
         </div>
@@ -237,7 +237,7 @@ function renderViewerOverlay(viewerState: ThreeDimensionalModelViewerState) {
     case "error":
       return (
         <div className="absolute inset-0 flex items-center justify-center p-6">
-          <p className="rounded-lg bg-white px-4 py-3 text-center text-sm text-[#8C1D18] shadow-sm">
+          <p className="rounded-lg bg-white px-4 py-3 text-center text-sm text-destructive shadow-sm">
             {viewerState.message}
           </p>
         </div>

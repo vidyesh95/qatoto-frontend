@@ -40,7 +40,7 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-3 py-1.5 text-xs font-medium text-[#00696E]"
+        className="cursor-pointer rounded-full border border-outline-strong px-3 py-1.5 text-xs font-medium text-primary-imprint"
       >
         Link a file
       </button>
@@ -49,7 +49,7 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
 
   return (
     <form
-      className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-3"
+      className="space-y-2 rounded-2xl border border-outline-variant/60 p-3"
       onSubmit={(submitEvent) => {
         submitEvent.preventDefault();
         fileMutation.mutate(
@@ -68,7 +68,7 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
         value={fileName}
         onChange={(changeEvent) => setFileName(changeEvent.target.value)}
         placeholder="What is it called?"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <input
         required
@@ -76,7 +76,7 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
         value={externalUrl}
         onChange={(changeEvent) => setExternalUrl(changeEvent.target.value)}
         placeholder="https://…"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <select
         value={fileKind}
@@ -84,7 +84,7 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
           const parsed = WorkshopFileKindSchema.safeParse(changeEvent.target.value);
           if (parsed.success) setFileKind(parsed.data);
         }}
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       >
         {WORKSHOP_FILE_KINDS.map((kind) => (
           <option key={kind} value={kind}>
@@ -100,14 +100,14 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
         <button
           type="submit"
           disabled={fileMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {fileMutation.isPending ? "Linking…" : "Link it"}
         </button>
         <button
           type="button"
           onClick={() => setIsFormOpen(false)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+          className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
         >
           Cancel
         </button>

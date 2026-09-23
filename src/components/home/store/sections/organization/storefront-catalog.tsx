@@ -35,7 +35,7 @@ export default function StorefrontCatalog({
         attribution="declared"
         description="Listings this seller has published."
       >
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
           This seller has no published listings yet.
         </p>
       </StorefrontSection>
@@ -79,7 +79,7 @@ export default function StorefrontCatalog({
                 cursor belongs in the URL so the position is shareable and back-navigable. */}
             <Link
               href={`/store/organizations/${organizationSlug}?cursor=${encodeURIComponent(page.nextCursor)}`}
-              className="rounded-full px-6 py-2.5 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-[#F2F4F4]"
+              className="rounded-full px-6 py-2.5 text-sm font-medium tracking-normal text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted"
             >
               Show more products
             </Link>

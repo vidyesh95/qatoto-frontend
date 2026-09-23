@@ -96,7 +96,7 @@ export default function TeardownProvenanceBlock({
             href={provenance.licence.url}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            className="font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           >
             Read {provenance.licence.name}
           </a>
@@ -115,7 +115,7 @@ export default function TeardownProvenanceBlock({
         </p>
       )}
 
-      <h3 className="mt-5 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+      <h3 className="mt-5 text-xs font-medium tracking-wider text-muted-foreground uppercase">
         What the methods prove
       </h3>
       <ul className="mt-2 max-w-2xl">

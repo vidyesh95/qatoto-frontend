@@ -66,7 +66,7 @@ export default function StoreAndChatActions({
       <div className="flex flex-col items-center gap-4 px-4 pt-4 pb-2 lg:px-6">
         <Link
           href={`/store/organizations/${sellerSlug}`}
-          className="flex w-full items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex w-full items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-normal text-primary-imprint outline -outline-offset-1 outline-outline-strong"
         >
           <Image
             src="/icons/storefront_24dp_00696E_FILL0_wght400_GRAD0_opsz24.svg"
@@ -97,7 +97,7 @@ function renderContactControl(
   onChatClick: () => void,
 ) {
   const controlClass =
-    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white";
+    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium tracking-normal text-primary-imprint-foreground";
 
   switch (contactAffordance) {
     case "chat":

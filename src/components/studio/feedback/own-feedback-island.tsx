@@ -130,7 +130,7 @@ export default function OwnFeedbackIsland({ isViewerSignedIn }: { isViewerSigned
                     {PLATFORM_FEEDBACK_CATEGORY_LABELS[note.category]}
                   </span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium ${STATUS_PILL_CLASSES[note.status]}`}
+                    className={`rounded-full px-2 py-0.5 text-xs leading-4 font-medium ${STATUS_PILL_CLASSES[note.status]}`}
                   >
                     {PLATFORM_FEEDBACK_STATUS_LABELS[note.status]}
                   </span>

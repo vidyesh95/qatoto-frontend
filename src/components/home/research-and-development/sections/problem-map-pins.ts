@@ -68,5 +68,5 @@ export const PIN_RING_CLASS: Record<OpportunityBand, string> = {
   high: "ring-red-500",
   medium: "ring-amber-500",
   low: "ring-primary-imprint",
-  unscored: "ring-[#CAC4D0]",
+  unscored: "ring-outline-variant",
 };

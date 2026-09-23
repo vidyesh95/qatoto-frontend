@@ -24,7 +24,7 @@ function countedLabel(count: number, singular: string, plural: string): string {
 function ReviewRow({ label, value }: { readonly label: string; readonly value: string | null }) {
   return (
     <div className="border-t border-border py-2">
-      <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">{label}</dt>
+      <dt className="text-xs tracking-wider text-muted-foreground uppercase">{label}</dt>
       <dd className="mt-0.5 text-sm text-foreground">
         {/*
           ⚠️ "NOT ANSWERED" HERE, EVEN THOUGH THE READ SURFACE WOULD RENDER NOTHING. The rules are

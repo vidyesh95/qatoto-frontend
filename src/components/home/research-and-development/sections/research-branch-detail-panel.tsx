@@ -33,7 +33,7 @@ export function ResearchBranchDetailPanel({
   return (
     <div
       aria-live="polite"
-      className="space-y-3 self-start rounded-2xl border border-[#CAC4D0]/60 p-4"
+      className="space-y-3 self-start rounded-2xl border border-outline-variant/60 p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-medium">{branch.title}</h3>
@@ -47,14 +47,14 @@ export function ResearchBranchDetailPanel({
       <p className="text-sm text-muted-foreground">{branch.summary}</p>
 
       {isMissingBranch && (
-        <p className="rounded-xl bg-[#8A6116]/10 p-3 text-xs text-[#8A6116]">
+        <p className="rounded-xl bg-amber-700/10 p-3 text-xs text-amber-700">
           Highlighted gap — nobody has claimed this branch and no approved paper covers it. Computed
           nightly from what contributors have actually done, not set by anyone.
         </p>
       )}
 
       {hasOverlappingGroups && (
-        <p className="rounded-xl bg-[#D6E3FF] p-3 text-xs text-blue-900">
+        <p className="rounded-xl bg-secondary p-3 text-xs text-blue-900">
           {branch.overlappingGroupCount} other branches ask a near-identical question — consider
           joining forces instead of duplicating the work. Detected by comparing branch wording, so
           treat it as a prompt to look rather than a verdict.

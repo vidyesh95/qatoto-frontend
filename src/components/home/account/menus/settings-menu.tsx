@@ -375,7 +375,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           height={320}
           className="aspect-square h-auto w-full rounded-xl border border-background object-cover"
         />
-        <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-[0.5px] text-secondary-foreground">
+        <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-wider text-secondary-foreground">
           @{session?.user.handle ?? "…"}
         </div>
         <Image
@@ -417,7 +417,7 @@ function SettingsItemBody({ item }: { item: SettingsItem }) {
         ) : null}
       </span>
       {item.badge ? (
-        <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
+        <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-primary-imprint">
           <Image
             src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt=""

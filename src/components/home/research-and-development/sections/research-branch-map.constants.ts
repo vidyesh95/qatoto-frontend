@@ -16,30 +16,30 @@ export type BranchStatusStyle = {
 
 export const BRANCH_STATUS_STYLES: Record<ResearchBranchStatus, BranchStatusStyle> = {
   active: {
-    nodeBorderClassName: "border-[#00696E]",
-    statusDotClassName: "bg-[#00696E]",
-    statusChipClassName: "bg-[#00696E]/10 text-[#00696E]",
-    edgeStrokeColor: "#00696E",
+    nodeBorderClassName: "border-primary-imprint",
+    statusDotClassName: "bg-primary-imprint",
+    statusChipClassName: "bg-primary-imprint/10 text-primary-imprint",
+    edgeStrokeColor: "var(--primary-imprint)",
   },
   emerging: {
     nodeBorderClassName: "border-amber-500",
     statusDotClassName: "bg-amber-500",
     statusChipClassName: "bg-amber-100 text-amber-800",
-    edgeStrokeColor: "#F59E0B",
+    edgeStrokeColor: "var(--color-amber-500)",
   },
   contested: {
-    nodeBorderClassName: "border-[#BA1A1A]",
-    statusDotClassName: "bg-[#BA1A1A]",
+    nodeBorderClassName: "border-destructive",
+    statusDotClassName: "bg-destructive",
     statusChipClassName: "bg-red-100 text-red-800",
-    edgeStrokeColor: "#BA1A1A",
+    edgeStrokeColor: "var(--destructive)",
   },
   // DASHED, and that is the point: a gap is drawn as an absence rather than as a colour, so it
   // reads as missing even to someone who cannot distinguish the hues.
   missing: {
-    nodeBorderClassName: "border-dashed border-[#8A6116]",
-    statusDotClassName: "bg-[#8A6116]",
-    statusChipClassName: "bg-[#8A6116]/10 text-[#8A6116]",
-    edgeStrokeColor: "#8A6116",
+    nodeBorderClassName: "border-dashed border-amber-700",
+    statusDotClassName: "bg-amber-700",
+    statusChipClassName: "bg-amber-700/10 text-amber-700",
+    edgeStrokeColor: "var(--color-amber-700)",
   },
 };
 

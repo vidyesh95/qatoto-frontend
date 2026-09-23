@@ -67,7 +67,9 @@ export default function VisibilityStep({ draft, onDraftChange }: VisibilityStepP
                 type="button"
                 onClick={() => onDraftChange({ visibility: visibilityOption.value })}
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
-                  isSelected ? "border-[#1DBDC5] bg-secondary/50" : "border-border hover:bg-muted"
+                  isSelected
+                    ? "border-primary-imprint bg-secondary/50"
+                    : "border-border hover:bg-muted"
                 }`}
               >
                 <span
@@ -126,7 +128,7 @@ export default function VisibilityStep({ draft, onDraftChange }: VisibilityStepP
               aria-label="Scheduled publish date and time"
               value={draft.scheduledPublishDate}
               onChange={(event) => onDraftChange({ scheduledPublishDate: event.target.value })}
-              className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5] sm:w-80"
+              className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint sm:w-80"
             />
             {draft.scheduledPublishDate !== "" && (
               <div className="flex items-center justify-between gap-2">

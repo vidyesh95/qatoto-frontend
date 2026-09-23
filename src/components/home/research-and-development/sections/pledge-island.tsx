@@ -58,7 +58,7 @@ export default function PledgeIsland({
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white"
+        className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground"
       >
         Commit to back this
       </button>
@@ -98,7 +98,7 @@ export default function PledgeIsland({
         value={amountInCents}
         onChange={(changeEvent) => setAmountInCents(changeEvent.target.value)}
         placeholder="Amount in whole cents"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
 
       <p className="text-xs text-muted-foreground">
@@ -110,14 +110,14 @@ export default function PledgeIsland({
         <button
           type="submit"
           disabled={pledgeMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {pledgeMutation.isPending ? "Recording…" : "Record my commitment"}
         </button>
         <button
           type="button"
           onClick={() => setIsFormOpen(false)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+          className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
         >
           Cancel
         </button>

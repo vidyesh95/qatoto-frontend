@@ -108,7 +108,7 @@ const ARTICLE_COMPONENTS: Components = {
       {children}
     </blockquote>
   ),
-  code: ({ children }) => <code className="font-mono text-[0.92em]">{children}</code>,
+  code: ({ children }) => <code className="font-mono text-sm">{children}</code>,
   pre: ({ children }) => (
     <pre className="mt-6 overflow-x-auto rounded-2xl border border-border bg-card p-4 font-sans text-sm leading-6">
       {children}

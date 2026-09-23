@@ -44,8 +44,8 @@ export default function VideoCard({
   const isLive = isChannelLive;
 
   const avatar = isLive ? (
-    <div className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-[#1DBDC5]">
-      <div className="pointer-events-none absolute -inset-1.25 animate-live-ring rounded-full border border-[#1DBDC5] will-change-transform" />
+    <div className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-primary-imprint">
+      <div className="pointer-events-none absolute -inset-1.25 animate-live-ring rounded-full border border-primary-imprint will-change-transform" />
       <Image
         src={profileSrc}
         width={34}
@@ -110,12 +110,12 @@ export default function VideoCard({
             {channelHref ? (
               <Link
                 href={channelHref}
-                className="relative z-10 text-xs text-[#6F7979] hover:text-foreground"
+                className="relative z-10 text-xs text-outline-strong hover:text-foreground"
               >
                 {channelName}
               </Link>
             ) : (
-              <span className="text-xs text-[#6F7979]">{channelName}</span>
+              <span className="text-xs text-outline-strong">{channelName}</span>
             )}
             {verified && (
               <Image
@@ -127,7 +127,7 @@ export default function VideoCard({
             )}
           </div>
           <div className="flex flex-row flex-wrap items-center gap-x-1">
-            <span className="text-xs text-[#6F7979]">{views}</span>
+            <span className="text-xs text-outline-strong">{views}</span>
             <Image
               src={"/icons/circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
               width={4}
@@ -140,9 +140,9 @@ export default function VideoCard({
               still hand-author `postedAt`. Whichever one is present renders; never both.
             */}
             {publishedAt == null ? (
-              <span className="text-xs text-[#6F7979]">{postedAt}</span>
+              <span className="text-xs text-outline-strong">{postedAt}</span>
             ) : (
-              <RelativeTime isoInstant={publishedAt} className="text-xs text-[#6F7979]" />
+              <RelativeTime isoInstant={publishedAt} className="text-xs text-outline-strong" />
             )}
           </div>
         </div>

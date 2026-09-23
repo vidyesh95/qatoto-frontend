@@ -48,7 +48,7 @@ export default function DefinitionList({ items }: { items: readonly DefinitionLi
     <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[minmax(8rem,14rem)_1fr]">
       {items.map((item) => (
         <div key={item.term} className="contents">
-          <dt className="text-xs font-medium tracking-[0.4px] text-muted-foreground sm:pt-0.5">
+          <dt className="text-xs font-medium tracking-wider text-muted-foreground sm:pt-0.5">
             {item.term}
           </dt>
           <dd className="mb-2 text-sm text-foreground sm:mb-0">

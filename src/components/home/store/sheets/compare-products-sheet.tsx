@@ -166,14 +166,14 @@ export default function CompareProductsSheet({
       footer={
         isComparing ? undefined : (
           <div className="flex items-center gap-3">
-            <p className="flex-1 text-xs text-[#6F7979]">
+            <p className="flex-1 text-xs text-outline-strong">
               {selectedProductIds.length} selected · up to {MAXIMUM_COMPARE_COLUMNS - 1}
             </p>
             <button
               type="button"
               disabled={selectedProductIds.length === 0}
               onClick={() => setIsComparing(true)}
-              className="rounded-full bg-[#00696E] px-6 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded-full bg-primary-imprint px-6 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
               Compare
             </button>
@@ -190,13 +190,13 @@ export default function CompareProductsSheet({
                     whose first column header is empty reads as an unlabelled row group. */}
                 <th
                   scope="col"
-                  className="w-28 shrink-0 pr-3 pb-2 text-xs font-medium text-[#6F7979]"
+                  className="w-28 shrink-0 pr-3 pb-2 text-xs font-medium text-outline-strong"
                 >
                   <span className="sr-only">Attribute</span>
                 </th>
                 {columns.map((column) => (
                   <th key={column.id} className="w-40 pr-4 pb-2 align-top">
-                    <span className="relative mb-1 block aspect-square w-28 overflow-hidden rounded bg-[#F5F5F5]">
+                    <span className="relative mb-1 block aspect-square w-28 overflow-hidden rounded bg-muted">
                       {column.mainImageUrl !== null && (
                         <Image
                           src={column.mainImageUrl}
@@ -207,32 +207,34 @@ export default function CompareProductsSheet({
                         />
                       )}
                     </span>
-                    <span className="block text-xs leading-4 font-medium text-[#191C1C]">
+                    <span className="block text-xs leading-4 font-medium text-foreground">
                       {column.title}
                     </span>
                     {column.isCurrentProduct && (
-                      <span className="mt-0.5 block text-[11px] text-[#00696E]">This product</span>
+                      <span className="mt-0.5 block text-xs text-primary-imprint">
+                        This product
+                      </span>
                     )}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-[#CAC4D0]/60">
-                <th className="py-2 pr-3 text-xs font-medium text-[#6F7979]">Price</th>
+              <tr className="border-t border-outline-variant/60">
+                <th className="py-2 pr-3 text-xs font-medium text-outline-strong">Price</th>
                 {columns.map((column) => (
-                  <td key={column.id} className="py-2 pr-4 text-xs text-[#191C1C]">
+                  <td key={column.id} className="py-2 pr-4 text-xs text-foreground">
                     {formatCentsLabel(column.priceInCents, column.currency)}
                   </td>
                 ))}
               </tr>
               {specificationKeys.map((specificationKey) => (
-                <tr key={specificationKey} className="border-t border-[#CAC4D0]/60">
-                  <th className="py-2 pr-3 text-xs font-medium text-[#6F7979]">
+                <tr key={specificationKey} className="border-t border-outline-variant/60">
+                  <th className="py-2 pr-3 text-xs font-medium text-outline-strong">
                     {specificationKey}
                   </th>
                   {columns.map((column) => (
-                    <td key={column.id} className="py-2 pr-4 text-xs text-[#191C1C]">
+                    <td key={column.id} className="py-2 pr-4 text-xs text-foreground">
                       {/* Blank means "this seller did not publish it", never "it lacks it". */}
                       {column.specificationsByKey.get(specificationKey) ?? "—"}
                     </td>
@@ -242,7 +244,7 @@ export default function CompareProductsSheet({
             </tbody>
           </table>
 
-          <p className="pt-3 text-[11px] leading-4 text-[#6F7979]">
+          <p className="pt-3 text-xs leading-4 text-outline-strong">
             Attributes are each seller&apos;s own published specifications. A dash means the seller
             did not state that attribute — not that the product lacks it.
           </p>
@@ -255,7 +257,7 @@ export default function CompareProductsSheet({
             return (
               <li
                 key={companion.id}
-                className="flex items-center gap-3 border-b border-[#CAC4D0]/60 py-3"
+                className="flex items-center gap-3 border-b border-outline-variant/60 py-3"
               >
                 <input
                   type="checkbox"
@@ -263,11 +265,11 @@ export default function CompareProductsSheet({
                   disabled={isAtCap}
                   onChange={() => toggleSelected(companion.id)}
                   aria-label={`Compare ${companion.title}`}
-                  className="size-4 shrink-0 accent-[#00696E]"
+                  className="size-4 shrink-0 accent-primary-imprint"
                 />
                 <span
                   aria-hidden
-                  className="relative size-12 shrink-0 overflow-hidden rounded bg-[#F5F5F5]"
+                  className="relative size-12 shrink-0 overflow-hidden rounded bg-muted"
                 >
                   {companion.mainImageUrl !== null && (
                     <Image
@@ -280,8 +282,8 @@ export default function CompareProductsSheet({
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm text-[#191C1C]">{companion.title}</span>
-                  <span className="block text-xs text-[#6F7979]">
+                  <span className="block truncate text-sm text-foreground">{companion.title}</span>
+                  <span className="block text-xs text-outline-strong">
                     {formatCentsLabel(companion.priceInCents, companion.currency)}
                   </span>
                 </span>

@@ -63,7 +63,7 @@ export default function BlueprintLane({
           >
             <Link
               href={categoryHref}
-              className="transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="transition-colors hover:text-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             >
               {BLUEPRINT_CATEGORY_LANE_HEADINGS[category]}
             </Link>
@@ -71,7 +71,7 @@ export default function BlueprintLane({
 
           <Link
             href={categoryHref}
-            className="flex shrink-0 items-center gap-1 text-sm leading-5 font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            className="flex shrink-0 items-center gap-1 text-sm leading-5 font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           >
             {seeAllLabel}
             <span aria-hidden="true">&rarr;</span>

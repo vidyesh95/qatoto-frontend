@@ -24,7 +24,7 @@ export default function OpenRoleCard({ role }: { role: OpenRole }) {
   ].map((policy) => COMPENSATION_EARNED_AS_POLICY_LABELS[policy]);
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex w-72 shrink-0 flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="min-w-0">
         <p className="truncate font-semibold">{role.roleTitle}</p>
         <p className="truncate text-xs text-muted-foreground">{role.projectName}</p>
@@ -44,12 +44,12 @@ export default function OpenRoleCard({ role }: { role: OpenRole }) {
           </span>
         </div>
         {earnedAsPolicyLabels.map((policyLabel) => (
-          <p key={policyLabel} className="text-[11px] text-muted-foreground">
+          <p key={policyLabel} className="text-xs text-muted-foreground">
             {policyLabel}
           </p>
         ))}
         {remainingSlotCount > 0 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {remainingSlotCount} of {role.slotsTotal} slot{role.slotsTotal === 1 ? "" : "s"} open
           </p>
         )}

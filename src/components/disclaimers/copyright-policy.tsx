@@ -55,7 +55,7 @@ export default function CopyrightPolicy() {
               Email{" "}
               <a
                 href={`mailto:${SUPPORT_CONTACT_EMAIL}`}
-                className="font-medium text-[#00696E] hover:underline"
+                className="font-medium text-primary-imprint hover:underline"
               >
                 {SUPPORT_CONTACT_EMAIL}
               </a>
@@ -130,7 +130,7 @@ export default function CopyrightPolicy() {
             email{" "}
             <a
               href={`mailto:${SUPPORT_CONTACT_EMAIL}`}
-              className="font-medium text-[#00696E] hover:underline"
+              className="font-medium text-primary-imprint hover:underline"
             >
               {SUPPORT_CONTACT_EMAIL}
             </a>

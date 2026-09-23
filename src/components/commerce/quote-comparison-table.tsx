@@ -71,7 +71,7 @@ export default function QuoteComparisonTable({
       {[...quotesByCurrency.entries()].map(([currency, currencyQuotes]) => (
         <section key={currency} aria-label={`Quotes in ${currency}`}>
           {currencyCount > 1 && (
-            <h3 className="pb-2 text-xs font-medium tracking-[0.5px] text-muted-foreground uppercase">
+            <h3 className="pb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
               Priced in {currency}
             </h3>
           )}
@@ -87,7 +87,7 @@ export default function QuoteComparisonTable({
 
       {unpricedQuotes.length > 0 && (
         <section aria-label="Quotes with nothing submitted">
-          <h3 className="pb-2 text-xs font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h3 className="pb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             Nothing submitted yet
           </h3>
           <ul className="space-y-2">
@@ -101,7 +101,7 @@ export default function QuoteComparisonTable({
       )}
 
       {/* Said once, at the foot, rather than beside every number. */}
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Qatoto does not rank these or recommend one. Read the exclusions and lead times on each
         quote — the lowest total is often the one that excludes the most.
       </p>
@@ -148,7 +148,7 @@ function QuoteComparisonRow({ quote }: { quote: QuoteComparisonItem }) {
           accepted" is nonsense, and on an awarded RFQ this row is the outcome rather than a rejected
           option. */}
       {!isActionable && revision !== null && (
-        <p className="mt-1 text-[11px] leading-4 text-amber-900">
+        <p className="mt-1 text-xs leading-4 text-amber-900">
           {quote.status === "accepted"
             ? "This is the quote that was accepted. An order was created from it."
             : `This total cannot be accepted — ${QUOTE_STATUS_LABELS[quote.status].toLowerCase()}.`}
@@ -162,7 +162,7 @@ function QuoteComparisonRow({ quote }: { quote: QuoteComparisonItem }) {
           {quote.serviceLineSummaries.map((line) => (
             <li
               key={`${quote.quoteId}-${line.titleSnapshot}`}
-              className="flex flex-wrap items-baseline gap-x-2 text-[11px] leading-4"
+              className="flex flex-wrap items-baseline gap-x-2 text-xs leading-4"
             >
               <ProviderKindBadge providerKind={line.providerKind} isCompact />
               <span className="min-w-0 flex-1 text-muted-foreground">{line.titleSnapshot}</span>
@@ -183,7 +183,7 @@ function QuoteComparisonRow({ quote }: { quote: QuoteComparisonItem }) {
           {quote.productLineSummaries.map((line) => (
             <li
               key={`${quote.quoteId}-${line.titleSnapshot}`}
-              className="flex flex-wrap items-baseline gap-x-2 text-[11px] leading-4"
+              className="flex flex-wrap items-baseline gap-x-2 text-xs leading-4"
             >
               <span className="min-w-0 flex-1 text-muted-foreground">
                 {line.titleSnapshot} × {formatCountLabel(line.quantity)}
@@ -219,7 +219,7 @@ function MoneyBreakdown({
   if (components.length <= 1) return null;
 
   return (
-    <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+    <p className="mt-1 text-xs leading-4 text-muted-foreground">
       {components
         .map(
           (component) =>

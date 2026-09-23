@@ -131,7 +131,7 @@ export default async function ResearchAndDevelopmentPage() {
       )}
 
       <ResearchProgramBanner />
-      <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
+      <section className="mx-4 rounded-2xl bg-primary-imprint/5 p-6 text-center md:p-8 lg:mx-6">
         <h2 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Have an idea the world needs?
         </h2>
@@ -141,7 +141,7 @@ export default async function ResearchAndDevelopmentPage() {
         <div className="mt-4 flex justify-center">
           <Link
             href="/research-and-development/new"
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
           >
             Post your idea
           </Link>
@@ -203,7 +203,7 @@ function EmptyRailActionLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-block cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+      className="inline-block cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint"
     >
       {label}
     </Link>

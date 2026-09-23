@@ -25,7 +25,7 @@ export default function StorefrontFactorySites({ sites }: { sites: FactorySite[]
     >
       <ul className="grid gap-2 lg:grid-cols-3">
         {sites.map((site) => (
-          <li key={site.id} className="rounded-lg bg-[#F2F4F4] px-3 py-2.5">
+          <li key={site.id} className="rounded-lg bg-muted px-3 py-2.5">
             <div className="flex items-start gap-2">
               <Image
                 src="/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -35,11 +35,11 @@ export default function StorefrontFactorySites({ sites }: { sites: FactorySite[]
                 className="mt-0.5 shrink-0 opacity-70"
               />
               <div className="min-w-0">
-                <p className="text-sm leading-5 font-medium text-[#191C1C]">{site.name}</p>
-                <p className="text-xs leading-4 tracking-[0.4px] text-[#6F7979]">
+                <p className="text-sm leading-5 font-medium text-foreground">{site.name}</p>
+                <p className="text-xs leading-4 tracking-wider text-outline-strong">
                   {site.addressLine}
                 </p>
-                <p className="text-xs leading-4 tracking-[0.4px] text-[#6F7979]">
+                <p className="text-xs leading-4 tracking-wider text-outline-strong">
                   {site.city}, {site.countryLabel}
                 </p>
               </div>
@@ -47,20 +47,20 @@ export default function StorefrontFactorySites({ sites }: { sites: FactorySite[]
 
             <dl className="mt-2 grid grid-cols-3 gap-x-2">
               <div className="flex flex-col gap-0.5">
-                <dt className="text-[11px] leading-4 text-[#6F7979]">Floor area</dt>
-                <dd className="text-xs leading-4 font-medium text-[#191C1C]">
+                <dt className="text-xs leading-4 text-outline-strong">Floor area</dt>
+                <dd className="text-xs leading-4 font-medium text-foreground">
                   {formatSquareMetresLabel(site.floorAreaSquareMetres)}
                 </dd>
               </div>
               <div className="flex flex-col gap-0.5">
-                <dt className="text-[11px] leading-4 text-[#6F7979]">Lines</dt>
-                <dd className="text-xs leading-4 font-medium text-[#191C1C]">
+                <dt className="text-xs leading-4 text-outline-strong">Lines</dt>
+                <dd className="text-xs leading-4 font-medium text-foreground">
                   {site.productionLineCount}
                 </dd>
               </div>
               <div className="flex flex-col gap-0.5">
-                <dt className="text-[11px] leading-4 text-[#6F7979]">Since</dt>
-                <dd className="text-xs leading-4 font-medium text-[#191C1C]">
+                <dt className="text-xs leading-4 text-outline-strong">Since</dt>
+                <dd className="text-xs leading-4 font-medium text-foreground">
                   {site.yearEstablished}
                 </dd>
               </div>

@@ -63,9 +63,9 @@ export default function LifecycleRolesStrip() {
         {LIFECYCLE_ROLES.map((lifecycleRole) => (
           <div
             key={lifecycleRole.title}
-            className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+            className="space-y-2 rounded-2xl border border-outline-variant/60 bg-card p-4"
           >
-            <div className="grid size-10 place-items-center rounded-full bg-[#00696E]/10">
+            <div className="grid size-10 place-items-center rounded-full bg-primary-imprint/10">
               <Image src={lifecycleRole.iconSrc} width={24} height={24} alt="" />
             </div>
             <p className="text-sm font-medium">{lifecycleRole.title}</p>
@@ -74,7 +74,7 @@ export default function LifecycleRolesStrip() {
               {lifecycleRole.compensationModes.map((compensationMode) => (
                 <span
                   key={compensationMode}
-                  className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[10px] text-[#00696E]"
+                  className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint"
                 >
                   {compensationMode}
                 </span>

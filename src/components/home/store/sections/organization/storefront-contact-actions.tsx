@@ -55,7 +55,7 @@ export default function StorefrontContactActions({
         {!isSignedIn && (
           <Link
             href="/sign-in"
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium tracking-normal text-primary-imprint-foreground"
           >
             Sign in to contact this seller
           </Link>
@@ -63,7 +63,7 @@ export default function StorefrontContactActions({
 
         <Link
           href="/store/rfqs/new"
-          className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-normal text-primary-imprint outline -outline-offset-1 outline-outline-strong"
         >
           <Image
             src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

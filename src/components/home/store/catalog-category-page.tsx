@@ -121,7 +121,7 @@ function ChildCategoryGrid({
 }) {
   return (
     <section aria-label={`Subcategories of ${categoryName}`} className="pt-6">
-      <h2 className="px-4 pb-3 text-base font-medium text-[#191C1C] lg:px-6">
+      <h2 className="px-4 pb-3 text-base font-medium text-foreground lg:px-6">
         Browse within {categoryName}
       </h2>
       <div className="grid grid-cols-3 gap-3 px-4 sm:grid-cols-4 lg:grid-cols-6 lg:px-6">
@@ -164,7 +164,7 @@ function ProductGrid({
 
   return (
     <section aria-label={`Listings in ${categoryName}`} className="pt-6">
-      <h2 className="px-4 pb-3 text-base font-medium text-[#191C1C] lg:px-6">
+      <h2 className="px-4 pb-3 text-base font-medium text-foreground lg:px-6">
         {formatCountLabel(products.length)} listings on this page
       </h2>
       <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4 lg:px-6">

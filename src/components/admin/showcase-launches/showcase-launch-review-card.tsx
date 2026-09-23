@@ -24,13 +24,13 @@ import {
 import type { ApiError } from "@/lib/http";
 import { formatCentsLabel, formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
 
 type DecisionKind = ShowcaseModerationDecision["decision"];
 
@@ -191,7 +191,7 @@ export default function ShowcaseLaunchReviewCard({
             href={submission.callToAction.url}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="mt-1 block text-sm text-[#00696E] hover:underline"
+            className="mt-1 block text-sm text-primary-imprint hover:underline"
           >
             {submission.callToAction.label}
           </a>
@@ -214,7 +214,7 @@ export default function ShowcaseLaunchReviewCard({
                 </li>
               ))}
             </ul>
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Handles are free text and are not verified.
             </p>
           </>
@@ -245,7 +245,7 @@ export default function ShowcaseLaunchReviewCard({
         <p className="mt-4 text-xs text-muted-foreground">Tags: {submission.tags.join(", ")}</p>
       )}
 
-      <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
+      <div className="mt-4 border-t border-outline-variant/60 pt-3">
         <label className="block text-xs text-muted-foreground">
           Note to the maker
           <textarea
@@ -257,7 +257,7 @@ export default function ShowcaseLaunchReviewCard({
             className={FIELD_CLASS}
           />
         </label>
-        <p className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+        <p className="mt-1 text-xs text-muted-foreground tabular-nums">
           {moderatorNote.length} of{" "}
           {SHOWCASE_MODERATOR_NOTE_MAXIMUM_CHARACTERS.toLocaleString("en-US")}
         </p>
@@ -309,7 +309,7 @@ export default function ShowcaseLaunchReviewCard({
                 : "Send back"}
             </button>
             {isNoteEmpty ? (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Sending back needs a note. It is the only thing the maker sees.
               </span>
             ) : null}
@@ -333,7 +333,7 @@ export default function ShowcaseLaunchReviewCard({
 
 function FactRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="border-t border-[#CAC4D0]/40 py-1">
+    <div className="border-t border-outline-variant/40 py-1">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>{value}</dd>
     </div>

@@ -100,7 +100,7 @@ export default function CompensationTab({
         return (
           <div className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="text-xs text-muted-foreground">Attested as paid</p>
                 <p className="text-xl font-semibold">
                   {formatMoneyFromCents(
@@ -112,7 +112,7 @@ export default function CompensationTab({
                   What the company says it sent, confirmed or not.
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="text-xs text-muted-foreground">Confirmed received</p>
                 <p className="text-xl font-semibold">
                   {formatMoneyFromCents(
@@ -132,7 +132,7 @@ export default function CompensationTab({
                 {compensation.paidOut.map((payment) => (
                   <li
                     key={payment.paymentId}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
                   >
                     <span className="min-w-0">
                       <span className="font-medium">{payment.memberName}</span>
@@ -164,7 +164,7 @@ export default function CompensationTab({
                   {compensation.members.map((member) => (
                     <li
                       key={member.memberId}
-                      className="rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                      className="rounded-2xl border border-outline-variant/60 p-3 text-sm"
                     >
                       <span className="font-medium">{member.name}</span>
                       <span className="block text-xs text-muted-foreground">
@@ -237,7 +237,7 @@ export default function CompensationTab({
             {agreementsState.rows.map((agreement) => (
               <li
                 key={agreement.id}
-                className="flex flex-wrap items-start justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                className="flex flex-wrap items-start justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
               >
                 <span className="min-w-0">
                   <span className="font-medium">{agreement.memberName}</span>

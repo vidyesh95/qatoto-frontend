@@ -68,7 +68,7 @@ export default function AdminNavbarAccountCluster({
       ) : (
         <Link
           href={"/sign-in"}
-          className="flex gap-2 rounded-full border border-primary bg-white px-2 py-1.75 text-[#1DBDC5]"
+          className="flex gap-2 rounded-full border border-primary bg-white px-2 py-1.75 text-primary-imprint"
         >
           <Image
             src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}

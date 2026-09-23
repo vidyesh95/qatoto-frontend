@@ -62,7 +62,7 @@ export default function CommodityDirectory({
         <p className="text-sm text-muted-foreground">No commodity matches these filters.</p>
       ) : (
         <>
-          <ul className="divide-y divide-[#CAC4D0]/60 rounded-2xl border border-[#CAC4D0]/60">
+          <ul className="divide-y divide-outline-variant/60 rounded-2xl border border-outline-variant/60">
             {commodities.map((commodity) => (
               <li key={commodity.hsCode}>
                 <Link

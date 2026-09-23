@@ -64,7 +64,7 @@ export default function AllocationProposalsIsland({
     <div className="space-y-3">
       <ul className="space-y-3">
         {proposalList.rows.map((proposal) => (
-          <li key={proposal.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <li key={proposal.id} className="rounded-2xl border border-outline-variant/60 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-medium">{proposal.memberName}</p>

@@ -189,7 +189,7 @@ export default function ServiceOfferingComposer() {
               />
             </div>
 
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               Lead time is a pair too. Blank means you have not said — it does not mean same day.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -412,7 +412,7 @@ function ReviewStep({
         </p>
       )}
 
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Saving creates a draft only your organization can see. Submitting it for review is the next,
         separate step, and a moderator decides whether it is listed.
       </p>
@@ -456,7 +456,7 @@ function CreatedOfferingPanel({
       </p>
       {/* The public URL for a listing that is not public yet — so it is NOT offered as a link. A draft's
           `/store/services/:slug` is a 404 by design, and a button leading there would look like a bug. */}
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Once it is approved it will live at /store/services/{offeringSlug}.
       </p>
       <Link

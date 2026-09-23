@@ -70,10 +70,10 @@ type OwnProfileViewState =
   | { status: "ready"; profile: OwnCofounderProfile };
 
 const PRIMARY_BUTTON_CLASS =
-  "rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
+  "rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90 disabled:opacity-50";
 
 const QUIET_BUTTON_CLASS =
-  "rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted disabled:opacity-50";
+  "rounded-full bg-background px-4 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted disabled:opacity-50";
 
 export default function OwnCofounderProfilePage() {
   const ownProfileQuery = useOwnCofounderProfileQuery();
@@ -101,7 +101,7 @@ export default function OwnCofounderProfilePage() {
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <nav className="pb-2 text-xs leading-4 text-[#6F7979]" aria-label="Breadcrumb">
+        <nav className="pb-2 text-xs leading-4 text-outline-strong" aria-label="Breadcrumb">
           <Link href="/store/find-cofounder" className="hover:underline">
             Find a cofounder
           </Link>
@@ -148,7 +148,7 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
 
   return (
     <article>
-      <p className="text-xs leading-4 text-[#6F7979]">
+      <p className="text-xs leading-4 text-outline-strong">
         {COFOUNDER_PROFILE_STATE_LABELS[profile.state]}
         {" · "}
         {COFOUNDER_IDENTITY_LABELS[profile.profile.identityState]}
@@ -157,42 +157,42 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
           : ` · first published ${formatIsoInstantLabel(profile.publishedAt)}`}
       </p>
 
-      <h2 className="mt-1 text-base leading-6 font-medium text-[#191C1C]">
+      <h2 className="mt-1 text-base leading-6 font-medium text-foreground">
         {profile.profile.headline}
       </h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         {profile.profile.displayName} · {countryLabelFromCode(profile.profile.countryCode)} ·{" "}
         {COFOUNDER_COMMITMENT_LABELS[profile.profile.commitmentLevel]}
       </p>
 
       {wasRejected && profile.decisionReason !== null && (
-        <div className="mt-3 rounded-lg bg-[#E0E3E3] px-3 py-2">
-          <p className="text-xs leading-4 font-medium text-[#191C1C]">
+        <div className="mt-3 rounded-lg bg-muted px-3 py-2">
+          <p className="text-xs leading-4 font-medium text-foreground">
             A moderator sent this back. Here is why:
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#4A6364]">{profile.decisionReason}</p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">{profile.decisionReason}</p>
         </div>
       )}
 
       {profile.state === "pending_review" && (
-        <p className="mt-3 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           A moderator has this. You cannot edit it while they do — everything here is content they
           are about to approve.
         </p>
       )}
 
       <section className="mt-4" aria-label="About you">
-        <p className="text-sm leading-6 whitespace-pre-line text-[#191C1C]">{profile.bio}</p>
+        <p className="text-sm leading-6 whitespace-pre-line text-foreground">{profile.bio}</p>
       </section>
 
       <section className="mt-4" aria-label="What you are looking for">
-        <h3 className="text-sm font-medium text-[#191C1C]">What you are looking for</h3>
-        <p className="mt-1 text-sm leading-6 whitespace-pre-line text-[#191C1C]">
+        <h3 className="text-sm font-medium text-foreground">What you are looking for</h3>
+        <p className="mt-1 text-sm leading-6 whitespace-pre-line text-foreground">
           {profile.lookingFor}
         </p>
       </section>
 
-      <p className="mt-4 text-xs leading-4 text-[#6F7979]">
+      <p className="mt-4 text-xs leading-4 text-outline-strong">
         {profile.profile.contributionKinds
           .map((contributionKind) => COFOUNDER_CONTRIBUTION_LABELS[contributionKind])
           .join(" · ")}
@@ -200,10 +200,10 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
 
       {profile.priorVentures.length > 0 && (
         <section className="mt-4" aria-label="Prior ventures">
-          <h3 className="text-sm font-medium text-[#191C1C]">Before this</h3>
+          <h3 className="text-sm font-medium text-foreground">Before this</h3>
           <ul className="mt-1 space-y-1">
             {profile.priorVentures.map((venture) => (
-              <li key={venture.id} className="text-sm leading-5 text-[#191C1C]">
+              <li key={venture.id} className="text-sm leading-5 text-foreground">
                 {venture.name} — {venture.roleLabel}, {venture.yearsActiveLabel}
                 {/* An absent outcome renders as absent. Demanding one invites invention. */}
                 {venture.outcomeSummary === null ? "" : `. ${venture.outcomeSummary}`}
@@ -256,7 +256,7 @@ function EditProfileForm({ profile }: { profile: OwnCofounderProfile }) {
 
   return (
     <form
-      className="mt-6 rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+      className="mt-6 rounded-xl border border-outline-variant/60 px-4 py-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!hasChanges || updateProfile.isPending) return;
@@ -273,35 +273,35 @@ function EditProfileForm({ profile }: { profile: OwnCofounderProfile }) {
         });
       }}
     >
-      <h3 className="text-sm font-medium text-[#191C1C]">Edit</h3>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h3 className="text-sm font-medium text-foreground">Edit</h3>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         {/* Says what saving does NOT do, because "save" reads as "publish" to most people. */}
         Saving keeps this a draft. Sending it for review is the separate button below.
       </p>
 
-      <label className="mt-3 block text-xs text-[#6F7979]">
+      <label className="mt-3 block text-xs text-outline-strong">
         One line about you
         <input
-          className="mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm text-[#191C1C] outline-none focus:border-[#00696E]"
+          className="mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary-imprint"
           value={headline}
           onChange={(event) => setHeadline(event.target.value)}
         />
       </label>
 
-      <label className="mt-2 block text-xs text-[#6F7979]">
+      <label className="mt-2 block text-xs text-outline-strong">
         The longer version
         <textarea
-          className="mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm leading-6 text-[#191C1C] outline-none focus:border-[#00696E]"
+          className="mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm leading-6 text-foreground outline-none focus:border-primary-imprint"
           rows={5}
           value={bio}
           onChange={(event) => setBio(event.target.value)}
         />
       </label>
 
-      <label className="mt-2 block text-xs text-[#6F7979]">
+      <label className="mt-2 block text-xs text-outline-strong">
         What you are looking for
         <textarea
-          className="mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm leading-6 text-[#191C1C] outline-none focus:border-[#00696E]"
+          className="mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm leading-6 text-foreground outline-none focus:border-primary-imprint"
           rows={3}
           value={lookingFor}
           onChange={(event) => setLookingFor(event.target.value)}
@@ -333,15 +333,15 @@ function EngagementStateControl({ profile }: { profile: OwnCofounderProfile }) {
   const updateEngagementState = useUpdateOwnCofounderEngagementState();
 
   return (
-    <section className="mt-6 rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <h3 className="text-sm font-medium text-[#191C1C]">Where you are right now</h3>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+    <section className="mt-6 rounded-xl border border-outline-variant/60 px-4 py-3">
+      <h3 className="text-sm font-medium text-foreground">Where you are right now</h3>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         The only thing you can change without going back through review.
       </p>
 
       <div className="mt-2 space-y-1">
         {COFOUNDER_ENGAGEMENT_STATES.map((candidateState) => (
-          <label key={candidateState} className="flex items-center gap-2 text-sm text-[#191C1C]">
+          <label key={candidateState} className="flex items-center gap-2 text-sm text-foreground">
             <input
               type="radio"
               name="engagement-state"
@@ -353,7 +353,7 @@ function EngagementStateControl({ profile }: { profile: OwnCofounderProfile }) {
         ))}
       </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-2 text-xs leading-4 text-outline-strong">
         {/* Said outright, because people press "not looking" expecting to disappear. */}
         None of these removes you from the directory. &ldquo;Not looking&rdquo; keeps your profile
         visible saying exactly that, with no way for anyone to contact you — taking it down would
@@ -425,7 +425,7 @@ function LifecycleControls({
           >
             Take yourself out of the directory
           </button>
-          <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+          <p className="mt-1 text-xs leading-4 text-outline-strong">
             {/* Withdraw is reversible and there is no delete. Say so before they press it. */}
             Reversible. Your profile is kept and you can send it back for review whenever you want.
           </p>

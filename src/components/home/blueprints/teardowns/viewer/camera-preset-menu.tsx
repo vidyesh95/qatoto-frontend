@@ -72,7 +72,7 @@ export default function CameraPresetMenu({ store, isInteractive }: CameraPresetM
                 onClick={() => handlePresetClick(preset)}
                 className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-muted"
               >
-                <span aria-hidden className="w-3 text-[#00696E]">
+                <span aria-hidden className="w-3 text-primary-imprint">
                   {preset === requestedPreset ? "✓" : ""}
                 </span>
                 {TEARDOWN_CAMERA_PRESET_LABELS[preset]}
@@ -91,7 +91,7 @@ export default function CameraPresetMenu({ store, isInteractive }: CameraPresetM
         className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 bg-white/85 px-2.5 py-1.5 text-xs text-foreground backdrop-blur transition-colors hover:border-black/30 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {TEARDOWN_CAMERA_PRESET_LABELS[requestedPreset]}
-        <span aria-hidden className="text-[#6F7979]">
+        <span aria-hidden className="text-outline-strong">
           ⌄
         </span>
       </button>

@@ -46,7 +46,7 @@ export default function ServiceCoverageList({ coverage }: { coverage: PublicCove
         attribution="declared"
         description="Where this provider says it will work."
       >
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
           No specific lanes are declared for this service. Ask the provider what it covers — an
           empty list does not mean worldwide.
         </p>
@@ -66,15 +66,15 @@ export default function ServiceCoverageList({ coverage }: { coverage: PublicCove
           // stable because the list is server-ordered and never reordered client-side.
           <li
             key={`${buildLaneLabel(lane)}-${laneIndex}`}
-            className="rounded-lg bg-[#F2F4F4] px-3 py-2"
+            className="rounded-lg bg-muted px-3 py-2"
           >
-            <p className="text-sm leading-5 text-[#191C1C]">{buildLaneLabel(lane)}</p>
+            <p className="text-sm leading-5 text-foreground">{buildLaneLabel(lane)}</p>
 
             {lane.locationIdentifier !== null && (
-              <p className="text-xs leading-4 text-[#6F7979]">{lane.locationIdentifier}</p>
+              <p className="text-xs leading-4 text-outline-strong">{lane.locationIdentifier}</p>
             )}
 
-            <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] leading-4 text-[#6F7979]">
+            <div className="mt-1 flex flex-wrap gap-x-3 text-xs leading-4 text-outline-strong">
               {/* Stated only when claimed. Unlike the typed-extension panel, where "No" is a useful
                   answer about the whole service, a per-lane false is the default and printing nine
                   "Hazardous goods: No" rows would bury the one lane that says yes. */}

@@ -12,8 +12,8 @@ import {
 const MATURITY_BADGE_CLASSES: Record<string, string> = {
   lab_scale: "bg-muted text-muted-foreground",
   pilot_scale: "bg-muted text-muted-foreground",
-  commercial: "bg-[#00696E]/10 text-[#00696E]",
-  mature: "bg-[#00696E]/20 text-[#00696E]",
+  commercial: "bg-primary-imprint/10 text-primary-imprint",
+  mature: "bg-primary-imprint/20 text-primary-imprint",
 };
 
 /**
@@ -46,7 +46,7 @@ export default function SubstituteList({
           {substitutes.map((substitute) => (
             <li
               key={substitute.id}
-              className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+              className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <p className="text-sm font-medium">{substitute.substituteLabel}</p>
@@ -76,7 +76,7 @@ export default function SubstituteList({
                 ) : (
                   <Link
                     href={`/research-and-development/go-to-market?capability=${substitute.supplierCapabilitySlug}`}
-                    className="text-[#00696E] hover:underline"
+                    className="text-primary-imprint hover:underline"
                   >
                     Find suppliers who can do this →
                   </Link>

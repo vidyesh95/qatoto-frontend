@@ -79,7 +79,7 @@ function RoadmapDestinationCard({ destination }: { destination: RoadmapDestinati
             <span className="text-base font-semibold tracking-tight text-muted-foreground">
               {destination.label}
             </span>
-            <span className="text-[0.625rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
+            <span className="text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
               Soon
             </span>
           </p>
@@ -103,16 +103,17 @@ export default function Roadmap() {
   return (
     <main className="min-h-[calc(100dvh-64px)] bg-background text-foreground">
       <section className="relative overflow-hidden">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Complex decorative multi-radial gradient */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_50%_0%,var(--color-primary)_0%,transparent_55%),radial-gradient(40%_50%_at_15%_30%,var(--color-secondary)_0%,transparent_55%)] opacity-80"
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-20 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-eyebrow text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             Roadmap
           </span>
-          <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-7xl md:text-8xl">
+          <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl leading-tight font-semibold tracking-tight sm:text-7xl md:text-8xl">
             Every surface.
             <br />
             <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -130,7 +131,7 @@ export default function Roadmap() {
       <section id="what-this-is" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
         <div className="grid gap-12 md:grid-cols-[1fr_1.3fr] md:items-start">
           <div>
-            <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+            <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
               What this is
             </span>
             <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
@@ -160,7 +161,7 @@ export default function Roadmap() {
 
       <section id="what-you-can-do" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
             What you can do
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -367,7 +368,7 @@ export default function Roadmap() {
 
       <section id="reference" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
             Reference
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -392,7 +393,7 @@ export default function Roadmap() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[1.4fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
+              <span className="text-xs font-medium tracking-eyebrow text-background/60 uppercase">
                 Start anywhere
               </span>
               <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">

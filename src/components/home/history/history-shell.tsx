@@ -52,7 +52,7 @@ export default async function HistoryShell() {
         a reader believe this list is permanent is telling them something false about their own
         data — and they only find out when a video they were looking for is not here.
       */}
-      <p className="text-xs text-[#6F7979]">Kept for 90 days.</p>
+      <p className="text-xs text-outline-strong">Kept for 90 days.</p>
     </div>
   );
 

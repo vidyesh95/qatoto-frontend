@@ -8,11 +8,11 @@ import type { WorkshopFile, WorkshopFileKind } from "@/lib/rnd/workshop.schemas"
 
 // Lettered squares instead of per-kind icon assets — no new binaries this phase.
 const FILE_KIND_GLYPHS: Record<WorkshopFileKind, { letter: string; className: string }> = {
-  document: { letter: "D", className: "bg-[#D6E3FF] text-[#191C1C]" },
-  spreadsheet: { letter: "S", className: "bg-[#00696E]/10 text-[#00696E]" },
+  document: { letter: "D", className: "bg-secondary text-foreground" },
+  spreadsheet: { letter: "S", className: "bg-primary-imprint/10 text-primary-imprint" },
   cad_model: { letter: "C", className: "bg-muted text-foreground" },
-  image: { letter: "I", className: "bg-[#8A6116]/10 text-[#8A6116]" },
-  video: { letter: "V", className: "bg-[#BA1A1A]/10 text-[#BA1A1A]" },
+  image: { letter: "I", className: "bg-amber-700/10 text-amber-700" },
+  video: { letter: "V", className: "bg-destructive/10 text-destructive" },
   archive: { letter: "Z", className: "bg-muted text-foreground" },
   other: { letter: "?", className: "bg-muted text-muted-foreground" },
 };
@@ -43,7 +43,7 @@ export default function WorkshopFiles({ files, teamMembers }: WorkshopFilesProps
 
   return (
     <div className="space-y-3 px-4 lg:px-6">
-      <ul className="divide-y divide-border/50 rounded-2xl border border-[#CAC4D0]/60">
+      <ul className="divide-y divide-border/50 rounded-2xl border border-outline-variant/60">
         {files.map((workshopFile) => {
           const fileKindGlyph = FILE_KIND_GLYPHS[workshopFile.fileKind];
           const uploader = findUploader(workshopFile.uploadedByMemberId);
@@ -60,7 +60,7 @@ export default function WorkshopFiles({ files, teamMembers }: WorkshopFilesProps
                     href={workshopFile.externalUrl}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="block truncate text-sm font-medium text-[#00696E] underline"
+                    className="block truncate text-sm font-medium text-primary-imprint underline"
                   >
                     {workshopFile.fileName}
                   </a>

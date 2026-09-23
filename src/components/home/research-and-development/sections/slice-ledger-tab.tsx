@@ -90,15 +90,15 @@ export default function SliceLedgerTab({
         return (
           <div className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="text-xs text-muted-foreground">Total slices</p>
                 <p className="text-xl font-semibold">{equity.totalSlices}</p>
               </div>
-              <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="text-xs text-muted-foreground">Members with a share</p>
                 <p className="text-xl font-semibold">{equity.memberCount}</p>
               </div>
-              <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="text-xs text-muted-foreground">
                   {equity.isBaked ? "Frozen" : "Recomputed"}
                 </p>
@@ -130,7 +130,7 @@ export default function SliceLedgerTab({
                   {equity.shares.map((share, shareIndex) => (
                     <li
                       key={share.memberId}
-                      className="flex items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                      className="flex items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <span
@@ -187,7 +187,7 @@ export default function SliceLedgerTab({
               {projectionState.rows.map((projection) => (
                 <li
                   key={projection.openRoleId}
-                  className="rounded-2xl border border-dashed border-[#CAC4D0] p-4"
+                  className="rounded-2xl border border-dashed border-outline-variant p-4"
                 >
                   <p className="font-medium">{projection.roleTitle}</p>
                   <p className="mt-1 text-sm">

@@ -126,7 +126,7 @@ function OrderRow({ order, which }: { order: OrderSummary; which: "buyer" | "pro
       {/* Escrow, or its absence, on every row. It is the difference between money someone is holding and
           money nobody is, and a queue that only mentioned it on the protected orders would leave the
           unprotected ones reading as protected by default. */}
-      <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1 text-xs leading-4 text-muted-foreground">
         {order.hasEscrowProtection
           ? SETTLEMENT_RAIL_LABELS[order.settlementRail]
           : `${SETTLEMENT_RAIL_LABELS[order.settlementRail]} No escrow.`}

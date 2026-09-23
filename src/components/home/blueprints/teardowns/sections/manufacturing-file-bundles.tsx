@@ -32,7 +32,7 @@ export default function ManufacturingFileBundles({
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Manufacturing files</h2>
-      <p className="mt-0.5 text-[11px] text-[#6F7979]">
+      <p className="mt-0.5 text-xs text-outline-strong">
         What a machine shop or a board house builds from.
       </p>
 
@@ -46,13 +46,13 @@ export default function ManufacturingFileBundles({
 
           return (
             <div key={bundle}>
-              <h3 className="font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase">
+              <h3 className="font-mono text-xs tracking-eyebrow text-outline-strong uppercase">
                 {TEARDOWN_MANUFACTURING_BUNDLE_LABELS[bundle]}
               </h3>
               {/* ONE PANEL PER BUNDLE WITH HAIRLINES BETWEEN FILES, not a bordered box per file. Six
                   stacked boxes was the repeated-card shape `docs/Design.md` §6 bans, and it read as
                   six things rather than one bundle a board house receives together. */}
-              <ul className="mt-1.5 divide-y divide-[#CAC4D0]/60 rounded-xl border border-[#CAC4D0]/60">
+              <ul className="mt-1.5 divide-y divide-outline-variant/60 rounded-xl border border-outline-variant/60">
                 {bundleFiles.map((file) => (
                   <li key={file.id} className="flex items-center gap-3 px-3 py-2.5">
                     <Image
@@ -64,7 +64,7 @@ export default function ManufacturingFileBundles({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-foreground">{file.title}</p>
-                      <p className="mt-0.5 text-[11px] text-[#6F7979]">
+                      <p className="mt-0.5 text-xs text-outline-strong">
                         {TEARDOWN_MANUFACTURING_FILE_KIND_LABELS[file.kind]}
                         {" · "}
                         {formatFileSizeFromBytes(file.byteSize)}

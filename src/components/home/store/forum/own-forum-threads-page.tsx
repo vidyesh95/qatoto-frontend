@@ -66,13 +66,13 @@ export default function OwnForumThreadsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <nav className="pb-2 text-xs leading-4 text-[#6F7979]" aria-label="Breadcrumb">
+        <nav className="pb-2 text-xs leading-4 text-outline-strong" aria-label="Breadcrumb">
           <Link href="/store/forum" className="hover:underline">
             Business forum
           </Link>
         </nav>
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">Your threads</h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Everything you have asked, including what is still waiting for review.
         </p>
       </header>
@@ -118,8 +118,8 @@ function OwnThreadCard({ thread }: { thread: OwnForumThread }) {
   const wasNotPublished = thread.state === "pending_review" && thread.moderatedAt !== null;
 
   return (
-    <article className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <p className="text-xs leading-4 text-[#6F7979]">
+    <article className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <p className="text-xs leading-4 text-outline-strong">
         {FORUM_BOARD_LABELS[thread.board]}
         {" · "}
         {describeOwnForumThreadState(thread)}
@@ -127,7 +127,7 @@ function OwnThreadCard({ thread }: { thread: OwnForumThread }) {
         {formatIsoInstantLabel(thread.createdAt)}
       </p>
 
-      <h2 className="mt-1 text-sm leading-5 font-medium text-[#191C1C]">
+      <h2 className="mt-1 text-sm leading-5 font-medium text-foreground">
         {isPubliclyReadable ? (
           <Link href={`/store/forum/${thread.slug}`} className="hover:underline">
             {thread.title}
@@ -137,21 +137,21 @@ function OwnThreadCard({ thread }: { thread: OwnForumThread }) {
         )}
       </h2>
 
-      <p className="mt-1 text-sm leading-5 text-[#6F7979]">{thread.excerpt}</p>
+      <p className="mt-1 text-sm leading-5 text-outline-strong">{thread.excerpt}</p>
 
       {wasNotPublished && thread.decisionReason !== null && (
         // NOT styled as an error. The author did nothing wrong by asking; a moderator decided the
         // board would not carry it, and the note is the actionable part.
-        <div className="mt-2 rounded-lg bg-[#E0E3E3] px-3 py-2">
-          <p className="text-xs leading-4 font-medium text-[#191C1C]">
+        <div className="mt-2 rounded-lg bg-muted px-3 py-2">
+          <p className="text-xs leading-4 font-medium text-foreground">
             This was not published. Here is why:
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#4A6364]">{thread.decisionReason}</p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">{thread.decisionReason}</p>
         </div>
       )}
 
       {isPubliclyReadable && (
-        <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-2 text-xs leading-4 text-outline-strong">
           {formatCountLabel(thread.replyCount)}
           {thread.replyCount === 1 ? " reply" : " replies"}
           {/* `null` is NOT "nobody helped" — it means nobody pressed the button. */}

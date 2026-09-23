@@ -43,13 +43,13 @@ import { createHttpsOrSiteRelativeUrlSchema } from "@/lib/blueprints/url-source.
 import type { ActionResponse, ApiError } from "@/lib/http";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
 
 type DecisionKind = TeardownModerationDecision["decision"];
 
@@ -235,7 +235,7 @@ export default function TeardownReviewCard({
       <WalkthroughBlock walkthroughVideo={payload.walkthroughVideo} />
       <TagLine tags={payload.tags} />
 
-      <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
+      <div className="mt-4 border-t border-outline-variant/60 pt-3">
         {noteField}
 
         {/*
@@ -361,7 +361,7 @@ function RefusalBlock({
 function SendBackHint({ isNoteEmpty }: { readonly isNoteEmpty: boolean }) {
   if (!isNoteEmpty) return null;
   return (
-    <span className="text-[11px] text-muted-foreground">
+    <span className="text-xs text-muted-foreground">
       Sending back needs a note. It is the only thing the publisher sees.
     </span>
   );
@@ -442,7 +442,7 @@ function UnpublishableDecision({
         </p>
         <IssueList issues={issues} />
       </div>
-      <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
+      <div className="mt-4 border-t border-outline-variant/60 pt-3">
         {noteField}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <button
@@ -567,7 +567,7 @@ function PermissionBlock({
   readonly provenance: TeardownReviewPayload["provenance"];
 }) {
   return (
-    <section className="mt-3 rounded-xl border border-[#CAC4D0]/60 p-3">
+    <section className="mt-3 rounded-xl border border-outline-variant/60 p-3">
       <h3 className="text-xs font-medium text-muted-foreground">Permission</h3>
       <p className="mt-1 text-sm font-medium">{TEARDOWN_PROVENANCE_KIND_LABELS[provenance.kind]}</p>
       {renderPermissionEvidence(provenance)}
@@ -594,7 +594,7 @@ function renderPermissionEvidence(provenance: TeardownReviewPayload["provenance"
             href={provenance.licence.url}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="text-[#00696E] hover:underline"
+            className="text-primary-imprint hover:underline"
           >
             {provenance.licence.name}
           </a>
@@ -676,7 +676,7 @@ function MaterialList({ materials }: { readonly materials: readonly TeardownRevi
       <ul className="mt-1 space-y-2">
         {materials.map((material, materialIndex) => (
           // Keyed by position: a submission mints no id, and two rows may share a designation.
-          <li key={materialIndex} className="rounded-xl border border-[#CAC4D0]/40 p-3">
+          <li key={materialIndex} className="rounded-xl border border-outline-variant/40 p-3">
             <p className="text-sm font-medium">{material.appliesToLabel}</p>
             <p className="mt-0.5 text-sm">
               {material.designation}
@@ -712,9 +712,9 @@ function PartsTable({ parts }: { readonly parts: TeardownReviewPayload["parts"] 
   return (
     <section className="mt-3">
       <h3 className="text-xs font-medium text-muted-foreground">Parts</h3>
-      <div className="mt-1 overflow-hidden rounded-xl border border-[#CAC4D0]/60">
+      <div className="mt-1 overflow-hidden rounded-xl border border-outline-variant/60">
         <table className="w-full text-sm">
-          <thead className="border-b border-[#CAC4D0]/60 text-left text-xs text-muted-foreground">
+          <thead className="border-b border-outline-variant/60 text-left text-xs text-muted-foreground">
             <tr>
               <th scope="col" className="px-3 py-2 font-medium">
                 Part
@@ -724,7 +724,7 @@ function PartsTable({ parts }: { readonly parts: TeardownReviewPayload["parts"] 
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#CAC4D0]/60">
+          <tbody className="divide-y divide-outline-variant/60">
             {parts.map((listedPart, partIndex) => (
               // Keyed by position: "Housing bolt, M4" four times over is one unit's honest list.
               <tr key={partIndex}>
@@ -772,20 +772,20 @@ function ReviewFileList({
             return (
               // Keyed by position: a submission mints no file ids.
               <li key={fileIndex} className="text-sm">
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px]">
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs">
                   {TEARDOWN_REVIEW_FILE_KIND_LABELS[file.kind]}
                 </span>{" "}
                 <a
                   href={file.url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="text-[#00696E] hover:underline"
+                  className="text-primary-imprint hover:underline"
                 >
                   {file.title}
                 </a>
                 <span className="block text-xs break-all text-muted-foreground">{file.url}</span>
                 {isOtherVocabulary ? (
-                  <span className="block text-[11px] text-muted-foreground">
+                  <span className="block text-xs text-muted-foreground">
                     Sent in the wrong list, from an older version of the form. It will be filed by
                     its own label when you publish, so this is not a reason to send it back.
                   </span>
@@ -818,7 +818,7 @@ function WalkthroughBlock({
           href={`https://www.youtube.com/watch?v=${walkthroughVideo.youtubeVideoId}`}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="text-[#00696E] hover:underline"
+          className="text-primary-imprint hover:underline"
         >
           {walkthroughVideo.youtubeVideoId}
         </a>
@@ -847,7 +847,7 @@ function NoteField({
         disabled={isBusy}
         className={FIELD_CLASS}
       />
-      <span className="mt-1 block text-[11px] tabular-nums">
+      <span className="mt-1 block text-xs tabular-nums">
         {moderatorNote.length} of{" "}
         {TEARDOWN_MODERATOR_NOTE_MAXIMUM_CHARACTERS.toLocaleString("en-US")}
       </span>
@@ -881,7 +881,7 @@ function PublishFields({
   readonly onDesiredSlugChange: (nextDesiredSlug: string) => void;
 }) {
   return (
-    <fieldset className="mt-3 rounded-xl border border-[#CAC4D0]/60 p-3">
+    <fieldset className="mt-3 rounded-xl border border-outline-variant/60 p-3">
       <legend className="px-1 text-xs font-medium text-muted-foreground">
         If you publish — the publisher sent none of this
       </legend>
@@ -935,7 +935,7 @@ function PublishFields({
           placeholder="Leave blank to let the server choose"
           className={FIELD_CLASS}
         />
-        <span className="mt-1 block text-[11px]">
+        <span className="mt-1 block text-xs">
           Lowercase, digits and single hyphens. It cannot be changed once the teardown is published.
         </span>
       </label>
@@ -981,14 +981,12 @@ function ThumbnailPreview({ thumbnailUrl }: { readonly thumbnailUrl: string }) {
   switch (previewState.status) {
     case "blank":
       return (
-        <div className="mt-3 flex aspect-video w-40 items-center justify-center rounded-lg border border-dashed border-[#CAC4D0]/60 text-[11px] text-muted-foreground">
+        <div className="mt-3 flex aspect-video w-40 items-center justify-center rounded-lg border border-dashed border-outline-variant/60 text-xs text-muted-foreground">
           Paste a link to see it
         </div>
       );
     case "invalid":
-      return (
-        <p className="mt-3 max-w-prose text-[11px] text-destructive">{previewState.message}</p>
-      );
+      return <p className="mt-3 max-w-prose text-xs text-destructive">{previewState.message}</p>;
     case "ready":
       return (
         <Image
@@ -1005,7 +1003,7 @@ function ThumbnailPreview({ thumbnailUrl }: { readonly thumbnailUrl: string }) {
       // NOT a blocker. A host that refuses hotlinking from this origin is not grounds to refuse a
       // decision, and the server re-validates the address anyway.
       return (
-        <p className="mt-3 max-w-prose text-[11px] text-muted-foreground">
+        <p className="mt-3 max-w-prose text-xs text-muted-foreground">
           That link did not load here. The address may still be right — open it in a new tab to
           check.
         </p>
@@ -1029,7 +1027,7 @@ function ReviewProse({ heading, body }: { readonly heading: string; readonly bod
 
 function FactRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="border-t border-[#CAC4D0]/40 py-1">
+    <div className="border-t border-outline-variant/40 py-1">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>{value}</dd>
     </div>

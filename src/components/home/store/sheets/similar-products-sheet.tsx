@@ -31,14 +31,14 @@ export default function SimilarProductsSheet({
       <div className="flex flex-col gap-5 px-4 pb-6">
         {populatedGroups.map((group) => (
           <section key={group.relationKind}>
-            <h3 className="pb-2 text-sm font-medium tracking-[0.1px] text-[#191C1C]">
+            <h3 className="pb-2 text-sm font-medium tracking-normal text-foreground">
               {PRODUCT_RELATION_KIND_LABELS[group.relationKind]}
             </h3>
             <ul className="grid grid-cols-2 gap-3">
               {group.items.map((companion) => (
                 <li key={companion.product.id} className="flex flex-col">
                   <CatalogProductCard product={companion.product} />
-                  <span className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+                  <span className="mt-1 text-xs leading-4 text-outline-strong">
                     {companionSourceCaption(companion.sourceKind)}
                   </span>
                 </li>

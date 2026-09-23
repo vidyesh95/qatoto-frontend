@@ -54,11 +54,11 @@ export default function VariantPicker({ currency }: { readonly currency: string 
             >
               <span
                 className={`relative block aspect-square overflow-hidden rounded outline -outline-offset-1 ${
-                  isSelected ? "outline-[#2A76FD]" : "outline-[#E0E3E3]"
+                  isSelected ? "outline-blue-600" : "outline-border"
                 }`}
               >
                 {tileImage === null ? (
-                  <span className="grid size-full place-items-center bg-[#F2F4F4] text-[10px] font-medium text-[#6F7979]">
+                  <span className="grid size-full place-items-center bg-muted text-xs font-medium text-outline-strong">
                     {variant.name.slice(0, 2).toUpperCase()}
                   </span>
                 ) : (
@@ -73,7 +73,7 @@ export default function VariantPicker({ currency }: { readonly currency: string 
               </span>
               <span
                 className={`mt-1 block truncate text-center text-xs font-medium tracking-wide ${
-                  isSelected ? "text-[#2A76FD]" : "text-foreground"
+                  isSelected ? "text-blue-600" : "text-foreground"
                 }`}
               >
                 {variant.name}

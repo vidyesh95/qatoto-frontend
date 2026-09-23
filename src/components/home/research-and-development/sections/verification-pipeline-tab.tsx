@@ -40,8 +40,8 @@ const VERIFICATION_STATUS_LABELS: Record<EffortVerificationStatus, string> = {
 const VERIFICATION_STATUS_BADGE_CLASS: Record<EffortVerificationStatus, string> = {
   not_run: "bg-muted text-muted-foreground",
   queued: "bg-muted text-muted-foreground",
-  running: "bg-[#D6E3FF] text-[#191C1C]",
-  verified: "bg-[#00696E]/10 text-[#00696E]",
+  running: "bg-secondary text-foreground",
+  verified: "bg-primary-imprint/10 text-primary-imprint",
   flagged_for_review: "bg-amber-100 text-amber-800",
   unverified: "bg-red-100 text-red-800",
 };
@@ -169,7 +169,7 @@ export default function VerificationPipelineTab({
         return (
           <ul className="grid gap-3 sm:grid-cols-2">
             {receiptsState.rows.map((receipt) => (
-              <li key={receipt.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <li key={receipt.id} className="rounded-2xl border border-outline-variant/60 p-4">
                 <p className="font-medium">{receipt.receiptKind.replaceAll("_", " ")}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {/* Null capture time is the whole story on a physical claim: with no

@@ -169,7 +169,7 @@ export default function ResearchProgramPapers({
       {canUploadPaper && (
         <form
           onSubmit={handleSubmit}
-          className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+          className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1 text-xs">
@@ -179,7 +179,7 @@ export default function ResearchProgramPapers({
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 maxLength={300}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 placeholder="Senolytic dosing in human trials: a meta-review"
               />
             </label>
@@ -224,7 +224,7 @@ export default function ResearchProgramPapers({
                 value={doi}
                 onChange={(event) => setDoi(event.target.value)}
                 maxLength={200}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 placeholder="10.1234/example or a doi.org link"
               />
             </label>
@@ -235,11 +235,11 @@ export default function ResearchProgramPapers({
                 value={authorAffiliation}
                 onChange={(event) => setAuthorAffiliation(event.target.value)}
                 maxLength={200}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 placeholder="University of Lagos, Gerontology Lab"
               />
               {/* Said out loud, because nothing verifies it. */}
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Shown as your own claim. Qatoto does not verify affiliations.
               </span>
             </label>
@@ -251,9 +251,9 @@ export default function ResearchProgramPapers({
               type="file"
               accept="application/pdf"
               onChange={handleFileChange}
-              className="w-full cursor-pointer rounded-lg border border-dashed border-[#CAC4D0] px-3 py-4 text-sm"
+              className="w-full cursor-pointer rounded-lg border border-dashed border-outline-variant px-3 py-4 text-sm"
             />
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Up to 25 MB. You can file a DOI now and attach the PDF later.
             </span>
           </label>
@@ -262,7 +262,7 @@ export default function ResearchProgramPapers({
             <button
               type="submit"
               disabled={uploadMutation.isPending || !title.trim() || !categoryId}
-              className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploadMutation.isPending ? "Submitting…" : "Submit for review"}
             </button>
@@ -284,20 +284,20 @@ export default function ResearchProgramPapers({
           {papers.map((paper) => (
             <li
               key={paper.paperId}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+              className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium">{paper.title}</p>
                   {paper.isUploadedByViewer && (
-                    <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[10px] text-[#00696E]">
+                    <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint">
                       You
                     </span>
                   )}
                   {/* A queued or rejected paper is visible only to its uploader and staff, so
                       showing the verdict here tells them something only they can see. */}
                   {paper.moderationStatus !== "approved" && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                       {RESEARCH_PAPER_MODERATION_STATUS_LABELS[paper.moderationStatus]}
                     </span>
                   )}
@@ -326,7 +326,7 @@ export default function ResearchProgramPapers({
                     type="button"
                     disabled={downloadMutation.isPending}
                     onClick={() => void handleDownload(paper.paperId)}
-                    className="cursor-pointer rounded-full border border-[#00696E] px-3 py-1.5 text-xs font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/10 disabled:opacity-60"
+                    className="cursor-pointer rounded-full border border-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/10 disabled:opacity-60"
                   >
                     Download
                   </button>
@@ -336,7 +336,7 @@ export default function ResearchProgramPapers({
                     type="button"
                     disabled={deleteMutation.isPending}
                     onClick={() => deleteMutation.mutate(paper.paperId)}
-                    className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition-colors hover:bg-muted disabled:opacity-60"
+                    className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs transition-colors hover:bg-muted disabled:opacity-60"
                   >
                     Withdraw
                   </button>

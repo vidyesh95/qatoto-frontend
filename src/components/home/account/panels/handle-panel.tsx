@@ -464,7 +464,7 @@ function HandleAvailabilityRow({
       return <span className="text-xs text-muted-foreground">This is your current handle.</span>;
     case "revertable":
       return (
-        <span className="text-xs text-[#00696E]">
+        <span className="text-xs text-primary-imprint">
           This is your reserved handle — revert before {formatHandleDate(state.expiresAt)} to
           reclaim it.
         </span>

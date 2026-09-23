@@ -80,7 +80,7 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
   return (
     <article className="mx-auto w-full max-w-3xl">
       <header className="px-4 pt-4 lg:px-6">
-        <nav className="pb-2 text-xs leading-4 text-[#6F7979]" aria-label="Breadcrumb">
+        <nav className="pb-2 text-xs leading-4 text-outline-strong" aria-label="Breadcrumb">
           <Link href="/store/forum" className="hover:underline">
             Business forum
           </Link>
@@ -92,7 +92,7 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
 
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">{thread.title}</h1>
 
-        <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           {thread.authorDisplayName}
           {thread.authorOrganizationName === null
             ? " · posting as an individual"
@@ -102,7 +102,7 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
         </p>
 
         {thread.state === "locked" && (
-          <p className="mt-2 rounded-lg bg-[#E0E3E3] px-3 py-2 text-xs leading-4 text-[#4A6364]">
+          <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
             This thread is locked. It stays readable; nobody can add to it.
           </p>
         )}
@@ -110,12 +110,12 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
         {/* `whitespace-pre-line` renders the paragraph breaks the body carries. It is plain text on
             the wire, never HTML — a forum that renders member-supplied markup on a commerce domain
             is a stored-XSS surface, and the backend has no sanitiser to lean on. */}
-        <p className="mt-3 text-sm leading-6 whitespace-pre-line text-[#191C1C]">{detail.body}</p>
+        <p className="mt-3 text-sm leading-6 whitespace-pre-line text-foreground">{detail.body}</p>
       </header>
 
       {acceptedReply !== null && (
         <section className="px-4 pt-6 lg:px-6" aria-label="Accepted answer">
-          <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">
+          <h2 className="pb-2 text-sm font-medium tracking-wide text-foreground">
             Answer accepted by the author
           </h2>
           <ReplyCard reply={acceptedReply} isAccepted />
@@ -140,10 +140,10 @@ function ReplyCard({ reply, isAccepted }: { reply: ForumReply; isAccepted: boole
   return (
     <div
       className={`rounded-xl border px-4 py-3 ${
-        isAccepted ? "border-[#00696E]/50 bg-[#00696E]/5" : "border-[#CAC4D0]/60"
+        isAccepted ? "border-primary-imprint/50 bg-primary-imprint/5" : "border-outline-variant/60"
       }`}
     >
-      <p className="text-xs leading-4 text-[#6F7979]">
+      <p className="text-xs leading-4 text-outline-strong">
         {reply.authorDisplayName}
         {reply.authorOrganizationName === null
           ? " · posting as an individual"
@@ -151,7 +151,7 @@ function ReplyCard({ reply, isAccepted }: { reply: ForumReply; isAccepted: boole
         {" · "}
         {formatIsoInstantLabel(reply.createdAt)}
       </p>
-      <p className="mt-1.5 text-sm leading-6 whitespace-pre-line text-[#191C1C]">{reply.body}</p>
+      <p className="mt-1.5 text-sm leading-6 whitespace-pre-line text-foreground">{reply.body}</p>
     </div>
   );
 }

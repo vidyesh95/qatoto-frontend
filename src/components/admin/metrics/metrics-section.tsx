@@ -54,7 +54,7 @@ export function MetricsSection({
   readonly children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-lg font-medium">{title}</h2>
@@ -73,7 +73,7 @@ export function MetricsSection({
 /** The loading, error and empty renders every section shares. */
 export function MetricsStateNotice({ message }: { readonly message: string }) {
   return (
-    <output className="block rounded-xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+    <output className="block rounded-xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
       {message}
     </output>
   );

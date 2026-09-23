@@ -7,8 +7,8 @@ import Link from "next/link";
 // visible place someone could mistake a flag for a pay cut.
 export default function BuildLogHero() {
   return (
-    <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
-      <p className="text-xs tracking-widest text-white/80">STAGE 04 · BUILD &amp; DAILY LOGS</p>
+    <section className="mx-4 rounded-2xl bg-linear-to-r from-band-ink via-band-deep to-band-imprint p-6 text-white md:p-10 lg:mx-6">
+      <p className="text-xs tracking-eyebrow text-white/80">STAGE 04 · BUILD &amp; DAILY LOGS</p>
       <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
         Effort becomes proof.
       </h1>
@@ -25,7 +25,7 @@ export default function BuildLogHero() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
           href="#global-daily-log-feed"
-          className="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           Read the feed
         </Link>

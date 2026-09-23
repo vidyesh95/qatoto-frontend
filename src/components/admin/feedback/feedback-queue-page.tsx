@@ -144,7 +144,7 @@ export default function FeedbackQueuePage() {
                 {note.message}
               </p>
 
-              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+              <p className="mt-2 text-xs leading-4 text-muted-foreground">
                 {/* AN ERASED AUTHOR IS AN ORDINARY ROW. `user_id` is `ON DELETE SET NULL` and
                     the anonymization manifest nulls it, keeping the note. Say "account erased"
                     rather than printing a blank or inventing a placeholder name. */}
@@ -163,7 +163,7 @@ export default function FeedbackQueuePage() {
               </p>
 
               {note.userAgent !== null && (
-                <p className="mt-1 text-[11px] leading-4 break-all text-muted-foreground">
+                <p className="mt-1 text-xs leading-4 break-all text-muted-foreground">
                   {note.userAgent}
                 </p>
               )}
@@ -172,7 +172,7 @@ export default function FeedbackQueuePage() {
                   control that could bring a closed note back, and rendering dead buttons
                   would imply otherwise. */}
               {note.status === "closed" ? (
-                <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
+                <p className="mt-3 text-xs leading-4 text-muted-foreground">
                   Closed. This cannot be reopened from here.
                 </p>
               ) : (

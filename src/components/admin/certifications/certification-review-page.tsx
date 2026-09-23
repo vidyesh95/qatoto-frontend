@@ -49,7 +49,7 @@ import {
 } from "@/lib/store/factories.schemas";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40";
@@ -58,7 +58,7 @@ const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
 
 type QueueViewState =
   | { status: "loading" }
@@ -92,12 +92,12 @@ export default function CertificationReviewPage() {
       </header>
 
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       )}
       {staffContextQuery.isSuccess && !canDecideCertifications && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Deciding certifications needs the `moderate_commerce` capability. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is not loaded.
         </output>
@@ -169,7 +169,7 @@ function renderQueue(viewState: QueueViewState) {
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Nothing in this queue.
         </p>
       );
@@ -456,7 +456,7 @@ function renderEvidence(evidence: EvidenceViewState, standardName: string) {
             src={evidence.objectUrl}
             type="application/pdf"
             title={`Certificate for ${standardName}`}
-            className="mt-2 h-[70vh] w-full rounded-xl border border-[#CAC4D0]/60"
+            className="mt-2 h-[70vh] w-full rounded-xl border border-outline-variant/60"
           />
         );
       }
@@ -466,7 +466,7 @@ function renderEvidence(evidence: EvidenceViewState, standardName: string) {
           <img
             src={evidence.objectUrl}
             alt={`Certificate for ${standardName}`}
-            className="mt-2 max-h-[70vh] w-full rounded-xl border border-[#CAC4D0]/60 object-contain"
+            className="mt-2 max-h-[70vh] w-full rounded-xl border border-outline-variant/60 object-contain"
           />
         );
       }

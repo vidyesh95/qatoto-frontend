@@ -68,7 +68,9 @@ export default function VideoCommentThread({
 
   if (!areCommentsEnabled) {
     return (
-      <p className="px-4 py-6 text-sm text-[#6F7979]">Comments are turned off for this video.</p>
+      <p className="px-4 py-6 text-sm text-outline-strong">
+        Comments are turned off for this video.
+      </p>
     );
   }
 
@@ -77,17 +79,17 @@ export default function VideoCommentThread({
       {isViewerSignedIn ? (
         <CommentComposer videoId={videoId} />
       ) : (
-        <p className="px-4 py-3 text-xs text-[#6F7979]">Sign in to leave a comment.</p>
+        <p className="px-4 py-3 text-xs text-outline-strong">Sign in to leave a comment.</p>
       )}
 
       {thread.isLoadingFirstPage ? (
-        <p className="px-4 py-6 text-sm text-[#6F7979]">Loading comments…</p>
+        <p className="px-4 py-6 text-sm text-outline-strong">Loading comments…</p>
       ) : thread.firstPageErrorMessage !== null ? (
         <p role="alert" className="px-4 py-6 text-sm text-red-700">
           {thread.firstPageErrorMessage}
         </p>
       ) : thread.rows.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-[#6F7979]">No comments yet. Be the first.</p>
+        <p className="px-4 py-6 text-sm text-outline-strong">No comments yet. Be the first.</p>
       ) : (
         <ul className="px-4 pb-2">
           {thread.rows.map((comment) => (
@@ -177,7 +179,7 @@ function CommentComposer({
         rows={2}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="w-full resize-none rounded-lg border border-[#CAC4D0] px-3 py-2 text-sm outline-none focus:border-[#00696E]"
+        className="w-full resize-none rounded-lg border border-outline-variant px-3 py-2 text-sm outline-none focus:border-primary-imprint"
       />
       <div className="flex flex-row items-center justify-end gap-3">
         {refusal !== null && (
@@ -188,7 +190,7 @@ function CommentComposer({
         <button
           type="submit"
           disabled={!isSubmittable || createComment.isPending}
-          className="rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {createComment.isPending
             ? "Posting…"
@@ -224,7 +226,7 @@ function CommentItem({
   if (comment.isDeleted || comment.body === null) {
     return (
       <li className="py-3">
-        <p className="text-xs text-[#6F7979] italic">[deleted]</p>
+        <p className="text-xs text-outline-strong italic">[deleted]</p>
         {comment.replyCount > 0 && (
           <ReplyThread videoId={videoId} parentCommentId={comment.commentId} />
         )}
@@ -264,7 +266,7 @@ function CommentItem({
       />
       <div className="min-w-0 flex-1">
         {/* `author` is null for a closed account even on a live comment. */}
-        <span className="text-[11px] font-medium text-foreground">
+        <span className="text-xs font-medium text-foreground">
           {comment.author?.name ?? "Former member"}
         </span>
 
@@ -280,7 +282,7 @@ function CommentItem({
             <p className="mt-1 text-xs leading-snug font-medium">{comment.body}</p>
             <RelativeTime
               isoInstant={comment.createdAt}
-              className="mt-1 block text-[11px] text-[#6F7979]"
+              className="mt-1 block text-xs text-outline-strong"
             />
           </>
         )}
@@ -291,7 +293,7 @@ function CommentItem({
             onClick={handleLikeClick}
             aria-pressed={isLiked}
             aria-label="Like comment"
-            className="flex cursor-pointer flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979]"
+            className="flex cursor-pointer flex-row items-center gap-1.5 text-xs text-foreground hover:text-outline-strong"
           >
             <Image
               src={`/icons/favorite_24dp_000000_FILL${isLiked ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
@@ -311,7 +313,7 @@ function CommentItem({
               type="button"
               onClick={() => setIsReplyComposerOpen((isOpen) => !isOpen)}
               aria-expanded={isReplyComposerOpen}
-              className="cursor-pointer text-[11px] text-[#6F7979] hover:text-foreground"
+              className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
             >
               Reply
             </button>
@@ -327,7 +329,7 @@ function CommentItem({
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="cursor-pointer text-[11px] text-[#6F7979] hover:text-foreground"
+              className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
             >
               Edit
             </button>
@@ -336,14 +338,14 @@ function CommentItem({
             type="button"
             onClick={() => deleteComment.mutate(comment.commentId)}
             disabled={deleteComment.isPending}
-            className="cursor-pointer text-[11px] text-[#6F7979] hover:text-foreground disabled:opacity-50"
+            className="cursor-pointer text-xs text-outline-strong hover:text-foreground disabled:opacity-50"
           >
             Delete
           </button>
         </div>
 
         {deleteComment.error !== null && (
-          <p role="alert" className="mt-1 text-[11px] text-red-700">
+          <p role="alert" className="mt-1 text-xs text-red-700">
             {describeEngagementError(deleteComment.error).message}
           </p>
         )}
@@ -367,9 +369,9 @@ function CommentItem({
             type="button"
             onClick={() => setAreRepliesExpanded((isExpanded) => !isExpanded)}
             aria-expanded={areRepliesExpanded}
-            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-[#6F7979] hover:text-foreground"
+            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-outline-strong hover:text-foreground"
           >
-            <span className="h-px w-6 bg-[#D5DBDB]" />
+            <span className="h-px w-6 bg-muted" />
             {areRepliesExpanded
               ? "Collapse"
               : `Show ${formatCompactCountLabel(comment.replyCount)} ${
@@ -417,15 +419,15 @@ function ReplyThread({
   });
 
   return (
-    <div className="mt-2 border-l border-[#D5DBDB] pl-3">
+    <div className="mt-2 border-l border-border pl-3">
       {replies.isLoadingFirstPage ? (
-        <p className="py-2 text-[11px] text-[#6F7979]">Loading replies…</p>
+        <p className="py-2 text-xs text-outline-strong">Loading replies…</p>
       ) : replies.firstPageErrorMessage !== null ? (
-        <p role="alert" className="py-2 text-[11px] text-red-700">
+        <p role="alert" className="py-2 text-xs text-red-700">
           {replies.firstPageErrorMessage}
         </p>
       ) : replies.rows.length === 0 ? (
-        <p className="py-2 text-[11px] text-[#6F7979]">No replies yet.</p>
+        <p className="py-2 text-xs text-outline-strong">No replies yet.</p>
       ) : (
         <ul>
           {replies.rows.map((reply) => (
@@ -460,7 +462,7 @@ function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly repl
   if (reply.isDeleted || reply.body === null) {
     return (
       <li className="py-2">
-        <p className="text-[11px] text-[#6F7979] italic">[deleted]</p>
+        <p className="text-xs text-outline-strong italic">[deleted]</p>
       </li>
     );
   }
@@ -494,13 +496,13 @@ function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly repl
         className="size-7 shrink-0 rounded-full object-cover"
       />
       <div className="min-w-0 flex-1">
-        <span className="text-[11px] font-medium text-foreground">
+        <span className="text-xs font-medium text-foreground">
           {reply.author?.name ?? "Former member"}
         </span>
         <p className="mt-1 text-xs leading-snug font-medium">{reply.body}</p>
         <RelativeTime
           isoInstant={reply.createdAt}
-          className="mt-1 block text-[11px] text-[#6F7979]"
+          className="mt-1 block text-xs text-outline-strong"
         />
         <div className="mt-2 flex flex-row items-center gap-5">
           <button
@@ -508,7 +510,7 @@ function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly repl
             onClick={handleLikeClick}
             aria-pressed={isLiked}
             aria-label="Like reply"
-            className="flex cursor-pointer flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979]"
+            className="flex cursor-pointer flex-row items-center gap-1.5 text-xs text-foreground hover:text-outline-strong"
           >
             <Image
               src={`/icons/favorite_24dp_000000_FILL${isLiked ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
@@ -522,13 +524,13 @@ function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly repl
             type="button"
             onClick={() => deleteComment.mutate(reply.commentId)}
             disabled={deleteComment.isPending}
-            className="cursor-pointer text-[11px] text-[#6F7979] hover:text-foreground disabled:opacity-50"
+            className="cursor-pointer text-xs text-outline-strong hover:text-foreground disabled:opacity-50"
           >
             Delete
           </button>
         </div>
         {deleteComment.error !== null && (
-          <p role="alert" className="mt-1 text-[11px] text-red-700">
+          <p role="alert" className="mt-1 text-xs text-red-700">
             {describeEngagementError(deleteComment.error).message}
           </p>
         )}
@@ -580,25 +582,25 @@ function CommentEditor({
         maxLength={COMMENT_MAX_LENGTH}
         rows={2}
         aria-label="Edit comment"
-        className="w-full resize-none rounded-lg border border-[#CAC4D0] px-3 py-2 text-xs outline-none focus:border-[#00696E]"
+        className="w-full resize-none rounded-lg border border-outline-variant px-3 py-2 text-xs outline-none focus:border-primary-imprint"
       />
       <div className="flex flex-row items-center gap-3">
         {refusal !== null && (
-          <p role="alert" className="flex-1 text-[11px] text-red-700">
+          <p role="alert" className="flex-1 text-xs text-red-700">
             {refusal.message}
           </p>
         )}
         <button
           type="button"
           onClick={onDone}
-          className="cursor-pointer text-[11px] text-[#6F7979] hover:text-foreground"
+          className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!isSubmittable || updateComment.isPending}
-          className="rounded-full bg-[#00696E] px-3 py-1 text-[11px] font-medium text-white disabled:opacity-50"
+          className="rounded-full bg-primary-imprint px-3 py-1 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {updateComment.isPending ? "Saving…" : "Save"}
         </button>

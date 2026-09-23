@@ -101,7 +101,10 @@ export default function IntegrationConsentTab({
               const isConnected = grant?.status === "active";
 
               return (
-                <li key={provider} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+                <li
+                  key={provider}
+                  className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{PROVIDER_LABELS[provider]}</p>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
@@ -135,7 +138,7 @@ export default function IntegrationConsentTab({
                       type="button"
                       onClick={() => revokeMutation.mutate(provider)}
                       disabled={revokeMutation.isPending}
-                      className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                      className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                     >
                       {revokeMutation.isPending ? "Revoking…" : "Revoke"}
                     </button>
@@ -156,7 +159,7 @@ export default function IntegrationConsentTab({
                           },
                         );
                       }}
-                      className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                      className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                     >
                       {authorizeUrlMutation.isPending && connectingProvider === provider
                         ? "Opening…"

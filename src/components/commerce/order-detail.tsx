@@ -150,7 +150,7 @@ function OrderBody({
   return (
     <div className="pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           {isCounterpartySide && !isBuyerSide ? "Order you received" : "Order you placed"}
         </p>
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -351,7 +351,7 @@ function OrderLines({ order, isBuyerSide }: { order: OrderDetailValue; isBuyerSi
                 {/* A service line points at a separately stateful engagement, and its progress lives
                     on the Fulfilment tab. Saying so here stops a reader assuming a priced line means
                     a delivered service. */}
-                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                <p className="mt-1 text-xs leading-4 text-muted-foreground">
                   Progress for this service is tracked on the Fulfilment tab.
                 </p>
               </li>
@@ -431,7 +431,7 @@ function QuantityFact({
   if (quantity === 0 && !isAlwaysShown) return null;
   return (
     <div>
-      <dt className="text-[11px] leading-4 text-muted-foreground">{label}</dt>
+      <dt className="text-xs leading-4 text-muted-foreground">{label}</dt>
       <dd className="text-xs leading-4 text-foreground">{formatCountLabel(quantity)}</dd>
     </div>
   );

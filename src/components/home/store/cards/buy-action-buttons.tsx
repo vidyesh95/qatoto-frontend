@@ -190,7 +190,7 @@ export default function BuyActionButtons({
   if (sellingState !== "selling") {
     return (
       <div className="w-full">
-        <p className="mb-2 rounded-lg bg-[#8C1D18]/10 px-3 py-2 text-xs leading-4 text-[#8C1D18]">
+        <p className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
           <span className="font-medium">{SELLING_STATE_LABELS[sellingState]}.</span>{" "}
           {sellingState === "discontinued"
             ? "This listing is no longer sold. Any replacements the seller has listed are shown below."
@@ -198,7 +198,7 @@ export default function BuyActionButtons({
         </p>
         <Link
           href={requestQuoteHref}
-          className="flex w-full items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex w-full items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
         >
           Request a quote
         </Link>
@@ -222,7 +222,7 @@ export default function BuyActionButtons({
             the composer is five steps and its own idempotency key. */}
         <Link
           href={requestQuoteHref}
-          className="flex flex-1 items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex flex-1 items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
         >
           Request a quote
         </Link>
@@ -230,7 +230,7 @@ export default function BuyActionButtons({
           type="button"
           onClick={handleAddToCartClick}
           disabled={!canAddToCart}
-          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
+          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
         >
           {setCartItem.isPending ? "Adding…" : "Add to cart"}
         </button>
@@ -247,7 +247,7 @@ export default function BuyActionButtons({
           type="button"
           onClick={handleBuyNowClick}
           disabled={!canAddToCart}
-          className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+          className="flex-1 rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-40"
         >
           {setCartItem.isPending ? "Starting…" : "Buy now"}
         </button>
@@ -256,14 +256,14 @@ export default function BuyActionButtons({
       {/* Why the button is disabled, when it is disabled for a reason the buyer can act on. A
           disabled control with no explanation reads as a broken page. */}
       {isVariantMissing && (
-        <p className="mt-1 text-xs leading-4 text-[#6F7979]">Choose an option to continue.</p>
+        <p className="mt-1 text-xs leading-4 text-outline-strong">Choose an option to continue.</p>
       )}
 
       {cart === null && !isCartLoading && (
-        <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           {isSignInRequired ? (
             <>
-              <Link href="/sign-in" className="font-medium text-[#00696E]">
+              <Link href="/sign-in" className="font-medium text-primary-imprint">
                 Sign in
               </Link>{" "}
               to add this to your cart.
@@ -275,9 +275,9 @@ export default function BuyActionButtons({
       )}
 
       {confirmedLine !== null && (
-        <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           {formatCountLabel(confirmedLine.quantity)} in your cart.{" "}
-          <Link href="/cart" className="font-medium text-[#00696E]">
+          <Link href="/cart" className="font-medium text-primary-imprint">
             View cart
           </Link>
         </p>

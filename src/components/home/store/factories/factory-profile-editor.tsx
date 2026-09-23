@@ -75,15 +75,15 @@ import {
 } from "@/lib/store/factories.schemas";
 
 const PRIMARY_BUTTON_CLASS =
-  "rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
+  "rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90 disabled:opacity-50";
 
 const QUIET_BUTTON_CLASS =
-  "rounded-full bg-background px-3 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted disabled:opacity-50";
+  "rounded-full bg-background px-3 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted disabled:opacity-50";
 
 const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-sm text-[#191C1C] outline-none focus:border-[#00696E]";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary-imprint";
 
-const SECTION_CLASS = "rounded-xl border border-[#CAC4D0]/60 px-4 py-4";
+const SECTION_CLASS = "rounded-xl border border-outline-variant/60 px-4 py-4";
 
 /** A blank text input is an ABSENCE, never `""`. */
 function toOptionalText(value: string): string | undefined {
@@ -161,7 +161,7 @@ export default function FactoryProfileEditor({
         {/* NOT "factory profile" any more. `businessType` spans manufacturer, trading company,
             agent and distributor — a trading company has stakeholders and certifications and no
             production lines at all, so the page's own title should not assume a factory. */}
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           What buyers see on {source.displayName} across the directory and your storefront.
         </p>
       </header>
@@ -171,7 +171,7 @@ export default function FactoryProfileEditor({
       <TermsForm organizationId={organizationId} source={source} />
 
       {declaredProfile === null ? (
-        <p className={`${SECTION_CLASS} text-sm leading-5 text-[#6F7979]`}>
+        <p className={`${SECTION_CLASS} text-sm leading-5 text-outline-strong`}>
           The rest of your profile could not be loaded. It is readable once your organization is
           active and public, which is also when buyers can see it.
         </p>
@@ -242,8 +242,8 @@ function ProductionLinesForm({
         replaceLines.mutate({ organizationId, input: { productionLines } });
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Production lines</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Production lines</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Saving replaces the whole list. A line you remove here is removed from your profile.
       </p>
 
@@ -251,8 +251,8 @@ function ProductionLinesForm({
         {lines.map((line, lineIndex) => (
           // The index IS the identity here: the list is positional on the wire, rows carry no id
           // on the way up, and reordering is what the array order means.
-          <li key={lineIndex} className="rounded-lg bg-[#F2F4F4] px-3 py-3">
-            <label className="block text-xs text-[#6F7979]">
+          <li key={lineIndex} className="rounded-lg bg-muted px-3 py-3">
+            <label className="block text-xs text-outline-strong">
               Name
               <input
                 className={FIELD_CLASS}
@@ -263,7 +263,7 @@ function ProductionLinesForm({
                 placeholder="Injection moulding"
               />
             </label>
-            <label className="mt-2 block text-xs text-[#6F7979]">
+            <label className="mt-2 block text-xs text-outline-strong">
               What it does
               <input
                 className={FIELD_CLASS}
@@ -275,7 +275,7 @@ function ProductionLinesForm({
               />
             </label>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Monthly capacity (optional)
                 <input
                   className={FIELD_CLASS}
@@ -289,7 +289,7 @@ function ProductionLinesForm({
                   placeholder="Leave blank if unmeasured"
                 />
               </label>
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Unit — required
                 <input
                   className={FIELD_CLASS}
@@ -303,7 +303,7 @@ function ProductionLinesForm({
             </div>
             <button
               type="button"
-              className="mt-2 text-[11px] leading-4 text-[#6F7979] hover:underline"
+              className="mt-2 text-xs leading-4 text-outline-strong hover:underline"
               onClick={() => setLines(lines.filter((_line, index) => index !== lineIndex))}
             >
               Remove this line
@@ -402,14 +402,14 @@ function SitesForm({
         replaceSites.mutate({ organizationId, input: { sites: siteInputs } });
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Sites</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">Saving replaces the whole list.</p>
+      <h2 className="text-sm font-medium text-foreground">Sites</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">Saving replaces the whole list.</p>
 
       <ul className="mt-3 space-y-3">
         {sites.map((site, siteIndex) => (
-          <li key={siteIndex} className="rounded-lg bg-[#F2F4F4] px-3 py-3">
+          <li key={siteIndex} className="rounded-lg bg-muted px-3 py-3">
             <div className="grid grid-cols-2 gap-2">
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Label
                 <input
                   className={FIELD_CLASS}
@@ -420,7 +420,7 @@ function SitesForm({
                   placeholder="Xiaoshan plant"
                 />
               </label>
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Country code
                 <input
                   className={FIELD_CLASS}
@@ -433,7 +433,7 @@ function SitesForm({
                 />
               </label>
             </div>
-            <label className="mt-2 block text-xs text-[#6F7979]">
+            <label className="mt-2 block text-xs text-outline-strong">
               Locality (optional)
               <input
                 className={FIELD_CLASS}
@@ -445,7 +445,7 @@ function SitesForm({
               />
             </label>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Floor area m² (optional)
                 <input
                   className={FIELD_CLASS}
@@ -458,7 +458,7 @@ function SitesForm({
                   }
                 />
               </label>
-              <label className="block text-xs text-[#6F7979]">
+              <label className="block text-xs text-outline-strong">
                 Production staff (optional)
                 <input
                   className={FIELD_CLASS}
@@ -474,7 +474,7 @@ function SitesForm({
             </div>
             <button
               type="button"
-              className="mt-2 text-[11px] leading-4 text-[#6F7979] hover:underline"
+              className="mt-2 text-xs leading-4 text-outline-strong hover:underline"
               onClick={() => setSites(sites.filter((_site, index) => index !== siteIndex))}
             >
               Remove this site
@@ -490,7 +490,7 @@ function SitesForm({
         asserting something neither party said. It is a remark, not a validation error.
       */}
       {statedAreaTotal > 0 && (
-        <p className="mt-3 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           These sites add up to {formatSquareMetresLabel(statedAreaTotal)}. Your organization-wide
           figure is stated separately and is not changed by this form; buyers see both.
         </p>
@@ -624,13 +624,13 @@ function TermsForm({
         updateTerms.mutate({ organizationId, input });
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Samples, minimums and your inbox</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Samples, minimums and your inbox</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Saved as one object — a sample fee only means something beside whether you offer samples,
         and a minimum only means something beside its unit.
       </p>
 
-      <label className="mt-3 flex items-center gap-2 text-sm text-[#191C1C]">
+      <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
         <input
           type="checkbox"
           checked={offersSamples}
@@ -641,7 +641,7 @@ function TermsForm({
 
       {offersSamples && (
         <fieldset className="mt-3">
-          <legend className="text-xs text-[#6F7979]">What does a sample cost?</legend>
+          <legend className="text-xs text-outline-strong">What does a sample cost?</legend>
           {/*
             THREE OPTIONS BECAUSE THERE ARE THREE ANSWERS. A single number box would make "unstated"
             and "free" the same empty field, and a buyer who orders a sample believing it is free
@@ -669,7 +669,7 @@ function TermsForm({
           </div>
 
           {sampleFeeChoice === "priced" && (
-            <label className="mt-2 block text-xs text-[#6F7979]">
+            <label className="mt-2 block text-xs text-outline-strong">
               Fee in minor units (cents)
               <input
                 className={FIELD_CLASS}
@@ -681,7 +681,7 @@ function TermsForm({
             </label>
           )}
 
-          <label className="mt-2 block text-xs text-[#6F7979]">
+          <label className="mt-2 block text-xs text-outline-strong">
             Sample lead time in days (optional)
             <input
               className={FIELD_CLASS}
@@ -693,7 +693,7 @@ function TermsForm({
         </fieldset>
       )}
 
-      <label className="mt-3 block text-xs text-[#6F7979]">
+      <label className="mt-3 block text-xs text-outline-strong">
         Currency
         <input
           className={FIELD_CLASS}
@@ -705,7 +705,7 @@ function TermsForm({
       </label>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="block text-xs text-[#6F7979]">
+        <label className="block text-xs text-outline-strong">
           Minimum order quantity
           <input
             className={FIELD_CLASS}
@@ -714,7 +714,7 @@ function TermsForm({
             onChange={(event) => setMinimumOrderQuantity(event.target.value)}
           />
         </label>
-        <label className="block text-xs text-[#6F7979]">
+        <label className="block text-xs text-outline-strong">
           …in what unit
           <input
             className={FIELD_CLASS}
@@ -726,7 +726,7 @@ function TermsForm({
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="block text-xs text-[#6F7979]">
+        <label className="block text-xs text-outline-strong">
           Minimum lead time (days)
           <input
             className={FIELD_CLASS}
@@ -735,7 +735,7 @@ function TermsForm({
             onChange={(event) => setMinimumLeadTimeDays(event.target.value)}
           />
         </label>
-        <label className="block text-xs text-[#6F7979]">
+        <label className="block text-xs text-outline-strong">
           Maximum lead time (days)
           <input
             className={FIELD_CLASS}
@@ -746,7 +746,7 @@ function TermsForm({
         </label>
       </div>
 
-      <label className="mt-3 flex items-center gap-2 text-sm text-[#191C1C]">
+      <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
         <input
           type="checkbox"
           checked={acceptingInquiries}
@@ -754,7 +754,7 @@ function TermsForm({
         />
         Accept manufacturing inquiries
       </label>
-      <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Turning this off keeps your profile in the directory and says you are not taking new
         inquiries. It does not hide you.
       </p>
@@ -790,7 +790,7 @@ function SampleFeeOption({
   label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-[#191C1C]">
+    <label className="flex items-center gap-2 text-sm text-foreground">
       <input
         type="radio"
         name="sample-fee-choice"
@@ -883,14 +883,14 @@ function CompanyFactsForm({
         );
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Company facts</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Company facts</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         What you state about yourself. Buyers see these beside measured figures Qatoto calculates,
         and the two are labelled apart.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Year founded
           <input
             type="text"
@@ -900,7 +900,7 @@ function CompanyFactsForm({
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Factories
           <input
             type="text"
@@ -910,7 +910,7 @@ function CompanyFactsForm({
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Total staff
           <input
             type="text"
@@ -923,7 +923,7 @@ function CompanyFactsForm({
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Business type
           <select
             value={businessType}
@@ -938,7 +938,7 @@ function CompanyFactsForm({
             ))}
           </select>
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Visitors
           <select
             value={visitPolicy}
@@ -955,7 +955,7 @@ function CompanyFactsForm({
         </label>
       </div>
 
-      <label className="mt-3 block text-xs font-medium text-[#6F7979]">
+      <label className="mt-3 block text-xs font-medium text-outline-strong">
         Summary
         <textarea
           value={publicSummary}
@@ -966,7 +966,7 @@ function CompanyFactsForm({
         />
       </label>
 
-      <label className="mt-3 flex items-center gap-2 text-xs text-[#6F7979]">
+      <label className="mt-3 flex items-center gap-2 text-xs text-outline-strong">
         <input
           type="checkbox"
           checked={acceptingCustomOrders}
@@ -1072,8 +1072,8 @@ function SiteAccessForm({
         );
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Freight access</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Freight access</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         The ports, airports and terminals you ship through, and how far each one is.
       </p>
 
@@ -1081,9 +1081,9 @@ function SiteAccessForm({
         {rows.map((row, rowIndex) => (
           // The index IS the identity: these rows carry no id on the way up, and the server mints
           // fresh ones on every save.
-          <li key={rowIndex} className="rounded-lg border border-[#CAC4D0]/60 p-3">
+          <li key={rowIndex} className="rounded-lg border border-outline-variant/60 p-3">
             <div className="grid gap-2 sm:grid-cols-2">
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Mode
                 <select
                   value={row.accessMode}
@@ -1099,7 +1099,7 @@ function SiteAccessForm({
                   ))}
                 </select>
               </label>
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Facility
                 <input
                   type="text"
@@ -1110,7 +1110,7 @@ function SiteAccessForm({
                   className={FIELD_CLASS}
                 />
               </label>
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Distance (km)
                 <input
                   type="text"
@@ -1122,7 +1122,7 @@ function SiteAccessForm({
                   className={FIELD_CLASS}
                 />
               </label>
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Notes
                 <input
                   type="text"
@@ -1272,8 +1272,8 @@ function StakeholdersForm({
         );
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Who runs it</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Who runs it</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Names and roles only — no contact details. Save the list before adding a photo: a portrait
         attaches to a saved person.
       </p>
@@ -1282,10 +1282,10 @@ function StakeholdersForm({
         {rows.map((row, rowIndex) => (
           <li
             key={row.savedId ?? `new-${String(rowIndex)}`}
-            className="rounded-lg border border-[#CAC4D0]/60 p-3"
+            className="rounded-lg border border-outline-variant/60 p-3"
           >
             <div className="grid gap-2 sm:grid-cols-2">
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Name
                 <input
                   type="text"
@@ -1296,7 +1296,7 @@ function StakeholdersForm({
                   className={FIELD_CLASS}
                 />
               </label>
-              <label className="block text-xs font-medium text-[#6F7979]">
+              <label className="block text-xs font-medium text-outline-strong">
                 Role
                 <input
                   type="text"
@@ -1310,11 +1310,11 @@ function StakeholdersForm({
             </div>
 
             {row.savedId === null ? (
-              <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+              <p className="mt-2 text-xs leading-4 text-outline-strong">
                 Save the list to add a photo for this person.
               </p>
             ) : (
-              <label className="mt-2 block text-xs font-medium text-[#6F7979]">
+              <label className="mt-2 block text-xs font-medium text-outline-strong">
                 {row.photoUrl === null ? "Add a photo" : "Replace the photo"}
                 <input
                   type="file"
@@ -1457,18 +1457,18 @@ function CapabilitiesForm({
         );
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">What you can do</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">What you can do</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Declared capabilities. Buyers read these beside your certifications, which are checked.
       </p>
 
       <ul className="mt-3 space-y-3">
         {rows.map((row, rowIndex) => (
-          <li key={row.capabilityKind} className="rounded-lg border border-[#CAC4D0]/60 p-3">
-            <p className="text-xs font-medium text-[#191C1C]">
+          <li key={row.capabilityKind} className="rounded-lg border border-outline-variant/60 p-3">
+            <p className="text-xs font-medium text-foreground">
               {row.capabilityKind.replaceAll("_", " ")}
             </p>
-            <label className="mt-1 block text-xs font-medium text-[#6F7979]">
+            <label className="mt-1 block text-xs font-medium text-outline-strong">
               Detail
               <input
                 type="text"
@@ -1492,7 +1492,7 @@ function CapabilitiesForm({
       </ul>
 
       {availableKinds.length > 0 && (
-        <label className="mt-3 block text-xs font-medium text-[#6F7979]">
+        <label className="mt-3 block text-xs font-medium text-outline-strong">
           Add a capability
           <select
             value=""
@@ -1586,8 +1586,8 @@ function MediaForm({
 
   return (
     <section className={SECTION_CLASS}>
-      <h2 className="text-sm font-medium text-[#191C1C]">Photos</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Photos</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Your factory, offices and work. The first one is the cover on your storefront.
       </p>
 
@@ -1595,9 +1595,9 @@ function MediaForm({
         {gallery.map((image, imageIndex) => (
           <li
             key={image.id}
-            className="flex items-center gap-3 rounded-lg border border-[#CAC4D0]/60 p-2"
+            className="flex items-center gap-3 rounded-lg border border-outline-variant/60 p-2"
           >
-            <span className="min-w-0 flex-1 truncate text-xs text-[#191C1C]">
+            <span className="min-w-0 flex-1 truncate text-xs text-foreground">
               {image.altText ?? image.mediaKind.replaceAll("_", " ")}
             </span>
             <button
@@ -1648,12 +1648,12 @@ function MediaForm({
       </ul>
 
       {gallery.length >= SELLER_PROFILE_MAX_MEDIA ? (
-        <p className="mt-3 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-3 text-xs leading-4 text-outline-strong">
           You have the maximum of {SELLER_PROFILE_MAX_MEDIA} photos. Remove one to add another.
         </p>
       ) : (
         <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="block text-xs font-medium text-[#6F7979]">
+          <label className="block text-xs font-medium text-outline-strong">
             Kind
             <select
               value={mediaKind}
@@ -1667,7 +1667,7 @@ function MediaForm({
               ))}
             </select>
           </label>
-          <label className="block text-xs font-medium text-[#6F7979]">
+          <label className="block text-xs font-medium text-outline-strong">
             Add a photo
             <input
               type="file"
@@ -1821,8 +1821,8 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
         );
       }}
     >
-      <h2 className="text-sm font-medium text-[#191C1C]">Certifications</h2>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <h2 className="text-sm font-medium text-foreground">Certifications</h2>
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         Qatoto staff check each one against the certificate you attach. Buyers see it only once it
         is approved. Withdrawing a claim stops publishing it and cannot be undone.
       </p>
@@ -1833,7 +1833,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
       />
 
       {certificationsQuery.isPending ? (
-        <p className="mt-3 text-xs text-[#6F7979]">Loading your certifications…</p>
+        <p className="mt-3 text-xs text-outline-strong">Loading your certifications…</p>
       ) : certifications === null ? (
         <p className="mt-3 text-xs text-destructive">
           {certificationsQuery.data?.success === false
@@ -1841,23 +1841,23 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             : "Your certifications could not be loaded."}
         </p>
       ) : certifications.length === 0 ? (
-        <p className="mt-3 text-xs text-[#6F7979]">No certifications submitted yet.</p>
+        <p className="mt-3 text-xs text-outline-strong">No certifications submitted yet.</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {certifications.map((certification) => (
-            <li key={certification.id} className="rounded-lg border border-[#CAC4D0]/60 p-3">
-              <p className="text-xs font-medium text-[#191C1C]">
+            <li key={certification.id} className="rounded-lg border border-outline-variant/60 p-3">
+              <p className="text-xs font-medium text-foreground">
                 {certification.standardName}{" "}
-                <span className="font-normal text-[#6F7979]">· {certification.state}</span>
+                <span className="font-normal text-outline-strong">· {certification.state}</span>
               </p>
-              <p className="text-[11px] leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 {certification.issuerName} · {certification.certificateNumber} · valid{" "}
                 {certification.validFrom} to {certification.validUntil}
               </p>
               {/* The reason a moderator gave, shown only when there is one. A rejected claim the
                   seller cannot see the reason for is one they will simply resubmit. */}
               {certification.decisionReason !== null && (
-                <p className="mt-1 text-[11px] leading-4 text-amber-800">
+                <p className="mt-1 text-xs leading-4 text-amber-800">
                   {certification.decisionReason}
                 </p>
               )}
@@ -1894,7 +1894,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
       )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Standard
           <input
             type="text"
@@ -1905,7 +1905,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Filterable code (optional)
           <select
             value={standardCode ?? ""}
@@ -1921,12 +1921,12 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
               </option>
             ))}
           </select>
-          <span className="mt-1 block text-[11px] leading-4 font-normal text-[#6F7979]">
+          <span className="mt-1 block text-xs leading-4 font-normal text-outline-strong">
             Buyers filter the directory by these eight. Anything else still publishes on your
             profile — it just cannot be filtered for.
           </span>
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Issued by
           <input
             type="text"
@@ -1936,7 +1936,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Certificate number
           <input
             type="text"
@@ -1946,7 +1946,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Scope
           <input
             type="text"
@@ -1956,7 +1956,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Valid from
           <input
             type="date"
@@ -1965,7 +1965,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             className={FIELD_CLASS}
           />
         </label>
-        <label className="block text-xs font-medium text-[#6F7979]">
+        <label className="block text-xs font-medium text-outline-strong">
           Valid until
           <input
             type="date"
@@ -1976,7 +1976,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
         </label>
       </div>
 
-      <label className="mt-3 block text-xs font-medium text-[#6F7979]">
+      <label className="mt-3 block text-xs font-medium text-outline-strong">
         The certificate (PDF, JPEG or PNG)
         <input
           type="file"

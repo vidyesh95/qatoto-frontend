@@ -274,7 +274,7 @@ export default function StoreCategoryAdminPage() {
     if (children.length === 0) return null;
 
     return (
-      <ul className="ml-6 space-y-3 border-l border-[#CAC4D0]/60 pl-4">
+      <ul className="ml-6 space-y-3 border-l border-outline-variant/60 pl-4">
         {children.map((childCategory, childIndex) => (
           <li key={childCategory.id}>
             <CategoryRow
@@ -310,12 +310,12 @@ export default function StoreCategoryAdminPage() {
       {/* Three distinct cases, said apart — a failed permission check is not the same as
           failing it. */}
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so this page is read-only.
         </output>
       )}
       {staffContextQuery.isSuccess && !canManageCategories && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Managing store categories needs the moderator or admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
         </output>
@@ -390,7 +390,7 @@ function CreateCategoryForm({
   const canSubmit = !isSubmitting && trimmedName.length > 0 && trimmedSlug.length >= 2;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <h2 className="text-lg font-medium">Add a category</h2>
 
       <label className="block space-y-1 text-xs">
@@ -403,7 +403,7 @@ function CreateCategoryForm({
             if (!hasEditedSlug) setSlug(toCategorySlug(changeEvent.target.value));
           }}
           maxLength={120}
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         />
       </label>
 
@@ -416,9 +416,9 @@ function CreateCategoryForm({
             setSlug(changeEvent.target.value);
           }}
           maxLength={100}
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 font-mono text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 font-mono text-sm"
         />
-        <span className="block text-[10px] text-muted-foreground">
+        <span className="block text-xs text-muted-foreground">
           /store/categories/{trimmedSlug === "" ? "…" : trimmedSlug} — this cannot be changed later.
           Lowercase words joined by single hyphens.
         </span>
@@ -429,7 +429,7 @@ function CreateCategoryForm({
         <select
           value={parentCategoryId}
           onChange={(changeEvent) => setParentCategoryId(changeEvent.target.value)}
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         >
           <option value="">No parent — a top-level category</option>
           {parentOptions.map((option) => (
@@ -447,7 +447,7 @@ function CreateCategoryForm({
           onChange={(changeEvent) => setSearchSynonyms(changeEvent.target.value)}
           maxLength={2048}
           placeholder="sofa, couch, settee"
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         />
       </label>
 
@@ -509,7 +509,7 @@ function CreateCategoryForm({
           setState("draft");
           setImageFile(null);
         }}
-        className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Adding…" : "Add category"}
       </button>
@@ -570,11 +570,11 @@ function CategoryRow({
   const isProtected = category.id === MISC_CATEGORY_ID;
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <div className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="flex flex-wrap items-start gap-3">
-        <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-[#CAC4D0]/60 bg-muted">
+        <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-outline-variant/60 bg-muted">
           {category.imageUrl === null ? (
-            <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
+            <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
               No art
             </span>
           ) : (
@@ -588,21 +588,21 @@ function CategoryRow({
         <div className="min-w-48 flex-1 space-y-1">
           <p className="text-sm font-medium">{category.name}</p>
           <p className="font-mono text-xs text-muted-foreground">{category.slug}</p>
-          <div className="flex flex-wrap items-center gap-2 text-[10px]">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-muted px-2 py-0.5">
               {toOrdinalLabel(displayIndex)}
             </span>
             <span
               className={`rounded-full px-2 py-0.5 ${
                 category.state === "active"
-                  ? "bg-[#00696E]/10 text-[#00393C]"
+                  ? "bg-primary-imprint/10 text-primary-imprint"
                   : "bg-muted text-muted-foreground"
               }`}
             >
               {category.state}
             </span>
             {isOnHomeRail && (
-              <span className="rounded-full bg-[#1DBDC5]/15 px-2 py-0.5">On store home</span>
+              <span className="rounded-full bg-primary-imprint/15 px-2 py-0.5">On store home</span>
             )}
             {/* Both counts are what the retire guard checks, so showing them is showing the
                 reason a retire will or will not work — before it is attempted. */}
@@ -624,7 +624,7 @@ function CategoryRow({
                 type="button"
                 disabled={isReordering || displayIndex === 0}
                 onClick={() => onMove(category.id, displayIndex - 1)}
-                className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Move up
               </button>
@@ -632,17 +632,17 @@ function CategoryRow({
                 type="button"
                 disabled={isReordering || displayIndex === siblingCount - 1}
                 onClick={() => onMove(category.id, displayIndex + 1)}
-                className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Move down
               </button>
-              <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">
                 Show as
                 <select
                   value={displayIndex}
                   disabled={isReordering}
                   onChange={(changeEvent) => onMove(category.id, Number(changeEvent.target.value))}
-                  className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                  className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
                 >
                   {Array.from({ length: siblingCount }, (_unused, index) => (
                     <option key={index} value={index}>
@@ -658,12 +658,12 @@ function CategoryRow({
             type="button"
             disabled={isBusy}
             onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isEditing ? "Cancel edit" : "Edit"}
           </button>
 
-          <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <label className="flex items-center gap-1 text-xs text-muted-foreground">
             State
             <select
               value={category.state}
@@ -679,7 +679,7 @@ function CategoryRow({
                   patch: { state: parsedState.data },
                 });
               }}
-              className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+              className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
             >
               <option value="draft">draft</option>
               <option value="active">active</option>
@@ -691,7 +691,7 @@ function CategoryRow({
             type="button"
             disabled={isBusy}
             onClick={() => setIsReplacingImage((wasReplacing) => !wasReplacing)}
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isReplacingImage ? "Cancel image" : "Replace image"}
           </button>
@@ -701,7 +701,7 @@ function CategoryRow({
             type="button"
             disabled={isBusy}
             onClick={() => setIsEditingAttributes((wasEditing) => !wasEditing)}
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isEditingAttributes ? "Hide fields" : "Fields"}
           </button>
@@ -709,7 +709,7 @@ function CategoryRow({
           {/* TWO-STEP CONFIRM, not a `window.confirm` — oxlint's `no-alert` forbids that, and
               a browser dialog blocks the whole tab anyway. */}
           {isProtected ? (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Misc can&apos;t be retired — listings wait here during review.
             </span>
           ) : isConfirmingRetire ? (
@@ -721,14 +721,14 @@ function CategoryRow({
                   retireCategory.mutate(category.id);
                   setIsConfirmingRetire(false);
                 }}
-                className="cursor-pointer rounded-full bg-[#BA1A1A] px-3 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Confirm retire
               </button>
               <button
                 type="button"
                 onClick={() => setIsConfirmingRetire(false)}
-                className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs"
+                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
               >
                 Keep it
               </button>
@@ -738,7 +738,7 @@ function CategoryRow({
               type="button"
               disabled={isBusy || category.state === "retired"}
               onClick={() => setIsConfirmingRetire(true)}
-              className="cursor-pointer rounded-full border border-[#BA1A1A] px-3 py-1 text-xs text-[#BA1A1A] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-full border border-destructive px-3 py-1 text-xs text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             >
               Retire
             </button>
@@ -747,14 +747,14 @@ function CategoryRow({
       )}
 
       {canManage && isEditing && (
-        <div className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3">
+        <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
           <label className="block space-y-1 text-xs">
             <span className="font-medium">Name</span>
             <input
               value={draftName}
               onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
               maxLength={120}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -763,7 +763,7 @@ function CategoryRow({
             <select
               value={draftParentCategoryId}
               onChange={(changeEvent) => setDraftParentCategoryId(changeEvent.target.value)}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             >
               <option value="">No parent — a top-level category</option>
               {parentOptions
@@ -782,11 +782,11 @@ function CategoryRow({
               value={draftSynonyms}
               onChange={(changeEvent) => setDraftSynonyms(changeEvent.target.value)}
               maxLength={2048}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             The slug is permanent and is not editable — a category that needs a different slug is a
             new category.
           </p>
@@ -808,7 +808,7 @@ function CategoryRow({
               });
               setIsEditing(false);
             }}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {updateCategory.isPending ? "Saving…" : "Save changes"}
           </button>
@@ -816,7 +816,7 @@ function CategoryRow({
       )}
 
       {canManage && isReplacingImage && (
-        <div className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3">
+        <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
           <AdminImagePicker
             inputId={`replace-image-${category.id}`}
             isDisabled={replaceImage.isPending}
@@ -833,7 +833,7 @@ function CategoryRow({
               setReplacementFile(null);
               setIsReplacingImage(false);
             }}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {replaceImage.isPending ? "Uploading…" : "Replace image"}
           </button>
@@ -893,7 +893,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
     (valueKind !== "enum" || parsedChoices.length >= 2);
 
   return (
-    <div className="space-y-3 rounded-xl border border-[#CAC4D0]/60 p-3">
+    <div className="space-y-3 rounded-xl border border-outline-variant/60 p-3">
       {panelError && <MutationErrorNotice error={panelError.apiError} />}
 
       {attributesQuery.isPending ? (
@@ -908,21 +908,19 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
           {attributes.map((attribute) => (
             <li
               key={attribute.id}
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-[#CAC4D0]/60 p-2 text-xs"
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-outline-variant/60 p-2 text-xs"
             >
               <span className="min-w-32 flex-1">
                 <span className="font-medium">{attribute.label}</span>{" "}
-                <span className="font-mono text-[10px] text-muted-foreground">
+                <span className="font-mono text-xs text-muted-foreground">
                   {attribute.attributeKey}
                 </span>
               </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                 {attribute.valueKind}
                 {attribute.unitLabel === null ? "" : ` · ${attribute.unitLabel}`}
               </span>
-              <span className="text-[10px] text-muted-foreground">
-                {attribute.valueCount} answered
-              </span>
+              <span className="text-xs text-muted-foreground">{attribute.valueCount} answered</span>
 
               {attribute.isInherited ? (
                 /*
@@ -931,7 +929,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                   parent's vocabulary for every sibling leaf under it. The admin edits it where it
                   is defined.
                 */
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                   Inherited — edit it on the category that defines it
                 </span>
               ) : (
@@ -951,7 +949,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                           patch: { isFilterable: !attribute.isFilterable },
                         })
                       }
-                      className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                      className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {attribute.isFilterable ? "Filterable ✓" : "Not filterable"}
                     </button>
@@ -965,7 +963,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                         patch: { isRequiredForPublish: !attribute.isRequiredForPublish },
                       })
                     }
-                    className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {attribute.isRequiredForPublish ? "Required ✓" : "Optional"}
                   </button>
@@ -982,12 +980,12 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
         no route for it. Turning off "Filterable" takes it out of browse and is reversible, which is
         the honest exit.
       */}
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Attributes cannot be deleted once listings answer them — turn off Filterable to take one out
         of browse instead. Requiring one blocks publishing until every listing here answers it.
       </p>
 
-      <div className="space-y-2 rounded-lg border border-[#CAC4D0]/60 p-2">
+      <div className="space-y-2 rounded-lg border border-outline-variant/60 p-2">
         <span className="text-xs font-medium">Add a field</span>
 
         <label className="block space-y-1 text-xs">
@@ -1002,7 +1000,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
             }}
             maxLength={120}
             placeholder="Wood type"
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
         </label>
 
@@ -1015,9 +1013,9 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
               setAttributeKey(changeEvent.target.value);
             }}
             maxLength={64}
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 font-mono text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 font-mono text-sm"
           />
-          <span className="block text-[10px] text-muted-foreground">
+          <span className="block text-xs text-muted-foreground">
             snake_case, and permanent — a saved filter link names it. A field needing a different
             key is a new field.
           </span>
@@ -1036,7 +1034,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                 if (!parsedKind.success) return;
                 setValueKind(parsedKind.data);
               }}
-              className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+              className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
             >
               <option value="enum">enum — a fixed list</option>
               <option value="number">number — a measurement</option>
@@ -1051,7 +1049,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
               onChange={(changeEvent) => setGroupLabel(changeEvent.target.value)}
               maxLength={80}
               placeholder="Materials"
-              className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+              className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
             />
           </label>
 
@@ -1065,7 +1063,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                   onChange={(changeEvent) => setUnitLabel(changeEvent.target.value)}
                   maxLength={24}
                   placeholder="mm"
-                  className="w-20 rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                  className="w-20 rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
                 />
               </label>
               <label className="block space-y-1 text-xs">
@@ -1076,7 +1074,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
                   max={6}
                   value={numericScale}
                   onChange={(changeEvent) => setNumericScale(changeEvent.target.value)}
-                  className="w-20 rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                  className="w-20 rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
                 />
               </label>
             </>
@@ -1090,9 +1088,9 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
               value={choiceLabels}
               onChange={(changeEvent) => setChoiceLabels(changeEvent.target.value)}
               placeholder="Oak, Pine, Walnut"
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
-            <span className="block text-[10px] text-muted-foreground">
+            <span className="block text-xs text-muted-foreground">
               At least two — one choice is not a filter, and the chip row hides a single-bucket
               facet anyway.
             </span>
@@ -1129,7 +1127,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
             setNumericScale("0");
             setChoiceLabels("");
           }}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {createAttribute.isPending ? "Adding…" : "Add field"}
         </button>
@@ -1278,13 +1276,13 @@ function PendingRequestCard({
   }
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-1">
         <p className="text-sm font-medium">{request.proposedName}</p>
         {request.justification !== null && (
           <p className="text-xs text-muted-foreground">{request.justification}</p>
         )}
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {request.waitingProducts.length} listing(s) waiting in Misc for this request
         </p>
       </div>
@@ -1305,7 +1303,7 @@ function PendingRequestCard({
                 if (!hasEditedSlug) setSlug(toCategorySlug(changeEvent.target.value));
               }}
               maxLength={120}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -1318,7 +1316,7 @@ function PendingRequestCard({
                 setSlug(changeEvent.target.value);
               }}
               maxLength={100}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 font-mono text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 font-mono text-sm"
             />
           </label>
 
@@ -1327,7 +1325,7 @@ function PendingRequestCard({
             <select
               value={parentCategoryId}
               onChange={(changeEvent) => setParentCategoryId(changeEvent.target.value)}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             >
               <option value="">No parent — a top-level category</option>
               {assignableCategories.map((option) => (
@@ -1346,7 +1344,7 @@ function PendingRequestCard({
               maxLength={2000}
               rows={2}
               placeholder="Required to reject. Optional when approving."
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -1356,7 +1354,7 @@ function PendingRequestCard({
               really just a chair" without refusing the request outright — and it is the only
               control that reaches the route's `productAssignments`. */}
           {request.waitingProducts.length > 0 && (
-            <fieldset className="space-y-2 rounded-xl border border-[#CAC4D0]/60 p-3 text-xs">
+            <fieldset className="space-y-2 rounded-xl border border-outline-variant/60 p-3 text-xs">
               <legend className="px-1 font-medium">Where each waiting listing goes</legend>
               <ul className="space-y-2">
                 {request.waitingProducts.map((waitingProduct) => (
@@ -1370,7 +1368,7 @@ function PendingRequestCard({
                           [waitingProduct.id]: changeEvent.target.value,
                         }))
                       }
-                      className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                      className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
                     >
                       <option value="">Follow the decision</option>
                       {assignableCategories.map((option) => (
@@ -1395,7 +1393,7 @@ function PendingRequestCard({
                   input: buildDecideInput("approve"),
                 })
               }
-              className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
               Approve
             </button>
@@ -1408,14 +1406,12 @@ function PendingRequestCard({
                   input: buildDecideInput("reject"),
                 })
               }
-              className="cursor-pointer rounded-full border border-[#BA1A1A] px-4 py-2 text-xs font-medium text-[#BA1A1A] transition-colors hover:bg-[#BA1A1A]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-full border border-destructive px-4 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Reject
             </button>
             {trimmedNote === "" && (
-              <span className="text-[10px] text-muted-foreground">
-                A note is required to reject.
-              </span>
+              <span className="text-xs text-muted-foreground">A note is required to reject.</span>
             )}
           </div>
         </>

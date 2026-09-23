@@ -69,12 +69,12 @@ export default function PreparedNoticePanel({
       </div>
 
       <div className="mt-5">
-        <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">Subject</p>
+        <p className="text-xs tracking-wider text-muted-foreground uppercase">Subject</p>
         <p className="mt-1 text-sm text-foreground">{notice.subject}</p>
       </div>
 
       <div className="mt-4">
-        <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">Notice</p>
+        <p className="text-xs tracking-wider text-muted-foreground uppercase">Notice</p>
         {/*
           `whitespace-pre-wrap` because the body is plain text with meaningful line breaks, and a
           `<pre>` would scroll horizontally on a phone. Sans rather than mono: this is a letter
@@ -90,14 +90,14 @@ export default function PreparedNoticePanel({
         */}
         <a
           href={notice.mailtoHref}
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Open this in my email
         </a>
         <button
           type="button"
           onClick={() => void handleCopyClick()}
-          className="rounded-full border border-[#00696E]/40 px-5 py-2.5 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full border border-primary-imprint/40 px-5 py-2.5 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Copy the notice
         </button>
@@ -107,7 +107,7 @@ export default function PreparedNoticePanel({
             setCopyState("idle");
             onReviseNotice();
           }}
-          className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Change something
         </button>

@@ -102,7 +102,7 @@ export default function OrderFulfillmentPanel({
           {formatCountLabel(fulfillment.progress.totalUnits)} units ·{" "}
           {formatBasisPointsLabel(fulfillment.progress.basisPoints)}
         </p>
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           A summary across separate services. Each one below finishes on its own schedule.
         </p>
       </section>
@@ -240,7 +240,7 @@ function ShipmentEventControl({ orderId, shipmentId }: { orderId: string; shipme
           ))}
         </select>
       </label>
-      <label className="min-w-[12rem] flex-1 text-xs font-medium text-muted-foreground">
+      <label className="min-w-48 flex-1 text-xs font-medium text-muted-foreground">
         What happened (optional)
         <input
           type="text"
@@ -422,7 +422,7 @@ function CreateShipmentForm({
         </label>
       </div>
 
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Leave a line at zero to ship it later — an order can go out in several shipments.
       </p>
 
@@ -485,7 +485,7 @@ function ShipmentBlock({ shipment }: { shipment: FulfillmentShipment }) {
         <p className="flex-1 text-sm leading-5 font-medium text-foreground">
           {SHIPMENT_STATE_LABELS[shipment.state]}
         </p>
-        <span className="text-[11px] leading-4 text-muted-foreground">
+        <span className="text-xs leading-4 text-muted-foreground">
           {formatCountLabel(shipment.legs.length)} {shipment.legs.length === 1 ? "leg" : "legs"}
         </span>
       </div>
@@ -540,7 +540,7 @@ function EngagementRow({
         {SERVICE_ENGAGEMENT_STATE_LABELS[engagement.state]}
       </p>
       {engagement.executionContractState === "legacy_missing_snapshot" && (
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           Predates typed deliverables — its results cannot be shown here.
         </p>
       )}

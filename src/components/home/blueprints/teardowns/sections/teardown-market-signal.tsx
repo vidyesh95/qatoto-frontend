@@ -52,7 +52,7 @@ export default function TeardownMarketSignalBand({
 
       {marketSignal.storeListings.length === 0 ? null : (
         <>
-          <h3 className="mt-3 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h3 className="mt-3 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             {/*
               THE CLASS IS NAMED, because "3 listings" without saying of what is a number a reader
               cannot check — and checking is the entire posture of this product.
@@ -67,7 +67,7 @@ export default function TeardownMarketSignalBand({
               >
                 <Link
                   href={`/store/product/${listing.productSlug}`}
-                  className="text-sm font-medium text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                  className="text-sm font-medium text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                 >
                   {listing.title}
                 </Link>
@@ -90,7 +90,7 @@ export default function TeardownMarketSignalBand({
 
       {marketSignal.showcases.length === 0 ? null : (
         <>
-          <h3 className="mt-4 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h3 className="mt-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             Built from this teardown
           </h3>
           <ul className="mt-1">
@@ -106,7 +106,7 @@ export default function TeardownMarketSignalBand({
                    * it could contain.
                    */
                   href={buildBlueprintHref({ category: "showcase", slug: showcase.slug })}
-                  className="text-sm font-medium text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                  className="text-sm font-medium text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                 >
                   {showcase.title}
                 </Link>

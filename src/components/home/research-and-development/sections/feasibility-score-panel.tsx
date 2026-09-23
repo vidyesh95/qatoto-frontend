@@ -23,7 +23,7 @@ export default function FeasibilityScorePanel({
   assessment: LocalizationAssessment;
 }) {
   return (
-    <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 p-5">
+    <section className="space-y-4 rounded-2xl border border-outline-variant/60 p-5">
       <div className="flex items-baseline justify-between gap-4">
         <div>
           <h2 className="text-sm font-medium text-foreground">Feasibility to make here</h2>
@@ -32,7 +32,7 @@ export default function FeasibilityScorePanel({
             {assessment.scoreAlgorithmVersion}
           </p>
         </div>
-        <p className="shrink-0 text-3xl font-semibold text-[#00696E]">
+        <p className="shrink-0 text-3xl font-semibold text-primary-imprint">
           {assessment.feasibilityScorePoints}
           <span className="text-sm font-normal text-muted-foreground">/100</span>
         </p>
@@ -55,7 +55,7 @@ export default function FeasibilityScorePanel({
                 role="presentation"
               >
                 <div
-                  className="h-full rounded-full bg-[#00696E]"
+                  className="h-full rounded-full bg-primary-imprint"
                   style={{ width: `${filledPercent}%` }}
                 />
               </div>
@@ -65,7 +65,7 @@ export default function FeasibilityScorePanel({
         })}
       </ul>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-[#CAC4D0]/60 pt-4 text-xs">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-outline-variant/60 pt-4 text-xs">
         <dt className="text-muted-foreground">Annual imports</dt>
         <dd className="text-right tabular-nums">
           {formatTradeValueExact(assessment.observedImportValueInCents, assessment.currency)}

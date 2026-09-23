@@ -64,7 +64,7 @@ export default function MyPledgesPanel() {
         {pledgesQuery.data.map((pledge) => (
           <li
             key={pledge.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
           >
             <span>
               {formatMoneyFromCents(BigInt(pledge.amountInCents), pledge.currency)}
@@ -78,7 +78,7 @@ export default function MyPledgesPanel() {
                 type="button"
                 disabled={cancelMutation.isPending}
                 onClick={() => cancelMutation.mutate(pledge.id)}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               >
                 Withdraw it
               </button>

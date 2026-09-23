@@ -79,7 +79,7 @@ export default function DisputeDetail({ disputeId }: { disputeId: string }) {
             action={
               <Link
                 href="/orders-and-returns"
-                className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
               >
                 Your orders
               </Link>
@@ -108,7 +108,7 @@ function DisputeBody({ dispute }: { dispute: DisputeDetailValue }) {
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Dispute · {DISPUTE_STATE_LABELS[dispute.state]}
         </p>
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -137,7 +137,7 @@ function DisputeBody({ dispute }: { dispute: DisputeDetailValue }) {
       </header>
 
       <section aria-label="Dispute timeline" className="mt-4 px-4 lg:px-6">
-        <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Timeline
         </h2>
         <ol className="mt-2 space-y-3">
@@ -221,11 +221,11 @@ function DisputeNoteComposer({ disputeId }: { disputeId: string }) {
             },
           )
         }
-        className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        className="mt-2 cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
       >
         {addNote.isPending ? "Adding…" : "Add note"}
       </button>
-      <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
         Notes cannot be edited or removed once added.
       </p>
 

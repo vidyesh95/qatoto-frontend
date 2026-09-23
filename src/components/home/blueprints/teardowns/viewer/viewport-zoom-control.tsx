@@ -74,7 +74,7 @@ export default function ViewportZoomControl({
       >
         <span aria-hidden>−</span>
       </button>
-      <output className="w-11 text-center font-mono text-[11px] text-foreground tabular-nums">
+      <output className="w-11 text-center font-mono text-xs text-foreground tabular-nums">
         {zoomPercent}%
       </output>
       <button

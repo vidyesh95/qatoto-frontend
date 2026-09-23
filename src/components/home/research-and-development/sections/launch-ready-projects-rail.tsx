@@ -56,7 +56,7 @@ export default function LaunchReadyProjectsRail({ projects }: { projects: Launch
                     ` · ${formatEquityFromBasisPoints(project.allocatedEquityBasisPoints)} allocated`}
                 </p>
                 {project.launchedProducts.length > 0 && (
-                  <p className="text-xs font-medium text-[#00696E]">
+                  <p className="text-xs font-medium text-primary-imprint">
                     {project.launchedProducts.length} listing
                     {project.launchedProducts.length === 1 ? "" : "s"} live
                   </p>

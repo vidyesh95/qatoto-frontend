@@ -38,7 +38,7 @@ export default function CaseStudyLessonLink({ caseStudy }: { caseStudy: CaseStud
   return (
     <Link
       href={buildBlueprintHref(caseStudy)}
-      className="-mx-3 my-1 block rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+      className="-mx-3 my-1 block rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
     >
       <h3 className="text-sm leading-5 font-medium text-foreground">{caseStudy.title}</h3>
       <p className="mt-1 text-xs leading-4 text-muted-foreground">

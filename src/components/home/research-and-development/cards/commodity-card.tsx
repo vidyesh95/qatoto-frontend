@@ -14,8 +14,8 @@ const TREND_GLYPHS: Record<"up" | "down" | "flat", string> = {
 };
 
 const TREND_CLASSES: Record<"up" | "down" | "flat", string> = {
-  up: "text-[#00696E]",
-  down: "text-[#8C4A4A]",
+  up: "text-primary-imprint",
+  down: "text-destructive",
   flat: "text-muted-foreground",
 };
 
@@ -37,19 +37,19 @@ export default function CommodityCard({ assessment }: { assessment: Localization
   const strongestComponent = components.toSorted((left, right) => right.points - left.points)[0];
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`/research-and-development/import-intelligence/${assessment.hsCode}`}
-            className="line-clamp-2 text-sm font-medium hover:text-[#00696E]"
+            className="line-clamp-2 text-sm font-medium hover:text-primary-imprint"
           >
             {assessment.commodityLabel}
           </Link>
           <p className="mt-0.5 font-mono text-xs text-muted-foreground">HS {assessment.hsCode}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-lg font-semibold text-[#00696E]">
+          <p className="text-lg font-semibold text-primary-imprint">
             {assessment.feasibilityScorePoints}
             <span className="text-xs font-normal text-muted-foreground">/100</span>
           </p>
@@ -63,7 +63,7 @@ export default function CommodityCard({ assessment }: { assessment: Localization
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
           {IMPORT_COMMODITY_KIND_LABELS[assessment.commodityKind]}
         </span>
-        <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-xs text-[#00696E]">
+        <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint">
           {formatTradeValueCompact(assessment.observedImportValueInCents, assessment.currency)}{" "}
           imported
         </span>

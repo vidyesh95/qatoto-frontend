@@ -19,8 +19,8 @@ export default function FeedStatusPanel({
   readonly action?: React.ReactNode;
 }) {
   return (
-    <div className="mx-4 flex flex-col items-center gap-4 rounded-2xl border border-[#CAC4D0]/60 px-6 py-16 text-center lg:mx-6">
-      <p className="text-sm text-[#6F7979]">{message}</p>
+    <div className="mx-4 flex flex-col items-center gap-4 rounded-2xl border border-outline-variant/60 px-6 py-16 text-center lg:mx-6">
+      <p className="text-sm text-outline-strong">{message}</p>
       {action}
     </div>
   );
@@ -40,7 +40,7 @@ export function FeedSignInRequiredPanel({ message }: { message: string }) {
       action={
         <Link
           href="/sign-in"
-          className="rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white"
+          className="rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground"
         >
           Sign in
         </Link>

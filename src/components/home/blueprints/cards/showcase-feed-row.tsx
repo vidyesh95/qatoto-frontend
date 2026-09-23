@@ -56,7 +56,7 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
 
       <Link
         href={buildBlueprintHref(showcase)}
-        className="group/launch flex min-w-0 items-center gap-x-4 text-[#191C1C] visited:text-[#6F7979] sm:gap-x-6"
+        className="group/launch flex min-w-0 items-center gap-x-4 text-foreground visited:text-outline-strong sm:gap-x-6"
       >
         <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted sm:size-16">
           <Image src={showcase.thumbnailUrl} alt="" fill sizes="64px" className="object-cover" />
@@ -73,7 +73,7 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
           {/* ⚠️ `BlueprintMetaLine`, NOT BARE FLEX SIBLINGS. At 400px this line wrapped on five of
               seven launches and left a `·` stranded at the end of the first line; the component
               records the measurement and why the fix is geometry. Every child is an item. */}
-          <BlueprintMetaLine className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+          <BlueprintMetaLine className="mt-1.5 text-xs leading-4 text-outline-strong">
             <BlueprintMetaItem hasSeparator={false}>
               <span className="flex items-center gap-x-2">
                 <BlueprintAvatar
@@ -82,7 +82,9 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
                   sizePx={20}
                   className="size-5"
                 />
-                <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
+                <span className="font-medium text-primary-imprint">
+                  {showcase.author.displayName}
+                </span>
               </span>
             </BlueprintMetaItem>
             <BlueprintMetaItem>

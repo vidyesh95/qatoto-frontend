@@ -69,21 +69,21 @@ export default function StorefrontMeasuredMetrics({
         {figures.map((figure) => (
           <div
             key={figure.label}
-            className="flex flex-col gap-0.5 rounded-lg bg-[#D6E3FF]/40 px-3 py-2.5"
+            className="flex flex-col gap-0.5 rounded-lg bg-secondary px-3 py-2.5"
           >
             {figure.value === null ? (
-              <span className="text-sm leading-5 font-medium text-[#6F7979]">
+              <span className="text-sm leading-5 font-medium text-outline-strong">
                 Not enough data yet
               </span>
             ) : (
-              <span className="text-xl leading-7 font-medium tracking-tight text-[#00696E]">
+              <span className="text-xl leading-7 font-medium tracking-tight text-primary-imprint">
                 {figure.value}
               </span>
             )}
-            <span className="text-xs leading-4 font-medium tracking-[0.4px] text-[#191C1C]">
+            <span className="text-xs leading-4 font-medium tracking-wider text-foreground">
               {figure.label}
             </span>
-            <span className="text-[11px] leading-4 text-[#6F7979]">{figure.sampleNote}</span>
+            <span className="text-xs leading-4 text-outline-strong">{figure.sampleNote}</span>
           </div>
         ))}
       </div>

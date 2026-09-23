@@ -133,7 +133,7 @@ export default function ModalSheet({
         </div>
 
         {footer === undefined ? null : (
-          <footer className="shrink-0 border-t border-[#CAC4D0]/60 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+          <footer className="shrink-0 border-t border-outline-variant/60 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
             {footer}
           </footer>
         )}

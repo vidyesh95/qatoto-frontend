@@ -68,27 +68,27 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
       : formatCentsLabel(item.lineTotalInCents, item.currency);
 
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
-        <p className="min-w-0 flex-1 text-sm leading-5 font-medium text-[#191C1C]">{item.title}</p>
+        <p className="min-w-0 flex-1 text-sm leading-5 font-medium text-foreground">{item.title}</p>
 
         {/* A sample and a bulk line of the same product are two entries, so the badge is what tells
             them apart at a glance. */}
         {item.isSample && (
-          <span className="rounded bg-[#D6E3FF] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+          <span className="rounded bg-secondary px-1.5 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
             Sample
           </span>
         )}
 
         {item.isMadeToOrder === true && (
-          <span className="rounded bg-[#F2F4F4] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#6F7979]">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-xs leading-4 font-medium text-outline-strong">
             Made to order
           </span>
         )}
       </div>
 
       {item.variantName !== null && (
-        <p className="text-xs leading-4 text-[#6F7979]">{item.variantName}</p>
+        <p className="text-xs leading-4 text-outline-strong">{item.variantName}</p>
       )}
 
       {/* Only an unusual stock state earns a line. "In stock" on every row is noise, and `stockState`
@@ -100,7 +100,9 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
       {item.stockState !== undefined &&
         item.stockState !== "in_stock" &&
         item.stockState !== "made_to_order" && (
-          <p className="text-xs leading-4 text-[#6F7979]">{STOCK_STATE_LABELS[item.stockState]}</p>
+          <p className="text-xs leading-4 text-outline-strong">
+            {STOCK_STATE_LABELS[item.stockState]}
+          </p>
         )}
 
       {item.pricingError !== undefined && (
@@ -116,14 +118,14 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
             onClick={() => submitQuantity(item.quantity - 1)}
             disabled={isMutating || item.quantity <= minimumQuantity}
             aria-label={`Reduce quantity of ${item.title}`}
-            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
+            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
           >
             −
           </button>
 
           {/* Rendered, not editable. A free-text quantity would need debouncing, and a debounced
               write to a stock reservation is a race the buyer loses silently. */}
-          <span className="min-w-12 text-center text-sm font-medium text-[#191C1C]">
+          <span className="min-w-12 text-center text-sm font-medium text-foreground">
             {formatCountLabel(item.quantity)}
           </span>
 
@@ -132,13 +134,13 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
             onClick={() => submitQuantity(item.quantity + 1)}
             disabled={isMutating || isAtMaximumQuantity}
             aria-label={`Increase quantity of ${item.title}`}
-            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
+            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
           >
             +
           </button>
 
           {item.minimumOrderQuantity !== null && !item.isSample && (
-            <span className="text-[11px] leading-4 text-[#6F7979]">
+            <span className="text-xs leading-4 text-outline-strong">
               min {formatCountLabel(item.minimumOrderQuantity)}
             </span>
           )}
@@ -147,7 +149,7 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
               known — a line that did not price has its stepper disabled and its reason above, and
               a `max` with no number beside it would read as a bug rather than as caution. */}
           {item.isSample && maximumQuantity !== null && (
-            <span className="text-[11px] leading-4 text-[#6F7979]">
+            <span className="text-xs leading-4 text-outline-strong">
               max {formatCountLabel(maximumQuantity)}
             </span>
           )}
@@ -155,12 +157,12 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
 
         <div className="text-right">
           {lineTotalLabel === null ? (
-            <p className="text-xs leading-4 text-[#6F7979]">Not priced</p>
+            <p className="text-xs leading-4 text-outline-strong">Not priced</p>
           ) : (
             <>
-              <p className="text-sm leading-5 font-medium text-[#191C1C]">{lineTotalLabel}</p>
+              <p className="text-sm leading-5 font-medium text-foreground">{lineTotalLabel}</p>
               {priceLabel !== null && (
-                <p className="text-[11px] leading-4 text-[#6F7979]">{priceLabel} each</p>
+                <p className="text-xs leading-4 text-outline-strong">{priceLabel} each</p>
               )}
             </>
           )}
@@ -184,12 +186,12 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
             })
           }
           disabled={isMutating}
-          className="cursor-pointer text-xs font-medium text-[#00696E] disabled:opacity-40"
+          className="cursor-pointer text-xs font-medium text-primary-imprint disabled:opacity-40"
         >
           Remove
         </button>
 
-        {isMutating && <span className="text-[11px] leading-4 text-[#6F7979]">Updating…</span>}
+        {isMutating && <span className="text-xs leading-4 text-outline-strong">Updating…</span>}
       </div>
 
       {/* Two notices, one per mutation — see `shared/mutation-notice.tsx` for why a refusal renders

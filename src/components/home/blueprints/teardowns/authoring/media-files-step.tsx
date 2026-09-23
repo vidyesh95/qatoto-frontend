@@ -193,7 +193,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                   <p className="truncate text-xs font-medium text-foreground">
                     Uploaded: {row.fileName ?? row.uploadId}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">Staged securely on Qatoto</p>
+                  <p className="text-xs text-muted-foreground">Staged securely on Qatoto</p>
                 </div>
                 <button
                   type="button"
@@ -205,7 +205,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                       url: "",
                     })
                   }
-                  className="shrink-0 text-xs text-[#00696E] hover:underline"
+                  className="shrink-0 text-xs text-primary-imprint hover:underline"
                 >
                   Change to link
                 </button>
@@ -221,7 +221,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                 />
                 <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                   <span>or upload a PDF (up to 50 MB)</span>
-                  <label className="cursor-pointer font-medium text-[#00696E] hover:underline">
+                  <label className="cursor-pointer font-medium text-primary-imprint hover:underline">
                     {isUploading ? "Uploading…" : "Upload PDF"}
                     <input
                       type="file"
@@ -277,7 +277,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                   <p className="truncate text-xs font-medium text-foreground">
                     Uploaded: {row.fileName ?? row.uploadId}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">Staged securely on Qatoto</p>
+                  <p className="text-xs text-muted-foreground">Staged securely on Qatoto</p>
                 </div>
                 <button
                   type="button"
@@ -289,7 +289,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                       url: "",
                     })
                   }
-                  className="shrink-0 text-xs text-[#00696E] hover:underline"
+                  className="shrink-0 text-xs text-primary-imprint hover:underline"
                 >
                   Change to link
                 </button>
@@ -305,7 +305,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
                 />
                 <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                   <span>or upload CAD/3D model (STEP, STL, DXF, GLB, PDF)</span>
-                  <label className="cursor-pointer font-medium text-[#00696E] hover:underline">
+                  <label className="cursor-pointer font-medium text-primary-imprint hover:underline">
                     {isUploading ? "Uploading…" : "Upload file"}
                     <input
                       type="file"

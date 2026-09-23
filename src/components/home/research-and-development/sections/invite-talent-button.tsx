@@ -18,7 +18,7 @@ export default function InviteTalentButton({ handleOrUserId }: { handleOrUserId:
   return (
     <Link
       href={`/research-and-development/talent/${handleOrUserId}`}
-      className="mt-auto cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-center text-sm font-medium text-[#00696E]"
+      className="mt-auto cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-center text-sm font-medium text-primary-imprint"
     >
       View profile
     </Link>

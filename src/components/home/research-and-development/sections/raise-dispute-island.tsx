@@ -55,7 +55,7 @@ export default function RaiseDisputeIsland({
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="mt-3 cursor-pointer text-xs font-medium text-[#00696E]"
+        className="mt-3 cursor-pointer text-xs font-medium text-primary-imprint"
       >
         Dispute this allocation
       </button>
@@ -79,7 +79,7 @@ export default function RaiseDisputeIsland({
           rows={3}
           value={disputeNote}
           onChange={(changeEvent) => setDisputeNote(changeEvent.target.value)}
-          className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
         />
       </label>
       <p className="text-xs text-muted-foreground">
@@ -90,14 +90,14 @@ export default function RaiseDisputeIsland({
         <button
           type="submit"
           disabled={raiseMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {raiseMutation.isPending ? "Raising…" : "Raise the dispute"}
         </button>
         <button
           type="button"
           onClick={() => setIsFormOpen(false)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+          className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
         >
           Cancel
         </button>

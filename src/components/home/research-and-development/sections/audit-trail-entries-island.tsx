@@ -61,7 +61,7 @@ export default function AuditTrailEntriesIsland({
     <div className="space-y-2">
       <ol className="space-y-2">
         {entryList.rows.map((entry) => (
-          <li key={entry.id} className="rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm">
+          <li key={entry.id} className="rounded-2xl border border-outline-variant/60 p-3 text-sm">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-medium">
                 #{entry.sequenceNumber} · {entry.actionLabel}
@@ -73,7 +73,7 @@ export default function AuditTrailEntriesIsland({
               {entry.targetLabel}
             </p>
             {entry.detailNote.length > 0 && <p className="mt-1 text-xs">{entry.detailNote}</p>}
-            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
               {shortenHashForDisplay(entry.entryHash)}
               {entry.previousEntryHash !== null &&
                 ` ← ${shortenHashForDisplay(entry.previousEntryHash)}`}
@@ -81,7 +81,7 @@ export default function AuditTrailEntriesIsland({
             <button
               type="button"
               onClick={() => setExpandedEntryId(expandedEntryId === entry.id ? null : entry.id)}
-              className="mt-1 cursor-pointer text-xs font-medium text-[#00696E] underline"
+              className="mt-1 cursor-pointer text-xs font-medium text-primary-imprint underline"
             >
               {expandedEntryId === entry.id ? "Hide the proof" : "Check this hash yourself"}
             </button>

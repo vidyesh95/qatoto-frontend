@@ -117,7 +117,7 @@ export default function ResearchProgramContributors({
           {isFormOpen ? (
             <form
               onSubmit={handleSubmit}
-              className="grid gap-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4 sm:grid-cols-3"
+              className="grid gap-3 rounded-2xl border border-outline-variant/60 bg-card p-4 sm:grid-cols-3"
             >
               <label className="space-y-1 text-xs">
                 <span className="font-medium">How you contribute</span>
@@ -129,7 +129,7 @@ export default function ResearchProgramContributors({
                     const parsed = ResearchParticipantRoleSchema.safeParse(event.target.value);
                     if (parsed.success) setRole(parsed.data);
                   }}
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 >
                   {RESEARCH_PARTICIPANT_ROLES.map((roleOption) => (
                     <option key={roleOption} value={roleOption}>
@@ -147,7 +147,7 @@ export default function ResearchProgramContributors({
                     const parsed = CompensationKindSchema.safeParse(event.target.value);
                     if (parsed.success) setCompensationPreference(parsed.data);
                   }}
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 >
                   {COMPENSATION_KINDS.map((kind) => (
                     <option key={kind} value={kind}>
@@ -163,7 +163,7 @@ export default function ResearchProgramContributors({
                   value={contributionSummary}
                   onChange={(event) => setContributionSummary(event.target.value)}
                   maxLength={500}
-                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                   placeholder="Senolytics assay data"
                 />
               </label>
@@ -172,7 +172,7 @@ export default function ResearchProgramContributors({
                 <button
                   type="submit"
                   disabled={participationMutation.isPending}
-                  className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C] disabled:opacity-60"
+                  className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:opacity-60"
                 >
                   {participationMutation.isPending
                     ? "Saving…"
@@ -183,7 +183,7 @@ export default function ResearchProgramContributors({
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm"
+                  className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm"
                 >
                   Cancel
                 </button>
@@ -193,7 +193,7 @@ export default function ResearchProgramContributors({
             <button
               type="button"
               onClick={() => setIsFormOpen(true)}
-              className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#00393C]"
+              className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep"
             >
               {isViewerParticipant ? "Edit how I contribute" : "Join this programme"}
             </button>
@@ -217,7 +217,7 @@ export default function ResearchProgramContributors({
           {contributors.map((contributor) => (
             <li
               key={contributor.participantId}
-              className="flex items-start gap-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+              className="flex items-start gap-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
             >
               {contributor.participant.avatarImageUrl ? (
                 <Image
@@ -230,7 +230,7 @@ export default function ResearchProgramContributors({
               ) : (
                 <span
                   aria-hidden
-                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#00696E]/10 text-sm font-medium text-[#00696E]"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-imprint/10 text-sm font-medium text-primary-imprint"
                 >
                   {contributor.participant.name.slice(0, 1).toUpperCase()}
                 </span>
@@ -240,7 +240,7 @@ export default function ResearchProgramContributors({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate text-sm font-medium">{contributor.participant.name}</p>
                   {contributor.isViewer && (
-                    <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[10px] text-[#00696E]">
+                    <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint">
                       You
                     </span>
                   )}
@@ -261,7 +261,7 @@ export default function ResearchProgramContributors({
                 {contributor.contributionSummary && (
                   <p className="text-xs text-muted-foreground">{contributor.contributionSummary}</p>
                 )}
-                <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px]">
+                <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-xs">
                   {COMPENSATION_PREFERENCE_LABELS[contributor.compensationPreference]}
                 </span>
               </div>
@@ -280,7 +280,9 @@ function RoleChip({ label, href, isActive }: { label: string; href: string; isAc
       href={href}
       aria-current={isActive ? "true" : undefined}
       className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-        isActive ? "border-[#00696E] bg-[#00696E] text-white" : "border-[#CAC4D0] hover:bg-muted"
+        isActive
+          ? "border-primary-imprint bg-primary-imprint text-primary-imprint-foreground"
+          : "border-outline-variant hover:bg-muted"
       }`}
     >
       {label}

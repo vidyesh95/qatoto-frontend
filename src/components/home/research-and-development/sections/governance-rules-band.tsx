@@ -47,7 +47,7 @@ export default function GovernanceRulesBand({
       <h2 className="text-sm font-medium tracking-wide xl:text-lg">The rules, stated publicly</h2>
       <div className="grid gap-3 lg:grid-cols-3">
         {visibleDisclosureKeys.map((disclosureKey) => (
-          <div key={disclosureKey} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <div key={disclosureKey} className="rounded-2xl border border-outline-variant/60 p-4">
             <p className="font-medium">{GOVERNANCE_DISCLOSURES[disclosureKey].title}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {GOVERNANCE_DISCLOSURES[disclosureKey].body}

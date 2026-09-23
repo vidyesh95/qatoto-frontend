@@ -52,14 +52,14 @@ export default function BuiltInTheOpen({
 
   return (
     <section className="px-4 py-3 lg:px-6">
-      <h2 className="text-sm leading-5 tracking-wide text-[#191C1C]">Built in the open</h2>
-      <p className="mt-0.5 text-xs text-[#3F4948]">
+      <h2 className="text-sm leading-5 tracking-wide text-foreground">Built in the open</h2>
+      <p className="mt-0.5 text-xs text-muted-foreground">
         This listing came out of a project built in public, with its record attached.
       </p>
 
       <Link
         href={`/research-and-development/project/${venture.projectSlug}`}
-        className="group mt-2 flex gap-3 rounded-xl border border-[#CAC4D0] p-3 transition hover:bg-[#F4FBFA]"
+        className="group mt-2 flex gap-3 rounded-xl border border-outline-variant p-3 transition hover:bg-muted"
       >
         <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg sm:w-36">
           <Image
@@ -72,16 +72,16 @@ export default function BuiltInTheOpen({
         </div>
 
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="truncate text-sm font-semibold text-[#191C1C]">{venture.projectName}</p>
-          <p className="line-clamp-2 text-xs text-[#3F4948]">{venture.projectTagline}</p>
-          <p className="text-xs text-[#3F4948]">{stageAndTeamLabel}</p>
-          <p className="text-xs text-[#3F4948]">{effortLabel}</p>
+          <p className="truncate text-sm font-semibold text-foreground">{venture.projectName}</p>
+          <p className="line-clamp-2 text-xs text-muted-foreground">{venture.projectTagline}</p>
+          <p className="text-xs text-muted-foreground">{stageAndTeamLabel}</p>
+          <p className="text-xs text-muted-foreground">{effortLabel}</p>
           {venture.statsComputedAt !== null && (
-            <p className="text-xs text-[#6F7979]">
+            <p className="text-xs text-outline-strong">
               As of {formatIsoInstant(venture.statsComputedAt)}
             </p>
           )}
-          <p className="text-xs font-medium text-[#00696E]">See how it was built</p>
+          <p className="text-xs font-medium text-primary-imprint">See how it was built</p>
         </div>
       </Link>
     </section>

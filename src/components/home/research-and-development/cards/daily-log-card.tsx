@@ -17,8 +17,8 @@ import type { DailyLogView, EffortVerificationStatus } from "@/lib/rnd/daily-log
 const EFFORT_VERIFICATION_STATUS_CLASSES: Record<EffortVerificationStatus, string> = {
   not_run: "bg-muted text-muted-foreground",
   queued: "bg-muted text-muted-foreground",
-  running: "bg-[#D6E3FF] text-[#191C1C]",
-  verified: "bg-[#00696E]/10 text-[#00696E]",
+  running: "bg-secondary text-foreground",
+  verified: "bg-primary-imprint/10 text-primary-imprint",
   flagged_for_review: "bg-amber-100 text-amber-800",
   unverified: "bg-red-100 text-red-800",
 };
@@ -49,7 +49,7 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
   const isVideoPendingCheck = hasVideo && !log.isVideoVerified && log.videoThumbnailUrl === null;
 
   return (
-    <div className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="space-y-2 rounded-2xl border border-outline-variant/60 p-4">
       <div className="flex flex-wrap items-center gap-2">
         {log.authorAvatarImageUrl ? (
           <Image
@@ -78,7 +78,7 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
         )}
       </div>
       {isVideoPendingCheck && (
-        <p className="rounded-lg bg-[#F4FBFA] px-3 py-2 text-xs text-[#3F4948]">
+        <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
           Checking this video with YouTube. Your log is saved either way — the thumbnail appears
           once the check succeeds.
         </p>
@@ -94,7 +94,7 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
             className="object-cover"
           />
           <div className="absolute inset-0 grid place-items-center">
-            <span className="grid size-12 place-items-center rounded-full bg-white/90 text-[#191C1C]">
+            <span className="grid size-12 place-items-center rounded-full bg-white/90 text-foreground">
               ▶
             </span>
           </div>
@@ -104,7 +104,7 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
         <>
           <p className="line-clamp-2 text-sm">{log.narrative}</p>
           <details>
-            <summary className="cursor-pointer text-xs font-medium text-[#00696E]">
+            <summary className="cursor-pointer text-xs font-medium text-primary-imprint">
               Read full log
             </summary>
             <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">

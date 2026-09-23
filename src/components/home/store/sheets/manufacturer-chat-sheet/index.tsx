@@ -173,14 +173,14 @@ export default function ManufacturerChatSheet({
                   },
                 );
               }}
-              className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
               Send
             </button>
           </div>
 
           {/* The one thing still missing, named rather than mocked. */}
-          <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+          <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
             Attachments aren&apos;t available here yet — there is no upload route for message files.
           </p>
 
@@ -248,13 +248,16 @@ function renderConversation({
         return (
           <li
             key={message.id}
-            className={`max-w-[85%] rounded-2xl px-3 py-2 ${
-              isOwnMessage ? "ml-auto bg-[#00696E] text-white" : "bg-muted text-foreground"
+            style={{ maxWidth: "85%" }}
+            className={`rounded-2xl px-3 py-2 ${
+              isOwnMessage
+                ? "ml-auto bg-primary-imprint text-primary-imprint-foreground"
+                : "bg-muted text-foreground"
             }`}
           >
             <p className="text-sm leading-5 whitespace-pre-line">{message.bodyText}</p>
             <p
-              className={`mt-0.5 text-[11px] ${isOwnMessage ? "text-white/80" : "text-muted-foreground"}`}
+              className={`mt-0.5 text-xs ${isOwnMessage ? "text-white/80" : "text-muted-foreground"}`}
             >
               {formatIsoInstantLabel(message.createdAt)}
             </p>

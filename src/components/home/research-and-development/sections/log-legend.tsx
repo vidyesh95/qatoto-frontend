@@ -35,7 +35,7 @@ const EFFORT_VERIFICATION_STATUS_MEANINGS: Record<EffortVerificationStatus, stri
 export default function LogLegend() {
   return (
     <section className="px-4 lg:px-6">
-      <div className="max-w-2xl space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <div className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 p-4">
         <h2 className="text-sm font-medium tracking-wide">What verification can say</h2>
         <ul className="space-y-2">
           {EFFORT_VERIFICATION_STATUSES.map((verificationStatus) => (

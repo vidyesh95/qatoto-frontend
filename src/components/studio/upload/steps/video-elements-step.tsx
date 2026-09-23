@@ -240,7 +240,7 @@ export default function VideoElementsStep({
                 onDraftChange({ researchProjectSlug: event.target.value || null })
               }
               disabled={attachableProjectsQuery.isPending}
-              className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5] disabled:opacity-50"
+              className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint disabled:opacity-50"
             >
               <option value="">None</option>
               {attachableProjects.map((project) => (
@@ -320,7 +320,7 @@ export default function VideoElementsStep({
                   if (event.target.value !== "") handleLinkOpenRole(event.target.value);
                 }}
                 disabled={ventureOpenRolesQuery.isPending || ventureOpenRoles.length === 0}
-                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5] disabled:opacity-50"
+                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint disabled:opacity-50"
               >
                 <option value="">
                   {ventureOpenRolesQuery.isPending
@@ -495,7 +495,7 @@ export default function VideoElementsStep({
                 }
               }}
               placeholder="e.g. Pilot with 3 warehouses — Aug 2026"
-              className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
             />
             <button
               type="button"
@@ -537,7 +537,7 @@ export default function VideoElementsStep({
             value={draft.relatedVideoUrl}
             onChange={(event) => onDraftChange({ relatedVideoUrl: event.target.value })}
             placeholder="Paste a Qatoto video link"
-            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
         </div>
 
@@ -699,7 +699,7 @@ function ChipListInput({
             }
           }}
           placeholder={placeholder}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
         />
         <button
           type="button"

@@ -235,13 +235,13 @@ function RemovedRow({
     case "removed":
     case "restoring":
       return (
-        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-[#CAC4D0]/60 p-4">
-          <p className="line-clamp-2 text-xs text-[#6F7979]">Removed “{title}”</p>
+        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-outline-variant/60 p-4">
+          <p className="line-clamp-2 text-xs text-outline-strong">Removed “{title}”</p>
           <button
             type="button"
             onClick={onUndoClick}
             disabled={state.status === "restoring"}
-            className="text-xs font-medium text-[#00696E] disabled:opacity-50"
+            className="text-xs font-medium text-primary-imprint disabled:opacity-50"
           >
             {state.status === "restoring" ? "Restoring…" : "Undo"}
           </button>
@@ -249,20 +249,20 @@ function RemovedRow({
       );
     case "gone":
       return (
-        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-[#CAC4D0]/60 p-4">
-          <p className="line-clamp-2 text-xs text-[#6F7979]">Removed “{title}”</p>
+        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-outline-variant/60 p-4">
+          <p className="line-clamp-2 text-xs text-outline-strong">Removed “{title}”</p>
           {/*
             No Undo control, because there is nothing left to undo — the 90-day retention
             window closed on these rows. Saying so is better than an Undo that does nothing.
           */}
-          <p className="text-xs text-[#6F7979]">This one is past the 90-day window.</p>
+          <p className="text-xs text-outline-strong">This one is past the 90-day window.</p>
         </div>
       );
     case "failed":
       return (
-        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-[#CAC4D0]/60 p-4">
-          <p className="line-clamp-2 text-xs text-[#6F7979]">{state.message}</p>
-          <p className="text-xs text-[#6F7979]">Reload to see the current state.</p>
+        <div className="flex flex-col items-start justify-center gap-2 rounded-xl border border-outline-variant/60 p-4">
+          <p className="line-clamp-2 text-xs text-outline-strong">{state.message}</p>
+          <p className="text-xs text-outline-strong">Reload to see the current state.</p>
         </div>
       );
     default: {

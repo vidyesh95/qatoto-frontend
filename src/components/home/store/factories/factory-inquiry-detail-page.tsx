@@ -55,10 +55,10 @@ type InquiryDetailViewState =
   | { status: "ready"; inquiry: FactoryInquiry };
 
 const PRIMARY_BUTTON_CLASS =
-  "rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
+  "rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90 disabled:opacity-50";
 
 const QUIET_BUTTON_CLASS =
-  "rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted disabled:opacity-50";
+  "rounded-full bg-background px-4 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted disabled:opacity-50";
 
 export default function FactoryInquiryDetailPage({
   inquiryId,
@@ -92,7 +92,10 @@ export default function FactoryInquiryDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
-      <nav className="px-4 pt-4 text-xs leading-4 text-[#6F7979] lg:px-6" aria-label="Breadcrumb">
+      <nav
+        className="px-4 pt-4 text-xs leading-4 text-outline-strong lg:px-6"
+        aria-label="Breadcrumb"
+      >
         <Link href={backHref} className="hover:underline">
           Manufacturing inquiries
         </Link>
@@ -123,13 +126,13 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
   return (
     <article>
       <header>
-        <p className="text-xs leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           {inquiry.reference} · {FACTORY_INQUIRY_STATE_LABELS[inquiry.state]}
         </p>
         <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">
           {side === "buyer" ? inquiry.factoryDisplayName : inquiry.buyerDisplayName}
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           {FACTORY_CAPABILITY_LABELS[inquiry.capabilityKind]}
           {" · opened "}
           {formatIsoInstantLabel(inquiry.createdAt)}
@@ -137,7 +140,7 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
       </header>
 
       {inquiry.state === "draft" && (
-        <p className="mt-3 rounded-lg bg-[#E0E3E3] px-3 py-2 text-xs leading-4 text-[#4A6364]">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
           {/* The whole point of the draft state, said plainly. */}
           This is a draft. Nobody at the factory has seen it, and nothing was notified when you
           created it.
@@ -145,8 +148,8 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
       )}
 
       <section className="mt-4" aria-label="What was asked">
-        <h2 className="text-sm font-medium text-[#191C1C]">What was asked</h2>
-        <p className="mt-1 text-sm leading-6 whitespace-pre-line text-[#191C1C]">
+        <h2 className="text-sm font-medium text-foreground">What was asked</h2>
+        <p className="mt-1 text-sm leading-6 whitespace-pre-line text-foreground">
           {inquiry.productDescription}
         </p>
       </section>
@@ -176,15 +179,15 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
 
       {inquiry.notes !== null && (
         <section className="mt-4" aria-label="Notes">
-          <h2 className="text-sm font-medium text-[#191C1C]">Notes</h2>
-          <p className="mt-1 text-sm leading-6 whitespace-pre-line text-[#191C1C]">
+          <h2 className="text-sm font-medium text-foreground">Notes</h2>
+          <p className="mt-1 text-sm leading-6 whitespace-pre-line text-foreground">
             {inquiry.notes}
           </p>
         </section>
       )}
 
       {inquiry.threadId !== null && (
-        <p className="mt-4 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-4 text-xs leading-4 text-outline-strong">
           {/* The thread is one-to-one by definition — an RFQ thread would put competitors in it. */}
           A private thread was opened when this was sent. Messages live there, not on this page.
         </p>
@@ -197,9 +200,9 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-3 py-2">
-      <dt className="text-[11px] leading-4 text-[#6F7979]">{label}</dt>
-      <dd className="mt-0.5 text-sm leading-5 text-[#191C1C]">{value}</dd>
+    <div className="rounded-xl border border-outline-variant/60 px-3 py-2">
+      <dt className="text-xs leading-4 text-outline-strong">{label}</dt>
+      <dd className="mt-0.5 text-sm leading-5 text-foreground">{value}</dd>
     </div>
   );
 }
@@ -218,7 +221,7 @@ function InquiryControls({ inquiry, side }: { inquiry: FactoryInquiry; side: Fac
 
   if (!canSend && !canMarkAnswered && !canClose) {
     return (
-      <p className="mt-6 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+      <p className="mt-6 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
         This inquiry is closed. It stays readable.
       </p>
     );

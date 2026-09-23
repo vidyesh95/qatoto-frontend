@@ -38,7 +38,7 @@ import type { ModerationProductRelation } from "@/lib/store/admin-product-relati
 import { PRODUCT_RELATION_KIND_LABELS } from "@/lib/store/merchandising.schemas";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
@@ -91,13 +91,13 @@ function renderConsole(state: ConsoleState) {
       return <div className="h-28 animate-pulse rounded-2xl bg-muted/40" aria-hidden />;
     case "capabilityUnknown":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       );
     case "restricted":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Confirming related-product claims needs the `moderate_commerce` capability. Your role is{" "}
           {state.platformRole ?? "none"}, so this page is not loaded.
         </output>
@@ -156,7 +156,7 @@ function RelationList() {
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           {/* Never "you are not a moderator" — this subtree only exists once the capability was
               confirmed. Empty now means "nothing UNREVIEWED": a decided claim, confirmed or
               dismissed, has left this list. It does not mean no claims exist. */}
@@ -270,7 +270,7 @@ function RelationCard({ relation }: { readonly relation: ModerationProductRelati
       </p>
 
       {!isTargetPubliclyVisible && (
-        <p className="mt-2 text-xs text-[#8C1D18]">
+        <p className="mt-2 text-xs text-destructive">
           {/*
             Surfaced deliberately. The public companions read hides a non-visible target, so
             resolving this list the same way would have let a seller hide a claim from review by

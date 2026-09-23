@@ -39,7 +39,7 @@ export default function MarketResearchTabs({
     // new data, not client-side panels. A screen reader should announce them as destinations.
     <nav
       aria-label="Market research sections"
-      className="border-b border-[#CAC4D0]/60 px-4 lg:px-6"
+      className="border-b border-outline-variant/60 px-4 lg:px-6"
     >
       <ul className="-mb-px flex gap-1 overflow-x-auto">
         {MARKET_RESEARCH_TABS.map((tab) => {
@@ -52,7 +52,7 @@ export default function MarketResearchTabs({
                 aria-current={isActive ? "page" : undefined}
                 className={`inline-block shrink-0 border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
                   isActive
-                    ? "border-[#00696E] font-medium text-[#00696E]"
+                    ? "border-primary-imprint font-medium text-primary-imprint"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >

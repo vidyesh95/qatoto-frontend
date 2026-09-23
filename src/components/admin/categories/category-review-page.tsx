@@ -152,12 +152,12 @@ export default function CategoryReviewPage() {
       {/* Three distinct cases, said apart. The old single banner asserted "you lack rights"
           for all of them, including a check that never completed. */}
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so the queues below are read-only.
         </output>
       )}
       {staffContextQuery.isSuccess && !canDecideCategories && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Deciding categories needs the moderator or admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so the queues below are read-only.
         </output>
@@ -214,7 +214,7 @@ export default function CategoryReviewPage() {
               {taxonomyDecisions.map((entry) => (
                 <li
                   key={entry.id}
-                  className="rounded-xl border border-[#CAC4D0]/60 bg-card p-3 text-xs"
+                  className="rounded-xl border border-outline-variant/60 bg-card p-3 text-xs"
                 >
                   <p className="font-medium">{entry.actionLabel}</p>
                   <p className="text-muted-foreground">{entry.targetLabel}</p>
@@ -325,7 +325,7 @@ function PendingCategoryCard({
   const canApprove = canDecide && !isDeciding;
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-0.5">
         <p className="text-sm font-medium">{row.displayLabel}</p>
         <p className="font-mono text-xs text-muted-foreground">{row.slug}</p>
@@ -341,7 +341,7 @@ function PendingCategoryCard({
               maxLength={2000}
               rows={2}
               placeholder="Required to reject. Optional when approving."
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
           </label>
 
@@ -358,7 +358,7 @@ function PendingCategoryCard({
                   );
                   setPinIconKey(parsedIconKey.success ? parsedIconKey.data : "");
                 }}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               >
                 {/* Unset is sent as an ABSENT key, not a default value — the backend then
                     skips the column instead of stamping it. */}
@@ -383,7 +383,7 @@ function PendingCategoryCard({
                   ...(trimmedNote === "" ? {} : { note: trimmedNote }),
                 })
               }
-              className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
               Approve
             </button>
@@ -391,14 +391,12 @@ function PendingCategoryCard({
               type="button"
               disabled={!canReject}
               onClick={() => onDecide(row.categoryId, { decision: "reject", note: trimmedNote })}
-              className="cursor-pointer rounded-full border border-[#BA1A1A] px-4 py-2 text-xs font-medium text-[#BA1A1A] transition-colors hover:bg-[#BA1A1A]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer rounded-full border border-destructive px-4 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Reject
             </button>
             {trimmedNote === "" && (
-              <span className="text-[10px] text-muted-foreground">
-                A note is required to reject.
-              </span>
+              <span className="text-xs text-muted-foreground">A note is required to reject.</span>
             )}
           </div>
         </>

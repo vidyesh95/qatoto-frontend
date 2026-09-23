@@ -73,7 +73,7 @@ export default function CommitmentsOverview({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <div className="rounded-2xl border border-outline-variant/60 p-4">
           <p className="text-xs text-muted-foreground">Committed funding</p>
           {committedByCurrency.length === 0 ? (
             <p className="text-xl font-semibold">—</p>
@@ -86,18 +86,18 @@ export default function CommitmentsOverview({
           )}
           <p className="text-xs text-muted-foreground">Committed, not collected or held.</p>
         </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <div className="rounded-2xl border border-outline-variant/60 p-4">
           <p className="text-xs text-muted-foreground">Statements finalized</p>
           <p className="text-xl font-semibold">{platformTotals.finalizedPeriodCount}</p>
         </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <div className="rounded-2xl border border-outline-variant/60 p-4">
           <p className="text-xs text-muted-foreground">Countersigned</p>
           <p className="text-xl font-semibold">{platformTotals.countersignedPeriodCount}</p>
           <p className="text-xs text-muted-foreground">
             By a second admin, never the one who finalized.
           </p>
         </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <div className="rounded-2xl border border-outline-variant/60 p-4">
           <p className="text-xs text-muted-foreground">Still open</p>
           <p className="text-xl font-semibold">{platformTotals.openPeriodCount}</p>
           <p className="text-xs text-muted-foreground">
@@ -107,7 +107,7 @@ export default function CommitmentsOverview({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[46rem] text-sm">
+        <table className="w-full min-w-3xl text-sm">
           <thead className="text-left text-xs text-muted-foreground">
             <tr>
               <th className="p-2 font-medium">Project</th>
@@ -121,11 +121,11 @@ export default function CommitmentsOverview({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.projectSlug} className="border-t border-[#CAC4D0]/40">
+              <tr key={row.projectSlug} className="border-t border-outline-variant/40">
                 <td className="p-2">
                   <Link
                     href={`/research-and-development/project/${row.projectSlug}`}
-                    className="font-medium hover:text-[#00696E]"
+                    className="font-medium hover:text-primary-imprint"
                   >
                     {row.projectName}
                   </Link>

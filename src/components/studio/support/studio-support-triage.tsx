@@ -266,7 +266,7 @@ export default function StudioSupportTriage() {
 
       {SELLER_TRIAGE_GROUPS.map((group) => (
         <section key={group.heading} aria-label={group.heading}>
-          <h3 className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+          <h3 className="text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
             {group.heading}
           </h3>
           <dl className="mt-2 space-y-3">

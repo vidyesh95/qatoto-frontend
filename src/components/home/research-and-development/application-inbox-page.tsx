@@ -77,12 +77,15 @@ export default function ApplicationInboxPage() {
     return (
       <ul className="space-y-3">
         {invitesQuery.data.map((invite) => (
-          <li key={invite.id} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <li
+            key={invite.id}
+            className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
+          >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <Link
                   href={`/research-and-development/project/${invite.projectSlug}`}
-                  className="font-medium hover:text-[#00696E]"
+                  className="font-medium hover:text-primary-imprint"
                 >
                   {invite.projectName}
                 </Link>
@@ -117,7 +120,7 @@ export default function ApplicationInboxPage() {
                       decision: "accept",
                     })
                   }
-                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                 >
                   Accept and join
                 </button>
@@ -131,7 +134,7 @@ export default function ApplicationInboxPage() {
                       decision: "decline",
                     })
                   }
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                  className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                 >
                   Decline
                 </button>
@@ -159,12 +162,15 @@ export default function ApplicationInboxPage() {
     return (
       <ul className="space-y-3">
         {applicationsQuery.data.map((application) => (
-          <li key={application.id} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <li
+            key={application.id}
+            className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
+          >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <Link
                   href={`/research-and-development/project/${application.projectSlug}`}
-                  className="font-medium hover:text-[#00696E]"
+                  className="font-medium hover:text-primary-imprint"
                 >
                   {application.projectName}
                 </Link>

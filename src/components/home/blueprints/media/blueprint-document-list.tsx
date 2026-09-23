@@ -38,7 +38,7 @@ export default function BlueprintDocumentList({
 
       {/* One panel with hairlines between rows, not a bordered box per document — the same
           construction as `ManufacturingFileBundles` below it, so the two lists read as one kind. */}
-      <ul className="mt-2 max-w-2xl divide-y divide-[#CAC4D0]/60 rounded-xl border border-[#CAC4D0]/60">
+      <ul className="mt-2 max-w-2xl divide-y divide-outline-variant/60 rounded-xl border border-outline-variant/60">
         {documents.map((blueprintDocument) => (
           <li key={blueprintDocument.id} className="flex items-center gap-3 px-3 py-2.5">
             <Image
@@ -51,7 +51,7 @@ export default function BlueprintDocumentList({
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-foreground">{blueprintDocument.title}</p>
-              <p className="mt-0.5 text-[11px] text-[#6F7979]">
+              <p className="mt-0.5 text-xs text-outline-strong">
                 {BLUEPRINT_DOCUMENT_KIND_LABELS[blueprintDocument.kind]}
                 {" · "}
                 {formatFileSizeFromBytes(blueprintDocument.byteSize)}

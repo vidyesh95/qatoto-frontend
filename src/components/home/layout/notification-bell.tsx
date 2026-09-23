@@ -108,7 +108,7 @@ export default function NotificationBell({
         {unreadCount !== null && (
           <span
             aria-hidden
-            className="absolute -top-1 -right-1 grid min-w-4.5 place-items-center rounded-full bg-[#00696E] px-1 text-[10px] leading-4 font-medium text-white"
+            className="absolute -top-1 -right-1 grid min-w-4.5 place-items-center rounded-full bg-primary-imprint px-1 text-xs leading-4 font-medium text-primary-imprint-foreground"
           >
             {unreadCount > MAXIMUM_DISPLAYED_UNREAD_COUNT
               ? `${MAXIMUM_DISPLAYED_UNREAD_COUNT}+`
@@ -147,7 +147,7 @@ function NotificationPanelShell({ children }: { readonly children: ReactNode }) 
   return (
     <section
       aria-label="Notifications"
-      className="absolute right-0 z-50 mt-2 max-h-[32rem] w-88 overflow-y-auto rounded-xl border border-border bg-background shadow-lg"
+      className="absolute right-0 z-50 mt-2 max-h-128 w-88 overflow-y-auto rounded-xl border border-border bg-background shadow-lg"
     >
       <header className="sticky top-0 border-b border-border bg-background px-4 py-3">
         <h2 className="text-sm font-medium text-foreground">Notifications</h2>

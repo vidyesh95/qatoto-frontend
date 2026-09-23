@@ -33,7 +33,7 @@ const QUIET_BUTTON_CLASS =
 const FIELD_CLASS = "w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm";
 
 const STATE_BADGE_CLASSES: Record<AdminFreightRateCard["state"], string> = {
-  active: "bg-[#00696E]/10 text-[#00696E]",
+  active: "bg-primary-imprint/10 text-primary-imprint",
   superseded: "bg-muted text-muted-foreground",
   withdrawn: "bg-red-50 text-red-800",
 };
@@ -138,7 +138,7 @@ export default function RateCardRow({
             {FREIGHT_RATE_CARD_STATE_LABELS[card.state]}
           </span>
           {card.bandsEditable ? (
-            <span className="rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
               Staged · bands editable
             </span>
           ) : (

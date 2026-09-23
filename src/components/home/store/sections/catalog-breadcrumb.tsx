@@ -34,20 +34,20 @@ export default function CatalogBreadcrumb({
 }) {
   return (
     <nav aria-label="Category trail" className="px-4 pt-3 lg:px-6">
-      <ol className="flex flex-wrap items-center gap-1 text-xs leading-4 text-[#6F7979]">
+      <ol className="flex flex-wrap items-center gap-1 text-xs leading-4 text-outline-strong">
         <li className="flex items-center gap-1">
-          <Link href="/store" className="hover:text-[#00696E] hover:underline">
+          <Link href="/store" className="hover:text-primary-imprint hover:underline">
             Store
           </Link>
           <span aria-hidden>›</span>
         </li>
         <li className="flex items-center gap-1">
-          <Link href="/store/categories" className="hover:text-[#00696E] hover:underline">
+          <Link href="/store/categories" className="hover:text-primary-imprint hover:underline">
             Categories
           </Link>
           <span aria-hidden>›</span>
         </li>
-        <li aria-current="page" className="font-medium text-[#191C1C]">
+        <li aria-current="page" className="font-medium text-foreground">
           {resolvedCategoryName}
         </li>
       </ol>

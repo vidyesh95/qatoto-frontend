@@ -17,7 +17,7 @@ import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import type { TeardownReviewItem } from "@/lib/blueprints/teardown-moderation.schemas";
 
 const PANEL_CLASS =
-  "block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground";
+  "block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground";
 const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
@@ -121,7 +121,7 @@ function TeardownReviewQueue() {
     case "loading":
       return (
         <div
-          className="h-40 max-w-3xl animate-pulse rounded-2xl border border-[#CAC4D0]/60 bg-muted/40"
+          className="h-40 max-w-3xl animate-pulse rounded-2xl border border-outline-variant/60 bg-muted/40"
           aria-hidden
         />
       );

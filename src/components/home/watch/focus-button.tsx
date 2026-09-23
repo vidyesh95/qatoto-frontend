@@ -40,7 +40,7 @@ export default function FocusButton({
             onSuccess: (result) => setIsSubscribed(result.isSubscribed),
           })
         }
-        className="flex shrink-0 cursor-pointer flex-row items-center gap-2 rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+        className="flex shrink-0 cursor-pointer flex-row items-center gap-2 rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground hover:opacity-90 disabled:opacity-60"
       >
         <Image src={iconSrc} width={18} height={18} alt="" />
         {subscription.isPending ? "Working…" : isSubscribed ? "Focused" : "Focus on"}

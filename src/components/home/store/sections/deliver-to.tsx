@@ -50,8 +50,8 @@ export default function DeliverTo({
 
   if (!isSignedIn) {
     return (
-      <div className="px-4 py-2 text-xs leading-4 text-[#6F7979] lg:px-6">
-        <Link href="/sign-in" className="font-medium text-[#00696E]">
+      <div className="px-4 py-2 text-xs leading-4 text-outline-strong lg:px-6">
+        <Link href="/sign-in" className="font-medium text-primary-imprint">
           Sign in
         </Link>{" "}
         to use a saved delivery address.
@@ -64,18 +64,18 @@ export default function DeliverTo({
       <div className="flex items-start gap-2 px-4 py-2 lg:px-6">
         <div className="min-w-0 flex-1">
           {selectedAddress === null ? (
-            <p className="text-sm text-[#191C1C]">
+            <p className="text-sm text-foreground">
               {addressesQuery.isPending ? "Loading addresses…" : "No delivery address saved"}
             </p>
           ) : (
             <>
-              <p className="truncate text-sm text-[#191C1C]">
+              <p className="truncate text-sm text-foreground">
                 Deliver to:{" "}
                 <span className="font-medium">
                   {selectedAddress.recipientName ?? selectedAddress.label ?? "Saved address"}
                 </span>
               </p>
-              <p className="truncate text-xs leading-4 text-[#6F7979]">
+              <p className="truncate text-xs leading-4 text-outline-strong">
                 {formatAddressLines(selectedAddress)}
               </p>
             </>
@@ -84,7 +84,7 @@ export default function DeliverTo({
         <button
           type="button"
           onClick={() => setIsSheetOpen(true)}
-          className="shrink-0 text-xs font-medium text-[#00696E]"
+          className="shrink-0 text-xs font-medium text-primary-imprint"
         >
           {selectedAddress === null ? "Add" : "Change"}
         </button>

@@ -206,7 +206,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
             </span>
           </div>
           {rowPasskey.backedUp ? (
-            <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
+            <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-primary-imprint">
               <Image
                 src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt=""
@@ -237,7 +237,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
               disabled={
                 mutationState.status === "rename-saving" || renameDraftName.trim().length === 0
               }
-              className="cursor-pointer text-sm font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             >
               {mutationState.status === "rename-saving" ? "Saving…" : "Save"}
             </button>
@@ -268,7 +268,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
               type="button"
               onClick={() => handleStartRename(rowPasskey)}
               disabled={isMutationInFlight}
-              className="cursor-pointer text-sm font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             >
               Rename
             </button>
@@ -299,7 +299,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
             <button
               type="button"
               onClick={() => void loadPasskeys()}
-              className="cursor-pointer self-start text-sm font-medium text-[#00696E]"
+              className="cursor-pointer self-start text-sm font-medium text-primary-imprint"
             >
               Try again
             </button>

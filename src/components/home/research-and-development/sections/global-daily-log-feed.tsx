@@ -99,7 +99,7 @@ export default function GlobalDailyLogFeed({
                     {/* The row carries its own project, so this chip is never fabricated. */}
                     <Link
                       href={`/research-and-development/project/${log.projectSlug}`}
-                      className="inline-block rounded-full bg-[#00696E]/10 px-2 py-0.5 text-xs font-medium text-[#00696E]"
+                      className="inline-block rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs font-medium text-primary-imprint"
                     >
                       {log.projectName}
                     </Link>

@@ -146,7 +146,7 @@ export default async function ProviderDirectoryPage({
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Trade services
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Freight, customs, inspection, testing, warehousing, insurance and settlement. Engage any
           of them on their own — none requires buying a product on Qatoto.
         </p>
@@ -269,11 +269,11 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
   return (
     <Link
       href={`/store/providers/${provider.slug}`}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <div className="flex items-start gap-3">
         {provider.logoUrl === null ? (
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-sm font-medium text-[#00696E]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-sm font-medium text-primary-imprint">
             {provider.displayName.slice(0, 2).toUpperCase()}
           </span>
         ) : (
@@ -287,8 +287,8 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5 font-medium text-[#191C1C]">{provider.displayName}</p>
-          <p className="text-xs leading-4 text-[#6F7979]">
+          <p className="text-sm leading-5 font-medium text-foreground">{provider.displayName}</p>
+          <p className="text-xs leading-4 text-outline-strong">
             {countryLabelFromCode(provider.countryCode)}
             {provider.serviceRegionSummary !== null && ` · ${provider.serviceRegionSummary}`}
           </p>
@@ -309,7 +309,7 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
                 <li
                   key={providerKind.kind}
                   title={PROVIDER_KIND_VERIFICATION_LABELS[providerKind.verificationState]}
-                  className="rounded bg-[#D6E3FF] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]"
+                  className="rounded bg-secondary px-1.5 py-0.5 text-xs leading-4 font-medium text-primary-imprint"
                 >
                   {PROVIDER_KIND_LABELS[providerKind.kind]}
                 </li>
@@ -320,27 +320,27 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
 
         {/* Not accepting requests is worth saying; accepting them is the default and is not. */}
         {!provider.acceptingRequests && (
-          <span className="shrink-0 rounded bg-[#F2F4F4] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#6F7979]">
+          <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs leading-4 font-medium text-outline-strong">
             Not taking requests
           </span>
         )}
       </div>
 
       {provider.publicSummary !== null && (
-        <p className="mt-2 line-clamp-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-2 line-clamp-2 text-xs leading-4 text-outline-strong">
           {provider.publicSummary}
         </p>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] leading-4">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-4">
         {/* "Profile verified", never a bare tick. The per-kind approval is a different fact and
             does not reach this read at all. */}
-        <span className="text-[#00696E]">
+        <span className="text-primary-imprint">
           {PROVIDER_VERIFICATION_LABELS[provider.verificationState]}
         </span>
 
         {reviewMetrics.averageRating !== null && (
-          <span className="text-[#191C1C]">
+          <span className="text-foreground">
             {reviewMetrics.averageRating.toFixed(1)} ★ (
             {formatCountLabel(reviewMetrics.reviewCount)})
           </span>
@@ -351,13 +351,13 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
             and printing nothing at all would hide that they have completed work. */}
         {fulfillmentMetrics.onTimeShipmentRate === null ? (
           fulfillmentMetrics.completedOrderCount > 0 && (
-            <span className="text-[#6F7979]">
+            <span className="text-outline-strong">
               {formatCountLabel(fulfillmentMetrics.completedOrderCount)} completed · not enough data
               for an on-time rate
             </span>
           )
         ) : (
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             {formatPercentageLabel(fulfillmentMetrics.onTimeShipmentRate)} on time across{" "}
             {formatCountLabel(fulfillmentMetrics.onTimeSampleSize)} orders
           </span>
@@ -366,7 +366,7 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
         {/* Self-reported, and labelled as such in the copy rather than in a tooltip. The measured
             median lives on the detail read under `measuredMetrics`. */}
         {provider.declaredResponseTimeHours !== null && (
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             replies in ≤ {provider.declaredResponseTimeHours} h, self-reported
           </span>
         )}

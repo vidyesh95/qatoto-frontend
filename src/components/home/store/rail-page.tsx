@@ -79,7 +79,7 @@ export default async function RailPage({
               {rail.title}
             </h1>
             {strategyCaption !== null && (
-              <p className="mt-1 text-sm leading-5 text-[#6F7979]">{strategyCaption}</p>
+              <p className="mt-1 text-sm leading-5 text-outline-strong">{strategyCaption}</p>
             )}
           </header>
 

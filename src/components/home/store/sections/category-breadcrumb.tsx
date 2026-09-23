@@ -20,9 +20,9 @@ export default function CategoryBreadcrumb({
 }) {
   return (
     <nav aria-label="Category trail" className="px-4 py-2 lg:px-6">
-      <ol className="flex items-center gap-1 overflow-x-auto text-xs font-medium tracking-wide whitespace-nowrap text-[#6F7979]">
+      <ol className="flex items-center gap-1 overflow-x-auto text-xs font-medium tracking-wide whitespace-nowrap text-outline-strong">
         <li className="flex items-center gap-1">
-          <Link href="/store/categories" className="hover:text-[#00696E] hover:underline">
+          <Link href="/store/categories" className="hover:text-primary-imprint hover:underline">
             Categories
           </Link>
           {categoryTrail.length > 0 && <span aria-hidden>›</span>}
@@ -34,7 +34,9 @@ export default function CategoryBreadcrumb({
               <Link
                 href={`/store/categories/${category.slug}`}
                 aria-current={isLastCrumb ? "page" : undefined}
-                className={isLastCrumb ? "text-[#191C1C]" : "hover:text-[#00696E] hover:underline"}
+                className={
+                  isLastCrumb ? "text-foreground" : "hover:text-primary-imprint hover:underline"
+                }
               >
                 {category.name}
               </Link>

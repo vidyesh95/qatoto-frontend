@@ -34,7 +34,7 @@ export default function ProviderKindBadge({
     <span
       className={
         isCompact
-          ? "inline-flex items-center gap-1 text-[11px] leading-4 font-medium text-muted-foreground"
+          ? "inline-flex items-center gap-1 text-xs leading-4 font-medium text-muted-foreground"
           : "inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
       }
     >

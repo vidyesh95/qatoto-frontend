@@ -466,7 +466,7 @@ export default function ShowcaseLaunchComposer({
 
   return (
     <div className="max-w-2xl">
-      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">Showcase</p>
+      <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">Showcase</p>
       <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">Post a launch</h1>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         A launch is a working prototype or a finished build, and what it proved. Say what you made,
@@ -543,7 +543,7 @@ export default function ShowcaseLaunchComposer({
           {/* THE LIVE PREVIEW SITS WITH THE IMAGE, because the image is the one field a maker cannot
               judge from the form alone: what matters is how it reads beside the name at 64px. */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
+            <p className="text-xs tracking-wider text-muted-foreground uppercase">
               How it will look in the feed
             </p>
             <div className="mt-3">
@@ -568,9 +568,9 @@ export default function ShowcaseLaunchComposer({
                   type="button"
                   aria-pressed={writeUpPane === pane}
                   onClick={() => setWriteUpPane(pane)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
                     writeUpPane === pane
-                      ? "bg-[#CCE8E9] text-[#041F21]"
+                      ? "bg-primary text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -584,7 +584,7 @@ export default function ShowcaseLaunchComposer({
                 type="button"
                 onClick={handleAddWriteUpImageClick}
                 disabled={isWriteUpImageBusy}
-                className="ml-auto rounded-full border border-[#00696E]/40 px-3 py-1 text-xs font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+                className="ml-auto rounded-full border border-primary-imprint/40 px-3 py-1 text-xs font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isWriteUpImageBusy ? "Uploading…" : "Add an image"}
               </button>
@@ -686,7 +686,7 @@ export default function ShowcaseLaunchComposer({
                     <div className="flex items-center gap-2 sm:col-span-2">
                       <span
                         aria-hidden="true"
-                        className="grid size-8 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-xs font-medium text-[#00696E]"
+                        className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-medium text-primary-imprint"
                       >
                         {initials}
                       </span>
@@ -730,7 +730,7 @@ export default function ShowcaseLaunchComposer({
             onClick={() =>
               applyFormPatch({ teamRows: [...formDraft.teamRows, newTeamMemberDraftRow()] })
             }
-            className="rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            className="rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           >
             Add a team member
           </button>
@@ -751,7 +751,7 @@ export default function ShowcaseLaunchComposer({
                     )?.slug ?? "",
                 })
               }
-              className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+              className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint`}
             >
               <option value="">Not built from a teardown on Qatoto</option>
               {teardownOptions.map((teardownOption) => (
@@ -855,7 +855,7 @@ export default function ShowcaseLaunchComposer({
           type="button"
           onClick={handlePostClick}
           disabled={postBlockedReason !== null || isPosting}
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPosting ? "Posting…" : "Post launch"}
         </button>

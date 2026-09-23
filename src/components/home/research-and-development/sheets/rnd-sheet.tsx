@@ -106,7 +106,7 @@ export function RndSheetConfirmation({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-      <span className="grid size-12 place-items-center rounded-full bg-[#00696E]/10 text-2xl text-[#00696E]">
+      <span className="grid size-12 place-items-center rounded-full bg-primary-imprint/10 text-2xl text-primary-imprint">
         ✓
       </span>
       <p className="text-base font-medium">{headline}</p>
@@ -114,7 +114,7 @@ export function RndSheetConfirmation({
       <button
         type="button"
         onClick={onDismiss}
-        className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+        className="mt-2 cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
       >
         Done
       </button>

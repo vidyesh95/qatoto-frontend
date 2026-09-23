@@ -76,7 +76,7 @@ export default function MyPathwayList() {
                 {pathway.state === "active" && (
                   <Link
                     href={`/store/pathways/${pathway.slug}`}
-                    className="text-xs font-medium text-[#2A76FD]"
+                    className="text-xs font-medium text-primary-imprint hover:underline"
                   >
                     View it live
                   </Link>

@@ -150,7 +150,7 @@ export default function NewIdeaWizardPage() {
     case "submitted":
       return (
         <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-16 text-center">
-          <span className="grid size-12 place-items-center rounded-full bg-[#00696E]/10 text-2xl text-[#00696E]">
+          <span className="grid size-12 place-items-center rounded-full bg-primary-imprint/10 text-2xl text-primary-imprint">
             ✓
           </span>
           <p className="text-base font-medium">Saved as a draft</p>
@@ -162,7 +162,7 @@ export default function NewIdeaWizardPage() {
           </p>
           <Link
             href={`/research-and-development/project/${viewState.projectSlug}`}
-            className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+            className="mt-2 cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
           >
             Open your draft
           </Link>
@@ -244,9 +244,9 @@ export default function NewIdeaWizardPage() {
                     aria-current={isStepCurrent ? "step" : undefined}
                     className={`grid size-7 shrink-0 cursor-pointer place-items-center rounded-full text-xs font-semibold transition-colors ${
                       isStepCompleted
-                        ? "bg-[#00696E] text-white"
+                        ? "bg-primary-imprint text-primary-imprint-foreground"
                         : isStepCurrent
-                          ? "bg-[#00696E]/10 text-[#00696E] ring-2 ring-[#00696E]"
+                          ? "bg-primary-imprint/10 text-primary-imprint ring-2 ring-primary-imprint"
                           : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -255,7 +255,7 @@ export default function NewIdeaWizardPage() {
                   {stepIndex < NEW_IDEA_STEPS.length - 1 && (
                     <span
                       className={`h-0.5 flex-1 rounded-full ${
-                        isStepCompleted ? "bg-[#00696E]" : "bg-muted"
+                        isStepCompleted ? "bg-primary-imprint" : "bg-muted"
                       }`}
                     />
                   )}
@@ -277,7 +277,7 @@ export default function NewIdeaWizardPage() {
               type="button"
               onClick={handleBackStepClick}
               disabled={isFirstStep}
-              className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium disabled:opacity-40"
+              className="cursor-pointer rounded-full border border-outline-strong px-4 py-2 text-sm font-medium disabled:opacity-40"
             >
               Back
             </button>
@@ -286,7 +286,7 @@ export default function NewIdeaWizardPage() {
                 type="button"
                 onClick={handleIdeaSubmitClick}
                 disabled={!isDraftValid || createProjectMutation.isPending}
-                className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
               >
                 {createProgress.phase === "creating-category"
                   ? "Proposing the category…"
@@ -298,7 +298,7 @@ export default function NewIdeaWizardPage() {
               <button
                 type="button"
                 onClick={handleNextStepClick}
-                className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
               >
                 Next: {NEW_IDEA_STEPS[currentStepIndex + 1].label}
               </button>

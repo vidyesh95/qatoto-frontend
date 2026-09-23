@@ -195,7 +195,7 @@ export default function ReviewMediaPanel({ reviewId }: { reviewId: string }) {
         </p>
       )}
 
-      <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-3 text-xs leading-4 text-muted-foreground">
         Attachments can only be managed here, while you are on this page — there is no screen yet
         for returning to a review you have already published.
       </p>

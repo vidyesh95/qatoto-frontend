@@ -18,7 +18,7 @@ export default function PathwayCard({ pathway }: { pathway: StoreHomePathwayCard
   return (
     <Link
       href={`/store/pathways/${pathway.slug}`}
-      className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-[#CAC4D0]/60 transition-colors hover:border-[#2A76FD] sm:w-52"
+      className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-blue-600 sm:w-52"
     >
       <div
         className={`relative aspect-video w-full overflow-hidden ${accentSurfaceClass(pathway.accent)}`}
@@ -39,15 +39,15 @@ export default function PathwayCard({ pathway }: { pathway: StoreHomePathwayCard
             against one product rather than typed by a merchandiser, and saying so tells the buyer
             why these pieces are here. */}
         {pathway.isAnchored && (
-          <span className="w-fit rounded bg-[#F2F4F4] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+          <span className="w-fit rounded bg-muted px-1.5 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
             Built around one product
           </span>
         )}
 
-        <p className="text-sm leading-5 font-medium text-[#191C1C]">{pathway.title}</p>
+        <p className="text-sm leading-5 font-medium text-foreground">{pathway.title}</p>
 
         {pathway.summary !== null && (
-          <p className="line-clamp-2 text-xs leading-4 text-[#6F7979]">{pathway.summary}</p>
+          <p className="line-clamp-2 text-xs leading-4 text-outline-strong">{pathway.summary}</p>
         )}
       </div>
     </Link>

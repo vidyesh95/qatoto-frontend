@@ -24,7 +24,7 @@ export default function VideoDescription({
       className="w-full cursor-pointer text-left"
     >
       <h1 className="text-lg font-medium">{title}</h1>
-      <p className="mt-1 text-sm text-[#6F7979]">
+      <p className="mt-1 text-sm text-outline-strong">
         <span>{views}</span> <span>{postedAt}</span>
         {!expanded && <span className="ml-1 font-medium text-foreground">…more</span>}
       </p>

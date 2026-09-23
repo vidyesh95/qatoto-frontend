@@ -187,10 +187,10 @@ function LegRow({
       {/* ESTIMATED AND ACTUAL ARE FOUR SEPARATE FIELDS AND NEITHER FALLS BACK TO THE OTHER. An
           estimate rendered where the actual is missing tells a buyer their goods moved when nobody
           has said so. */}
-      <p className="mt-1 text-[11px] text-muted-foreground">{describeLegTiming(leg)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{describeLegTiming(leg)}</p>
 
       {availableCommands.length === 0 ? (
-        <p className="mt-2 text-[11px] text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground">
           This leg is {SHIPMENT_LEG_STATE_LABELS[leg.state].toLowerCase()} — nothing further to do.
         </p>
       ) : (
@@ -221,7 +221,7 @@ function LegRow({
       <button
         type="button"
         onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-        className="mt-2 text-[11px] text-muted-foreground underline hover:no-underline"
+        className="mt-2 text-xs text-muted-foreground underline hover:no-underline"
       >
         {isHistoryOpen ? "Hide history" : "History"}
       </button>
@@ -331,7 +331,7 @@ function LegCommandForm({
             onChange={(event) => setIsCancelConfirmed(event.target.checked)}
             className="mt-0.5"
           />
-          <span className="text-[11px] leading-4 text-muted-foreground">
+          <span className="text-xs leading-4 text-muted-foreground">
             Cancelling is permanent — a cancelled leg cannot be reopened, and the shipment&apos;s
             own state is recomputed from its legs.
           </span>
@@ -425,22 +425,22 @@ function LegEventHistory({ legId }: { readonly legId: string }) {
   const legEventsQuery = useShipmentLegEventsQuery(legId);
 
   if (legEventsQuery.isPending) {
-    return <p className="mt-2 text-[11px] text-muted-foreground">Loading history…</p>;
+    return <p className="mt-2 text-xs text-muted-foreground">Loading history…</p>;
   }
   const result = legEventsQuery.data;
   if (legEventsQuery.isError || result === undefined || !result.success) {
     const message =
       result !== undefined && !result.success ? result.error.message : "Couldn't load history.";
-    return <p className="mt-2 text-[11px] text-muted-foreground">{message}</p>;
+    return <p className="mt-2 text-xs text-muted-foreground">{message}</p>;
   }
   if (result.data.items.length === 0) {
-    return <p className="mt-2 text-[11px] text-muted-foreground">Nothing recorded yet.</p>;
+    return <p className="mt-2 text-xs text-muted-foreground">Nothing recorded yet.</p>;
   }
 
   return (
     <ol className="mt-2 space-y-1">
       {result.data.items.map((event) => (
-        <li key={event.id} className="text-[11px] text-muted-foreground">
+        <li key={event.id} className="text-xs text-muted-foreground">
           {SHIPMENT_LEG_EVENT_KIND_LABELS[event.eventKind]} ·{" "}
           {formatIsoInstantLabel(event.occurredAt)}
           {event.locationIdentifier === null ? "" : ` · ${event.locationIdentifier}`}
@@ -483,7 +483,7 @@ function LegAssignmentControl({
   const isAssignable = leg.state === "planned" || leg.state === "booked";
   if (!isAssignable) {
     return leg.logisticsEngagementId === null ? null : (
-      <p className="mt-1 text-[11px] text-muted-foreground">
+      <p className="mt-1 text-xs text-muted-foreground">
         This leg is {SHIPMENT_LEG_STATE_LABELS[leg.state].toLowerCase()} — who carries it can no
         longer be changed.
       </p>
@@ -526,23 +526,23 @@ function LegAssignmentControl({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="text-[11px] text-muted-foreground underline hover:no-underline"
+        className="text-xs text-muted-foreground underline hover:no-underline"
       >
         {leg.logisticsEngagementId === null ? "Assign a forwarder" : "Change who carries this leg"}
       </button>
 
       {isOpen && (
         <div className="mt-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             Assigning hands this leg to the provider: they book, depart, arrive and complete it, and
             you no longer can. Detaching returns it to you. Neither is possible once the leg leaves{" "}
             <span className="font-medium">booked</span>.
           </p>
 
           {fulfillmentQuery.isPending ? (
-            <p className="mt-2 text-[11px] text-muted-foreground">Loading engagements…</p>
+            <p className="mt-2 text-xs text-muted-foreground">Loading engagements…</p>
           ) : carriers.length === 0 ? (
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               This order has no freight or logistics engagement to assign. One is created when a
               provider&apos;s quote is accepted on the order.
             </p>
@@ -554,7 +554,7 @@ function LegAssignmentControl({
                     type="button"
                     disabled={assignLeg.isPending || engagement.id === leg.logisticsEngagementId}
                     onClick={() => submitAssignment(engagement.id)}
-                    className="w-full rounded-lg border border-border px-2 py-1 text-left text-[11px] text-foreground disabled:opacity-50"
+                    className="w-full rounded-lg border border-border px-2 py-1 text-left text-xs text-foreground disabled:opacity-50"
                   >
                     {engagement.titleSnapshot}
                     {engagement.id === leg.logisticsEngagementId ? " · carrying it now" : ""}
@@ -569,14 +569,14 @@ function LegAssignmentControl({
               type="button"
               disabled={assignLeg.isPending}
               onClick={() => submitAssignment(null)}
-              className="mt-2 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground disabled:opacity-50"
+              className="mt-2 rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground disabled:opacity-50"
             >
               Detach — I will move this leg myself
             </button>
           )}
 
           {assignResult !== undefined && !assignResult.success && (
-            <p className="mt-2 text-[11px] text-foreground">
+            <p className="mt-2 text-xs text-foreground">
               {assignResult.error.code}: {assignResult.error.message}
             </p>
           )}
@@ -676,7 +676,7 @@ function AddLegForm({
 
       <div className="mt-2 space-y-2">
         <label className="block">
-          <span className="block text-[11px] text-muted-foreground">Position in the route</span>
+          <span className="block text-xs text-muted-foreground">Position in the route</span>
           <input
             type="number"
             min={0}
@@ -687,7 +687,7 @@ function AddLegForm({
         </label>
 
         <label className="block">
-          <span className="block text-[11px] text-muted-foreground">Transport mode</span>
+          <span className="block text-xs text-muted-foreground">Transport mode</span>
           <select
             value={mode}
             onChange={(event) => {
@@ -725,7 +725,7 @@ function AddLegForm({
       </div>
 
       {result !== undefined && !result.success && (
-        <p className="mt-2 text-[11px] text-foreground">
+        <p className="mt-2 text-xs text-foreground">
           {/* A 409 here names the sequence that is already taken — the backend writes that
               sentence, and repeating it in our own words would let the two drift. */}
           {result.error.code}: {result.error.message}
@@ -765,7 +765,7 @@ function AddLegForm({
  */
 function InsuranceSignpost() {
   return (
-    <p className="px-1 pt-1 text-[11px] text-muted-foreground">
+    <p className="px-1 pt-1 text-xs text-muted-foreground">
       <Link href="/store/providers?providerKind=insurance_provider" className="underline">
         Find a cargo insurance provider
       </Link>{" "}
@@ -788,7 +788,7 @@ function LabelledInput({
 }) {
   return (
     <label className="block">
-      <span className="block text-[11px] text-muted-foreground">{label}</span>
+      <span className="block text-xs text-muted-foreground">{label}</span>
       <input
         type="text"
         value={value}

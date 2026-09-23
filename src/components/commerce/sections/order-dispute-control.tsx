@@ -138,7 +138,7 @@ export default function OrderDisputeControl({
       }}
     >
       <p className="text-sm font-medium text-foreground">Open a dispute</p>
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         This puts the order into a disputed state and starts a record both sides can add to. It does
         not move any money — Qatoto holds none.
       </p>

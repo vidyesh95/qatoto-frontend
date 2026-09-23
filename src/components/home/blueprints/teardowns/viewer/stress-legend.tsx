@@ -20,25 +20,25 @@ export default function StressLegend({ store }: { readonly store: ExplosionStore
 
   return (
     <div className="pointer-events-none absolute top-3 right-3 max-w-56 rounded-lg border border-black/10 bg-white/85 px-2.5 py-2 text-right shadow-xs backdrop-blur">
-      <p className="font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase">
+      <p className="font-mono text-xs tracking-eyebrow text-outline-strong uppercase">
         Stress, fraction of yield
       </p>
       <div className="mt-1.5 flex items-center justify-end gap-1.5">
-        <span className="font-mono text-[10px] text-foreground">0</span>
+        <span className="font-mono text-xs text-foreground">0</span>
         <span
           aria-hidden
           className="block h-2 w-24 rounded-sm"
           style={{ backgroundImage: STRESS_GRADIENT }}
         />
-        <span className="font-mono text-[10px] text-foreground">1</span>
+        <span className="font-mono text-xs text-foreground">1</span>
         <span
           aria-hidden
           className="ml-1 block size-2 rounded-sm"
           style={{ backgroundColor: NOT_SIMULATED_HEX }}
         />
-        <span className="font-mono text-[10px] text-[#6F7979]">n/a</span>
+        <span className="font-mono text-xs text-outline-strong">n/a</span>
       </div>
-      <p className="mt-1.5 text-[10px] leading-4 text-[#6F7979]">
+      <p className="mt-1.5 text-xs leading-4 text-outline-strong">
         Author-reported ratings. Not a live simulation.
       </p>
     </div>

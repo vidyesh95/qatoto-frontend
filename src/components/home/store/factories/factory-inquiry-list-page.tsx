@@ -95,7 +95,7 @@ export default function FactoryInquiryListPage({
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">{copy.title}</h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">{copy.subtitle}</p>
+        <p className="mt-1 text-sm leading-5 text-outline-strong">{copy.subtitle}</p>
       </header>
 
       <div className="px-4 pt-6 lg:px-6">
@@ -149,8 +149,8 @@ function InquiryRow({
   const counterpartyName = side === "buyer" ? inquiry.factoryDisplayName : inquiry.buyerDisplayName;
 
   return (
-    <article className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
-      <p className="text-xs leading-4 text-[#6F7979]">
+    <article className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <p className="text-xs leading-4 text-outline-strong">
         {/* The reference is what somebody reads out on a call, so it leads the row. */}
         {inquiry.reference}
         {" · "}
@@ -159,7 +159,7 @@ function InquiryRow({
         {FACTORY_CAPABILITY_SHORT_LABELS[inquiry.capabilityKind]}
       </p>
 
-      <h2 className="mt-1 text-sm leading-5 font-medium text-[#191C1C]">
+      <h2 className="mt-1 text-sm leading-5 font-medium text-foreground">
         <Link href={`${detailHrefBase}/${inquiry.id}`} className="hover:underline">
           {counterpartyName}
         </Link>
@@ -167,11 +167,11 @@ function InquiryRow({
 
       {/* `line-clamp-2` rather than a server excerpt: this read carries the whole description and
           there is no truncated field on the wire to prefer. */}
-      <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#6F7979]">
+      <p className="mt-1 line-clamp-2 text-sm leading-5 text-outline-strong">
         {inquiry.productDescription}
       </p>
 
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-2 text-xs leading-4 text-outline-strong">
         {describeQuantity(inquiry)}
         {describeTargetPrice(inquiry)}
         {/* `sentAt` NULL IS THE DRAFT CASE. A renderer must not print "sent" without it. */}

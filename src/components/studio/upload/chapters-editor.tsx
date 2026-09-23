@@ -67,7 +67,7 @@ export default function ChaptersEditor({ chapters, onChaptersChange }: ChaptersE
                     handleChapterFieldChange(chapter.id, { timestampLabel: event.target.value })
                   }
                   placeholder="00:00"
-                  className="h-10 w-24 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-10 w-24 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 <input
                   type="text"
@@ -76,7 +76,7 @@ export default function ChaptersEditor({ chapters, onChaptersChange }: ChaptersE
                     handleChapterFieldChange(chapter.id, { title: event.target.value })
                   }
                   placeholder="Chapter title, e.g. Demo"
-                  className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                  className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                 />
                 <button
                   type="button"

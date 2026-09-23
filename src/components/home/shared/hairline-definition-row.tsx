@@ -59,9 +59,7 @@ export default function HairlineDefinitionRow({
     >
       {presentFacts.map((fact) => (
         <div key={fact.label}>
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-            {fact.label}
-          </dt>
+          <dt className="text-xs tracking-wider text-muted-foreground uppercase">{fact.label}</dt>
           <dd className="mt-0.5 text-sm font-medium text-foreground tabular-nums">{fact.value}</dd>
         </div>
       ))}

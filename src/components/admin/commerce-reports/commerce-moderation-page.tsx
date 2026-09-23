@@ -115,13 +115,13 @@ function renderConsole(state: ModerationConsoleState, controls: ConsoleControls)
       return <div className="h-28 animate-pulse rounded-2xl bg-muted/40" aria-hidden />;
     case "capabilityUnknown":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       );
     case "restricted":
       return (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Working store reports needs the `moderate_commerce` capability. Your role is{" "}
           {state.platformRole ?? "none"}, so this page is not loaded.
         </output>

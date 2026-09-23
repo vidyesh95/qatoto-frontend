@@ -131,9 +131,9 @@ function TextField({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-[#6F7979]">
+      <span className="text-xs font-medium text-outline-strong">
         {label}
-        {isRequired && <span className="text-[#8C1D18]"> *</span>}
+        {isRequired && <span className="text-destructive"> *</span>}
       </span>
       <input
         type="text"
@@ -141,7 +141,7 @@ function TextField({
         required={isRequired}
         placeholder={placeholder}
         onChange={(changeEvent) => onChange(changeEvent.target.value)}
-        className="rounded border border-[#CAC4D0] px-3 py-2 text-sm text-[#191C1C] focus:outline-[#2A76FD]"
+        className="rounded border border-outline-variant px-3 py-2 text-sm text-foreground focus:outline-blue-600"
       />
     </label>
   );
@@ -224,7 +224,7 @@ export default function AddressSheet({
           <button
             type="button"
             onClick={() => setMode({ view: "list" })}
-            className="cursor-pointer px-1 text-sm font-medium text-[#00696E]"
+            className="cursor-pointer px-1 text-sm font-medium text-primary-imprint"
           >
             Back
           </button>
@@ -244,14 +244,14 @@ export default function AddressSheet({
           />
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-[#6F7979]">
-              Country<span className="text-[#8C1D18]"> *</span>
+            <span className="text-xs font-medium text-outline-strong">
+              Country<span className="text-destructive"> *</span>
             </span>
             <select
               required
               value={formValues.countryCode}
               onChange={(changeEvent) => setField("countryCode")(changeEvent.target.value)}
-              className="rounded border border-[#CAC4D0] px-3 py-2 text-sm text-[#191C1C]"
+              className="rounded border border-outline-variant px-3 py-2 text-sm text-foreground"
             >
               <option value="">Choose a country…</option>
               {COUNTRY_OPTIONS.map((country) => (
@@ -296,7 +296,7 @@ export default function AddressSheet({
           <button
             type="submit"
             disabled={isSaving || organizationId === null}
-            className="mt-2 rounded-full bg-[#00696E] px-6 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+            className="mt-2 rounded-full bg-primary-imprint px-6 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
           >
             {isSaving ? "Saving…" : "Save address"}
           </button>
@@ -315,7 +315,7 @@ export default function AddressSheet({
     <ModalSheet title="Delivery address" onClose={onClose}>
       <div className="flex flex-col gap-2 px-4 pb-6">
         {addresses.length === 0 && (
-          <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+          <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
             No delivery addresses saved yet.
           </p>
         )}
@@ -326,7 +326,9 @@ export default function AddressSheet({
             <div
               key={address.id}
               className={`flex items-start gap-3 rounded-lg border px-3 py-3 ${
-                isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]"
+                isSelected
+                  ? "border-primary-imprint bg-primary-imprint/5"
+                  : "border-outline-variant"
               }`}
             >
               <input
@@ -338,18 +340,20 @@ export default function AddressSheet({
                   onClose();
                 }}
                 aria-label={address.label ?? formatAddressLines(address)}
-                className="mt-1 size-4 shrink-0 accent-[#00696E]"
+                className="mt-1 size-4 shrink-0 accent-primary-imprint"
               />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#191C1C]">
+                <p className="text-sm font-medium text-foreground">
                   {address.recipientName ?? address.label ?? "Delivery address"}
                   {address.isDefault && (
-                    <span className="ml-2 rounded bg-[#D6E3FF] px-1.5 py-0.5 text-[11px] font-medium text-[#191C1C]">
+                    <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-foreground">
                       Default
                     </span>
                   )}
                 </p>
-                <p className="text-xs leading-4 text-[#6F7979]">{formatAddressLines(address)}</p>
+                <p className="text-xs leading-4 text-outline-strong">
+                  {formatAddressLines(address)}
+                </p>
               </div>
               <button
                 type="button"
@@ -357,7 +361,7 @@ export default function AddressSheet({
                   setFormValues(formValuesFrom(address));
                   setMode({ view: "form", editing: address });
                 }}
-                className="shrink-0 text-xs font-medium text-[#00696E]"
+                className="shrink-0 text-xs font-medium text-primary-imprint"
               >
                 Edit
               </button>
@@ -372,12 +376,12 @@ export default function AddressSheet({
             setFormValues(EMPTY_FORM);
             setMode({ view: "form", editing: null });
           }}
-          className="mt-1 rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E] disabled:opacity-40"
+          className="mt-1 rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
         >
           + Add new address
         </button>
 
-        <p className="text-[11px] leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           {addresses.length} of {MAXIMUM_ADDRESSES_PER_KIND} delivery addresses saved.
         </p>
       </div>

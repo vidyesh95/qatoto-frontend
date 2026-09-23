@@ -172,7 +172,7 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
       ) : (
         // NO LINK. Every non-active state 404s on its public URL, and a dead link reads as a bug rather than
         // as an unpublished listing.
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
           {offering.state === "pending_review"
             ? "Waiting for a moderator. Buyers cannot find it yet."
             : "Buyers cannot find this listing."}
@@ -410,7 +410,7 @@ function OfferingEditForm({
       </div>
 
       {/* Leaving both price ends empty is "quoted per job", which is a real answer — not a blank. */}
-      <p className="text-[11px] leading-4 text-muted-foreground">
+      <p className="text-xs leading-4 text-muted-foreground">
         Leave both price fields empty to keep this quoted per job.
         {offering.state === "active" && " Buyers see edits to a published listing immediately."}
       </p>

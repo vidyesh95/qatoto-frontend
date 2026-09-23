@@ -328,7 +328,7 @@ function StrandToggle({
           isOn ? "border-foreground bg-foreground text-background" : "border-border"
         }`}
       >
-        {isOn && <span className="text-[10px] leading-none">✓</span>}
+        {isOn && <span className="text-xs leading-none">✓</span>}
       </span>
       {label}
     </button>

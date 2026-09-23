@@ -79,7 +79,7 @@ export default function SubjectProvenanceStep({ draft, onDraftChange }: Teardown
                     checked={draft.subjectKind === subjectKind}
                     disabled={isRefused}
                     onChange={() => onDraftChange({ subjectKind })}
-                    className="mt-0.5 size-4 shrink-0 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="mt-0.5 size-4 shrink-0 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   />
                   <span className="text-sm text-foreground">
                     {TEARDOWN_SUBJECT_KIND_LABELS[subjectKind]}
@@ -174,7 +174,7 @@ export default function SubjectProvenanceStep({ draft, onDraftChange }: Teardown
                 value={provenanceKind}
                 checked={draft.provenanceKind === provenanceKind}
                 onChange={() => onDraftChange({ provenanceKind })}
-                className="mt-0.5 size-4 shrink-0 accent-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                className="mt-0.5 size-4 shrink-0 accent-primary-imprint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
               />
               <span className="text-sm text-foreground">
                 {PROVENANCE_KIND_PROMPTS[provenanceKind]}

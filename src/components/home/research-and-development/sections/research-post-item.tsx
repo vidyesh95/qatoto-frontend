@@ -98,7 +98,7 @@ export function ResearchPostItem({
   }
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="flex items-start gap-3">
         {post.author.avatarImageUrl ? (
           <Image
@@ -111,7 +111,7 @@ export function ResearchPostItem({
         ) : (
           <span
             aria-hidden
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00696E]/10 text-xs font-medium text-[#00696E]"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-imprint/10 text-xs font-medium text-primary-imprint"
           >
             {post.author.name.slice(0, 1).toUpperCase()}
           </span>
@@ -131,7 +131,7 @@ export function ResearchPostItem({
               {formatIsoInstant(post.createdAt)}
             </span>
             {post.isAuthoredByViewer && (
-              <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[10px] text-[#00696E]">
+              <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint">
                 You
               </span>
             )}
@@ -159,8 +159,8 @@ export function ResearchPostItem({
           }
           className={`cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
             post.isReactedByViewer
-              ? "border-[#00696E] bg-[#00696E]/10 text-[#00696E]"
-              : "border-[#CAC4D0] hover:bg-muted"
+              ? "border-primary-imprint bg-primary-imprint/10 text-primary-imprint"
+              : "border-outline-variant hover:bg-muted"
           }`}
         >
           {/* An integer, formatted here. The wire carries no "1,203" string. */}
@@ -174,7 +174,7 @@ export function ResearchPostItem({
             type="button"
             disabled={!canInteract}
             onClick={() => setIsReplyOpen((isOpen) => !isOpen)}
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-full border border-outline-variant px-3 py-1 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
           >
             Reply
           </button>
@@ -184,7 +184,7 @@ export function ResearchPostItem({
           <button
             type="button"
             onClick={() => setAreRepliesExpanded((isExpanded) => !isExpanded)}
-            className="cursor-pointer text-xs text-[#00696E] underline"
+            className="cursor-pointer text-xs text-primary-imprint underline"
           >
             {areRepliesExpanded
               ? "Hide replies"
@@ -213,7 +213,7 @@ export function ResearchPostItem({
                 reasonNote: post.isHidden ? "Restored by a moderator." : "Hidden by a moderator.",
               })
             }
-            className="cursor-pointer rounded-full border border-[#BA1A1A] px-3 py-1 text-xs text-[#BA1A1A] transition-colors hover:bg-[#BA1A1A]/10 disabled:opacity-60"
+            className="cursor-pointer rounded-full border border-destructive px-3 py-1 text-xs text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
           >
             {post.isHidden ? "Restore" : "Hide"}
           </button>
@@ -229,12 +229,12 @@ export function ResearchPostItem({
             maxLength={10_000}
             rows={2}
             placeholder="Add a reply"
-            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />
           <button
             type="submit"
             disabled={replyMutation.isPending || !replyText.trim()}
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-60"
           >
             {replyMutation.isPending ? "Posting…" : "Post reply"}
           </button>
@@ -251,7 +251,7 @@ export function ResearchPostItem({
                 const parsed = ContentReportReasonSchema.safeParse(event.target.value);
                 if (parsed.success) setReportReason(parsed.data);
               }}
-              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             >
               {CONTENT_REPORT_REASONS.map((reason) => (
                 <option key={reason} value={reason}>
@@ -274,7 +274,7 @@ export function ResearchPostItem({
                 { onSuccess: () => setIsReportOpen(false) },
               )
             }
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-1.5 text-xs disabled:opacity-60"
+            className="cursor-pointer rounded-full border border-outline-variant px-4 py-1.5 text-xs disabled:opacity-60"
           >
             {reportMutation.isPending ? "Reporting…" : "Send report"}
           </button>
@@ -293,7 +293,7 @@ export function ResearchPostItem({
       )}
 
       {areRepliesExpanded && visibleReplies.length > 0 && (
-        <ul className="space-y-3 border-l border-[#CAC4D0]/60 pl-4">
+        <ul className="space-y-3 border-l border-outline-variant/60 pl-4">
           {visibleReplies.map((reply) => (
             <ResearchPostItem
               key={reply.postId}

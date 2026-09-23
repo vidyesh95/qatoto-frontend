@@ -36,7 +36,7 @@ import {
 import { newIdempotencyKey } from "@/lib/idempotency";
 import type { MyCommerceOrganization } from "@/lib/store/organizations.schemas";
 
-const PANEL_CLASS = "rounded-xl border border-[#CAC4D0]/60 bg-[#F2F4F4] px-4 py-3";
+const PANEL_CLASS = "rounded-xl border border-outline-variant/60 bg-muted px-4 py-3";
 
 export default function BuyerWorkspaceNotice() {
   const readinessQuery = useBuyerWorkspaceReadinessQuery();
@@ -55,10 +55,10 @@ export default function BuyerWorkspaceNotice() {
     case "awaiting_review":
       return (
         <div className={PANEL_CLASS}>
-          <p className="text-sm leading-5 text-[#191C1C]">
+          <p className="text-sm leading-5 text-foreground">
             {readiness.organization.displayName} is waiting to be reviewed.
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+          <p className="mt-1 text-xs leading-4 text-outline-strong">
             You can keep building this cart and reserve stock. Placing the order needs the review to
             finish first — someone checks it, and this is not something you can do from here.
           </p>
@@ -67,12 +67,12 @@ export default function BuyerWorkspaceNotice() {
     case "blocked":
       return (
         <div className={PANEL_CLASS}>
-          <p className="text-sm leading-5 text-[#191C1C]">
+          <p className="text-sm leading-5 text-foreground">
             {readiness.organizations.length === 1
               ? `${readiness.organizations[0]?.displayName} cannot trade right now.`
               : "None of your organizations can trade right now."}
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+          <p className="mt-1 text-xs leading-4 text-outline-strong">
             Orders are on hold until that changes.{" "}
             {/* This sentence used to name a channel that did not exist — "contact support"
                 with nowhere to go. It has a destination now, and a blocked workspace is
@@ -87,7 +87,7 @@ export default function BuyerWorkspaceNotice() {
     case "none":
       return (
         <div className={PANEL_CLASS}>
-          <p className="text-sm leading-5 text-[#191C1C]">
+          <p className="text-sm leading-5 text-foreground">
             You do not have a buying workspace yet.
           </p>
           {/* Honest about the mechanism: `GET /commerce/cart` is what mints the shell — the READ,
@@ -101,7 +101,7 @@ export default function BuyerWorkspaceNotice() {
               false. It stays because `deriveBuyerWorkspaceReadiness` is not checkout-specific and
               `none` is a real state of the data; a silent gap here would be worse than copy that
               rarely runs. */}
-          <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+          <p className="mt-1 text-xs leading-4 text-outline-strong">
             Opening your cart creates one automatically.
           </p>
         </div>
@@ -148,10 +148,10 @@ function CountryDeclarationForm({ organization }: { organization: MyCommerceOrga
 
   return (
     <div className={PANEL_CLASS}>
-      <p className="text-sm leading-5 text-[#191C1C]">
+      <p className="text-sm leading-5 text-foreground">
         Tell us where {organization.displayName} is registered.
       </p>
-      <p className="mt-1 text-xs leading-4 text-[#6F7979]">
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         We opened this workspace for you when you started your cart, so we do not know its country
         yet. Orders cannot be placed until it is reviewed, and the review cannot start without this.
       </p>
@@ -177,13 +177,13 @@ function CountryDeclarationForm({ organization }: { organization: MyCommerceOrga
           type="button"
           onClick={handleSubmit}
           disabled={!isSubmittable}
-          className="cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+          className="cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
         >
           {updateOrganization.isPending ? "Saving…" : "Submit for review"}
         </button>
       </div>
 
-      <p className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-1.5 text-xs leading-4 text-outline-strong">
         Two-letter country code, like IN or DE. This is also what asks a reviewer to look at the
         workspace, so it is not something you can change back yourself afterwards.
       </p>

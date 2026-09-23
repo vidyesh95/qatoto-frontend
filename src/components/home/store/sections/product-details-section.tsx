@@ -34,7 +34,7 @@ export default function ProductDetailsSection({
     <>
       <details open className="group [&_summary]:list-none">
         <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
-          <span className="text-sm leading-5 tracking-wide text-[#191C1C]">Product details</span>
+          <span className="text-sm leading-5 tracking-wide text-foreground">Product details</span>
           <Image
             src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             width={22}
@@ -47,10 +47,10 @@ export default function ProductDetailsSection({
         <div className="flex flex-col gap-4 px-4 pb-2 lg:px-6">
           {hasDescription && (
             <div className="flex flex-col gap-1">
-              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+              <p className="text-sm leading-5 font-medium tracking-normal text-foreground">
                 About this product
               </p>
-              <p className="text-xs leading-4 tracking-[0.4px] whitespace-pre-line text-[#191C1C]">
+              <p className="text-xs leading-4 tracking-wider whitespace-pre-line text-foreground">
                 {product.description}
               </p>
             </div>
@@ -58,11 +58,11 @@ export default function ProductDetailsSection({
 
           {hasKeyFeatures && (
             <div className="flex flex-col gap-1">
-              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+              <p className="text-sm leading-5 font-medium tracking-normal text-foreground">
                 Key features
               </p>
               {product.keyFeatures.map((keyFeature) => (
-                <p key={keyFeature} className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
+                <p key={keyFeature} className="text-xs leading-4 tracking-wider text-foreground">
                   {keyFeature}
                 </p>
               ))}
@@ -71,7 +71,7 @@ export default function ProductDetailsSection({
         </div>
 
         <div className="px-4 lg:px-6">
-          <div className="h-px bg-[#CAC4D0]" />
+          <div className="h-px bg-outline-variant" />
         </div>
 
         <button
@@ -79,7 +79,7 @@ export default function ProductDetailsSection({
           onClick={() => setIsSheetOpen(true)}
           className="flex w-full cursor-pointer items-center px-4 py-2 text-left lg:px-6"
         >
-          <span className="flex-1 text-sm leading-5 tracking-wide text-[#191C1C]">
+          <span className="flex-1 text-sm leading-5 tracking-wide text-foreground">
             All product details
           </span>
           <Image
@@ -91,7 +91,7 @@ export default function ProductDetailsSection({
         </button>
 
         <div className="px-4 lg:px-6">
-          <div className="h-px bg-[#CAC4D0]" />
+          <div className="h-px bg-outline-variant" />
         </div>
       </details>
 

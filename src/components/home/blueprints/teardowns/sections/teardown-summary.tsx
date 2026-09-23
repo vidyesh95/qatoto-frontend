@@ -69,7 +69,7 @@ export default function TeardownSummary({ summary }: { readonly summary: string 
           aria-expanded={isExpanded}
           aria-controls={summaryParagraphId}
           onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
-          className="mt-1 cursor-pointer text-sm font-medium text-[#00696E]"
+          className="mt-1 cursor-pointer text-sm font-medium text-primary-imprint"
         >
           {isExpanded ? "Show less" : "…more"}
         </button>

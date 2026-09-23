@@ -119,7 +119,7 @@ export default function CreatePlaylistModal({
               value={playlistTitle}
               onChange={(event) => setPlaylistTitle(event.target.value)}
               placeholder="Add title"
-              className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
             />
           </div>
 
@@ -136,7 +136,7 @@ export default function CreatePlaylistModal({
               onChange={(event) => setPlaylistDescription(event.target.value)}
               placeholder="Add description"
               rows={3}
-              className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
             />
           </div>
 
@@ -178,7 +178,7 @@ export default function CreatePlaylistModal({
                   );
                   if (selectedOrder !== undefined) setDefaultVideoOrder(selectedOrder);
                 }}
-                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
               >
                 {PLAYLIST_VIDEO_ORDERS.map((orderValue, orderIndex) => (
                   <option key={orderValue} value={orderValue}>
@@ -252,7 +252,7 @@ function SelectField({ fieldId, label, value, options, onValueChange }: SelectFi
           id={fieldId}
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+          className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
         >
           {options.map((option) => (
             <option key={option} value={option}>

@@ -66,7 +66,7 @@ export default function LaunchReadinessChecklist() {
         by hand.{" "}
         <Link
           href="/research-and-development"
-          className="font-medium text-[#00696E] underline underline-offset-2"
+          className="font-medium text-primary-imprint underline underline-offset-2"
         >
           Open a project you are a member of
         </Link>{" "}
@@ -74,7 +74,7 @@ export default function LaunchReadinessChecklist() {
       </p>
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {LAUNCH_READINESS_ITEM_KEYS.map((itemKey) => (
-          <li key={itemKey} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+          <li key={itemKey} className="rounded-2xl border border-outline-variant/60 p-4">
             <p className="font-medium">{READINESS_ITEM_TITLES[itemKey]}</p>
             <p className="mt-1 text-xs text-muted-foreground">{READINESS_ITEM_NOTES[itemKey]}</p>
           </li>

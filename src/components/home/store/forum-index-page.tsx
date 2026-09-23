@@ -79,13 +79,13 @@ export default async function ForumIndexPage({ searchParams }: { searchParams: R
         <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Business forum
         </h1>
-        <p className="mt-1 text-sm leading-5 text-[#6F7979]">
+        <p className="mt-1 text-sm leading-5 text-outline-strong">
           Sourcing, customs, compliance, payments and manufacturing — asked and answered by people
           who have already shipped it.
         </p>
         {/* SAID ONCE, AT THE TOP. Replies here are other businesses talking, not Qatoto advising,
             and a platform that stayed silent about that would be implying the opposite. */}
-        <p className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-outline-strong">
           Answers come from other members. Qatoto does not verify them and none of this is legal,
           customs or financial advice.
         </p>
@@ -94,7 +94,7 @@ export default async function ForumIndexPage({ searchParams }: { searchParams: R
       <div className="flex flex-wrap items-center gap-2 px-4 pt-4 lg:px-6">
         <Link
           href="/store/forum/new"
-          className="shrink-0 rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="shrink-0 rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-opacity hover:opacity-90"
         >
           Ask a question
         </Link>
@@ -102,7 +102,7 @@ export default async function ForumIndexPage({ searchParams }: { searchParams: R
             design, so an author who has just posted has nowhere else to look. */}
         <Link
           href="/store/forum/mine"
-          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong transition-colors hover:bg-muted"
         >
           Your threads
         </Link>
@@ -167,31 +167,31 @@ function ForumThreadRow({ thread }: { thread: ForumThreadCard }) {
   return (
     <Link
       href={`/store/forum/${thread.slug}`}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#D6E3FF] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
           {FORUM_BOARD_LABELS[thread.board]}
         </span>
         {/* Only a thread with a real accepted reply is marked answered. `acceptedReplyId === null`
             renders nothing at all — not "unanswered", which would tell readers to skip the replies
             that are there. */}
         {thread.acceptedReplyId !== null && (
-          <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+          <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
             Answered
           </span>
         )}
         {thread.state === "locked" && (
-          <span className="rounded-full bg-[#E0E3E3] px-2 py-0.5 text-[11px] leading-4 font-medium text-[#4A6364]">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs leading-4 font-medium text-muted-foreground">
             Locked
           </span>
         )}
       </div>
 
-      <p className="mt-1.5 text-sm leading-5 font-medium text-[#191C1C]">{thread.title}</p>
-      <p className="mt-1 line-clamp-2 text-xs leading-4 text-[#6F7979]">{thread.excerpt}</p>
+      <p className="mt-1.5 text-sm leading-5 font-medium text-foreground">{thread.title}</p>
+      <p className="mt-1 line-clamp-2 text-xs leading-4 text-outline-strong">{thread.excerpt}</p>
 
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-2 text-xs leading-4 text-outline-strong">
         {thread.authorDisplayName}
         {/* Null is a real answer here: this person posted as themselves, not on behalf of a company. */}
         {thread.authorOrganizationName === null

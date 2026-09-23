@@ -66,7 +66,7 @@ function renderWishlist(bookmarkedQuery: ReturnType<typeof useBookmarkedProducts
           result.error.code === "401" ? (
             <Link
               href="/sign-in"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Sign in
             </Link>
@@ -86,7 +86,7 @@ function renderWishlist(bookmarkedQuery: ReturnType<typeof useBookmarkedProducts
         action={
           <Link
             href="/store"
-            className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+            className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
           >
             Browse the store
           </Link>

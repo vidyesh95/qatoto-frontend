@@ -210,7 +210,7 @@ const STATIC_WRITE_UP_COMPONENTS: Components = {
         href={href}
         target="_blank"
         rel="noopener noreferrer nofollow ugc"
-        className="font-medium text-[#00696E] underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="font-medium text-primary-imprint underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       >
         {children}
       </a>
@@ -229,7 +229,7 @@ const STATIC_WRITE_UP_COMPONENTS: Components = {
       {children}
     </blockquote>
   ),
-  code: ({ children }) => <code className="font-mono text-[0.92em]">{children}</code>,
+  code: ({ children }) => <code className="font-mono text-sm">{children}</code>,
   pre: ({ children }) => (
     <pre
       className={`${BLUEPRINT_MEDIA_COLUMN_CLASS} overflow-x-auto rounded-xl border border-border bg-card p-3 text-xs leading-5`}

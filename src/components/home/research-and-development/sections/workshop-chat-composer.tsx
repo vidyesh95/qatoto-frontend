@@ -66,13 +66,13 @@ export default function WorkshopChatComposer({
         value={bodyText}
         onChange={(changeEvent) => setBodyText(changeEvent.target.value)}
         placeholder="Message your team"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={sendMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {sendMutation.isPending ? "Sending…" : "Send"}
         </button>

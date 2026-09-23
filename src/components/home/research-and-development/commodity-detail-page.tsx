@@ -70,7 +70,10 @@ export default async function CommodityDetailPage({
   return (
     <div className="space-y-8 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       <nav className="text-xs text-muted-foreground">
-        <Link href="/research-and-development/import-intelligence" className="hover:text-[#00696E]">
+        <Link
+          href="/research-and-development/import-intelligence"
+          className="hover:text-primary-imprint"
+        >
           Import intelligence
         </Link>
       </nav>
@@ -86,7 +89,7 @@ export default async function CommodityDetailPage({
           </span>
           <Link
             href={`/research-and-development/problem-map?category=${commodity.researchCategorySlug}`}
-            className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-xs text-[#00696E] hover:underline"
+            className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs text-primary-imprint hover:underline"
           >
             {commodity.researchCategorySlug}
           </Link>
@@ -110,7 +113,7 @@ export default async function CommodityDetailPage({
 
         <aside className="space-y-4">
           {assessment === null ? (
-            <section className="rounded-2xl border border-[#CAC4D0]/60 px-5 py-6">
+            <section className="rounded-2xl border border-outline-variant/60 px-5 py-6">
               <h2 className="text-sm font-medium text-foreground">Feasibility to make here</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {/* Absence, not zero. A score of 0 would be a claim; this is its lack. */}

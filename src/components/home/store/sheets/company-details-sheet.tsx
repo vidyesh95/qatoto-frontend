@@ -98,30 +98,30 @@ export default function CompanyDetailsSheet({
 
   return (
     <ModalSheet title="Company details" onClose={onClose}>
-      <p className="px-4 pb-2 text-base font-medium text-[#191C1C]">{STOREFRONT.displayName}</p>
+      <p className="px-4 pb-2 text-base font-medium text-foreground">{STOREFRONT.displayName}</p>
 
       <div className="px-4 pb-5">
         {/* Overview */}
         <ul className="flex flex-col gap-3">
           {OVERVIEW_FACTS.map((fact) => (
             <li key={fact.label} className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF]">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary">
                 <Image src={`/icons/${fact.iconFileName}`} width={20} height={20} alt="" />
               </span>
               <div className="flex-1">
-                <p className="text-xs text-[#6F7979]">{fact.label}</p>
-                <p className="text-sm text-[#191C1C]">{fact.value}</p>
+                <p className="text-xs text-outline-strong">{fact.label}</p>
+                <p className="text-sm text-foreground">{fact.value}</p>
               </div>
             </li>
           ))}
         </ul>
 
         {/* Factory photos */}
-        <p className="mt-5 mb-2 text-sm font-medium text-[#191C1C]">Factory photos</p>
+        <p className="mt-5 mb-2 text-sm font-medium text-foreground">Factory photos</p>
         <div className="grid grid-cols-2 gap-2">
           {FACTORY_PHOTOS.map((photo) => (
             <div key={photo.id} className="flex flex-col gap-1">
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
                 <Image
                   src={photo.imageUrl}
                   fill
@@ -130,7 +130,7 @@ export default function CompanyDetailsSheet({
                   className="object-cover"
                 />
               </div>
-              <span className="text-[11px] text-[#6F7979]">
+              <span className="text-xs text-outline-strong">
                 {photo.altText ?? MEDIA_KIND_LABELS[photo.mediaKind]}
               </span>
             </div>
@@ -138,13 +138,10 @@ export default function CompanyDetailsSheet({
         </div>
 
         {/* Freight access — only the modes the seller actually claimed. */}
-        <p className="mt-5 mb-2 text-sm font-medium text-[#191C1C]">Freight &amp; logistics</p>
+        <p className="mt-5 mb-2 text-sm font-medium text-foreground">Freight &amp; logistics</p>
         <ul className="flex flex-col gap-2">
           {SITE_ACCESS.map((access) => (
-            <li
-              key={access.id}
-              className="flex items-center gap-3 rounded-lg bg-[#F2F4F4] px-3 py-2"
-            >
+            <li key={access.id} className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2">
               <Image
                 src={`/icons/${SITE_ACCESS_MODE_ICONS[access.accessMode]}`}
                 width={22}
@@ -152,10 +149,10 @@ export default function CompanyDetailsSheet({
                 alt=""
               />
               <div className="flex-1">
-                <p className="text-sm text-[#191C1C]">
+                <p className="text-sm text-foreground">
                   {SITE_ACCESS_MODE_LABELS[access.accessMode]}
                 </p>
-                <p className="text-xs text-[#6F7979]">
+                <p className="text-xs text-outline-strong">
                   {access.facilityName}
                   {access.distanceKm !== null &&
                     (access.distanceKm === 0 ? " · on site" : ` · ${access.distanceKm} km away`)}
@@ -170,20 +167,20 @@ export default function CompanyDetailsSheet({
               placeholders rather than being asserted here as fact. */}
         {VISIT_POLICY !== null && (
           <>
-            <p className="mt-5 mb-2 text-sm font-medium text-[#191C1C]">Factory visit</p>
-            <div className="flex gap-3 rounded-lg bg-[#F2F4F4] px-3 py-2">
+            <p className="mt-5 mb-2 text-sm font-medium text-foreground">Factory visit</p>
+            <div className="flex gap-3 rounded-lg bg-muted px-3 py-2">
               <Image
                 src="/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 width={22}
                 height={22}
                 alt=""
               />
-              <p className="flex-1 text-xs leading-5 text-[#191C1C]">
+              <p className="flex-1 text-xs leading-5 text-foreground">
                 {VISIT_POLICY_LABELS[VISIT_POLICY]}.{" "}
                 <Link
                   href={`/store/organizations/${storefront.slug}`}
                   onClick={onClose}
-                  className="font-medium text-[#2A76FD]"
+                  className="font-medium text-blue-600"
                 >
                   See visiting terms
                 </Link>
@@ -193,11 +190,11 @@ export default function CompanyDetailsSheet({
         )}
 
         {/* Ownership */}
-        <p className="mt-5 mb-2 text-sm font-medium text-[#191C1C]">Directors and ownership</p>
+        <p className="mt-5 mb-2 text-sm font-medium text-foreground">Directors and ownership</p>
         <ul className="flex flex-col gap-3">
           {STAKEHOLDERS.map((stakeholder) => (
             <li key={stakeholder.id} className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF]">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary">
                 <Image
                   src="/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                   width={20}
@@ -206,8 +203,8 @@ export default function CompanyDetailsSheet({
                 />
               </span>
               <div className="flex-1">
-                <p className="text-xs text-[#6F7979]">{stakeholder.roleTitle}</p>
-                <p className="text-sm text-[#191C1C]">{stakeholder.fullName}</p>
+                <p className="text-xs text-outline-strong">{stakeholder.roleTitle}</p>
+                <p className="text-sm text-foreground">{stakeholder.fullName}</p>
               </div>
             </li>
           ))}
@@ -216,7 +213,7 @@ export default function CompanyDetailsSheet({
         <Link
           href={`/store/organizations/${storefront.slug}`}
           onClick={onClose}
-          className="mt-5 flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+          className="mt-5 flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium tracking-normal text-primary-imprint outline -outline-offset-1 outline-outline-strong"
         >
           <Image
             src="/icons/storefront_24dp_00696E_FILL0_wght400_GRAD0_opsz24.svg"

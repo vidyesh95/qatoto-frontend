@@ -38,10 +38,10 @@ export default function CustomizationOptions({
   return (
     <CustomizationOptionsOpener options={orderedOptions}>
       <span className="flex w-full items-center px-4 py-2 lg:px-6">
-        <span className="flex-1 text-sm leading-5 tracking-wide text-[#191C1C]">
+        <span className="flex-1 text-sm leading-5 tracking-wide text-foreground">
           Customization options
           {requiredCount > 0 && (
-            <span className="ml-2 rounded bg-[#FFE3E1] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#8C1D18]">
+            <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-xs leading-4 font-medium text-destructive">
               {requiredCount} required
             </span>
           )}
@@ -63,7 +63,7 @@ export default function CustomizationOptions({
               height={16}
               alt=""
             />
-            <span className="truncate text-xs leading-4 tracking-wide text-[#191C1C]">
+            <span className="truncate text-xs leading-4 tracking-wide text-foreground">
               {option.label}
             </span>
           </span>

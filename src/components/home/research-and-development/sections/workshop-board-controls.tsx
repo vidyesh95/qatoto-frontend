@@ -65,7 +65,7 @@ export default function WorkshopBoardControls({
         {boardColumns.map((column, columnIndex) => (
           <li
             key={column.id}
-            className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+            className="space-y-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-medium">{column.title}</span>
@@ -74,7 +74,7 @@ export default function WorkshopBoardControls({
                   type="button"
                   disabled={columnIndex === 0 || columnMutation.isPending}
                   onClick={() => moveColumn(column.id, -1)}
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-2 py-1 text-xs disabled:opacity-40"
+                  className="cursor-pointer rounded-full border border-outline-variant px-2 py-1 text-xs disabled:opacity-40"
                 >
                   ← Move left
                 </button>
@@ -82,7 +82,7 @@ export default function WorkshopBoardControls({
                   type="button"
                   disabled={columnIndex === boardColumns.length - 1 || columnMutation.isPending}
                   onClick={() => moveColumn(column.id, 1)}
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-2 py-1 text-xs disabled:opacity-40"
+                  className="cursor-pointer rounded-full border border-outline-variant px-2 py-1 text-xs disabled:opacity-40"
                 >
                   Move right →
                 </button>
@@ -92,7 +92,7 @@ export default function WorkshopBoardControls({
                     setRenamingColumnId(renamingColumnId === column.id ? null : column.id);
                     setRenameTitle(column.title);
                   }}
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-2 py-1 text-xs"
+                  className="cursor-pointer rounded-full border border-outline-variant px-2 py-1 text-xs"
                 >
                   Rename
                 </button>
@@ -100,7 +100,7 @@ export default function WorkshopBoardControls({
                   type="button"
                   disabled={columnMutation.isPending}
                   onClick={() => columnMutation.mutate({ action: "delete", columnId: column.id })}
-                  className="cursor-pointer rounded-full border border-[#CAC4D0] px-2 py-1 text-xs disabled:opacity-50"
+                  className="cursor-pointer rounded-full border border-outline-variant px-2 py-1 text-xs disabled:opacity-50"
                 >
                   Delete
                 </button>
@@ -127,7 +127,7 @@ export default function WorkshopBoardControls({
                 <button
                   type="submit"
                   disabled={columnMutation.isPending}
-                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                 >
                   Save
                 </button>
@@ -164,7 +164,7 @@ export default function WorkshopBoardControls({
                           })(),
                         })
                       }
-                      className="rounded-lg border border-[#CAC4D0] p-1 text-xs"
+                      className="rounded-lg border border-outline-variant p-1 text-xs"
                     >
                       {boardColumns.map((targetColumn) => (
                         <option key={targetColumn.id} value={targetColumn.id}>
@@ -176,7 +176,7 @@ export default function WorkshopBoardControls({
                       type="button"
                       disabled={taskMutation.isPending}
                       onClick={() => taskMutation.mutate({ action: "delete", taskId: task.id })}
-                      className="cursor-pointer font-medium text-[#00696E] disabled:opacity-50"
+                      className="cursor-pointer font-medium text-primary-imprint disabled:opacity-50"
                     >
                       Delete
                     </button>
@@ -189,7 +189,7 @@ export default function WorkshopBoardControls({
       </ul>
 
       <form
-        className="flex flex-col gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3"
+        className="flex flex-col gap-2 rounded-2xl border border-outline-variant/60 p-3"
         onSubmit={(submitEvent) => {
           submitEvent.preventDefault();
           columnMutation.mutate(
@@ -211,7 +211,7 @@ export default function WorkshopBoardControls({
         <button
           type="submit"
           disabled={columnMutation.isPending}
-          className="cursor-pointer self-start rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer self-start rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           Add it
         </button>

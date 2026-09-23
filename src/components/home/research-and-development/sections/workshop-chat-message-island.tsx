@@ -105,13 +105,13 @@ export default function WorkshopChatMessageIsland({
               rows={2}
               value={draftBodyText}
               onChange={(changeEvent) => setDraftBodyText(changeEvent.target.value)}
-              className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+              className="w-full rounded-xl border border-outline-variant p-2 text-sm"
             />
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={chatMessageMutation.isPending}
-                className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+                className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
               >
                 {chatMessageMutation.isPending ? "Saving…" : "Save"}
               </button>
@@ -121,7 +121,7 @@ export default function WorkshopChatMessageIsland({
                   setDraftBodyText(chatMessage.messageText);
                   setIsEditing(false);
                 }}
-                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1 text-xs font-medium"
+                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1 text-xs font-medium"
               >
                 Cancel
               </button>

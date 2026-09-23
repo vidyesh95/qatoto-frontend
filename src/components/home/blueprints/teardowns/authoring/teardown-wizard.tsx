@@ -323,7 +323,7 @@ export default function TeardownWizard() {
 
   return (
     <div>
-      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">Teardown</p>
+      <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">Teardown</p>
       <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">Publish a teardown</h1>
       <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
         A teardown is your own survey of a unit you obtained lawfully. Somebody with very little
@@ -372,7 +372,7 @@ export default function TeardownWizard() {
                   type="button"
                   onClick={() => goToStep(stepIndex)}
                   aria-current={isCurrentStep ? "step" : undefined}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
                     isCurrentStep
                       ? "bg-primary text-foreground"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -419,7 +419,7 @@ export default function TeardownWizard() {
             type="button"
             onClick={() => goToStep(Math.max(0, viewState.currentStepIndex - 1))}
             disabled={viewState.currentStepIndex === 0}
-            className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
           >
             Back
           </button>
@@ -429,7 +429,7 @@ export default function TeardownWizard() {
               type="button"
               onClick={handleSubmit}
               disabled={submitBlockedReason !== null || submitMutation.isPending}
-              className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
             >
               {submitMutation.isPending ? "Submitting…" : "Submit for review"}
             </button>
@@ -439,7 +439,7 @@ export default function TeardownWizard() {
               onClick={() =>
                 goToStep(Math.min(TEARDOWN_WIZARD_STEPS.length - 1, viewState.currentStepIndex + 1))
               }
-              className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
             >
               Next
             </button>
@@ -449,7 +449,7 @@ export default function TeardownWizard() {
             type="button"
             onClick={() => void handleSaveDraft()}
             disabled={isSavingDraft}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSavingDraft ? "Saving…" : "Save draft"}
           </button>

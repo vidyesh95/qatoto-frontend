@@ -34,7 +34,7 @@ export default function ReportBlueprintOpener({
         onClick={() => {
           setIsSheetOpen(true);
         }}
-        className="cursor-pointer text-xs font-medium text-[#6F7979] underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        className="cursor-pointer text-xs font-medium text-outline-strong underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
       >
         Report this
       </button>

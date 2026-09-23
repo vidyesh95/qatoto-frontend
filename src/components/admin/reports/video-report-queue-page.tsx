@@ -171,7 +171,7 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {isHidden && (
-            <span className="rounded-full bg-foreground px-2 py-0.5 text-[11px] text-background">
+            <span className="rounded-full bg-foreground px-2 py-0.5 text-xs text-background">
               Hidden
             </span>
           )}
@@ -181,7 +181,7 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
             with no sense of volume decides each report as if it were the only one.
           */}
           {report.openReportCount > 1 && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {report.openReportCount} open reports
             </span>
           )}
@@ -234,7 +234,7 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
               Dismiss
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Hiding closes every open report on this video, not just this one.
           </p>
         </div>

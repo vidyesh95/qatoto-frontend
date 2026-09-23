@@ -47,7 +47,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
       : `/research-and-development/project/${deal.projectSlug}`;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4">
       <Link href={projectHref} className="group -m-1 space-y-2 rounded-xl p-1">
         <div className="relative aspect-video w-full overflow-hidden rounded-xl">
           <Image
@@ -57,7 +57,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
             alt={deal.projectName}
             className="object-cover transition duration-300 group-hover:scale-105"
           />
-          <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+          <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-foreground">
             {PROJECT_STAGE_LABELS[deal.projectStage]}
           </span>
         </div>
@@ -68,7 +68,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
       </Link>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
             {FUNDING_ROUND_TYPE_LABELS[deal.type]}
           </span>
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{deal.title}</span>
@@ -81,7 +81,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-[#00696E]"
+            className="h-full rounded-full bg-primary-imprint"
             style={{ width: `${Math.min(percentageFunded, 100)}%` }}
           />
         </div>

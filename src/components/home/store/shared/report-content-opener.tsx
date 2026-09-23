@@ -37,7 +37,7 @@ export default function ReportContentOpener({
 
   const buttonClassName =
     variant === "standalone"
-      ? "flex cursor-pointer items-center gap-1 text-xs font-medium text-[#6F7979]"
+      ? "flex cursor-pointer items-center gap-1 text-xs font-medium text-outline-strong"
       : "cursor-pointer text-xs text-muted-foreground underline";
 
   return (

@@ -53,12 +53,12 @@ export default function CallerOpenLines({ lines }: { lines: GovernanceCallerLine
         {lines.map((line) => (
           <li
             key={`${line.periodId}-${line.kind}`}
-            className="space-y-1 rounded-2xl border border-[#CAC4D0]/60 p-4"
+            className="space-y-1 rounded-2xl border border-outline-variant/60 p-4"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <Link
                 href={`/research-and-development/project/${line.projectSlug}`}
-                className="text-sm font-medium hover:text-[#00696E]"
+                className="text-sm font-medium hover:text-primary-imprint"
               >
                 {line.projectSlug}
               </Link>

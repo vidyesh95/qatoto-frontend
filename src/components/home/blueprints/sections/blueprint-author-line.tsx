@@ -20,7 +20,7 @@ export default function BlueprintAuthorLine({ author }: { readonly author: Bluep
       />
       <div>
         <p className="text-sm font-medium text-foreground">{author.displayName}</p>
-        {author.handle !== null && <p className="text-[11px] text-[#6F7979]">@{author.handle}</p>}
+        {author.handle !== null && <p className="text-xs text-outline-strong">@{author.handle}</p>}
       </div>
     </div>
   );

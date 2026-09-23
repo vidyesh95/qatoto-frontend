@@ -22,9 +22,9 @@ export default function ProductHighlights({
   const orderedHighlights = highlights.toSorted((left, right) => left.position - right.position);
 
   return (
-    <details open className="group/section border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+    <details open className="group/section border-t border-outline-variant/60 px-4 py-2 lg:px-6">
       <summary className="flex cursor-pointer list-none items-center gap-2 py-2 [&::-webkit-details-marker]:hidden">
-        <h2 className="flex-1 text-sm tracking-[0.25px] text-[#191C1C]">Product highlights</h2>
+        <h2 className="flex-1 text-sm tracking-normal text-foreground">Product highlights</h2>
         <Image
           src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           width={24}
@@ -37,11 +37,11 @@ export default function ProductHighlights({
         {orderedHighlights.map((highlight, highlightIndex) => (
           <details key={highlight.id} className="group">
             <summary className="flex cursor-pointer list-none flex-col gap-2 [&::-webkit-details-marker]:hidden">
-              <h3 className="text-base font-medium tracking-[0.15px] text-[#191C1C]">
+              <h3 className="text-base font-medium tracking-normal text-foreground">
                 {highlight.title}
               </h3>
               {highlight.imageUrl !== null && (
-                <div className="relative aspect-4/3 w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
+                <div className="relative aspect-4/3 w-full overflow-hidden rounded-lg bg-muted">
                   <Image
                     src={highlight.imageUrl}
                     fill
@@ -52,10 +52,10 @@ export default function ProductHighlights({
                   />
                 </div>
               )}
-              <p className="line-clamp-3 text-sm leading-5 tracking-[0.25px] text-[#191C1C] group-open:line-clamp-none">
+              <p className="line-clamp-3 text-sm leading-5 tracking-normal text-foreground group-open:line-clamp-none">
                 {highlight.bodyText}
               </p>
-              <span className="text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]">
+              <span className="text-right text-xs font-medium tracking-wider text-blue-600">
                 <span className="group-open:hidden">read more</span>
                 <span className="hidden group-open:inline">read less</span>
               </span>

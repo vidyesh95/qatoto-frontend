@@ -235,7 +235,7 @@ function BranchDraftPanel({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-static-element-interactions -- the handler exists to STOP a key reaching the outer form, not to make this div operable; every control inside is natively focusable
     <div
       onKeyDown={handlePanelKeyDown}
-      className="space-y-3 rounded-xl border border-[#CAC4D0]/60 bg-muted/30 p-3 text-xs"
+      className="space-y-3 rounded-xl border border-outline-variant/60 bg-muted/30 p-3 text-xs"
     >
       <p className="font-medium">New branch</p>
 
@@ -248,7 +248,7 @@ function BranchDraftPanel({
           minLength={BRANCH_TITLE_MIN_LENGTH}
           maxLength={BRANCH_TITLE_MAX_LENGTH}
           placeholder="What is this line of work called?"
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         />
       </label>
 
@@ -261,9 +261,9 @@ function BranchDraftPanel({
           maxLength={BRANCH_SUMMARY_MAX_LENGTH}
           rows={2}
           placeholder="What question does this branch answer, and how would you know it worked?"
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         />
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {remainingSummaryCharacters > 0
             ? `${remainingSummaryCharacters} more character${remainingSummaryCharacters === 1 ? "" : "s"} needed.`
             : `${draft.summary.trim().length} / ${BRANCH_SUMMARY_MAX_LENGTH}`}
@@ -275,7 +275,7 @@ function BranchDraftPanel({
         <select
           value={draft.parentBranchId}
           onChange={(changeEvent) => onDraftChange({ parentBranchId: changeEvent.target.value })}
-          className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
         >
           <option value="">Top level</option>
           {parentBranchChoices.map((branch) => (
@@ -293,7 +293,7 @@ function BranchDraftPanel({
           type="button"
           onClick={onSubmit}
           disabled={!isReadyToSubmit || isSubmitting}
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? "Creating…" : "Create branch"}
         </button>
@@ -307,7 +307,7 @@ function BranchDraftPanel({
         </button>
       </div>
 
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         The branch goes live immediately. Its status and overlap flags are computed nightly, so it
         reads as <span className="font-medium">emerging</span> on the map until then.
       </p>

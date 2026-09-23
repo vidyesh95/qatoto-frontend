@@ -60,7 +60,7 @@ export default function SellerEarningsPanel() {
           result.error.code === "401" ? (
             <Link
               href="/sign-in"
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
             >
               Sign in
             </Link>
@@ -92,7 +92,7 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
 
       <section aria-label="Observed payments" className="space-y-2">
         <div>
-          <h3 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h3 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
             Observed
           </h3>
           <p className="text-xs text-muted-foreground">
@@ -125,7 +125,7 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
 
       <section aria-label="Self-reported payments" className="space-y-2">
         <div>
-          <h3 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          <h3 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
             Self-reported
           </h3>
           <p className="text-xs text-muted-foreground">
@@ -155,7 +155,7 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
           money that moved FROM them, on a different clock. Folding it into the observed grid would
           invite exactly the subtraction the whole design refuses. */}
       <section aria-label="What these goods cost you">
-        <h3 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <h3 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           What these goods cost you
         </h3>
         <p className="mt-1 text-xs leading-4 text-muted-foreground">

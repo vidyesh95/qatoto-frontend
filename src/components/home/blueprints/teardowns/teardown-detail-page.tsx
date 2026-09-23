@@ -306,7 +306,7 @@ export default async function TeardownDetailPage({
         video is YouTube-only now, so there is nothing to seek and no channel to mount.
       */}
       <div className="px-4 pt-5 lg:px-6">
-        <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+        <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">
           Teardown
         </p>
 
@@ -470,7 +470,7 @@ export default async function TeardownDetailPage({
           LIKES USED TO PRINT HERE TOO and now do not — `TeardownEngagementBar` carries them. Views
           stay, because the bar has no view readout and both sibling arms print the same line.
         */}
-        <p className="mt-6 text-[11px] text-[#6F7979]">
+        <p className="mt-6 text-xs text-outline-strong">
           Published{" "}
           <span title={formatIsoInstantLabel(teardown.createdAt)}>
             <RelativeTime isoInstant={teardown.createdAt} />

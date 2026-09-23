@@ -75,8 +75,8 @@ export default function ShowcaseVoteButton({
         onClick={handleClick}
         aria-pressed={isSet}
         disabled={toggle.isPending}
-        className={`flex h-11 w-10 shrink-0 cursor-pointer flex-col items-center justify-center rounded-md transition-colors select-none hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default ${
-          isSet ? "text-[#00696E]" : "text-foreground"
+        className={`flex h-11 w-10 shrink-0 cursor-pointer flex-col items-center justify-center rounded-md transition-colors select-none hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-default ${
+          isSet ? "text-primary-imprint" : "text-foreground"
         }`}
       >
         <Image
@@ -94,7 +94,7 @@ export default function ShowcaseVoteButton({
         </span>
       </button>
       {refusal === null ? null : (
-        <output className="mt-1 block max-w-32 text-center text-[11px] text-destructive">
+        <output className="mt-1 block max-w-32 text-center text-xs text-destructive">
           {refusal}
         </output>
       )}

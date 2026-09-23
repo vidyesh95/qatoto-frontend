@@ -71,10 +71,10 @@ export default function WatchInfoPanel({
 
   return (
     <aside
-      className={`flex flex-col overflow-hidden rounded-xl border border-[#E5E7E7] bg-background ${className}`}
+      className={`flex flex-col overflow-hidden rounded-xl border border-border bg-background ${className}`}
     >
       {/* Header */}
-      <div className="flex shrink-0 flex-row items-center justify-between border-b border-[#E5E7E7] py-2 pr-2 pl-4">
+      <div className="flex shrink-0 flex-row items-center justify-between border-b border-border py-2 pr-2 pl-4">
         <h2 className="text-lg">In this video</h2>
         <div className="flex flex-row items-center gap-2">
           {hasTranscript && tab === "transcript" && (
@@ -105,13 +105,13 @@ export default function WatchInfoPanel({
                   />
                   <div
                     role="menu"
-                    className="absolute top-full right-0 z-20 mt-1 min-w-56 rounded-lg border border-[#E5E7E7] bg-background py-1 shadow-lg"
+                    className="absolute top-full right-0 z-20 mt-1 min-w-56 rounded-lg border border-border bg-background py-1 shadow-lg"
                   >
                     <button
                       type="button"
                       role="menuitemcheckbox"
                       aria-checked={showTimestamps}
-                      className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-[#F1F3F3]"
+                      className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
                       onClick={() => {
                         setShowTimestamps((v) => !v);
                         setMenuOpen(false);
@@ -156,7 +156,7 @@ export default function WatchInfoPanel({
           type="button"
           onClick={() => setTab("chapters")}
           className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            tab === "chapters" ? "bg-foreground text-background" : "bg-[#F1F3F3] text-foreground"
+            tab === "chapters" ? "bg-foreground text-background" : "bg-muted text-foreground"
           }`}
         >
           Chapters
@@ -173,9 +173,7 @@ export default function WatchInfoPanel({
             type="button"
             onClick={() => setTab("transcript")}
             className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              tab === "transcript"
-                ? "bg-foreground text-background"
-                : "bg-[#F1F3F3] text-foreground"
+              tab === "transcript" ? "bg-foreground text-background" : "bg-muted text-foreground"
             }`}
           >
             Transcript
@@ -190,7 +188,7 @@ export default function WatchInfoPanel({
             {chapters.map((chapter) => (
               <li
                 key={chapter.title}
-                className={`group flex flex-row items-center gap-3 px-4 py-2.5 hover:bg-[#F1F3F3] ${
+                className={`group flex flex-row items-center gap-3 px-4 py-2.5 hover:bg-muted ${
                   selectedChapter === chapter.title ? "bg-primary/30" : ""
                 }`}
               >
@@ -210,7 +208,7 @@ export default function WatchInfoPanel({
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{chapter.title}</p>
-                    <span className="mt-1 inline-block rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
+                    <span className="mt-1 inline-block rounded-md bg-secondary px-1.5 py-0.5 text-xs font-medium text-primary-imprint">
                       {chapter.time}
                     </span>
                   </div>
@@ -251,7 +249,7 @@ export default function WatchInfoPanel({
                 type="text"
                 aria-label="Search in video"
                 placeholder="Search in video"
-                className="flex-1 bg-transparent text-base outline-none placeholder:text-[#6F7979]"
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-outline-strong"
               />
             </div>
 
@@ -261,11 +259,11 @@ export default function WatchInfoPanel({
               {transcript.map((line) => (
                 <li key={line.time} className="flex flex-row gap-4 py-2.5">
                   {showTimestamps && (
-                    <span className="shrink-0 self-start rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
+                    <span className="shrink-0 self-start rounded-md bg-secondary px-1.5 py-0.5 text-xs font-medium text-primary-imprint">
                       {line.time}
                     </span>
                   )}
-                  <p className="text-[15px] leading-relaxed">{line.text}</p>
+                  <p className="text-sm leading-relaxed">{line.text}</p>
                 </li>
               ))}
             </ul>
@@ -275,7 +273,7 @@ export default function WatchInfoPanel({
 
       {/* Footer (transcript only) */}
       {tab === "transcript" && (
-        <div className="shrink-0 border-t border-[#E5E7E7] px-5 py-3">
+        <div className="shrink-0 border-t border-border px-5 py-3">
           <button type="button" className="flex flex-row items-center gap-1 text-sm font-medium">
             English
             <Image

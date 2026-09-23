@@ -195,7 +195,7 @@ export default function DetailsStep({
             maxLength={TITLE_MAXIMUM_LENGTH}
             onChange={(event) => onDraftChange({ title: event.target.value })}
             placeholder="Add a title that describes your video"
-            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
           <p className="text-right text-xs text-muted-foreground">
             {draft.title.length}/{TITLE_MAXIMUM_LENGTH}
@@ -212,7 +212,7 @@ export default function DetailsStep({
             onChange={(event) => onDraftChange({ description: event.target.value })}
             placeholder="Tell viewers about your video (type @ to mention a creator)"
             rows={5}
-            className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
         </div>
 
@@ -416,7 +416,7 @@ export default function DetailsStep({
                 maxLength={TAGS_MAXIMUM_LENGTH}
                 onChange={(event) => onDraftChange({ commaSeparatedTags: event.target.value })}
                 placeholder="Separate tags with commas"
-                className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
               />
               <p className="text-right text-xs text-muted-foreground">
                 {draft.commaSeparatedTags.length}/{TAGS_MAXIMUM_LENGTH}
@@ -450,7 +450,7 @@ export default function DetailsStep({
                   type="date"
                   value={draft.recordingDate}
                   onChange={(event) => onDraftChange({ recordingDate: event.target.value })}
-                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
                 />
               </div>
               <LabeledTextInput
@@ -679,7 +679,7 @@ function LabeledTextInput({
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
-        className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+        className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
       />
     </div>
   );
@@ -708,7 +708,7 @@ function LabeledSelect({
           id={fieldId}
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+          className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
         >
           {options.map((option) => (
             <option key={option} value={option}>

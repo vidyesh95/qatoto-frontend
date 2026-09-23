@@ -224,7 +224,7 @@ export default function FactoryInquiryComposer({
               <span className="text-xs font-medium text-muted-foreground">
                 First delivery wanted by
               </span>
-              <span className="block text-[11px] leading-4 text-muted-foreground">
+              <span className="block text-xs leading-4 text-muted-foreground">
                 A date you are working towards, not a commitment either side has made.
               </span>
               <span className="mt-1 block">
@@ -270,7 +270,7 @@ export default function FactoryInquiryComposer({
             )}
             {/* Names the omissions rather than hiding them, because "we left your target price out"
                 is a decision the buyer should get to disagree with before saving. */}
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               Blank fields are left out of the request entirely — never sent as zero.
             </p>
           </div>

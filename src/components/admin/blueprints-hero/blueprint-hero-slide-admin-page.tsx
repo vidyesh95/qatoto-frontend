@@ -206,12 +206,12 @@ export default function BlueprintHeroSlideAdminPage() {
       {/* Three distinct cases, said apart — a failed permission check is not the same as
           failing it. */}
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so this page is read-only.
         </output>
       )}
       {staffContextQuery.isSuccess && !canManageBlueprintHero && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Managing the Blueprints hero needs the admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
         </output>
@@ -271,7 +271,7 @@ function CreateSlideForm({
   const isCarouselFull = slideCount >= MAX_BLUEPRINT_HERO_SLIDES;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <h2 className="text-lg font-medium">Add a slide</h2>
       <form
         className="space-y-4"
@@ -322,7 +322,7 @@ function CreateSlideForm({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="A Record Of Mortal's Journey To Immortality"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           {/* Not decoration: the image sits inside a link, so this text IS the link's
               accessible name for anyone not seeing the picture. */}
@@ -342,7 +342,7 @@ function CreateSlideForm({
             value={destinationPath}
             onChange={(event) => setDestinationPath(event.target.value)}
             placeholder="/blueprints/solar-cold-storage-controller-teardown"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <p className="text-xs text-muted-foreground">
             A page on Qatoto, starting with a single slash. Leave blank for a slide that is not
@@ -432,7 +432,7 @@ function SlideRow({
   }
 
   return (
-    <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="flex flex-wrap items-start gap-4">
         {/* `object-cover` on a 16:9 box, NOT `object-contain`: the live carousel covers
             (`blueprints-hero-carousel.tsx`), so a letterboxed thumbnail here would show framing
@@ -481,7 +481,7 @@ function SlideRow({
             disabled={isReordering || index === 0}
             onClick={() => onMove(slide.id, index - 1)}
             aria-label="Move up one place"
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▲
           </button>
@@ -490,7 +490,7 @@ function SlideRow({
             disabled={isReordering || index === slideCount - 1}
             onClick={() => onMove(slide.id, index + 1)}
             aria-label="Move down one place"
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             ▼
           </button>
@@ -500,7 +500,7 @@ function SlideRow({
               value={index}
               disabled={isReordering}
               onChange={(event) => onMove(slide.id, Number(event.target.value))}
-              className="cursor-pointer rounded-lg border border-[#CAC4D0]/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+              className="cursor-pointer rounded-lg border border-outline-variant/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
             >
               {Array.from({ length: slideCount }, (_unused, position) => (
                 <option key={position} value={position}>
@@ -517,7 +517,7 @@ function SlideRow({
           type="button"
           disabled={isMutating}
           onClick={() => handleUpdate({ isActive: !slide.isActive })}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
           {slide.isActive ? "Hide from Blueprints page" : "Show on Blueprints page"}
         </button>
@@ -525,7 +525,7 @@ function SlideRow({
         <button
           type="button"
           onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
         >
           {isEditing ? "Cancel edit" : "Edit"}
         </button>
@@ -539,7 +539,7 @@ function SlideRow({
             setIsReplacingImage((wasReplacing) => !wasReplacing);
             setReplacementImageFile(null);
           }}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
           {replaceImage.isPending
             ? "Replacing…"
@@ -562,7 +562,7 @@ function SlideRow({
             <button
               type="button"
               onClick={() => setIsConfirmingDelete(false)}
-              className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs"
+              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
             >
               Cancel
             </button>
@@ -579,7 +579,7 @@ function SlideRow({
       </div>
 
       {isReplacingImage && (
-        <div className="space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+        <div className="space-y-3 border-t border-outline-variant/40 pt-3">
           <p className="text-sm font-medium">New image</p>
           {isSeededImage(slide.imageUrl) && (
             <p className="text-xs text-muted-foreground">
@@ -623,7 +623,7 @@ function SlideRow({
                 setIsReplacingImage(false);
                 setReplacementImageFile(null);
               }}
-              className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -648,7 +648,7 @@ function SlideRow({
 
       {isEditing && (
         <form
-          className="space-y-3 border-t border-[#CAC4D0]/40 pt-3"
+          className="space-y-3 border-t border-outline-variant/40 pt-3"
           onSubmit={(event) => {
             event.preventDefault();
             const trimmedDestination = draftDestinationPath.trim();
@@ -668,7 +668,7 @@ function SlideRow({
             value={draftTitle}
             onChange={(event) => setDraftTitle(event.target.value)}
             aria-label="Title"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <input
             type="text"
@@ -677,7 +677,7 @@ function SlideRow({
             onChange={(event) => setDraftDestinationPath(event.target.value)}
             placeholder="/blueprints/solar-cold-storage-controller-teardown"
             aria-label="Links to"
-            className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
+            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
           />
           <p className="text-xs text-muted-foreground">
             Clear this field to make the slide non-clickable.

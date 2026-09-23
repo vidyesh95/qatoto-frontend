@@ -61,7 +61,7 @@ export default function RecordTimeline({
               )}
               {/* The raw instant, not "3 days ago". A commercial record is cited later, and a relative
                   time cannot be. `relative-time.tsx` exists for feeds, where recency is the point. */}
-              <p className="text-[11px] leading-4 text-muted-foreground">
+              <p className="text-xs leading-4 text-muted-foreground">
                 {formatIsoInstantLabel(entry.occurredAtIso)}
               </p>
             </div>

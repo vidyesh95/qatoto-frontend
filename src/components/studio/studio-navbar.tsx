@@ -31,10 +31,13 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
             />
           </button>
           <div className="flex min-w-0 items-baseline gap-2">
-            <Link href="/" className="shrink-0 font-serif text-3xl font-medium text-[#00696E]">
+            <Link
+              href="/"
+              className="shrink-0 font-serif text-3xl font-medium text-primary-imprint"
+            >
               Qatoto
             </Link>
-            <span className="shrink-0 font-serif text-2xl text-[#00696E]/40">|</span>
+            <span className="shrink-0 font-serif text-2xl text-primary-imprint/40">|</span>
             <span className="truncate text-xl font-medium text-foreground">Creator Studio</span>
           </div>
         </div>

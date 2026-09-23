@@ -9,7 +9,7 @@ import Link from "next/link";
 // this band is where that gets fixed.
 export default function CreateListingCtaBand() {
   return (
-    <section className="mx-4 space-y-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
+    <section className="mx-4 space-y-4 rounded-2xl bg-primary-imprint/5 p-6 text-center md:p-8 lg:mx-6">
       <h2 className="text-xl font-semibold md:text-2xl">Ready to sell what you built?</h2>
       <p className="text-sm text-muted-foreground">
         Listings are created and managed in the studio. R&amp;D hands over the project — it does not
@@ -18,13 +18,13 @@ export default function CreateListingCtaBand() {
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           href="/studio/products"
-          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
         >
           Create your store listing
         </Link>
         <Link
           href="/store"
-          className="cursor-pointer rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="cursor-pointer rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           See the storefront
         </Link>

@@ -33,7 +33,7 @@ export default function BlueprintDocumentViewer({
         <a
           href={blueprintDocument.url}
           download
-          className="block rounded-full bg-[#00696E] px-4 py-2 text-center text-sm font-medium text-white"
+          className="block rounded-full bg-primary-imprint px-4 py-2 text-center text-sm font-medium text-primary-imprint-foreground"
         >
           Download
         </a>
@@ -45,7 +45,7 @@ export default function BlueprintDocumentViewer({
         title={blueprintDocument.title}
         className="h-full w-full"
       />
-      <p className="px-4 py-3 text-xs leading-4 text-[#6F7979]">
+      <p className="px-4 py-3 text-xs leading-4 text-outline-strong">
         Nothing above? This browser will not display a PDF inline — use Download.
       </p>
     </ModalSheet>

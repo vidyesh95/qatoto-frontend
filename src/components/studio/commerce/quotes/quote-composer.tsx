@@ -1151,7 +1151,7 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
               />
               <label className="block">
                 <span className="text-xs font-medium text-muted-foreground">Valid until</span>
-                <span className="block text-[11px] leading-4 text-muted-foreground">
+                <span className="block text-xs leading-4 text-muted-foreground">
                   A revision has to be submitted before its deadline. Past it you can still discard
                   and price again, but you lose the round trip — so leave yourself room.
                 </span>
@@ -1166,7 +1166,7 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
 
             <ExpiryWarning standing={validityDeadlineStanding} />
 
-            <p className="text-[11px] leading-4 text-muted-foreground">
+            <p className="text-xs leading-4 text-muted-foreground">
               The subtotal and total are computed by the server from your lines and these four
               amounts. A blank field here means zero — that is a real answer on a quote, unlike on a
               request.
@@ -1262,7 +1262,7 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
                 `commerce_quote_revision_document`. Saying which revision matters: revise the offer
                 and the superseded one keeps the documents it was judged on.
               */}
-              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">
                 They attach to this revision. If you revise the quote, choose them again for the new
                 one — the buyer keeps seeing the old set against the old prices.
               </p>
@@ -1428,7 +1428,7 @@ function DeliverablePlanFields({
   return (
     <div>
       <span className="text-xs font-medium text-muted-foreground">Deliverables</span>
-      <span className="block text-[11px] leading-4 text-muted-foreground">
+      <span className="block text-xs leading-4 text-muted-foreground">
         Optional. Steps are numbered by their order here, so removing one renumbers the rest.
       </span>
       <div className="mt-2 space-y-2">
@@ -1651,7 +1651,7 @@ function AppendedRevisionPanel({
         </div>
       )}
 
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-2 text-xs leading-4 text-muted-foreground">
         Leaving it unsubmitted keeps it as this quote&apos;s one open revision. Another cannot be
         priced until this one is submitted or discarded.
       </p>

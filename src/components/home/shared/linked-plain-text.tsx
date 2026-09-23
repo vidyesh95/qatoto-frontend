@@ -116,14 +116,14 @@ export default function LinkedPlainText({ text }: { readonly text: string }) {
                 href={token.value}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="rounded-sm break-words text-[#00696E] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                className="rounded-sm break-words text-primary-imprint underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
               >
                 {token.value}
               </a>
             );
           case "mention":
             return (
-              <span key={tokenIndex} className="font-medium text-[#00696E]">
+              <span key={tokenIndex} className="font-medium text-primary-imprint">
                 {token.value}
               </span>
             );

@@ -33,8 +33,8 @@ export default function WatchProjectButton({
       aria-pressed={isWatchedByViewer}
       className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
         isWatchedByViewer
-          ? "border-[#00696E] bg-[#00696E]/10 text-[#00696E]"
-          : "border-[#6F7979] text-[#00696E]"
+          ? "border-primary-imprint bg-primary-imprint/10 text-primary-imprint"
+          : "border-outline-strong text-primary-imprint"
       }`}
     >
       {isWatchedByViewer ? "Following" : "Follow"}

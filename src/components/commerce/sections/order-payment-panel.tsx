@@ -99,7 +99,7 @@ export default function OrderPaymentPanel({
 
   return (
     <section aria-label="Payment" className="space-y-3 rounded-xl border border-border px-4 py-3">
-      <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+      <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
         Payment
       </h2>
 
@@ -169,11 +169,11 @@ function PayPrompt({
         type="button"
         onClick={onPayClick}
         disabled={isSubmitting}
-        className="cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        className="cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
       >
         {isSubmitting ? "Starting…" : "Pay for this order"}
       </button>
-      <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-4 text-muted-foreground">
         The processor settles this straight to the seller. Qatoto never holds the money.
       </p>
     </div>
@@ -249,7 +249,7 @@ function ResumedPayment({
 
       {/* The processor's own reference, for a support conversation. Not a receipt. */}
       {intent.providerPaymentRef !== null && (
-        <p className="text-[11px] leading-4 text-muted-foreground">
+        <p className="text-xs leading-4 text-muted-foreground">
           Provider reference {intent.providerPaymentRef}
         </p>
       )}
@@ -407,7 +407,7 @@ function RazorpayCheckoutControl({ orderId, intent }: { orderId: string; intent:
         type="button"
         onClick={handlePayWithRazorpayClick}
         disabled={isBusy}
-        className="cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        className="cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
       >
         {checkoutState.status === "loading" ? "Opening Razorpay…" : "Pay with Razorpay"}
       </button>
@@ -421,7 +421,7 @@ function RazorpayCheckoutStatus({ checkoutState }: { checkoutState: RazorpayChec
     case "idle":
     case "loading":
       return (
-        <p className="text-[11px] leading-4 text-muted-foreground">
+        <p className="text-xs leading-4 text-muted-foreground">
           Razorpay test mode. Card, UPI and netbanking are handled in Razorpay&apos;s window.
         </p>
       );
@@ -627,7 +627,7 @@ function RefundHistory({ refunds }: { refunds: readonly Refund[] }) {
 
   return (
     <div className="space-y-1 border-t border-border pt-2">
-      <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+      <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
         Refunds
       </p>
       <ul className="space-y-1">

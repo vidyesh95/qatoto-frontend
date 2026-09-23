@@ -260,7 +260,9 @@ function SwitchAccountBody({
                     </span>
                   </span>
                   {isCurrent ? (
-                    <span className="shrink-0 text-xs font-medium text-[#00696E]">Current</span>
+                    <span className="shrink-0 text-xs font-medium text-primary-imprint">
+                      Current
+                    </span>
                   ) : null}
                 </button>
                 <button

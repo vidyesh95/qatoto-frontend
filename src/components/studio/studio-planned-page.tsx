@@ -58,7 +58,7 @@ export default function StudioPlannedPage({
       <p className="mt-1 text-sm text-muted-foreground">{summary}</p>
 
       <div className="mt-6 max-w-2xl rounded-2xl border border-dashed border-border p-6">
-        <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+        <p className="text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
           Not built yet
         </p>
         <p className="mt-2 text-sm text-foreground">

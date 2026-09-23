@@ -14,13 +14,13 @@ const MILESTONE_STATUS_STYLES: Record<
   },
   in_progress: {
     label: "In progress",
-    dotClassName: "bg-background ring-2 ring-[#00696E]",
-    chipClassName: "bg-[#D6E3FF] text-[#191C1C]",
+    dotClassName: "bg-background ring-2 ring-primary-imprint",
+    chipClassName: "bg-secondary text-foreground",
   },
   done: {
     label: "Done",
-    dotClassName: "bg-[#00696E] text-white",
-    chipClassName: "bg-[#00696E]/10 text-[#00696E]",
+    dotClassName: "bg-primary-imprint text-primary-imprint-foreground",
+    chipClassName: "bg-primary-imprint/10 text-primary-imprint",
   },
   cancelled: {
     label: "Cancelled",
@@ -46,7 +46,7 @@ function describeVariance(varianceBasisPoints: number): {
 } {
   const magnitudePercent = Math.abs(varianceBasisPoints) / BASIS_POINTS_PER_PERCENT;
   if (varianceBasisPoints === 0) {
-    return { label: "On pace", chipClassName: "bg-[#00696E]/10 text-[#00696E]" };
+    return { label: "On pace", chipClassName: "bg-primary-imprint/10 text-primary-imprint" };
   }
   if (varianceBasisPoints > 0) {
     return { label: `${magnitudePercent}% ahead`, chipClassName: "bg-green-100 text-green-800" };
@@ -118,12 +118,12 @@ export default function MilestoneTimeline({ milestones }: { milestones: Mileston
                 </p>
               )}
               {plannedPayoutInCents > NO_PLANNED_PAYOUT && (
-                <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+                <span className="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                   Planned payout {formatMoneyFromCents(plannedPayoutInCents, milestone.currency)}
                 </span>
               )}
               {variance && (
-                <div className="mt-2 space-y-1.5 rounded-xl border border-[#CAC4D0]/60 p-3">
+                <div className="mt-2 space-y-1.5 rounded-xl border border-outline-variant/60 p-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-medium">Production variance</span>
                     <span

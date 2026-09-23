@@ -62,9 +62,7 @@ export default function TeardownSubjectStrip({
   return (
     <section className="mt-3 border-t border-border pt-3" aria-label="What was surveyed">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-          Survey of
-        </span>
+        <span className="text-xs tracking-wider text-muted-foreground uppercase">Survey of</span>
         <span className="text-sm font-medium text-foreground">{provenance.subjectProductName}</span>
       </div>
 

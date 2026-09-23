@@ -40,7 +40,7 @@ export default function SimilarAndCompare({
         <button
           type="button"
           onClick={() => setIsSimilarOpen(true)}
-          className="flex flex-1 cursor-pointer items-center gap-2 px-4 py-2 text-xs text-[#191C1C] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex flex-1 cursor-pointer items-center gap-2 px-4 py-2 text-xs text-foreground outline -outline-offset-1 outline-outline-strong"
         >
           <Image
             src="/icons/content_copy_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -53,7 +53,7 @@ export default function SimilarAndCompare({
         <button
           type="button"
           onClick={() => setIsCompareOpen(true)}
-          className="flex flex-1 cursor-pointer items-center gap-2 px-4 py-2 text-xs text-[#191C1C] outline -outline-offset-1 outline-[#6F7979]"
+          className="flex flex-1 cursor-pointer items-center gap-2 px-4 py-2 text-xs text-foreground outline -outline-offset-1 outline-outline-strong"
         >
           <Image
             src="/icons/compare_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

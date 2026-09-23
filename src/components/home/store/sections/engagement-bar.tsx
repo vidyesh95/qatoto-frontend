@@ -44,11 +44,11 @@ import { formatCountLabel } from "@/lib/store/format";
 import type { ProductEngagement } from "@/lib/store/products.schemas";
 
 const PILL_CLASS =
-  "flex flex-1 cursor-pointer items-center justify-start gap-1 rounded-full bg-[#CCE8E9] px-2 py-1 text-xs font-medium tracking-wide text-[#041F21] disabled:opacity-60";
+  "flex flex-1 cursor-pointer items-center justify-start gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium tracking-wide text-foreground disabled:opacity-60";
 
 function PillIcon({ icon, filled }: { icon: string; filled: boolean }) {
   return (
-    <span className="relative size-4 shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">
+    <span className="relative size-4 shrink-0 drop-shadow-sm">
       <Image
         src={`/icons/${icon}_24dp_000000_FILL${filled ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
         fill
@@ -104,7 +104,7 @@ export default function EngagementBar({
           className={PILL_CLASS}
         >
           <PillIcon icon="favorite" filled={isViewerKnown && viewer.hasLiked} />
-          <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">
+          <span style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}>
             {formatCountLabel(engagement.likeCount)}
           </span>
         </button>
@@ -126,7 +126,7 @@ export default function EngagementBar({
           className={PILL_CLASS}
         >
           <PillIcon icon="bookmark" filled={isViewerKnown && viewer.hasBookmarked} />
-          <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">
+          <span style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}>
             {formatCountLabel(engagement.bookmarkedCount)}
           </span>
         </button>
@@ -135,7 +135,7 @@ export default function EngagementBar({
         <span className="relative flex flex-1">
           <button type="button" onClick={handleShareClick} className={PILL_CLASS}>
             <PillIcon icon="share" filled={false} />
-            <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">
+            <span style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}>
               {formatCountLabel(engagement.shareCount)}
             </span>
           </button>
@@ -145,8 +145,8 @@ export default function EngagementBar({
 
       {/* Why the two toggles are dead, when they are dead for a reason the visitor can act on. */}
       {!isViewerKnown && (
-        <p className="mt-2 text-xs leading-4 text-[#6F7979]">
-          <Link href="/sign-in" className="font-medium text-[#00696E]">
+        <p className="mt-2 text-xs leading-4 text-outline-strong">
+          <Link href="/sign-in" className="font-medium text-primary-imprint">
             Sign in
           </Link>{" "}
           to like this product or save it to your wishlist.

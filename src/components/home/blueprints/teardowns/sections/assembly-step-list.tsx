@@ -118,7 +118,7 @@ function StepRow({
   const numeral = (
     <span
       aria-hidden
-      className={`${NUMERAL_CLASS} ${isCurrent ? "text-[#00696E]" : "text-[#00696E]/30"}`}
+      className={`${NUMERAL_CLASS} ${isCurrent ? "text-primary-imprint" : "text-primary-imprint/30"}`}
     >
       {formatTwoDigitLabel(step.stepNumber)}
     </span>
@@ -130,7 +130,7 @@ function StepRow({
     </span>
   );
   const shellClass = `${ROW_SHELL_CLASS} ${
-    isCurrent ? "border-[#00696E] bg-[#00696E]/6" : "border-[#CAC4D0]/60"
+    isCurrent ? "border-primary-imprint bg-primary-imprint/6" : "border-outline-variant/60"
   }`;
 
   if (onFocusPart === null) {
@@ -150,7 +150,7 @@ function StepRow({
         type="button"
         aria-current={isCurrent ? "step" : undefined}
         onClick={onFocusPart}
-        className={`${ROW_BODY_CLASS} cursor-pointer hover:text-[#00696E]`}
+        className={`${ROW_BODY_CLASS} cursor-pointer hover:text-primary-imprint`}
       >
         {numeral}
         {body}

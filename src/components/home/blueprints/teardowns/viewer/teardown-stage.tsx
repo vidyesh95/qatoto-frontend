@@ -49,7 +49,7 @@ export default function TeardownStage({
       ref={stageRef}
       // `isolate` keeps the callout pins' stacking context local, so a pin can never float over
       // the site navbar. Fullscreen targets this element, so the controls travel with the canvas.
-      className="relative isolate h-[min(68vh,720px)] min-h-80 w-full overflow-hidden rounded-xl border border-[#CAC4D0]/60"
+      className="relative isolate h-[min(68vh,720px)] min-h-80 w-full overflow-hidden rounded-xl border border-outline-variant/60"
       style={STAGE_BACKGROUND_STYLE}
     >
       {children}

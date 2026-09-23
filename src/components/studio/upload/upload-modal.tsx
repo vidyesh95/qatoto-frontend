@@ -468,7 +468,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
                   <span
                     className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${
                       isCurrent
-                        ? "bg-primary text-primary-foreground ring-2 ring-[#1DBDC5]"
+                        ? "bg-primary text-primary-foreground ring-2 ring-primary-imprint"
                         : isCompleted
                           ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-muted-foreground"
@@ -495,7 +495,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
                 </button>
                 {stepIndex < UPLOAD_STEPS.length - 1 && (
                   <span
-                    className={`h-px min-w-4 flex-1 ${isCompleted ? "bg-[#1DBDC5]" : "bg-border"}`}
+                    className={`h-px min-w-4 flex-1 ${isCompleted ? "bg-primary-imprint" : "bg-border"}`}
                   />
                 )}
               </li>
@@ -768,7 +768,7 @@ function InviteCollaboratorOverlay({
               }
             }}
             placeholder="collaborator@company.com"
-            className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
           <button
             type="button"

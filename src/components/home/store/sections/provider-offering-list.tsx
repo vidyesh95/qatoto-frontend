@@ -33,7 +33,7 @@ export default function ProviderOfferingList({
         attribution="declared"
         description="What this provider has published."
       >
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
           {providerDisplayName} has no published services yet. A profile can exist before any
           offering does.
         </p>
@@ -72,33 +72,35 @@ function OfferingRow({ offering }: { offering: PublicOfferingCard }) {
   return (
     <Link
       href={`/store/services/${offering.slug}`}
-      className="block rounded-xl border border-[#CAC4D0]/60 px-4 py-3 transition-colors hover:border-[#2A76FD]"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
     >
       <ProviderKindBadge providerKind={offering.providerKind} isCompact />
 
-      <p className="mt-1 text-sm leading-5 font-medium text-[#191C1C]">{offering.title}</p>
+      <p className="mt-1 text-sm leading-5 font-medium text-foreground">{offering.title}</p>
 
       {offering.summary !== null && (
-        <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#6F7979]">{offering.summary}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-outline-strong">
+          {offering.summary}
+        </p>
       )}
 
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs leading-4">
         {/* `quote_only` yields a null range. The label is the model's own copy, not an invented
             price — "Quoted per request" is a true statement and "$0" is not. */}
         {priceRangeLabel === null ? (
-          <span className="text-[#00696E]">
+          <span className="text-primary-imprint">
             {SERVICE_PRICING_MODEL_LABELS[offering.pricingModel]}
           </span>
         ) : (
           <>
-            <span className="font-medium text-[#191C1C]">{priceRangeLabel}</span>
-            <span className="text-[#6F7979]">
+            <span className="font-medium text-foreground">{priceRangeLabel}</span>
+            <span className="text-outline-strong">
               {SERVICE_PRICING_MODEL_LABELS[offering.pricingModel].toLowerCase()}, indicative
             </span>
           </>
         )}
 
-        {leadTimeLabel !== null && <span className="text-[#6F7979]">{leadTimeLabel}</span>}
+        {leadTimeLabel !== null && <span className="text-outline-strong">{leadTimeLabel}</span>}
       </div>
     </Link>
   );

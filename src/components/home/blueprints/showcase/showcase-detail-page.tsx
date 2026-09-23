@@ -92,7 +92,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         />
 
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+          <p className="text-xs font-medium tracking-wider text-primary-imprint uppercase">
             Showcase
           </p>
           <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -102,8 +102,8 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
             {showcase.tagline}
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6F7979]">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-outline-variant/60 pb-3">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-outline-strong">
               <BlueprintAvatar
                 displayName={showcase.author.displayName}
                 avatarUrl={showcase.author.avatarUrl}
@@ -131,7 +131,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
                   <span aria-hidden="true">·</span>
                   <a
                     href="#discussion"
-                    className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   >
                     {formatCountLabel(showcase.commentCount)}{" "}
                     {showcase.commentCount === 1 ? "comment" : "comments"}
@@ -162,7 +162,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         places those blocks side by side; it never reorders them, so a screen reader and a narrow
         screen read the page in the same order.
       */}
-      <div className="min-[1440px]:grid min-[1440px]:grid-cols-[minmax(0,48rem)_minmax(14rem,1fr)] min-[1440px]:gap-x-6 sm:pl-[52px] lg:pl-[56px]">
+      <div className="min-[1440px]:grid min-[1440px]:grid-cols-[minmax(0,48rem)_minmax(14rem,1fr)] min-[1440px]:gap-x-6 sm:pl-13 lg:pl-14">
         {/* THE GAP ABOVE THE DISCUSSION BELONGS TO WHATEVER SITS ABOVE IT. From 1440px that is this
             column, so it carries the 40px as bottom padding; below 1440px the rail sits between
             them, so the discussion wrapper takes the gap as its own top margin there instead. */}
@@ -192,7 +192,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
                   href={showcase.callToAction.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                  className="inline-block rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground"
                 >
                   {showcase.callToAction.label}
                 </a>
@@ -205,7 +205,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
                     category: "teardown",
                     slug: showcase.builtFromBlueprintSlug,
                   })}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-imprint hover:underline"
                 >
                   Built from this teardown
                   <Image
@@ -240,7 +240,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
                     />
                     <div>
                       <p className="text-sm text-foreground">{member.displayName}</p>
-                      <p className="text-[11px] text-[#6F7979]">{member.role}</p>
+                      <p className="text-xs text-outline-strong">{member.role}</p>
                     </div>
                   </li>
                 ))}
@@ -266,17 +266,19 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4 sm:ml-[52px] lg:ml-[56px]">
+      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/60 pt-4 sm:ml-13 lg:ml-14">
         {/* VIEWS ONLY. `likeCount` is a field every blueprint shares, and teardowns and case studies
             still print it, but a launch's approval number is its upvote, in the gutter at the top.
             Printing likes here as well asked a reader to tell two approval numbers apart. */}
         <div className="flex items-center gap-4">
-          <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
+          <p className="text-xs text-outline-strong">
+            {formatCountLabel(showcase.viewCount)} views
+          </p>
           <ReportBlueprintOpener arm="showcase" slug={showcase.slug} targetTitle={showcase.title} />
         </div>
         <Link
           href={buildBlueprintCategoryHref("showcase")}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-imprint hover:underline"
         >
           See all launches
           <Image

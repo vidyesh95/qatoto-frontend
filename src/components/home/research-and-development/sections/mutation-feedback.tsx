@@ -53,7 +53,7 @@ export function MutationErrorNotice({ error }: { error: ApiError }) {
  */
 export function MutationAcceptedNotice({ message }: { message: string }) {
   return (
-    <output className="block rounded-2xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm text-[#00696E]">
+    <output className="block rounded-2xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm text-primary-imprint">
       {message}
     </output>
   );

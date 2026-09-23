@@ -44,7 +44,7 @@ export default function LocalizationPathwayPanel({
       </div>
 
       {suggestions.length === 0 ? (
-        <div className="rounded-2xl border border-[#CAC4D0]/60 px-5 py-6">
+        <div className="rounded-2xl border border-outline-variant/60 px-5 py-6">
           <p className="text-sm text-muted-foreground">
             {LOCALIZATION_NARRATIVE_STATUS_LABELS[narrativeStatus]}.
             {narrativeStatus === "pending"
@@ -60,7 +60,7 @@ export default function LocalizationPathwayPanel({
           {suggestions.map((suggestion) => (
             <li
               key={suggestion.id}
-              className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-5"
+              className="space-y-3 rounded-2xl border border-outline-variant/60 p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <h3 className="text-sm font-medium">{suggestion.title}</h3>
@@ -81,7 +81,7 @@ export default function LocalizationPathwayPanel({
               )}
 
               {/* Never optional, never collapsed. NULL confidence says so in words. */}
-              <p className="border-t border-[#CAC4D0]/60 pt-3 text-xs text-muted-foreground">
+              <p className="border-t border-outline-variant/60 pt-3 text-xs text-muted-foreground">
                 {suggestion.modelName}
                 {suggestion.modelVersion === null ? "" : ` (${suggestion.modelVersion})`} · prompt{" "}
                 {suggestion.promptVersion} · {formatConfidenceBps(suggestion.confidenceBps)}

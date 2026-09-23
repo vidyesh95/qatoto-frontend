@@ -111,7 +111,7 @@ export default function OrderDeliveryAddressReveal({
           </address>
           {/* Said AFTER the reveal too, because this is the moment the seller might copy it somewhere
               the platform cannot see. */}
-          <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+          <p className="mt-2 text-xs leading-4 text-muted-foreground">
             This access has been recorded. Use it only to fulfil this order.
           </p>
         </>

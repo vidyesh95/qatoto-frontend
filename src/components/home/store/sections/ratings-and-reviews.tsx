@@ -60,17 +60,17 @@ export default function RatingsAndReviews({
 
   if (result === undefined) {
     return (
-      <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
-        <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
-        <p className="pt-2 text-xs text-[#6F7979]">Loading reviews…</p>
+      <section className="border-t border-outline-variant/60 px-4 py-4 lg:px-6">
+        <h2 className="text-sm tracking-normal text-foreground">Ratings and reviews</h2>
+        <p className="pt-2 text-xs text-outline-strong">Loading reviews…</p>
       </section>
     );
   }
 
   if (!result.success) {
     return (
-      <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
-        <h2 className="pb-2 text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
+      <section className="border-t border-outline-variant/60 px-4 py-4 lg:px-6">
+        <h2 className="pb-2 text-sm tracking-normal text-foreground">Ratings and reviews</h2>
         <StoreErrorPanel message={result.error.message} />
       </section>
     );
@@ -84,11 +84,11 @@ export default function RatingsAndReviews({
   const hasActiveFilter = rating !== null || hasMediaOnly;
 
   return (
-    <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
-      <h2 className="pb-3 text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
+    <section className="border-t border-outline-variant/60 px-4 py-4 lg:px-6">
+      <h2 className="pb-3 text-sm tracking-normal text-foreground">Ratings and reviews</h2>
 
       {!hasAnyReviews ? (
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
           No reviews yet. Reviews can only be left by a buyer whose order completed, so this is a
           new listing rather than an unpopular one.
         </p>
@@ -96,10 +96,10 @@ export default function RatingsAndReviews({
         <>
           <div className="flex flex-wrap items-start gap-6 pb-3">
             <div>
-              <p className="text-3xl leading-9 font-medium text-[#191C1C]">
+              <p className="text-3xl leading-9 font-medium text-foreground">
                 {summary.averageRating === null ? "—" : summary.averageRating.toFixed(1)}
               </p>
-              <p className="text-xs leading-4 text-[#6F7979]">
+              <p className="text-xs leading-4 text-outline-strong">
                 {formatCountLabel(summary.reviewCount)}{" "}
                 {summary.reviewCount === 1 ? "review" : "reviews"}
               </p>
@@ -112,14 +112,14 @@ export default function RatingsAndReviews({
                   summary.reviewCount === 0 ? 0 : (count / summary.reviewCount) * 100;
                 return (
                   <li key={ratingValue} className="flex items-center gap-2">
-                    <span className="w-3 text-[11px] text-[#6F7979]">{ratingValue}</span>
-                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E0E3E3]">
+                    <span className="w-3 text-xs text-outline-strong">{ratingValue}</span>
+                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                       <span
-                        className="block h-full rounded-full bg-[#00696E]"
+                        className="block h-full rounded-full bg-primary-imprint"
                         style={{ width: `${sharePercentage}%` }}
                       />
                     </span>
-                    <span className="w-8 text-right text-[11px] text-[#6F7979]">{count}</span>
+                    <span className="w-8 text-right text-xs text-outline-strong">{count}</span>
                   </li>
                 );
               })}
@@ -136,9 +136,9 @@ export default function RatingsAndReviews({
                 ["Quality", summary.scoreAverages.quality],
               ] as const
             ).map(([label, score]) => (
-              <li key={label} className="text-xs leading-4 text-[#6F7979]">
+              <li key={label} className="text-xs leading-4 text-outline-strong">
                 {label}:{" "}
-                <span className="font-medium text-[#191C1C]">
+                <span className="font-medium text-foreground">
                   {score.average === null ? "Not rated yet" : score.average.toFixed(1)}
                 </span>
                 {score.count > 0 && <span> ({score.count})</span>}
@@ -156,8 +156,8 @@ export default function RatingsAndReviews({
                 onClick={() => setSort(sortOption)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   sort === sortOption
-                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
-                    : "border-[#CAC4D0] text-[#6F7979]"
+                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                    : "border-outline-variant text-outline-strong"
                 }`}
               >
                 {REVIEW_SORT_LABELS[sortOption]}
@@ -174,8 +174,8 @@ export default function RatingsAndReviews({
                 onClick={() => setRating(rating === ratingValue ? null : ratingValue)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   rating === ratingValue
-                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
-                    : "border-[#CAC4D0] text-[#6F7979]"
+                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                    : "border-outline-variant text-outline-strong"
                 }`}
               >
                 {ratingValue} star
@@ -188,8 +188,8 @@ export default function RatingsAndReviews({
                 onClick={() => setHasMediaOnly(!hasMediaOnly)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   hasMediaOnly
-                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
-                    : "border-[#CAC4D0] text-[#6F7979]"
+                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                    : "border-outline-variant text-outline-strong"
                 }`}
               >
                 With photos ({summary.reviewsWithMediaCount})
@@ -198,7 +198,7 @@ export default function RatingsAndReviews({
           </div>
 
           {items.length === 0 ? (
-            <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+            <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
               {hasActiveFilter ? "No reviews match those filters." : "No reviews on this page."}
             </p>
           ) : (
@@ -216,7 +216,7 @@ export default function RatingsAndReviews({
               belongs to the reviews route, and following it here would grow the product page into
               an unbounded list. */}
           {result.data.page.hasMore && (
-            <p className="pt-3 text-xs leading-4 text-[#6F7979]">
+            <p className="pt-3 text-xs leading-4 text-outline-strong">
               Showing the first {items.length} of {formatCountLabel(summary.reviewCount)} reviews.
             </p>
           )}
@@ -258,27 +258,27 @@ function ReviewCard({
   const videos = review.media.filter((media) => media.mediaKind === "youtube_video");
 
   return (
-    <article className="border-b border-[#CAC4D0]/60 pb-4">
+    <article className="border-b border-outline-variant/60 pb-4">
       <div className="flex items-center gap-2 pb-1">
-        <span className="rounded bg-[#00696E] px-1.5 py-0.5 text-[11px] font-medium text-white">
+        <span className="rounded bg-primary-imprint px-1.5 py-0.5 text-xs font-medium text-primary-imprint-foreground">
           {review.rating.toFixed(1)}
         </span>
         {/* A null reviewer is an organization that is not publicly visible. Its identity is not
             disclosed by the act of leaving a review. */}
-        <span className="text-xs font-medium text-[#191C1C]">
+        <span className="text-xs font-medium text-foreground">
           {review.reviewer?.displayName ?? "Verified buyer"}
         </span>
-        <span className="text-[11px] text-[#6F7979]">
+        <span className="text-xs text-outline-strong">
           {formatIsoInstantLabel(review.createdAt)}
         </span>
       </div>
 
-      <p className="text-sm leading-5 whitespace-pre-line text-[#191C1C]">{review.body}</p>
+      <p className="text-sm leading-5 whitespace-pre-line text-foreground">{review.body}</p>
 
       {photos.length > 0 && (
         <ul className="flex gap-2 pt-2">
           {photos.map((photo) => (
-            <li key={photo.id} className="relative size-16 overflow-hidden rounded bg-[#F5F5F5]">
+            <li key={photo.id} className="relative size-16 overflow-hidden rounded bg-muted">
               {photo.url !== null && (
                 <Image src={photo.url} fill sizes="64px" alt="" className="object-cover" />
               )}
@@ -298,7 +298,7 @@ function ReviewCard({
                   href={`https://www.youtube.com/watch?v=${video.youtubeVideoId}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-medium text-[#2A76FD]"
+                  className="text-xs font-medium text-blue-600"
                 >
                   Watch buyer video
                 </a>
@@ -309,7 +309,7 @@ function ReviewCard({
       )}
 
       <div className="flex items-center gap-3 pt-2">
-        <span className="text-[11px] text-[#6F7979]">
+        <span className="text-xs text-outline-strong">
           {formatCountLabel(review.helpfulCount)} found this helpful
         </span>
         {canVote && (
@@ -326,10 +326,10 @@ function ReviewCard({
                 isHelpful: !hasVotedHelpful,
               })
             }
-            className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+            className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
               hasVotedHelpful
-                ? "bg-[#00696E] text-white"
-                : "bg-transparent text-[#00696E] outline -outline-offset-1 outline-[#00696E]"
+                ? "bg-primary-imprint text-primary-imprint-foreground"
+                : "bg-transparent text-primary-imprint outline -outline-offset-1 outline-primary-imprint"
             }`}
           >
             {hasVotedHelpful ? "Helpful" : "Mark helpful"}
@@ -356,11 +356,11 @@ function ReviewCard({
       </div>
 
       {review.reply !== null && (
-        <div className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2">
-          <p className="text-[11px] font-medium text-[#191C1C]">
+        <div className="mt-2 rounded-lg bg-muted px-3 py-2">
+          <p className="text-xs font-medium text-foreground">
             {review.reply.responder?.displayName ?? "Seller"} replied
           </p>
-          <p className="text-xs leading-4 whitespace-pre-line text-[#191C1C]">
+          <p className="text-xs leading-4 whitespace-pre-line text-foreground">
             {review.reply.body}
           </p>
         </div>

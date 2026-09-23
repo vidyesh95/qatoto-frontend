@@ -121,7 +121,7 @@ export default function SupplierDirectory({
         {regions.length > 0 && <FilterChipRow options={regionChips} ariaLabel="Filter by region" />}
         <FilterChipRow options={verificationChips} ariaLabel="Filter by verification status" />
         {selectedCapabilitySlugs.length > 1 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Showing partners with all {selectedCapabilitySlugs.length} selected capabilities.
           </p>
         )}

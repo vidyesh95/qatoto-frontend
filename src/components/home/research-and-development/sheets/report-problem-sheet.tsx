@@ -215,7 +215,7 @@ export default function ReportProblemSheet({
             <p className="px-4 pb-6 text-center text-xs text-muted-foreground">
               <Link
                 href="/research-and-development/my-reports"
-                className="font-medium text-[#00696E] underline underline-offset-2"
+                className="font-medium text-primary-imprint underline underline-offset-2"
               >
                 See your reports
               </Link>{" "}
@@ -300,7 +300,7 @@ export default function ReportProblemSheet({
             <button
               type="submit"
               disabled={!isFormValid || reportMutation.isPending}
-              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
               {reportMutation.isPending ? "Sending…" : "Send my report"}
             </button>

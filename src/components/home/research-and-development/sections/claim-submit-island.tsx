@@ -98,7 +98,7 @@ export default function ClaimSubmitIsland({
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 p-4">
+    <section className="space-y-4 rounded-2xl border border-outline-variant/60 p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Claim your effort</h3>
         <p className="text-xs text-muted-foreground">
@@ -170,7 +170,7 @@ export default function ClaimSubmitIsland({
                     aria-pressed={selectedReceiptIds.includes(receipt.id)}
                     className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
                       selectedReceiptIds.includes(receipt.id)
-                        ? "bg-[#00696E] text-white"
+                        ? "bg-primary-imprint text-primary-imprint-foreground"
                         : "bg-muted text-foreground"
                     }`}
                   >
@@ -206,7 +206,7 @@ export default function ClaimSubmitIsland({
         <button
           type="submit"
           disabled={submitMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {submitMutation.isPending ? "Filing…" : "File the claim"}
         </button>
@@ -217,7 +217,7 @@ export default function ClaimSubmitIsland({
         )}
       </form>
 
-      <div className="space-y-2 border-t border-[#CAC4D0]/40 pt-3">
+      <div className="space-y-2 border-t border-outline-variant/40 pt-3">
         <span className={LABEL_CLASS}>Upload a receipt</span>
         <select
           value={receiptKind}
@@ -271,7 +271,7 @@ export default function ClaimSubmitIsland({
                     type="button"
                     disabled={deleteReceiptMutation.isPending}
                     onClick={() => deleteReceiptMutation.mutate(receipt.id)}
-                    className="cursor-pointer font-medium text-[#00696E] disabled:opacity-50"
+                    className="cursor-pointer font-medium text-primary-imprint disabled:opacity-50"
                   >
                     Remove
                   </button>

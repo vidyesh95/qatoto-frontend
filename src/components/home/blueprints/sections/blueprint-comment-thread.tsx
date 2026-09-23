@@ -70,7 +70,7 @@ function BlueprintCommentRow({
 
   if (comment.body === null || comment.author === null) {
     return (
-      <p className={`${isReply ? "text-[11px]" : "text-xs"} text-[#6F7979] italic`}>[deleted]</p>
+      <p className={`${isReply ? "text-xs" : "text-xs"} text-outline-strong italic`}>[deleted]</p>
     );
   }
 
@@ -83,8 +83,8 @@ function BlueprintCommentRow({
         className={`${isReply ? "size-5" : "size-6"} mt-0.5`}
       />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#6F7979]">
-          <span className="font-medium text-[#00696E]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-outline-strong">
+          <span className="font-medium text-primary-imprint">
             {comment.author.handle === null
               ? comment.author.displayName
               : `@${comment.author.handle}`}
@@ -104,8 +104,10 @@ function BlueprintCommentRow({
                   // Handled by mutation error
                 }
               }}
-              className={`inline-flex cursor-pointer items-center gap-1 tabular-nums transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
-                comment.viewerState.hasLiked ? "font-medium text-[#BA1A1A]" : "text-[#6F7979]"
+              className={`inline-flex cursor-pointer items-center gap-1 tabular-nums transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
+                comment.viewerState.hasLiked
+                  ? "font-medium text-destructive"
+                  : "text-outline-strong"
               }`}
               aria-label={comment.viewerState.hasLiked ? "Unlike comment" : "Like comment"}
             >
@@ -118,7 +120,7 @@ function BlueprintCommentRow({
                 alt=""
                 width={12}
                 height={12}
-                className={`size-3 shrink-0 ${comment.viewerState.hasLiked ? "brightness-50 hue-rotate-[-50deg] sepia" : "opacity-55"}`}
+                className={`size-3 shrink-0 ${comment.viewerState.hasLiked ? "brightness-50 -hue-rotate-60 sepia" : "opacity-55"}`}
               />
               <span aria-hidden="true">{formatCompactCountLabel(comment.likeCount)}</span>
               <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
@@ -143,7 +145,7 @@ function BlueprintCommentRow({
               <button
                 type="button"
                 onClick={() => setIsReplying((previous) => !previous)}
-                className="cursor-pointer text-[11px] font-medium text-[#00696E] hover:underline"
+                className="cursor-pointer text-xs font-medium text-primary-imprint hover:underline"
               >
                 {isReplying ? "Cancel" : "Reply"}
               </button>
@@ -156,7 +158,7 @@ function BlueprintCommentRow({
               <button
                 type="button"
                 onClick={() => setIsEditing((previous) => !previous)}
-                className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+                className="cursor-pointer text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
                 {isEditing ? "Cancel" : "Edit"}
               </button>
@@ -167,7 +169,7 @@ function BlueprintCommentRow({
             <>
               <span aria-hidden="true">·</span>
               {isConfirmingDelete ? (
-                <span className="inline-flex items-center gap-1.5 text-[11px]">
+                <span className="inline-flex items-center gap-1.5 text-xs">
                   <span className="font-medium text-destructive">Delete?</span>
                   <button
                     type="button"
@@ -196,7 +198,7 @@ function BlueprintCommentRow({
                 <button
                   type="button"
                   onClick={() => setIsConfirmingDelete(true)}
-                  className="cursor-pointer text-[11px] text-muted-foreground hover:text-destructive hover:underline"
+                  className="cursor-pointer text-xs text-muted-foreground hover:text-destructive hover:underline"
                 >
                   Delete
                 </button>
@@ -282,11 +284,11 @@ export default function BlueprintCommentThread({
   const threadGroups = groupIntoThreads(comments);
 
   return (
-    <section id="discussion" className="scroll-mt-20 border-t border-[#CAC4D0]/60 pt-6">
+    <section id="discussion" className="scroll-mt-20 border-t border-outline-variant/60 pt-6">
       <h2 className="text-sm font-medium text-foreground">Discussion</h2>
 
       {threadGroups.length === 0 ? (
-        <p className="mt-4 text-sm text-[#6F7979]">No comments yet.</p>
+        <p className="mt-4 text-sm text-outline-strong">No comments yet.</p>
       ) : (
         <ul className="mt-5 space-y-6">
           {threadGroups.map((group) => (
@@ -301,7 +303,7 @@ export default function BlueprintCommentThread({
                 onUpdateComment={onUpdateComment}
               />
               {group.replies.length === 0 ? null : (
-                <ul className="mt-3 ml-3 space-y-4 border-l border-[#CAC4D0]/60 pl-4">
+                <ul className="mt-3 ml-3 space-y-4 border-l border-outline-variant/60 pl-4">
                   {group.replies.map((reply) => (
                     <li key={reply.commentId}>
                       <BlueprintCommentRow

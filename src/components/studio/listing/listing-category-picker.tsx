@@ -103,7 +103,7 @@ export function ListingCategoryPicker({
           value={selectedRootId}
           disabled={isDisabled || rootsQuery.isPending}
           onChange={(changeEvent) => handleRootChange(changeEvent.target.value)}
-          className="h-12 w-full cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+          className="h-12 w-full cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
         >
           <option value="">
             {rootsQuery.isPending ? "Loading categories…" : "Select a category"}
@@ -146,7 +146,7 @@ export function ListingCategoryPicker({
                     },
               );
             }}
-            className="h-12 w-full cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+            className="h-12 w-full cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
           >
             <option value="">Select a sub-category</option>
             {children.map((childCategory) => (
@@ -166,7 +166,7 @@ export function ListingCategoryPicker({
         type="button"
         disabled={isDisabled}
         onClick={() => setIsRequesting((wasRequesting) => !wasRequesting)}
-        className="cursor-pointer self-start text-xs text-[#00696E] underline disabled:cursor-not-allowed disabled:opacity-50"
+        className="cursor-pointer self-start text-xs text-primary-imprint underline disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isRequesting ? "Never mind — pick an existing category" : "My category isn't listed"}
       </button>
@@ -187,7 +187,7 @@ export function ListingCategoryPicker({
       )}
 
       {value?.kind === "request" && (
-        <p className="rounded-lg border border-[#CAC4D0]/60 bg-muted/40 p-2 text-xs text-muted-foreground">
+        <p className="rounded-lg border border-outline-variant/60 bg-muted/40 p-2 text-xs text-muted-foreground">
           This listing will publish under <strong>Misc</strong> and move into the new category once
           a moderator approves your request. It stays visible and buyable the whole time.
         </p>
@@ -228,7 +228,7 @@ function CategoryRequestPanel({
   const canSubmit = !isDisabled && !submitRequest.isPending && trimmedName.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-[#CAC4D0]/60 p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-outline-variant/60 p-3">
       {pendingRequests.length > 0 && (
         <label className="flex flex-col gap-1.5 text-xs">
           <span className="font-medium">Use a request you already made</span>
@@ -329,7 +329,7 @@ function CategoryRequestPanel({
             },
           );
         }}
-        className="cursor-pointer self-start rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#00393C] disabled:cursor-not-allowed disabled:opacity-60"
+        className="cursor-pointer self-start rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitRequest.isPending ? "Requesting…" : "Request this category"}
       </button>

@@ -78,7 +78,7 @@ function AttestationBody({
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+        <h2 className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
           Payment
         </h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ function AttestationForm({
           <button
             type="submit"
             disabled={!isSubmittable}
-            className="mt-3 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-3 cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             {recordAttestation.isPending ? "Recording…" : "Record payment"}
           </button>
@@ -282,7 +282,7 @@ function AttestationForm({
           the wrong rail, or a claim already recorded. Paraphrasing either loses the half that
           says what to do instead. */}
       {result !== undefined && !result.success ? (
-        <p className="mt-2 text-xs leading-4 text-[#BA1A1A]">{result.error.message}</p>
+        <p className="mt-2 text-xs leading-4 text-destructive">{result.error.message}</p>
       ) : null}
     </form>
   );

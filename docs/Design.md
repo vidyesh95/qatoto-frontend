@@ -239,6 +239,23 @@ the same system, half of it written down.
 - **Outline Variant** (`oklch(0.8287 0.0178 308.22)`, ships as `#CAC4D0`): the softer
   divider used inside R&D panels and dashed empty-state boundaries.
 
+### Token Reference & Measured Contrast Ratios
+
+| Token Name                     | Light Value (from hex)                    | Dark Value                                        | Light Contrast            | Dark Contrast             | WCAG Status                                                                                        |
+| :----------------------------- | :---------------------------------------- | :------------------------------------------------ | :------------------------ | :------------------------ | :------------------------------------------------------------------------------------------------- |
+| `--primary-imprint`            | `oklch(0.4736 0.0805 200.55)` ← `#00696E` | `oklch(0.7278 0.1195 200.43)` (`#1DBDC5`)         | **6.47:1** vs white       | **7.57:1** vs ground      | **AA & AAA Pass** (> 4.5:1 floor)                                                                  |
+| `--primary-imprint-deep`       | `oklch(0.3133 0.0533 200.58)` ← `#00393C` | `oklch(0.2500 0.0400 200.58)`                     | **11.60:1** vs white      | **1.15:1** (ground)       | Hover/active on imprint; dark hero ground                                                          |
+| `--primary-imprint-foreground` | `oklch(1 0 0)` (white)                    | `oklch(0.2178 0 0)` (dark ink)                    | **6.47:1** on imprint     | **7.57:1** on imprint     | **AA & AAA Pass** (> 4.5:1 floor)                                                                  |
+| `--outline-strong`             | `oklch(0.5677 0.0120 196.82)` ← `#6F7979` | `oklch(0.6800 0.0120 196.82)` (_designer-chosen_) | **4.48:1** vs white       | **6.09:1** vs ground      | **AA Pass** (> 3:1 UI component floor)                                                             |
+| `--outline-variant`            | `oklch(0.8287 0.0178 308.22)` ← `#CAC4D0` | `oklch(0.4382 0.0154 308.22)` (_designer-chosen_) | **1.35:1** vs white       | **2.02:1** vs surface     | Decorative hairline only; never for meaningful boundary                                            |
+| `--color-cad-selection`        | `oklch(0.6759 0.2175 38.8)` ← `#ff5500`   | Same as light (fixed)                             | **3.21:1** vs white       | **5.43:1** vs ground      | 3D engine viewport mesh & UI callout parity. Note: callout pins use `text-black` (6.55:1 AAA pass) |
+| `--tracking-eyebrow`           | `0.18em`                                  | `0.18em`                                          | N/A                       | N/A                       | Documented Eyebrow kicker letter-spacing                                                           |
+| `--color-band-*`               | `oklch(0.2178)` → `oklch(0.4736)`         | Same as light (fixed)                             | **> 6.5:1** vs text-white | **> 6.5:1** vs text-white | Permanent dark hero gradient in both themes                                                        |
+
+_Note on `--outline-variant`: At 1.35:1 (light) and 2.02:1 (dark), `--outline-variant` fails the 3:1 WCAG non-text contrast floor. It must **never** be used for an interactive boundary or a boundary that carries structural meaning. It is strictly reserved for subtle hairline dividers and decorative empty-state frames. (Known wart: `--outline-strong` and `--outline-variant` collide with Tailwind's `outline-*` utility → `outline-outline-strong`. If ever renamed: `--border-subtle` / `--border-strong`)._
+
+_Note on `--primary` vs `--primary-imprint`: In this repository, `--primary` is the pale container wash (`oklch(0.9109 0.0295 199.2757)`) paired with dark `--primary-foreground`. In standard shadcn, `--primary` is the solid brand color. Any standard shadcn component added to the codebase (such as the default variant of `Button`) will render as a pale mint container rather than the solid action teal. That distinction is deliberate and why `--primary-imprint` exists as our authoritative solid action color. Do not "correct" `--primary` to match upstream shadcn._
+
 ### Named Rules
 
 **The Container Rule.** A wash is a container tone. It carries dark text and it never carries

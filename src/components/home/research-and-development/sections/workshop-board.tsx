@@ -7,9 +7,9 @@ import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
 import type { WorkshopBoardColumn, WorkshopTaskPriority } from "@/lib/rnd/workshop.schemas";
 
 const PRIORITY_DOT_CLASSES: Record<WorkshopTaskPriority, string> = {
-  high: "bg-[#BA1A1A]",
-  medium: "bg-[#8A6116]",
-  low: "bg-[#6F7979]",
+  high: "bg-destructive",
+  medium: "bg-amber-700",
+  low: "bg-outline-strong",
 };
 
 const PRIORITY_LABELS: Record<WorkshopTaskPriority, string> = {
@@ -59,7 +59,7 @@ export default function WorkshopBoard({ boardColumns, teamMembers }: WorkshopBoa
                 return (
                   <div
                     key={task.id}
-                    className="space-y-2 rounded-xl border border-[#CAC4D0]/60 bg-background p-3"
+                    className="space-y-2 rounded-xl border border-outline-variant/60 bg-background p-3"
                   >
                     <p className="text-sm font-medium">{task.title}</p>
                     {task.description && (

@@ -72,7 +72,7 @@ export default function StatementWalkthrough({
         </p>
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <div className="space-y-4 rounded-2xl border border-outline-variant/60 p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <p className="font-semibold">
@@ -83,7 +83,7 @@ export default function StatementWalkthrough({
               {period.timeZone}
             </p>
           </div>
-          <span className="rounded-full bg-[#00696E]/10 px-2 py-0.5 text-xs font-medium text-[#00696E]">
+          <span className="rounded-full bg-primary-imprint/10 px-2 py-0.5 text-xs font-medium text-primary-imprint">
             Finalized
           </span>
         </div>
@@ -106,7 +106,7 @@ export default function StatementWalkthrough({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-left text-sm">
+          <table className="w-full min-w-xl text-left text-sm">
             <thead className="text-xs text-muted-foreground">
               <tr>
                 <th scope="col" className="py-2 font-medium">
@@ -127,7 +127,7 @@ export default function StatementWalkthrough({
               {period.lines.map((line) => {
                 const paymentState = derivePaymentState(line, period.payments);
                 return (
-                  <tr key={line.id} className="border-t border-[#CAC4D0]/40 align-top">
+                  <tr key={line.id} className="border-t border-outline-variant/40 align-top">
                     <td className="py-3 pr-3">
                       {memberLabelsById[line.memberId] ?? "A team member"}
                     </td>

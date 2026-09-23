@@ -28,16 +28,16 @@ import {
 } from "@/lib/store/merchandising.schemas";
 
 const SLOT_STATE_CLASS: Record<StorePathwaySlot["state"], string> = {
-  available: "bg-[#D6E3FF] text-[#00696E]",
+  available: "bg-secondary text-primary-imprint",
   substituted: "bg-amber-100 text-amber-900",
-  unavailable: "bg-[#F2F4F4] text-[#6F7979]",
+  unavailable: "bg-muted text-outline-strong",
 };
 
 export default function PathwaySlotList({ slots }: { slots: StorePathwaySlot[] }) {
   if (slots.length === 0) {
     return (
       <section className="px-4 pt-6 lg:px-6">
-        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
           This set has no pieces defined yet.
         </p>
       </section>
@@ -46,7 +46,9 @@ export default function PathwaySlotList({ slots }: { slots: StorePathwaySlot[] }
 
   return (
     <section aria-label="Pieces in this set" className="pt-6">
-      <h2 className="px-4 pb-3 text-base font-medium text-[#191C1C] lg:px-6">Pieces in this set</h2>
+      <h2 className="px-4 pb-3 text-base font-medium text-foreground lg:px-6">
+        Pieces in this set
+      </h2>
 
       <ul className="space-y-4 px-4 lg:px-6">
         {slots.map((slot) => (
@@ -70,24 +72,24 @@ function SlotBlock({ slot }: { slot: StorePathwaySlot }) {
   );
 
   return (
-    <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="flex-1 text-sm leading-5 font-medium text-[#191C1C]">{slot.roleLabel}</p>
+        <p className="flex-1 text-sm leading-5 font-medium text-foreground">{slot.roleLabel}</p>
 
-        <span className="text-[11px] leading-4 text-[#6F7979]">
+        <span className="text-xs leading-4 text-outline-strong">
           × {formatCountLabel(slot.quantity)}
         </span>
 
         {/* Required vs optional changes what an unavailable slot MEANS — an optional gap is a
             choice the buyer skipped, a required one makes the set unbuyable. */}
         {slot.isRequired ? (
-          <span className="text-[11px] leading-4 font-medium text-[#191C1C]">Required</span>
+          <span className="text-xs leading-4 font-medium text-foreground">Required</span>
         ) : (
-          <span className="text-[11px] leading-4 text-[#6F7979]">Optional</span>
+          <span className="text-xs leading-4 text-outline-strong">Optional</span>
         )}
 
         <span
-          className={`rounded px-1.5 py-0.5 text-[11px] leading-4 font-medium ${SLOT_STATE_CLASS[slot.state]}`}
+          className={`rounded px-1.5 py-0.5 text-xs leading-4 font-medium ${SLOT_STATE_CLASS[slot.state]}`}
         >
           {PATHWAY_SLOT_STATE_LABELS[slot.state]}
         </span>
@@ -97,7 +99,7 @@ function SlotBlock({ slot }: { slot: StorePathwaySlot }) {
           slot fell through to rank 1 instead of disappearing. That fall-through is what candidates
           exist for — a set is only as robust as its substitutes. */}
       {slot.state === "substituted" && (
-        <p className="mt-1 text-[11px] leading-4 text-amber-900">
+        <p className="mt-1 text-xs leading-4 text-amber-900">
           The first choice for this role could not be supplied, so an alternative is shown.
         </p>
       )}
@@ -115,14 +117,14 @@ function SlotBlock({ slot }: { slot: StorePathwaySlot }) {
 
       {alternativeCandidates.length > 0 && (
         <details className="mt-3">
-          <summary className="cursor-pointer text-xs font-medium text-[#00696E]">
+          <summary className="cursor-pointer text-xs font-medium text-primary-imprint">
             {alternativeCandidates.length}{" "}
             {alternativeCandidates.length === 1 ? "alternative" : "alternatives"} for this role
           </summary>
           <ul className="mt-2 space-y-2">
             {alternativeCandidates.map((candidate) => (
-              <li key={candidate.key} className="rounded-lg bg-[#F2F4F4] px-3 py-2">
-                <p className="text-xs leading-4 font-medium text-[#191C1C]">
+              <li key={candidate.key} className="rounded-lg bg-muted px-3 py-2">
+                <p className="text-xs leading-4 font-medium text-foreground">
                   {candidate.product.title}
                 </p>
                 <CandidateFacts candidate={candidate} slotQuantity={slot.quantity} />
@@ -139,7 +141,7 @@ function SlotBlock({ slot }: { slot: StorePathwaySlot }) {
 function SlotUnavailableNote({ slot }: { slot: StorePathwaySlot }) {
   if (slot.unavailableReason === null) {
     return (
-      <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+      <p className="mt-1 text-xs leading-4 text-outline-strong">
         No piece is available for this role right now.
       </p>
     );
@@ -148,13 +150,13 @@ function SlotUnavailableNote({ slot }: { slot: StorePathwaySlot }) {
   switch (slot.unavailableReason.type) {
     case "NO_ELIGIBLE_CANDIDATE":
       return (
-        <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           Nothing is listed for this role right now.
         </p>
       );
     case "VARIANT_SELECTION_REQUIRED":
       return (
-        <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           This piece needs a variant chosen before it can be added.
         </p>
       );
@@ -162,7 +164,7 @@ function SlotUnavailableNote({ slot }: { slot: StorePathwaySlot }) {
       // The underlying pricing tag, not a generic shrug. "Only 4 left" and "the seller retired the
       // variant" are different problems and the buyer can act on one of them.
       return (
-        <p className="mt-1 text-[11px] leading-4 text-[#6F7979]">
+        <p className="mt-1 text-xs leading-4 text-outline-strong">
           {pricingErrorLabel(slot.unavailableReason.pricingError)}
         </p>
       );
@@ -183,7 +185,7 @@ function CandidateFacts({
   return (
     <div className="min-w-0 flex-1 space-y-1">
       {candidate.variantName !== null && (
-        <p className="text-xs leading-4 text-[#191C1C]">Variant: {candidate.variantName}</p>
+        <p className="text-xs leading-4 text-foreground">Variant: {candidate.variantName}</p>
       )}
 
       <CandidatePricing candidate={candidate} slotQuantity={slotQuantity} />
@@ -192,7 +194,7 @@ function CandidateFacts({
           inference or the seller's own claim; only a moderator-curated one has been checked, and
           that distinction does not reach this projection — so nothing here is worded as verified. */}
       {candidate.relationKind !== null && (
-        <p className="text-[11px] leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           {PRODUCT_RELATION_KIND_LABELS[candidate.relationKind]}
           {candidate.sourceKind === "derived"
             ? " · suggested from buying patterns and seller claims, not checked by Qatoto"
@@ -215,11 +217,11 @@ function CandidatePricing({
   switch (pricing.status) {
     case "priced":
       return (
-        <p className="text-xs leading-4 text-[#191C1C]">
+        <p className="text-xs leading-4 text-foreground">
           <span className="font-medium">
             {formatCentsLabel(pricing.lineTotalInCents, pricing.currency)}
           </span>{" "}
-          <span className="text-[#6F7979]">
+          <span className="text-outline-strong">
             for {formatCountLabel(slotQuantity)} ·{" "}
             {formatCentsLabel(pricing.unitPriceInCents, pricing.currency)} each
           </span>
@@ -229,16 +231,18 @@ function CandidatePricing({
       // Not an error: the server did not price this candidate on this read. Saying "no price shown"
       // is honest; printing a zero or falling back to the card's own price would not be, because the
       // card price is a list price and not this slot's line total.
-      return <p className="text-xs leading-4 text-[#6F7979]">No price shown for this piece.</p>;
+      return (
+        <p className="text-xs leading-4 text-outline-strong">No price shown for this piece.</p>
+      );
     case "unavailable":
       return (
-        <p className="text-xs leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           {pricingErrorLabel(pricing.pricingError)}
         </p>
       );
     case "variant_selection_required":
       return (
-        <p className="text-xs leading-4 text-[#6F7979]">
+        <p className="text-xs leading-4 text-outline-strong">
           Choose a variant to see this piece&apos;s price.
         </p>
       );

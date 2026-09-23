@@ -61,7 +61,7 @@ import {
   type CommunityContentReport,
 } from "@/lib/store/forum.schemas";
 
-const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 
 const PRIMARY_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
@@ -70,7 +70,7 @@ const QUIET_BUTTON_CLASS =
   "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
 const NOTE_FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-[#CAC4D0]/60 px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary";
+  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary";
 
 /** One shape for all four queues. `restricted` is first, and it wins over `loading`. */
 type QueueViewState<TRow> =
@@ -131,12 +131,12 @@ export default function CommunityModerationPage() {
       {/* Three distinct cases, said apart — a failed permission check is not the same as failing
           it, and neither is the same as passing it. */}
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so nothing here is loaded.
         </output>
       )}
       {staffContextQuery.isSuccess && !canModerateContent && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Moderating community content needs the `moderate_content` capability. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so these queues are not loaded.
         </output>
@@ -219,7 +219,7 @@ function renderQueueBody<TRow>(
       );
     case "empty":
       return (
-        <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           {emptyMessage}
         </p>
       );
@@ -344,14 +344,14 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
         </button>
       </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-2 text-xs leading-4 text-muted-foreground">
         {/* Said outright, because a moderator who thinks "reject" deletes will be surprised. */}
         Rejecting does not delete anything. The thread stays out of every public read and its author
         sees your reason on their own page.
       </p>
 
       {thread.replyCount > 0 && (
-        <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-2 text-xs leading-4 text-muted-foreground">
           {String(thread.replyCount)} repl{thread.replyCount === 1 ? "y" : "ies"}. Hiding one is a
           separate decision, made from the thread itself — a hidden reply keeps its place rather
           than vanishing.
@@ -480,7 +480,7 @@ function ContentReportCard({ report }: { report: CommunityContentReport }) {
         )}
       </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+      <p className="mt-2 text-xs leading-4 text-muted-foreground">
         Dismissing closes the report and does nothing to the text.
         {isReplyReport
           ? " Hiding is the separate decision, and a hidden reply keeps its place in the thread rather than vanishing."
@@ -557,7 +557,7 @@ function CofounderProfileCard({ profile }: { profile: AdminCofounderProfile }) {
       </p>
 
       {profile.priorVentures.length === 0 ? (
-        <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+        <p className="mt-2 text-xs leading-4 text-muted-foreground">
           {/* Said here so nobody treats it as a defect. It is the honest state for a first-timer. */}
           No prior ventures listed. That is not a reason on its own.
         </p>

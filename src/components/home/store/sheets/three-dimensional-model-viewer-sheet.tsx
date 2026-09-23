@@ -40,7 +40,7 @@ export default function ThreeDimensionalModelViewerSheet({
             alternateText={`${productTitle}, 3D model`}
           />
         </div>
-        <p className="shrink-0 px-4 py-3 text-xs leading-4 text-[#6F7979]">
+        <p className="shrink-0 px-4 py-3 text-xs leading-4 text-outline-strong">
           Drag to rotate · scroll or pinch to zoom · {model.fileName} (
           {formatByteSizeLabel(model.byteSize)})
         </p>

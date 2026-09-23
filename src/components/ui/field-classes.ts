@@ -3,5 +3,5 @@
 // render the same field shape, and the combobox must not depend on any of them.
 
 export const INPUT_CLASS =
-  "w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E]";
-export const LABEL_CLASS = "text-xs font-medium text-[#6F7979]";
+  "w-full rounded-lg border border-outline-strong bg-transparent px-3 py-2 text-sm outline-none focus:border-primary-imprint";
+export const LABEL_CLASS = "text-xs font-medium text-outline-strong";

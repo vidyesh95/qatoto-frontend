@@ -62,7 +62,7 @@ export default function SliceLedgerRowsIsland({
           </thead>
           <tbody>
             {ledger.rows.map((entry) => (
-              <tr key={entry.id} className="border-t border-[#CAC4D0]/40">
+              <tr key={entry.id} className="border-t border-outline-variant/40">
                 <td className="p-2 tabular-nums">{entry.sequenceNumber}</td>
                 <td className="p-2">{entry.memberName}</td>
                 <td className="p-2">

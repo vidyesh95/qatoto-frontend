@@ -18,11 +18,11 @@ export default function Press({ items }: { items: PressItem[] }) {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-secondary)_0%,transparent_60%)] opacity-70"
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-12">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-eyebrow text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-secondary" />
             Newsroom
           </span>
-          <h1 className="mt-6 font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-6xl">
+          <h1 className="mt-6 font-serif text-5xl leading-tight font-semibold tracking-tight sm:text-6xl">
             Updates from Qatoto.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
@@ -61,14 +61,14 @@ export default function Press({ items }: { items: PressItem[] }) {
                         alt=""
                         fill
                         sizes="(min-width: 768px) 260px, 100vw"
-                        className="object-cover transition group-hover:scale-[1.02]"
+                        className="object-cover transition group-hover:scale-105"
                       />
                     ) : (
                       <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_30%_30%,var(--color-secondary)_0%,transparent_60%),radial-gradient(40%_40%_at_80%_70%,var(--color-primary)_0%,transparent_60%)]" />
                     )}
                   </div>
                   <div className="flex flex-col justify-center">
-                    <div className="flex items-center gap-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                    <div className="flex items-center gap-3 text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
                       <span className="rounded-full bg-secondary/60 px-3 py-1 text-foreground">
                         {KIND_LABEL[item.kind]}
                       </span>

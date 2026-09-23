@@ -62,7 +62,7 @@ export default function MobileBottomNav() {
             key={item.href}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
-            className="flex flex-1 flex-col items-center gap-1 pt-3 pb-4 text-xs tracking-[0.5px]"
+            className="flex flex-1 flex-col items-center gap-1 pt-3 pb-4 text-xs tracking-wider"
           >
             <span
               className={`flex h-8 w-16 items-center justify-center rounded-full transition-colors ${

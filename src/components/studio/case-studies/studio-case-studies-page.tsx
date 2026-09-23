@@ -65,7 +65,7 @@ export default function StudioCaseStudiesPage() {
         </div>
         <Link
           href="/blueprints/case-studies/new"
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Write a case study
         </Link>
@@ -170,7 +170,7 @@ export default function StudioCaseStudiesPage() {
                       category: "case_study",
                       slug: submission.publicSlug,
                     })}
-                    className="mt-2 inline-block text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    className="mt-2 inline-block text-sm font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
                   >
                     View the case study
                   </Link>

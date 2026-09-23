@@ -24,7 +24,7 @@ import {
 } from "@/lib/image-file-check";
 
 /** The drag-active accent already used by the studio listing dropzone. */
-const DRAG_ACTIVE_BORDER_CLASS = "border-[#1DBDC5] bg-muted/40";
+const DRAG_ACTIVE_BORDER_CLASS = "border-primary-imprint bg-muted/40";
 
 /**
  * The picker's own state, as a union rather than a bag of flags.
@@ -283,7 +283,7 @@ export function AdminImagePicker({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 transition-colors ${
-          isDraggingOver ? DRAG_ACTIVE_BORDER_CLASS : "border-[#CAC4D0]/60"
+          isDraggingOver ? DRAG_ACTIVE_BORDER_CLASS : "border-outline-variant/60"
         } ${isDisabled ? "opacity-50" : ""}`}
       >
         <span className="flex size-16 items-center justify-center rounded-full bg-muted">
@@ -301,7 +301,7 @@ export function AdminImagePicker({
           type="button"
           disabled={isDisabled}
           onClick={() => fileInputRef.current?.click()}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           Choose image
         </button>
@@ -317,7 +317,7 @@ export function AdminImagePicker({
     return (
       <div className="space-y-2">
         <div
-          className={`${previewAspectClassName} w-full max-w-md overflow-hidden rounded-xl border border-[#CAC4D0]/60 bg-muted`}
+          className={`${previewAspectClassName} w-full max-w-md overflow-hidden rounded-xl border border-outline-variant/60 bg-muted`}
         >
           {/* A plain <img>: `next/image` routes through the optimizer, which cannot fetch a
               blob: URL. Same reason the studio listing previews use one. */}
@@ -340,7 +340,7 @@ export function AdminImagePicker({
             type="button"
             disabled={isDisabled}
             onClick={handleRemoveClick}
-            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           >
             Remove
           </button>

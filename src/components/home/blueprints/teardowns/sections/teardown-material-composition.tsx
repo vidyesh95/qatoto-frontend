@@ -62,7 +62,7 @@ function CompositionElementTable({
 
   return (
     <details className="mt-2" open={isOpenByDefault}>
-      <summary className="w-fit cursor-pointer list-none text-xs font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]">
+      <summary className="w-fit cursor-pointer list-none text-xs font-medium text-primary-imprint transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint">
         Composition, {elements.length} {elements.length === 1 ? "element" : "elements"}
       </summary>
 
@@ -73,19 +73,19 @@ function CompositionElementTable({
         just crowding it.
       */}
       <div className="mt-2 overflow-x-auto">
-        <table className="w-full min-w-[30rem] border-collapse text-left">
+        <table className="w-full min-w-120 border-collapse text-left">
           <thead>
             <tr className="border-b border-border">
-              <th className="py-1.5 pr-4 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+              <th className="py-1.5 pr-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 Element
               </th>
-              <th className="py-1.5 pr-4 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+              <th className="py-1.5 pr-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 Weight percent
               </th>
-              <th className="py-1.5 pr-4 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+              <th className="py-1.5 pr-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 Method
               </th>
-              <th className="py-1.5 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
+              <th className="py-1.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 Instrument
               </th>
             </tr>

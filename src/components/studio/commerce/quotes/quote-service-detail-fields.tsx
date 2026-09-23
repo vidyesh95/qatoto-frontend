@@ -376,7 +376,7 @@ export default function QuoteServiceDetailFields({
             maxEntries={50}
           />
           {/* BOTH OR NEITHER, stated above the pair rather than discovered as a 422. */}
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             A coverage limit needs its currency, and a currency needs its limit. Fill both or leave
             both blank — half a pair is refused.
           </p>
@@ -509,7 +509,7 @@ export default function QuoteServiceDetailFields({
             onValueChange={(nextValue) => patchDraft({ settlementRail: nextValue })}
             maxLength={80}
           />
-          <p className="text-[11px] leading-4 text-muted-foreground">
+          <p className="text-xs leading-4 text-muted-foreground">
             A notional amount needs its currency, and a currency needs its amount. Fill both or
             leave both blank.
           </p>

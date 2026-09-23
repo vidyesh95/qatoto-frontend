@@ -54,13 +54,13 @@ export default function AccountabilityExplainer() {
         {ACCOUNTABILITY_MECHANISMS.map((mechanism) => (
           <div
             key={mechanism.title}
-            className="flex flex-col rounded-2xl border border-[#CAC4D0]/60 p-4"
+            className="flex flex-col rounded-2xl border border-outline-variant/60 p-4"
           >
             <p className="font-medium">{mechanism.title}</p>
             <p className="mt-1 text-xs text-muted-foreground">{mechanism.blurb}</p>
             <Link
               href={mechanism.href}
-              className="mt-3 text-xs font-medium text-[#00696E] underline underline-offset-2"
+              className="mt-3 text-xs font-medium text-primary-imprint underline underline-offset-2"
             >
               {mechanism.linkLabel}
             </Link>

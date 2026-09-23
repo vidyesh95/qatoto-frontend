@@ -32,7 +32,7 @@ export default function ChecksStep() {
         <div className="flex items-center gap-3 rounded-xl border border-border px-4 py-3">
           {copyrightCheckStage === "checking" ? (
             <>
-              <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-border border-t-[#1DBDC5]" />
+              <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-border border-t-primary-imprint" />
               <div>
                 <p className="text-sm font-medium text-foreground">Copyright</p>
                 <p className="text-xs text-muted-foreground">Checking…</p>

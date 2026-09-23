@@ -35,11 +35,11 @@ export default function ShowcaseLaunchReceipt({
 
       <dl className="mt-4">
         <div className="border-t border-border py-2">
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">Launch</dt>
+          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Launch</dt>
           <dd className="mt-0.5 font-mono text-sm text-foreground">{receipt.submissionId}</dd>
         </div>
         <div className="border-t border-border py-2">
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">Received</dt>
+          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Received</dt>
           <dd className="mt-0.5 text-sm text-foreground">
             {formatIsoInstantLabel(receipt.receivedAt)}
           </dd>
@@ -47,7 +47,7 @@ export default function ShowcaseLaunchReceipt({
       </dl>
 
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
-        <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
+        <p className="text-xs tracking-wider text-muted-foreground uppercase">
           How it would look in the feed
         </p>
         <div className="mt-3">
@@ -59,13 +59,13 @@ export default function ShowcaseLaunchReceipt({
         <button
           type="button"
           onClick={onPostAnother}
-          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Post another launch
         </button>
         <Link
           href="/studio/launches"
-          className="rounded-full border border-[#00696E]/40 px-5 py-2.5 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          className="rounded-full border border-primary-imprint/40 px-5 py-2.5 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           See your launches
         </Link>

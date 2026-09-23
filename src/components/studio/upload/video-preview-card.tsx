@@ -101,7 +101,7 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Video link</p>
-            <p className="truncate text-sm text-[#1DBDC5]">{fakeWatchUrl}</p>
+            <p className="truncate text-sm text-primary-imprint">{fakeWatchUrl}</p>
           </div>
           <button
             type="button"

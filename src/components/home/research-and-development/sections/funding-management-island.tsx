@@ -95,7 +95,7 @@ export default function FundingManagementIsland({
   if (!canManageFunding(viewerProjectRole)) return null;
 
   return (
-    <div className="space-y-6 border-t border-[#CAC4D0]/40 pt-6">
+    <div className="space-y-6 border-t border-outline-variant/40 pt-6">
       <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Your rounds</h3>
 
@@ -104,7 +104,7 @@ export default function FundingManagementIsland({
             {rounds.map((round) => (
               <li
                 key={round.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
               >
                 <span>
                   {round.title}
@@ -121,7 +121,7 @@ export default function FundingManagementIsland({
                       onClick={() =>
                         roundLifecycleMutation.mutate({ roundId: round.id, action: "open" })
                       }
-                      className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                      className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
                     >
                       Open it
                     </button>
@@ -133,7 +133,7 @@ export default function FundingManagementIsland({
                       onClick={() =>
                         roundLifecycleMutation.mutate({ roundId: round.id, action: "close" })
                       }
-                      className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                      className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                     >
                       Close it
                     </button>
@@ -145,7 +145,7 @@ export default function FundingManagementIsland({
                       onClick={() =>
                         roundLifecycleMutation.mutate({ roundId: round.id, action: "delete" })
                       }
-                      className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                      className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                     >
                       Discard
                     </button>
@@ -157,7 +157,7 @@ export default function FundingManagementIsland({
         )}
 
         <form
-          className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+          className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
           onSubmit={(submitEvent) => {
             submitEvent.preventDefault();
             createRoundMutation.mutate(
@@ -209,7 +209,7 @@ export default function FundingManagementIsland({
           <button
             type="submit"
             disabled={createRoundMutation.isPending}
-            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             Create it as a draft
           </button>
@@ -224,7 +224,7 @@ export default function FundingManagementIsland({
             {milestones.map((milestone) => (
               <li
                 key={milestone.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant/60 p-3 text-sm"
               >
                 <span>
                   {milestone.title}
@@ -249,7 +249,7 @@ export default function FundingManagementIsland({
                         action: "complete",
                       })
                     }
-                    className="cursor-pointer rounded-full border border-[#00696E]/40 px-3 py-1.5 text-xs font-medium text-[#00696E] disabled:opacity-50"
+                    className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
                   >
                     Mark it done
                   </button>
@@ -260,7 +260,7 @@ export default function FundingManagementIsland({
         )}
 
         <form
-          className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4"
+          className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
           onSubmit={(submitEvent) => {
             submitEvent.preventDefault();
             createMilestoneMutation.mutate(
@@ -305,7 +305,7 @@ export default function FundingManagementIsland({
           <button
             type="submit"
             disabled={createMilestoneMutation.isPending}
-            className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
           >
             Add it
           </button>

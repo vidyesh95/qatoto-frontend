@@ -48,7 +48,7 @@ export default function TeamTab({ project, openRolesState }: TeamTabProps) {
             No open roles right now.{" "}
             <Link
               href="/research-and-development/team-building"
-              className="font-medium text-[#00696E] underline"
+              className="font-medium text-primary-imprint underline"
             >
               Browse every open role
             </Link>

@@ -106,7 +106,7 @@ export default function SignalAgreementBand({
   const rows = buildAgreementRows(demandSignals, assessments, commodityCategoryByHsCode);
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
+    <section className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-1">
         <h2 className="text-sm font-medium text-foreground">Both signals agree</h2>
         <p className="text-sm text-muted-foreground">
@@ -124,7 +124,7 @@ export default function SignalAgreementBand({
           the same place yet.
         </p>
       ) : (
-        <ul className="divide-y divide-[#CAC4D0]/60">
+        <ul className="divide-y divide-outline-variant/60">
           {rows.map((row) => (
             <li key={row.categorySlug} className="flex flex-wrap gap-x-4 gap-y-1 py-3">
               <div className="min-w-0 flex-1">
@@ -134,10 +134,10 @@ export default function SignalAgreementBand({
                   commodit{row.commodityCount === 1 ? "y" : "ies"} scoring 30+
                 </p>
               </div>
-              <div className="min-w-0 sm:max-w-[45%] sm:text-right">
+              <div className="min-w-0 sm:max-w-xs sm:text-right">
                 <Link
                   href={`/research-and-development/import-intelligence/${row.topCommodityHsCode}`}
-                  className="line-clamp-1 text-sm text-[#00696E] hover:underline"
+                  className="line-clamp-1 text-sm text-primary-imprint hover:underline"
                 >
                   {row.topCommodityLabel}
                 </Link>
@@ -150,7 +150,7 @@ export default function SignalAgreementBand({
         </ul>
       )}
 
-      <p className="border-t border-[#CAC4D0]/60 pt-3 text-xs text-muted-foreground">
+      <p className="border-t border-outline-variant/60 pt-3 text-xs text-muted-foreground">
         Joined on the research category, which is the coarsest link available — eight categories
         cover every commodity. Treat it as a hint about where to look, not as a match between a
         reported problem and a product.

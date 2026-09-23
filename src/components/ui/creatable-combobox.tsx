@@ -228,7 +228,7 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
     case "existing-option":
       return (
         <>
-          <span aria-hidden="true" className="w-3 shrink-0 text-[#00696E]">
+          <span aria-hidden="true" className="w-3 shrink-0 text-primary-imprint">
             {isRowSelectedOption ? "✓" : ""}
           </span>
           <span>
@@ -238,7 +238,7 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
           {comboboxRow.option.optionNote !== undefined && (
             // Not sr-only and not a title attribute: the note qualifies the option
             // the user is about to pick, so it has to be visible beside it.
-            <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {comboboxRow.option.optionNote}
             </span>
           )}
@@ -247,7 +247,7 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
     case "create-option":
       return (
         <>
-          <span aria-hidden="true" className="w-3 shrink-0 text-[#00696E]">
+          <span aria-hidden="true" className="w-3 shrink-0 text-primary-imprint">
             +
           </span>
           <span className="text-muted-foreground">
@@ -521,7 +521,7 @@ export default function CreatableCombobox({
             undersized, and there is no down-chevron in public/icons. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#6F7979]"
+          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-outline-strong"
         >
           <svg
             width="16"
@@ -557,7 +557,7 @@ export default function CreatableCombobox({
               mouseDownEvent.preventDefault();
             }}
             style={buildPopupStyle(comboboxState.popupPlacement)}
-            className="fixed z-100 overflow-y-auto rounded-lg border border-[#6F7979] bg-popover py-1 text-popover-foreground shadow-lg"
+            className="fixed z-100 overflow-y-auto rounded-lg border border-outline-strong bg-popover py-1 text-popover-foreground shadow-lg"
           >
             {comboboxRows.map((comboboxRow, rowIndex) => {
               const isRowHighlighted = rowIndex === comboboxState.highlightedRowIndex;
@@ -591,7 +591,7 @@ export default function CreatableCombobox({
                   }}
                   onClick={() => commitOptionRow(comboboxRow)}
                   className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm ${
-                    isRowHighlighted ? "bg-[#00696E]/10 text-[#00696E]" : ""
+                    isRowHighlighted ? "bg-primary-imprint/10 text-primary-imprint" : ""
                   } ${comboboxRow.kind === "create-option" ? "border-t border-border/50" : ""}`}
                 >
                   {renderComboboxRowContent(comboboxRow, isRowSelectedOption)}

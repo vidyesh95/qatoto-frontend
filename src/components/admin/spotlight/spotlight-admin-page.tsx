@@ -201,7 +201,7 @@ export default function SpotlightAdminPage() {
                 return (
                   <li
                     key={label}
-                    className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4"
+                    className="flex flex-col gap-3 rounded-2xl border border-outline-variant/60 p-4"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-sm font-medium">{label}</h3>
@@ -239,7 +239,7 @@ export default function SpotlightAdminPage() {
                     {canManageSpotlight && (
                       <button
                         type="button"
-                        className="rounded-full border border-[#CAC4D0] px-3 py-1.5 text-sm hover:bg-muted/50"
+                        className="rounded-full border border-outline-variant px-3 py-1.5 text-sm hover:bg-muted/50"
                         onClick={() => {
                           setActiveSlotIndex(isPicking ? null : slotIndex);
                           setSearchText("");
@@ -254,7 +254,7 @@ export default function SpotlightAdminPage() {
             </ul>
 
             {canManageSpotlight && activeSlotIndex !== null && (
-              <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <div className="space-y-3 rounded-2xl border border-outline-variant/60 p-4">
                 <label className="block space-y-1.5">
                   <span className="text-sm font-medium">
                     Search catalogue for {SLOT_LABELS[activeSlotIndex]}
@@ -264,7 +264,7 @@ export default function SpotlightAdminPage() {
                     value={searchText}
                     onChange={(event) => setSearchText(event.target.value)}
                     placeholder="Title or keywords"
-                    className="w-full rounded-xl border border-[#CAC4D0] bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-xl border border-outline-variant bg-background px-3 py-2 text-sm"
                   />
                 </label>
                 {trimmedSearch.length === 0 ? (
@@ -280,7 +280,7 @@ export default function SpotlightAdminPage() {
                 ) : (searchQuery.data?.data.length ?? 0) === 0 ? (
                   <p className="text-sm text-muted-foreground">No videos matched.</p>
                 ) : (
-                  <ul className="divide-y divide-[#CAC4D0]/40">
+                  <ul className="divide-y divide-outline-variant/40">
                     {searchQuery.data?.data.map((video) => (
                       <li key={video.videoId}>
                         <button
@@ -345,12 +345,12 @@ export default function SpotlightAdminPage() {
       </header>
 
       {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Couldn&apos;t check your permissions, so this page is read-only.
         </output>
       )}
       {staffContextQuery.isSuccess && !canManageSpotlight && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="block rounded-2xl border border-outline-variant/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           Managing Spotlight needs the admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
         </output>

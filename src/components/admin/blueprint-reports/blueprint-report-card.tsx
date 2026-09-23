@@ -17,7 +17,7 @@ import type {
 import { BLUEPRINT_REPORT_REASON_LABELS } from "@/lib/blueprints/reports.schemas";
 
 const NOTE_CLASS =
-  "mt-1 w-full resize-y rounded-md border border-[#CAC4D0]/60 bg-background px-2.5 py-1.5 text-sm";
+  "mt-1 w-full resize-y rounded-md border border-outline-variant/60 bg-background px-2.5 py-1.5 text-sm";
 const ACTION_CLASS =
   "cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium outline -outline-offset-1 outline-border disabled:cursor-default disabled:opacity-40";
 
@@ -111,7 +111,7 @@ export default function BlueprintReportCard({
   }
 
   return (
-    <li className="rounded-2xl border border-[#CAC4D0]/60 bg-background p-4">
+    <li className="rounded-2xl border border-outline-variant/60 bg-background p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm font-medium text-foreground">{report.targetTitle}</p>
         <p className="text-xs text-muted-foreground">
@@ -142,7 +142,7 @@ export default function BlueprintReportCard({
               href={`/blueprints/${TARGET_KIND_SEGMENTS[report.targetKind]}/${report.targetSlug}`}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-[#00696E] underline-offset-2 hover:underline"
+              className="font-medium text-primary-imprint underline-offset-2 hover:underline"
             >
               Open the page
             </a>
@@ -210,7 +210,7 @@ export default function BlueprintReportCard({
         A moderator who assumed otherwise would dismiss a report about something they had flagged
         and expect the flag to lift.
       */}
-      <p className="mt-2 text-[11px] text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground">
         Dismissing closes the report and changes nothing about the page. Use Restore for that.
       </p>
     </li>

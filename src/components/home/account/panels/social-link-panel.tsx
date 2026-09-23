@@ -247,7 +247,7 @@ function SocialLinkBody({
 
   const connectedRow = (
     <div className="flex flex-col items-center gap-1">
-      <div className="flex flex-row items-center gap-2 text-sm font-medium text-[#00696E]">
+      <div className="flex flex-row items-center gap-2 text-sm font-medium text-primary-imprint">
         <Image
           src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           alt=""

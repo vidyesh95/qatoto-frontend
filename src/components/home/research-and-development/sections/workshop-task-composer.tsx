@@ -54,7 +54,7 @@ export default function WorkshopTaskComposer({
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-3 py-1.5 text-xs font-medium text-[#00696E]"
+        className="cursor-pointer rounded-full border border-outline-strong px-3 py-1.5 text-xs font-medium text-primary-imprint"
       >
         Add a task
       </button>
@@ -63,7 +63,7 @@ export default function WorkshopTaskComposer({
 
   return (
     <form
-      className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-3"
+      className="space-y-2 rounded-2xl border border-outline-variant/60 p-3"
       onSubmit={(submitEvent) => {
         submitEvent.preventDefault();
         taskMutation.mutate(
@@ -77,13 +77,13 @@ export default function WorkshopTaskComposer({
         value={title}
         onChange={(changeEvent) => setTitle(changeEvent.target.value)}
         placeholder="What needs doing?"
-        className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />
       <div className="flex flex-wrap gap-2">
         <select
           value={columnId}
           onChange={(changeEvent) => setColumnId(changeEvent.target.value)}
-          className="rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          className="rounded-xl border border-outline-variant p-2 text-sm"
         >
           {columns.map((column) => (
             <option key={column.id} value={column.id}>
@@ -97,7 +97,7 @@ export default function WorkshopTaskComposer({
             const parsed = WorkshopTaskPrioritySchema.safeParse(changeEvent.target.value);
             if (parsed.success) setPriority(parsed.data);
           }}
-          className="rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          className="rounded-xl border border-outline-variant p-2 text-sm"
         >
           {WORKSHOP_TASK_PRIORITIES.map((priorityOption) => (
             <option key={priorityOption} value={priorityOption}>
@@ -110,14 +110,14 @@ export default function WorkshopTaskComposer({
         <button
           type="submit"
           disabled={taskMutation.isPending}
-          className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
         >
           {taskMutation.isPending ? "Adding…" : "Add it"}
         </button>
         <button
           type="button"
           onClick={() => setIsFormOpen(false)}
-          className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+          className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
         >
           Cancel
         </button>

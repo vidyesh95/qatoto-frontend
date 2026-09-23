@@ -21,7 +21,7 @@ const READINESS_STATE_LABELS: Record<LaunchReadinessState, string> = {
 };
 
 const READINESS_STATE_BADGE_CLASS: Record<LaunchReadinessState, string> = {
-  met: "bg-[#00696E]/10 text-[#00696E]",
+  met: "bg-primary-imprint/10 text-primary-imprint",
   not_met: "bg-muted text-muted-foreground",
   waived: "bg-amber-100 text-amber-800",
 };
@@ -81,7 +81,7 @@ export default function ProjectLaunchReadiness({
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {readiness.items.map((item) => (
-              <li key={item.key} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <li key={item.key} className="rounded-2xl border border-outline-variant/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="font-medium">{READINESS_ITEM_TITLES[item.key]}</p>
                   <span

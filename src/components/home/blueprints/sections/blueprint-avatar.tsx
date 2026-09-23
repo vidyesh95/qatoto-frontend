@@ -44,7 +44,7 @@ export default function BlueprintAvatar({
     <span
       aria-hidden="true"
       style={{ width: sizePx, height: sizePx }}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#E3EAEA] text-[#4A5656] ${sizeClassName}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ${sizeClassName}`}
     >
       <span style={{ fontSize: Math.max(9, Math.round(sizePx * 0.4)) }} className="font-medium">
         {buildInitialsFromName(displayName)}
