@@ -10,7 +10,8 @@
     "jsx-a11y",
     "nextjs",
     "import",
-    "promise"
+    "promise",
+    
   ],
   "env": {
     "browser": true,
