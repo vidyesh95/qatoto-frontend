@@ -10,9 +10,9 @@
     "jsx-a11y",
     "nextjs",
     "import",
-    "promise",
-    
+    "promise"
   ],
+  "jsPlugins": ["@shadcn/lint"],
   "env": {
     "browser": true,
     "node": true,
@@ -36,13 +36,21 @@
     "oxc/approx-constant": "warn",
     "eslint/prefer-const": ["error", { "destructuring": "any" }],
     "typescript/no-explicit-any": "error",
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "shadcn/no-arbitrary-values": "off"
   },
   "overrides": [
     {
       "files": ["**/*.test.{ts,tsx}", "tests/unit/**"],
       "plugins": ["vitest"],
       "env": { "vitest": true }
+    },
+    {
+      "files": ["src/components/ui/**/*.{ts,tsx}"],
+      "excludeFiles": ["**/creatable-combobox.tsx"],
+      "rules": {
+        "shadcn/no-arbitrary-values": "error"
+      }
     }
   ]
 }
