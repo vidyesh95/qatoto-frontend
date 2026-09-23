@@ -45,7 +45,7 @@ export default function BlueprintCommentComposer({
 
   if (!isSignedIn) {
     return (
-      <p className="mt-4 rounded-md border border-outline-variant/60 bg-black/[0.02] px-3 py-2.5 text-sm text-muted-foreground">
+      <p className="mt-4 rounded-md border border-outline-variant/60 bg-black/2 px-3 py-2.5 text-sm text-muted-foreground">
         Sign in to join the discussion.
       </p>
     );

@@ -259,7 +259,7 @@ function NotificationListItem({ notification }: { readonly notification: Notific
   );
 
   return (
-    <li className={isUnread ? "bg-foreground/[0.03]" : undefined}>
+    <li className={isUnread ? "bg-foreground/3" : undefined}>
       {href === null ? (
         <div className="px-4 py-3">{body}</div>
       ) : (

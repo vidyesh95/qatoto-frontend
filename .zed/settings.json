@@ -8,6 +8,9 @@
     },
     "TSX": {
       "language_servers": ["oxlint", "!eslint", "..."]
+    },
+    "CSS": {
+      "language_servers": ["tailwindcss-language-server", "!vscode-css-language-server", "..."]
     }
   }
 }

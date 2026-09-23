@@ -122,7 +122,7 @@ export default function ReportBlueprintSheet({
                 {BLUEPRINT_REPORT_REASONS.map((candidate) => (
                   <label
                     key={candidate}
-                    className="flex cursor-pointer items-start gap-2 rounded-md px-1 py-1 text-sm text-foreground hover:bg-black/[0.03]"
+                    className="flex cursor-pointer items-start gap-2 rounded-md px-1 py-1 text-sm text-foreground hover:bg-black/3"
                   >
                     <input
                       type="radio"
@@ -162,7 +162,7 @@ export default function ReportBlueprintSheet({
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+                className="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-black/4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
               >
                 Cancel
               </button>
