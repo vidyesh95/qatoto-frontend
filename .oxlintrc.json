@@ -16,7 +16,7 @@
   "env": {
     "browser": true,
     "node": true,
-    "es2024": true
+    "es2026": true
   },
   "categories": {
     "correctness": "error",
