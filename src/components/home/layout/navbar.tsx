@@ -135,7 +135,7 @@ export default function Navbar({
               type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              className="grid size-9 shrink-0 place-items-center rounded-full transition hover:bg-black/5 md:hidden"
+              className="grid size-9 shrink-0 place-items-center rounded-full transition hover:bg-foreground/5 md:hidden"
             >
               <Image
                 src={"/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}

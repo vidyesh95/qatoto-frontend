@@ -1357,6 +1357,27 @@ returns only this one. The rest are the VDP term of art and three code comments
 (`notifications/schemas.ts:53`, `branch-tree-layout.ts:99`, `research-branch-map.tsx:29`), none
 rendered.
 
+### §21. Phased Migration of Repo-wide Raw Tailwind Palette Colors
+
+Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its codemod only matched `-[#RRGGBB]`, so Tailwind palette keywords (`black`, `white`, `red-*`, `amber-*`, `blue-*`, `gray-*`) were never in scope. They aren't hex, so they survived untouched.
+
+#### Inventory across `src/` (from HEAD):
+
+- **Neutral**: `border-black` 107, `text-white` 69, `bg-white` 60, `bg-black` 58, `text-black` 11, `bg-gray-200` 11.
+- **Error**: `text-red-*` ~110, `bg-red-50/100` 43, `border-red-200` 23.
+- **Warning**: `text-amber-*` ~64, `bg-amber-50/100` 41.
+- **Blue**: `blue-600` ~28.
+
+#### Migration & Tokenization Strategy:
+
+1. **Neutrals and Errors**: Map onto existing theme tokens (`foreground`, `background`, `card`, `border`, `destructive`).
+2. **Warnings and Blues**: Currently have no tokens in `globals.css` (the design system has no `--warning` / `--info` token pairs). Converting them requires registering formal design tokens first; borrowing `--destructive` or random accents is forbidden as it makes a palette choice into a semantic lie.
+3. **`text-white` and `bg-white` per-site checks**: Each instance requires its own dark-mode audit. Some sit intentionally on permanent-dark bands (such as `--color-band-*` heroes) or modal scrims (`bg-black/40`), where white/black is correct in both themes. Instances sitting on themed surfaces must transition to semantic foreground tokens.
+4. **Navbar dark pass — one change, not piecemeal**: The navbar's icon discs (`notification-bell.tsx`, `navbar.tsx` search field, mic/menu discs, `text-black` cluster) are white with black `*_000000_*.svg` icons. Moving one disc to `bg-card` alone made the bell icon black-on-near-black in dark mode and left it the only dark disc in a row of white ones, so it was reverted. Do it together:
+    - Add shadcn's standard `@custom-variant dark (&:where(.dark, .dark *));` to `globals.css`. Without it, `dark:` utilities follow the OS setting, not the `.dark` class the theme switcher sets.
+    - Move the bell and `navbar.tsx` discs to `bg-card` / `text-foreground`.
+    - Add `dark:invert` to the black 24dp icon `<Image>`s.
+
 ---
 
 ## Decisions Needed
