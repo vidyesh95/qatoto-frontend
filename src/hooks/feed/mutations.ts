@@ -54,6 +54,7 @@ import {
   unsubscribeFromCreator,
   updateVideoComment,
   type CreateVideoCommentInput,
+  suppressSearchTerm,
 } from "@/lib/feed/api";
 import type { ShareChannel } from "@/lib/feed/schemas";
 import { isForbidden, isUnauthorized, unwrap, ApiRequestError } from "@/lib/http";
@@ -379,5 +380,16 @@ export function useVideoCommentLikeMutation() {
           ? likeVideoComment(variables.commentId)
           : unlikeVideoComment(variables.commentId)),
       ),
+  });
+}
+
+/**
+ * A moderator hides a trending search term. Not optimistic; the watch page is refreshed by the
+ * caller because the list comes from the server-rendered payload.
+ */
+export function useSuppressSearchTermMutation() {
+  return useMutation({
+    mutationFn: async (variables: { term: string; reason: string }) =>
+      unwrap(await suppressSearchTerm(variables)),
   });
 }

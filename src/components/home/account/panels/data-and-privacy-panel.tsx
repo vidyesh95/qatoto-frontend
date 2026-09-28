@@ -154,6 +154,21 @@ const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "The platform-wide hourly total is not in the download — it carries no account id, so there is no way to say which part of it is yours.",
   },
   {
+    // ADDED WITH THE SEARCH LOG (2026-09-28). The policy promises this list "in the same words",
+    // and a search is collected whether or not the reader is signed in — so it is listed here even
+    // though no row names an account, and `absentFromExport` says why that means no download.
+    title: "What you search for",
+    icon: "/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    items: [
+      "The words you searched for videos, kept for 30 days",
+      "A code that changes every week instead of your account, name or network address",
+      "Never a search containing an email address, a phone number or a web address",
+    ],
+    note: "A term is shown to others only once enough different people have searched for it.",
+    absentFromExport:
+      "Not in the download, and not deletable one person at a time: nothing links a search to your account. Every search is deleted after 30 days.",
+  },
+  {
     // ADDED WITH THE PRODUCT VIEW BEACON, for the same reason the watch-time card above was added
     // with the watch-time panel: the surface started recording something this list claims to
     // mirror, so shipping it without the disclosure would have made an existing promise false.

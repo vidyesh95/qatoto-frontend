@@ -395,7 +395,22 @@ export const WatchPayloadSchema = z.object({
    * invents nothing: absent and empty both render no line at all.
    */
   trendingTags: z.array(z.string().min(1).max(40)).max(5).default([]),
+  /**
+   * PLATFORM-WIDE, NOT ABOUT THIS VIDEO: what at least five distinct searchers looked for in the
+   * last seven days, none suppressed by a moderator. The log behind it stores no identity and never
+   * stores a search holding an email address, a web address or seven or more digits.
+   * `.default([])` for the deploy-order reason `trendingTags` gives.
+   */
+  trendingSearches: z.array(z.string().min(2).max(80)).max(5).default([]),
 });
+
+/** A moderator's suppression of a trending search term — `POST /feed/admin/search-terms/suppressions`. */
+export const SearchTermSuppressionSchema = z.object({
+  term: z.string(),
+  reason: z.string(),
+  suppressedAt: z.string(),
+});
+export type SearchTermSuppression = z.infer<typeof SearchTermSuppressionSchema>;
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
 
 /* -------------------------------------------------------------------------- */

@@ -280,6 +280,7 @@ export default function WatchContent({
               commentCount={video.stats.commentCount}
               attachedProducts={video.attachedProducts}
               trendingTags={video.trendingTags}
+              trendingSearches={video.trendingSearches}
             />
           )}
         </div>

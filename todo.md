@@ -320,10 +320,9 @@ A `TRANSPORT: mock` banner remains only in `src/components/home/watch/watch-cont
     - ⚠️ **IT RENDERS NOTHING TODAY, AND THAT IS CORRECT.** Measured 2026-09-28: 0 public videos carry
       any `tags`. The line appears once creators tag and two of them share a tag on trending videos.
       Per-tag moderation is the next control if abuse appears, not a lower floor.
-      ⚠️ **No search-query log.** Nothing stores search text today (`request-log.ts` drops the query
-      string on purpose), the privacy policy discloses no such collection, and adding one needs a PII
-      register entry, an erasure manifest entry and a retention rule — none worth it for one line.
-      There is no discussion "Trending" tab in either repo, and none is being built.
+      ~~⚠️ **No search-query log.**~~ **SUPERSEDED THE SAME DAY (Part 9):** the search log was then
+      asked for and built, bounded — see item 9 below. `request-log.ts` still never logs a query
+      string; the search log is a separate, disclosed table.
 
 **Remaining work from the 2026-09-28 request, in build order** (Part 1, the chapter lock, is done;
 this list starts at Part 2):
@@ -339,9 +338,22 @@ now asked for). Each is its own part with its own plan:
 
 7. ~~The 25 km catchment ring — §19.10.~~ Done 2026-09-28.
 8. ~~**The 90-days-after-resolution photo rule** — §19.5.~~ Built 2026-09-28; migration 0206.
-9. **A search-query log** — so "Everyone is searching for" can be real. Privacy work first: the
-   policy and Settings disclosure, the PII register, the erasure manifest, a retention and prune
-   rule, and reversing `request-log.ts`'s never-log-the-query rule on purpose.
+9. ~~**A search-query log**~~ — **BUILT 2026-09-28 (migration 0207).** "Everyone is searching for:"
+   now renders above "Trending tags:" on the watch page, each only when non-empty.
+    - `search_query_log` holds `(day, normalized term, weekly-salted fingerprint)` — no user id, no
+      IP. A search is NEVER stored if it has an email, a web address, 7+ digits in total, or is
+      outside 2–80 characters (`search-query-log.ts`). ⚠️ The digit rule is conservative on purpose:
+      "2024 grant 2025" is dropped too, because two years are eight digits.
+    - Page 1 only; the key collapses a same-day repeat. A failed write never fails the search.
+    - Hourly `recompute-trending-searches` (:28) DELETES rows past 30 days UNCONDITIONALLY — not via
+      the dry-run-by-default prune job — and publishes at most five terms with at least five distinct
+      fingerprints in seven days. ⚠️ The salt rotates WEEKLY, so one person counts at most twice
+      across a Monday; the disclosures therefore say "enough different people", not "five people".
+    - `moderate_content` holders see "Hide" beside each term (reason required, audited); the read
+      re-filters suppressions, so a hide shows on the next load. **Lifting a suppression is API-only**
+      (`DELETE /feed/admin/search-terms/suppressions/:term`) — an admin list page is the follow-up.
+    - The privacy policy's new "Searches" paragraph and the Settings card say all of this.
+    - `/feed` has no OpenAPI entries (the module never had any); these routes follow suit.
 10. **Discussion trending** — a server-side "Trending" sort for research-programme discussions
     (reactions and replies over a recent window); the discussion UI has no sort control today.
 

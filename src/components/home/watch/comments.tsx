@@ -14,17 +14,17 @@
 // `{ productSlug, initialPage }` — so the tab mounts the store's own component against the
 // attached product instead of a mock `Review[]`. One review surface, not two.
 //
-// TRENDING IS REAL NOW, AND IT IS TAGS, NOT SEARCHES. The line used to read "Everyone is
-// searching for…" over an `undefined` placeholder, because nothing logs what anyone searches for —
-// and nothing will. What ships instead is `trendingTags` on the watch payload: the tags creators
-// put on currently trending videos, used by at least two different creators, projected from the
-// hourly trending-video snapshot. The copy says "Trending tags" because that is what they are.
+// TWO TRENDING LINES, EACH NAMED FOR WHAT IT IS. "Everyone is searching for:" is `trendingSearches`
+// — terms five distinct searchers looked for in seven days, from a search log that stores no
+// identity (`TrendingSearches`). "Trending tags:" is `trendingTags` — tags creators put on trending
+// videos, used by two different creators. Each renders only when it has entries.
 
 import Link from "next/link";
 import { useState } from "react";
 
 import CatalogProductCard from "@/components/home/store/cards/catalog-product-card";
 import RatingsAndReviews from "@/components/home/store/sections/ratings-and-reviews";
+import TrendingSearches from "@/components/home/watch/trending-searches";
 import VideoCommentThread from "@/components/home/watch/video-comment-thread";
 import { formatCompactCountLabel } from "@/lib/feed/format";
 import type { VideoComment, WatchPayload } from "@/lib/feed/schemas";
@@ -40,6 +40,7 @@ export default function Comments({
   commentCount,
   attachedProducts,
   trendingTags,
+  trendingSearches,
   className = "",
 }: {
   readonly videoId: string;
@@ -57,6 +58,8 @@ export default function Comments({
   readonly attachedProducts: WatchPayload["attachedProducts"];
   /** Platform-wide, not about this video. `[]` is ordinary and renders no line at all. */
   readonly trendingTags: WatchPayload["trendingTags"];
+  /** Platform-wide, not about this video. `[]` is ordinary and renders no line. */
+  readonly trendingSearches: WatchPayload["trendingSearches"];
   readonly className?: string;
 }) {
   // THE REVIEWS TAB FOLLOWS THE FIRST ATTACHED PRODUCT. Reviews belong to a product, not to a
@@ -100,6 +103,7 @@ export default function Comments({
         </>
       ) : (
         <>
+          <TrendingSearches trendingSearches={trendingSearches} />
           {trendingTags.length > 0 && (
             <div className="px-4 py-3">
               <p className="text-sm font-medium">Trending tags:</p>

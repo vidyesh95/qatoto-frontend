@@ -128,6 +128,20 @@ export default function PrivacyPolicy() {
             platform, which carries no account identifier and cannot be traced back to you. Watching
             while signed out is not recorded in any of these.
           </dd>
+
+          {/* ADDED WITH THE SEARCH LOG (2026-09-28), which is what makes "Everyone is searching
+              for" real. Every clause is a rule the backend enforces: `search-query-log.ts` for what
+              is never kept, `recompute-trending-searches` for the 30 days and the floor. */}
+          <dt>Searches</dt>
+          <dd>
+            When you search for videos, we keep the words you searched for 30 days — not your
+            account, your name or your network address, only a code that changes every week — so we
+            can show what many people are searching for. A search containing an email address, a
+            phone number or a web address is not kept. A term is shown to others only once enough
+            different people have searched for it, and moderators can hide one. Because nothing
+            links a search to your account, we cannot include your searches in a download or delete
+            them one person at a time; they are deleted after 30 days.
+          </dd>
         </div>
         <div>
           <dt>Use of Information</dt>

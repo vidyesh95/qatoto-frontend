@@ -38,6 +38,8 @@ import {
   FeedVideoPageSchema,
   FeedVideoSchema,
   HideFromWatchHistoryResultSchema,
+  SearchTermSuppressionSchema,
+  type SearchTermSuppression,
   MutedCreatorSchema,
   NotInterestedResultSchema,
   NotInterestedVideoSchema,
@@ -654,4 +656,22 @@ export function clearWatchHistory(
   options?: RequestOptions,
 ): Promise<ActionResponse<ClearWatchHistoryResult>> {
   return sendJson("/watch-history", "DELETE", undefined, ClearWatchHistoryResultSchema, options);
+}
+
+/**
+ * Withholds a term from "Everyone is searching for" — `moderate_content` only, decided by the
+ * backend. The reason is required and goes to the audit chain. Idempotent: an already-suppressed
+ * term returns its standing suppression. Takes effect on the next load of any watch page.
+ */
+export function suppressSearchTerm(
+  input: { readonly term: string; readonly reason: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<SearchTermSuppression>> {
+  return sendJson(
+    "/feed/admin/search-terms/suppressions",
+    "POST",
+    input,
+    SearchTermSuppressionSchema,
+    options,
+  );
 }
