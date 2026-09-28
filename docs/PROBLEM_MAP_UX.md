@@ -24,7 +24,10 @@
 > - ⚠️ **NEITHER §7 NOR §5 MENTIONS `fitBounds`, AND IT IS THE FIRST THING PAN-DRIVEN FETCHING
 >   BREAKS.** The marker effect re-runs on every `clusters` change and ended in a `fitBounds`, so
 >   wiring `moveend` to a refetch closes a loop with no exit. It is latched to once per map
->   instance and skipped when the URL carries a camera.
+>   instance and skipped when the URL carries a camera. **Superseded 2026-09-28:** the latched fit
+>   also raced the first viewport read and never ran on a phone, so the map is now CONSTRUCTED
+>   fitted to the server's page, padded clear of the panel or sheet, and the latch is gone
+>   (`todo.md` §19.4, TRAP 1).
 > - ⚠️ **A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPENDENCIES DESTROYS THE MAP ONCE THE PARENT
 >   FETCHES.** Not predicted anywhere here, and the one that actually shipped: `Maximum update
 depth exceeded` ×129, `load` never firing, every marker destroyed — which took
@@ -57,10 +60,19 @@ problem` off the bottom of the peek sheet. The note is context rather than a con
 >   moved into the scrolling body.
 > - ⚠️ **§5 DRAWS THE LEGEND BOTTOM-LEFT, WHICH IS WHERE THE DOCKED PANEL IS.** Measured, the four
 >   labels rendered behind it. It is offset past the panel at each of its two widths.
-> - **Not built:** §6's "Cluster selected" row also asks the map to `easeTo` the centroid. Left out
->   — every camera mutation interacts with the `fitBounds` latch and the `moveend` refetch, and the
->   row already highlights.
->
+> - ✅ **§6's "Cluster selected" `easeTo` SHIPPED 2026-09-28, WITH TWO THINGS THE ROW DID NOT SAY.**
+>   It fires on a user-driven selection (pin or row) and never on mount, on deselect, or for an id
+>   the page no longer holds. Zoom is left alone.
+>     - ⚠️ **"THE CENTROID" MEANS THE MIDDLE OF THE VISIBLE MAP, NOT OF THE CANVAS.** The canvas is
+>       full-bleed and the list floats over it — the peek sheet alone covers the bottom 50% — so a
+>       plain centre ease parks the pin on the sheet's edge. The map measures the panel or sheet at
+>       ease time and passes `easeTo` an `offset` to the centre of the largest uncovered strip
+>       (`computeUnobscuredCentreOffsetPx` in `src/lib/rnd/map-viewport.ts`). `offset` applies to
+>       that one animation, so `getBounds()` and the viewport read are untouched.
+>     - ⚠️ **ONE EXTRA READ PER SELECTION, AND NO LOOP.** The ease fires `moveend`, which refetches;
+>       the effect reads `clusters` through a ref and acts only when the selected id changed, so a
+>       refetch cannot re-trigger it. `prefers-reduced-motion` is MapLibre's own: a non-`essential`
+>       animation becomes a jump.
 > - ✅ **WHAT SURVIVES UNCHANGED:** the layout strategy (§5), the light-theme argument (§3), the
 >   pin's privacy mechanism and the no-ring / no-accuracy-figure rules (§8), the copy table (§9),
 >   the accessibility contract (§10). §11's items 1 and 3 are fixed; 2 and 4 are open.
@@ -317,6 +329,13 @@ records against its own history ("Filtering used to happen in the canvas over an
 array, which cannot survive pagination"). The panel gets a visible sort control bound to
 `?sort=`, and distance ordering is a named backend ask (`todo.md` §19.8), not a client loop.
 
+**Shipped 2026-09-28 — as the backend ask, never a client loop.** `?sort=distance` is the
+"Near map centre" chip, offered only when the map has a camera. The live camera's centre travels
+as `centreLatitudeMicrodegrees` / `centreLongitudeMicrodegrees`, the server orders nearest-first
+from the PUBLISHED (quantized) centroid, and each pan is a new server read like any other.
+"Nearest" alone was rejected as a label: it reads as the reader's own location, which is never
+asked for.
+
 ### Pin and row are one selection
 
 Already true and it stays true: `ProblemMapCanvas` owns `selectedClusterId` and hands it to
@@ -509,7 +528,9 @@ shipped.
    rather than replaying a pan.
 2. **What is the default viewport for a first-time visitor?** Today `fitBounds` opens on the
    clusters that exist, which is right for 12 fixtures and wrong for 12,000 rows. Probably
-   stays `fitBounds` until there is enough data for it to be silly.
+   stays `fitBounds` until there is enough data for it to be silly. (Since 2026-09-28 the fit is
+   applied at construction, over the server's first page, clear of the list — see the correction
+   header's `fitBounds` note.)
 3. **Does the sort control belong in the panel or on the map?** Brief says panel. It is a
    property of the list, not of the geography.
 4. **Does the tablet panel remember its collapsed state across navigations?** Brief says no

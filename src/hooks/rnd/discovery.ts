@@ -31,6 +31,7 @@ import type {
   TalentProfileInput,
 } from "@/lib/rnd/discovery.schemas";
 import {
+  type CentreMicrodegrees,
   roundViewportBoundsForCacheKey,
   type ViewportBoundsMicrodegrees,
 } from "@/lib/rnd/map-viewport";
@@ -162,9 +163,17 @@ export function useProblemClustersQuery(parameters: {
   readonly sort: ProblemClusterSort;
   readonly limit: number;
   readonly viewportBounds: ViewportBoundsMicrodegrees | null;
+  /**
+   * Where `sort: "distance"` orders from. The caller only passes `"distance"` WITH a centre; with
+   * any other sort the centre is dropped here, out of the key and the request, so panning under
+   * Opportunity does not mint a cache entry per centre on top of the one per box.
+   */
+  readonly centre: CentreMicrodegrees | null;
   readonly initialRows: ProblemCluster[];
   readonly initialPagination: PaginationMeta | null;
+  readonly initialMatchRadiusMeters: number | null;
 }) {
+  const distanceCentre = parameters.sort === "distance" ? parameters.centre : null;
   const roundedViewportBounds =
     parameters.viewportBounds === null
       ? null
@@ -175,7 +184,11 @@ export function useProblemClustersQuery(parameters: {
   // compiler's rather than a claim.
   const serverSeededPage =
     roundedViewportBounds === null && parameters.initialPagination !== null
-      ? { rows: parameters.initialRows, pagination: parameters.initialPagination }
+      ? {
+          rows: parameters.initialRows,
+          pagination: parameters.initialPagination,
+          matchRadiusMeters: parameters.initialMatchRadiusMeters,
+        }
       : undefined;
 
   return useQuery({
@@ -184,6 +197,7 @@ export function useProblemClustersQuery(parameters: {
       region: parameters.region,
       sort: parameters.sort,
       roundedViewportBounds,
+      centre: distanceCentre,
     }),
     queryFn: async () =>
       unwrap(
@@ -196,6 +210,12 @@ export function useProblemClustersQuery(parameters: {
           // fields therefore arrive together or not at all, and the partial box the controller
           // answers `422 VIEWPORT_INCOMPLETE` for is unconstructible here.
           ...roundedViewportBounds,
+          ...(distanceCentre === null
+            ? {}
+            : {
+                centreLatitudeMicrodegrees: distanceCentre.latitudeMicrodegrees,
+                centreLongitudeMicrodegrees: distanceCentre.longitudeMicrodegrees,
+              }),
         }),
       ),
     staleTime: CLUSTER_LIST_STALE_TIME_MS,

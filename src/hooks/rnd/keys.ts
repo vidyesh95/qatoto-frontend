@@ -11,7 +11,7 @@
 // Every key starts with the literal `"rnd"` so `invalidateQueries({ queryKey: rndKeys.all })`
 // clears the domain and nothing else.
 
-import type { ViewportBoundsMicrodegrees } from "@/lib/rnd/map-viewport";
+import type { CentreMicrodegrees, ViewportBoundsMicrodegrees } from "@/lib/rnd/map-viewport";
 
 /** Filters that change a list's identity and therefore its cache entry. */
 /**
@@ -34,6 +34,8 @@ export interface ProblemClusterListFilter {
   readonly region?: string | undefined;
   readonly sort?: string | undefined;
   readonly roundedViewportBounds: ViewportBoundsMicrodegrees | null;
+  /** `sort=distance`'s centre, already snapped by `toCentreMicrodegrees`; `null` for every other sort. */
+  readonly centre: CentreMicrodegrees | null;
 }
 
 export const rndKeys = {
@@ -173,6 +175,7 @@ export const rndKeys = {
       filter.region,
       filter.sort,
       filter.roundedViewportBounds,
+      filter.centre,
     ] as const,
   dailyLog: (projectSlug: string, logId: string) =>
     ["rnd", "workshop", projectSlug, "daily-log", logId] as const,

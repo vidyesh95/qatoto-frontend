@@ -8,6 +8,7 @@
 
 import {
   buildQueryString,
+  getEnvelope,
   getJson,
   getPaginated,
   sendForm,
@@ -26,7 +27,7 @@ import {
   DiscoveryRegionSchema,
   DiscoverySkillSchema,
   MarketInsightSchema,
-  ProblemClusterSchema,
+  ProblemClusterListEnvelopeSchema,
   TalentProfileSchema,
   type DemandSignal,
   type DiscoveryRegion,
@@ -64,8 +65,22 @@ export interface ListProblemClustersFilter {
   readonly minLongitudeMicrodegrees?: number;
   readonly maxLongitudeMicrodegrees?: number;
   readonly sort?: ProblemClusterSort;
+  /**
+   * The point `sort: "distance"` orders from. BOTH OR NEITHER, and only with that sort — the
+   * backend answers 422 for either mismatch.
+   */
+  readonly centreLatitudeMicrodegrees?: number;
+  readonly centreLongitudeMicrodegrees?: number;
   readonly page?: number;
   readonly limit?: number;
+}
+
+/** A page of clusters plus the one envelope-level fact that applies to all of them. */
+export interface ProblemClusterListPage {
+  readonly rows: ProblemCluster[];
+  readonly pagination: PaginationMeta;
+  /** `null` when the backend did not send it — never a copied 25 km. */
+  readonly matchRadiusMeters: number | null;
 }
 
 /**
@@ -75,16 +90,26 @@ export interface ListProblemClustersFilter {
  * §11b calls it `minOpportunityScore`, which the `.strict()` query schema rejects
  * with a 422.
  */
-export function listProblemClusters(
+export async function listProblemClusters(
   filter: ListProblemClustersFilter = {},
   options?: RequestOptions,
-): PagedResult<ProblemCluster> {
-  return getPaginated(
+): Promise<ActionResponse<ProblemClusterListPage>> {
+  // `getEnvelope`, not `getPaginated`: the latter keeps only `data` and `pagination` and would
+  // drop `matchRadiusMeters` — the `rankSeed` precedent in `src/lib/feed/api.ts`.
+  const envelopeResult = await getEnvelope(
     `/discovery/problem-clusters${buildQueryString({ ...filter })}`,
-    ProblemClusterSchema,
-    PaginationMetaSchema,
+    ProblemClusterListEnvelopeSchema,
     options,
   );
+  if (!envelopeResult.success) return envelopeResult;
+  return {
+    success: true,
+    data: {
+      rows: envelopeResult.data.data,
+      pagination: envelopeResult.data.pagination,
+      matchRadiusMeters: envelopeResult.data.matchRadiusMeters ?? null,
+    },
+  };
 }
 
 export function getProblemCluster(

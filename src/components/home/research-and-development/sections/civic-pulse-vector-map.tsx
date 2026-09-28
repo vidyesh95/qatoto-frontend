@@ -4,9 +4,9 @@
 // the parent does the fetching, so the canvas still owns no transport of its own.
 "use client";
 
-import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
+import type { Map as MapLibreMap, MapOptions, Marker as MapLibreMarker } from "maplibre-gl";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -23,6 +23,8 @@ import {
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 import { toOpportunityBand } from "@/lib/rnd/map-projection";
 import {
+  computeUncoveredFitPaddingPx,
+  computeUnobscuredCentreOffsetPx,
   type MapCamera,
   toViewportBoundsMicrodegrees,
   type ViewportBoundsMicrodegrees,
@@ -99,6 +101,12 @@ type CivicPulseVectorMapProps = {
    * tile outage costs geographic precision and nothing else.
    */
   readonly onUnavailable: () => void;
+  /**
+   * The panel or sheet floating over the map. Read only at the moment a selection is eased to, so
+   * the cluster lands in the middle of the part of the map the reader can see rather than under
+   * the list. `null` inside the ref when nothing is mounted over the map.
+   */
+  readonly mapOverlayRef: RefObject<HTMLElement | null>;
 };
 
 /**
@@ -120,9 +128,14 @@ type VectorMapStatus = { readonly kind: "loading" } | { readonly kind: "ready" }
  */
 const CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP = 3;
 
-/** Whole world, roughly centred, before any cluster has been fitted to. */
+/** Whole world, roughly centred — only when there is no URL camera AND no cluster to open on. */
 const INITIAL_MAP_CENTER: [number, number] = [10, 20];
 const INITIAL_MAP_ZOOM = 1.3;
+
+/** How close an opening fit may zoom — one cluster's zero-area box would otherwise hit maximum. */
+const OPENING_FIT_MAX_ZOOM = 6;
+/** Room left between the outermost opening pins and the uncovered part's edges. */
+const OPENING_FIT_MARGIN_PX = 64;
 
 /**
  * How long after the last camera movement the viewport is reported.
@@ -133,6 +146,26 @@ const INITIAL_MAP_ZOOM = 1.3;
  */
 const VIEWPORT_REPORT_DEBOUNCE_MS = 300;
 
+/**
+ * The west/south/east/north box around a set of clusters, in degrees, as MapLibre's `bounds` takes
+ * it. A single cluster gives a zero-area box, which `OPENING_FIT_MAX_ZOOM` keeps from zooming in
+ * to the maximum.
+ */
+function toClusterBoundsDegrees(
+  clusters: readonly ProblemCluster[],
+): [[number, number], [number, number]] {
+  const longitudesDegrees = clusters.map(
+    (cluster) => cluster.centroidLongitudeMicrodegrees / 1_000_000,
+  );
+  const latitudesDegrees = clusters.map(
+    (cluster) => cluster.centroidLatitudeMicrodegrees / 1_000_000,
+  );
+  return [
+    [Math.min(...longitudesDegrees), Math.min(...latitudesDegrees)],
+    [Math.max(...longitudesDegrees), Math.max(...latitudesDegrees)],
+  ];
+}
+
 export default function CivicPulseVectorMap({
   clusters,
   selectedClusterId,
@@ -141,6 +174,7 @@ export default function CivicPulseVectorMap({
   onViewportChange,
   viewMode,
   onUnavailable,
+  mapOverlayRef,
 }: CivicPulseVectorMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   /**
@@ -158,18 +192,20 @@ export default function CivicPulseVectorMap({
    */
   const initialViewModeRef = useRef(viewMode);
   /**
-   * ⚠️ **THE `fitBounds` LATCH. WITHOUT IT THIS SURFACE REFETCHES FOREVER.**
+   * The clusters the page OPENED with, frozen at mount — the server's unbounded page, since the
+   * query seeds only its no-viewport key. The map opens fitted to these.
    *
-   * The marker effect below re-runs on every `clusters` change, and it used to end in a
-   * `fitBounds`. Once `moveend` drives the fetch, that closes a loop with no exit: pan → refetch →
-   * a new `clusters` array → the effect re-runs → `fitBounds` moves the camera → `moveend` →
-   * refetch, and it never settles because `fitBounds` is itself a camera move.
-   *
-   * So the fit is a once-per-map-instance action rather than a per-render one, and it is skipped
-   * outright when the URL already carries a camera — a reader who followed a shared link chose
-   * that view, and fitting to the pins would throw it away.
+   * ⚠️ **THE OPENING FIT HAPPENS AT CONSTRUCTION, NOT IN THE MARKER EFFECT, AND BOTH HALVES OF
+   * THAT ARE FIXES.** It used to be a `fitBounds` at the end of the marker effect, latched to once
+   * per map (`hasFittedToClustersRef`) because that effect re-runs on every `clusters` change and
+   * an unlatched fit was an endless pan → refetch → fit loop. It also RACED the first viewport read:
+   * the map reports its viewport the moment it exists, and on a 375px phone the world view spans
+   * only longitude −43°…63°, so that read came back empty before the fit ran and the fit never
+   * happened — measured, a phone reader with no URL camera got "No clusters in this view". Fitted
+   * at construction, the first viewport report is already the fitted view, no effect can repeat
+   * the fit, and the latch is gone because there is no loop left for it to break.
    */
-  const hasFittedToClustersRef = useRef(false);
+  const initialClustersRef = useRef(clusters);
   /**
    * The latest `onViewportChange` and `onUnavailable`, so the map-creation effect can call them
    * without taking either as a dependency.
@@ -190,6 +226,17 @@ export default function CivicPulseVectorMap({
    */
   const onViewportChangeRef = useRef(onViewportChange);
   const onUnavailableRef = useRef(onUnavailable);
+  /**
+   * The latest clusters, for the selection ease below — which must NOT take `clusters` as a
+   * dependency, for the reason given there.
+   */
+  const latestClustersRef = useRef(clusters);
+  /**
+   * The selection the camera last eased to, seeded with the one the page OPENED on. Seeding it is
+   * what makes mount a no-op: a `?cluster=` link already carries its own camera or gets the
+   * opening fit, and easing on top of either would throw that view away.
+   */
+  const lastEasedSelectionIdRef = useRef(selectedClusterId);
   // `import type` is ERASED AT COMPILE TIME, so naming MapLibre's own types here costs nothing at
   // runtime — the package still arrives only through the `await import()` below. An earlier draft
   // hand-rolled structural types (`{ remove: () => void }`) to avoid an import that was never a
@@ -206,7 +253,8 @@ export default function CivicPulseVectorMap({
   useEffect(() => {
     onViewportChangeRef.current = onViewportChange;
     onUnavailableRef.current = onUnavailable;
-  }, [onViewportChange, onUnavailable]);
+    latestClustersRef.current = clusters;
+  }, [onViewportChange, onUnavailable, clusters]);
 
   // --- Create the map exactly once -------------------------------------------------------
   useEffect(() => {
@@ -248,18 +296,38 @@ export default function CivicPulseVectorMap({
       maplibreModule.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
       const requestedCamera = initialCameraRef.current;
+      const openingClusters = initialClustersRef.current;
+
+      // Three ways to open, in order: a shared link's own camera, else FITTED to the clusters that
+      // exist (clear of the panel or sheet over the map), else the whole world. All set at
+      // construction rather than by a `jumpTo` afterwards, so the first painted frame is already
+      // the right one and the first viewport report describes it.
+      const openingCamera: Pick<MapOptions, "center" | "zoom" | "bounds" | "fitBoundsOptions"> =
+        requestedCamera !== null
+          ? {
+              center: [requestedCamera.longitudeDegrees, requestedCamera.latitudeDegrees],
+              zoom: requestedCamera.zoom,
+            }
+          : openingClusters.length > 0
+            ? {
+                bounds: toClusterBoundsDegrees(openingClusters),
+                fitBoundsOptions: {
+                  padding: computeUncoveredFitPaddingPx(
+                    container.getBoundingClientRect(),
+                    mapOverlayRef.current === null
+                      ? null
+                      : mapOverlayRef.current.getBoundingClientRect(),
+                    OPENING_FIT_MARGIN_PX,
+                  ),
+                  maxZoom: OPENING_FIT_MAX_ZOOM,
+                },
+              }
+            : { center: INITIAL_MAP_CENTER, zoom: INITIAL_MAP_ZOOM };
 
       const map = new maplibreModule.Map({
         container,
         style: resolveMapStyleUrl(isDarkThemeActive()),
-        // A shared link opens where it was shared from. Set at construction rather than by a
-        // `jumpTo` afterwards, so the first painted frame is already the right one and there is no
-        // visible slide from the world view to the requested one.
-        center:
-          requestedCamera === null
-            ? INITIAL_MAP_CENTER
-            : [requestedCamera.longitudeDegrees, requestedCamera.latitudeDegrees],
-        zoom: requestedCamera === null ? INITIAL_MAP_ZOOM : requestedCamera.zoom,
+        ...openingCamera,
         // Set at construction rather than eased afterwards, so a reader who arrives in 3D does not
         // watch the map tilt itself on first paint.
         pitch: MAP_VIEW_PITCH_DEGREES[initialViewModeRef.current],
@@ -383,10 +451,10 @@ export default function CivicPulseVectorMap({
   //
   // ⚠️ **THIS FIRES `moveend`, AND `moveend` DRIVES THE CLUSTER FETCH.** That is correct rather
   // than incidental: a tilted camera genuinely sees further toward the horizon, so `getBounds()`
-  // widens and the viewport-scoped read should widen with it. What it must NOT do is feed itself —
-  // the `fitBounds` latch exists because a camera move that re-triggers a camera move never
-  // settles. This one is safe because it eases only when `viewMode` actually changed, and nothing
-  // downstream of the fetch can change `viewMode`.
+  // widens and the viewport-scoped read should widen with it. What it must NOT do is feed itself — a
+  // camera move that re-triggers a camera move never settles, which is why the opening fit lives at
+  // construction. This one is safe because it eases only when `viewMode` actually changed, and
+  // nothing downstream of the fetch can change `viewMode`.
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (map === null) return;
@@ -396,6 +464,48 @@ export default function CivicPulseVectorMap({
     if (map.getPitch() === targetPitch) return;
     map.easeTo({ pitch: targetPitch, duration: 400 });
   }, [viewMode, readyMapToken]);
+
+  // --- Ease to the selected cluster (`docs/PROBLEM_MAP_UX.md` §6, "Cluster selected") ----------
+  //
+  // ⚠️ **THIS FIRES `moveend` TOO, AND `clusters` MUST STAY OUT OF THE DEPENDENCY LIST.** The ease
+  // moves the camera, the debounced `moveend` reports the viewport, and the refetch hands down a new
+  // `clusters` array. With `clusters` as a dependency that array would re-run this effect and ease
+  // again — the loop that moved the opening fit to construction. So the clusters are read through a ref,
+  // and the effect acts only when the selected id CHANGED since it last acted: one selection, one
+  // ease, one extra read, which is what the view-mode toggle above costs as well.
+  //
+  // Zoom is left alone: the spec asks for the centroid, and a zoom change would swing the viewport
+  // read much further than a pan. `prefers-reduced-motion` needs no code here — MapLibre skips any
+  // animation not marked `essential` and jumps instead, which still fires `moveend`.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (map === null) return;
+    if (selectedClusterId === lastEasedSelectionIdRef.current) return;
+    lastEasedSelectionIdRef.current = selectedClusterId;
+    // Deselecting leaves the camera where the reader put it.
+    if (selectedClusterId === null) return;
+
+    const selectedCluster = latestClustersRef.current.find(
+      (cluster) => cluster.id === selectedClusterId,
+    );
+    if (!selectedCluster) return;
+
+    const overlayElement = mapOverlayRef.current;
+    const unobscuredCentreOffsetPx = computeUnobscuredCentreOffsetPx(
+      map.getContainer().getBoundingClientRect(),
+      overlayElement === null ? null : overlayElement.getBoundingClientRect(),
+    );
+    map.easeTo({
+      center: [
+        selectedCluster.centroidLongitudeMicrodegrees / 1_000_000,
+        selectedCluster.centroidLatitudeMicrodegrees / 1_000_000,
+      ],
+      // Applies to this animation only — unlike `padding`, it leaves the map's own padding, and so
+      // `getBounds()` and the viewport read, exactly as they were.
+      offset: unobscuredCentreOffsetPx,
+      duration: 600,
+    });
+  }, [selectedClusterId, readyMapToken, mapOverlayRef]);
 
   // --- Follow the container -------------------------------------------------------------
   // ⚠️ **THE MAP'S BOX NOW CHANGES WITHOUT THE WINDOW CHANGING.** Collapsing the tablet panel or
@@ -428,11 +538,6 @@ export default function CivicPulseVectorMap({
 
       const containersByClusterId = new Map<string, HTMLDivElement>();
 
-      let westernmostLongitude = Number.POSITIVE_INFINITY;
-      let easternmostLongitude = Number.NEGATIVE_INFINITY;
-      let southernmostLatitude = Number.POSITIVE_INFINITY;
-      let northernmostLatitude = Number.NEGATIVE_INFINITY;
-
       for (const cluster of clusters) {
         const longitudeDegrees = cluster.centroidLongitudeMicrodegrees / 1_000_000;
         const latitudeDegrees = cluster.centroidLatitudeMicrodegrees / 1_000_000;
@@ -444,35 +549,9 @@ export default function CivicPulseVectorMap({
 
         containersByClusterId.set(cluster.id, markerContainer);
         createdMarkers.push(marker);
-
-        westernmostLongitude = Math.min(westernmostLongitude, longitudeDegrees);
-        easternmostLongitude = Math.max(easternmostLongitude, longitudeDegrees);
-        southernmostLatitude = Math.min(southernmostLatitude, latitudeDegrees);
-        northernmostLatitude = Math.max(northernmostLatitude, latitudeDegrees);
       }
 
       setMarkerContainersByClusterId(containersByClusterId);
-
-      // Open on the clusters that exist rather than on the whole globe. Skipped for a single
-      // cluster, where a bounding box has zero area and `fitBounds` would slam to max zoom.
-      //
-      // ⚠️ **AND SKIPPED ON EVERY RUN AFTER THE FIRST, AND WHENEVER THE URL NAMED A CAMERA.** This
-      // effect re-runs on every `clusters` change, and `clusters` now changes because the reader
-      // panned. See `hasFittedToClustersRef` — an unlatched fit here is an endless refetch loop,
-      // not a cosmetic issue.
-      const shouldFitToClusters =
-        clusters.length > 1 && !hasFittedToClustersRef.current && initialCameraRef.current === null;
-
-      if (shouldFitToClusters) {
-        hasFittedToClustersRef.current = true;
-        readyMap.fitBounds(
-          [
-            [westernmostLongitude, southernmostLatitude],
-            [easternmostLongitude, northernmostLatitude],
-          ],
-          { padding: 64, maxZoom: 6, duration: 0 },
-        );
-      }
     }
 
     if (map && readyMapToken > 0) void attachMarkers(map);

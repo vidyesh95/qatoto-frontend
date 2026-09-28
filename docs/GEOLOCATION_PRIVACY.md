@@ -52,10 +52,20 @@
 >   reviews or blurs what is in the picture: you are responsible for it."_ The EXIF/GPS strip is
 >   real: the backend decodes and re-encodes every photo with no metadata carried over
 >   (`validateAndNormalizeImage`), so the raw file never reaches storage.
-> - ⚠️ **§5's PII SCREEN IS STILL UNBUILT.** It is about the DESCRIPTION text rather than the pin, so
->   it was not part of the pin work. It survives as **UX feedback only**: CLAUDE.md is explicit that
->   a client-side check "exists only for fast UX feedback" and that the server must re-validate; a
->   regex in the browser is trivially bypassed by anyone who opens devtools.
+> - ✅ **§5's PII SCREEN SHIPPED 2026-09-28, AS A NON-BLOCKING ADVISORY ON TITLE AND DESCRIPTION.**
+>   A new cluster copies the first report's title and description verbatim, so both fields carry it
+>   (`src/lib/rnd/contact-detail-screen.ts`, rendered by `contact-detail-advisory.tsx`). It is **UX
+>   feedback only** and it never disables submit: CLAUDE.md is explicit that a client-side check
+>   "exists only for fast UX feedback", a regex in the browser is trivially bypassed, and the
+>   patterns misfire on date ranges and ID numbers — while a council helpline number can belong in
+>   a report. **No server screen exists and none is planned**; the claim below that "the client and
+>   server execute" it is false. Two departures from the code below, both deliberate:
+>     - The obfuscated pattern only matches BRACKETED or PARENTHESISED `at` / `dot`. `\bat\b … \bdot\b`
+>       flags ordinary prose ("at the market dot…").
+>     - One sentence naming everything found — "This looks like it contains a phone number. Reports
+>       can appear publicly on the problem map, so leave out personal contact details." — instead of
+>       per-kind "Please remove…" imperatives. It is a guess, so "looks like"; only the first
+>       report's text becomes the cluster's, so "can appear".
 
 ## 1. Regulatory Context: Why Coordinates Are PII
 

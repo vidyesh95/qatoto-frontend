@@ -15,24 +15,17 @@ import ReportProblemSheet from "@/components/home/research-and-development/sheet
 import type { RawSearchParams } from "@/lib/filter-href";
 import type { PaginationMeta } from "@/lib/http";
 import type { ProblemCluster, ProblemClusterSort } from "@/lib/rnd/discovery.schemas";
-import { PROBLEM_CLUSTER_SORTS } from "@/lib/rnd/discovery.schemas";
+import { DEFAULT_PROBLEM_CLUSTER_SORT, PROBLEM_CLUSTER_SORTS } from "@/lib/rnd/discovery.schemas";
 import type { ViewportBoundsMicrodegrees } from "@/lib/rnd/map-viewport";
-
-/**
- * The sort the backend applies when `?sort=` is absent, mirrored from
- * `ListProblemClustersQuerySchema`'s `.default("opportunity")`.
- *
- * ⚠️ **IT IS WRITTEN OUT OF THE URL, NOT INTO IT** — the `?view=business` precedent. Selecting
- * Opportunity returns to the canonical `/research-and-development/problem-map` rather than pinning
- * a parameter that means what the absence already meant.
- */
-export const DEFAULT_PROBLEM_CLUSTER_SORT: ProblemClusterSort = "opportunity";
 
 /** What each sort answers, in the reader's words rather than the enum's. */
 const PROBLEM_CLUSTER_SORT_LABELS: Record<ProblemClusterSort, string> = {
   opportunity: "Opportunity",
   recent: "Most recent",
   reporters: "Most reporters",
+  // "Nearest" alone reads as the reader's OWN location, which this never asks for or uses — the
+  // order is from the middle of the map they are looking at.
+  distance: "Near map centre",
 };
 
 /** One entry of a filter vocabulary — the shape both `/research-categories` and `/regions` return. */
@@ -199,7 +192,10 @@ export default function ProblemMapPanel({
     })),
   ];
 
-  const sortChips: FilterChipOption[] = PROBLEM_CLUSTER_SORTS.map((sort) => ({
+  // "Near map centre" is offered only where there IS a map centre: the static SVG and the list-only
+  // mode have no camera, so the order would have nothing to be near.
+  const offeredSorts = PROBLEM_CLUSTER_SORTS.filter((sort) => sort !== "distance" || hasViewport);
+  const sortChips: FilterChipOption[] = offeredSorts.map((sort) => ({
     label: PROBLEM_CLUSTER_SORT_LABELS[sort],
     href: buildFilterHrefFromLiveView({
       sort: sort === DEFAULT_PROBLEM_CLUSTER_SORT ? undefined : sort,

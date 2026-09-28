@@ -4,12 +4,11 @@
 // island: it re-reads the cluster list for its own viewport and this page's read is the seed that
 // paints before that lands.
 import ProblemMapShell from "@/components/home/research-and-development/sections/problem-map-shell";
-import { DEFAULT_PROBLEM_CLUSTER_SORT } from "@/components/home/research-and-development/sections/problem-map-panel";
 import { listResearchCategories } from "@/lib/rnd/catalog.api";
 import { listDiscoveryRegions, listProblemClusters } from "@/lib/rnd/discovery.api";
-import { PROBLEM_CLUSTER_SORTS } from "@/lib/rnd/discovery.schemas";
+import { DEFAULT_PROBLEM_CLUSTER_SORT, PROBLEM_CLUSTER_SORTS } from "@/lib/rnd/discovery.schemas";
 import { readEnumParam, readSingleParam, type RawSearchParams } from "@/lib/filter-href";
-import { readMapCameraFromSearchParams } from "@/lib/rnd/map-viewport";
+import { readMapCameraFromSearchParams, toCentreMicrodegrees } from "@/lib/rnd/map-viewport";
 import { rowsOrEmpty } from "@/lib/view-state";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 
@@ -55,10 +54,21 @@ export default async function ProblemMapPage({
   const selectedRegionSlug = readSingleParam(resolvedSearchParams, "region");
   // An unrecognised `?sort=` is DROPPED rather than forwarded — `readEnumParam` exists so a
   // hand-edited URL renders the default view instead of a 422 that blanks the page.
-  const selectedSort =
+  const requestedSort =
     readEnumParam(resolvedSearchParams, "sort", PROBLEM_CLUSTER_SORTS) ??
     DEFAULT_PROBLEM_CLUSTER_SORT;
   const initialCamera = readMapCameraFromSearchParams(resolvedSearchParams);
+  // `?sort=distance` orders from the map's centre, which only a URL camera supplies here. Without
+  // one it is dropped like any unusable value — the backend would 422 a distance read with no
+  // centre, and that 422 would cost the server seed.
+  const selectedSort =
+    requestedSort === "distance" && initialCamera === null
+      ? DEFAULT_PROBLEM_CLUSTER_SORT
+      : requestedSort;
+  const initialDistanceCentre =
+    selectedSort === "distance" && initialCamera !== null
+      ? toCentreMicrodegrees(initialCamera)
+      : null;
   const initialSelectedClusterId = readSingleParam(resolvedSearchParams, "cluster") ?? null;
 
   const [clustersResult, anyClusterProbeResult, categoriesResult, regionsResult] =
@@ -69,6 +79,12 @@ export default async function ProblemMapPage({
           limit: CLUSTERS_PAGE_LIMIT,
           category: selectedCategorySlug,
           region: selectedRegionSlug,
+          ...(initialDistanceCentre === null
+            ? {}
+            : {
+                centreLatitudeMicrodegrees: initialDistanceCentre.latitudeMicrodegrees,
+                centreLongitudeMicrodegrees: initialDistanceCentre.longitudeMicrodegrees,
+              }),
         },
         requestOptions,
       ),
@@ -109,6 +125,9 @@ export default async function ProblemMapPage({
   // read, and this is a paginated one whose `data` is `{ rows, pagination }`.
   const initialClusters = clustersResult.success ? clustersResult.data.rows : [];
   const initialPagination = clustersResult.success ? clustersResult.data.pagination : null;
+  const initialMatchRadiusMeters = clustersResult.success
+    ? clustersResult.data.matchRadiusMeters
+    : null;
 
   // Secondary reads: losing either costs a chip row, not the map.
   const categoryOptions = rowsOrEmpty(categoriesResult).map((category) => ({
@@ -134,6 +153,7 @@ export default async function ProblemMapPage({
       <ProblemMapShell
         initialClusters={initialClusters}
         initialPagination={initialPagination}
+        initialMatchRadiusMeters={initialMatchRadiusMeters}
         hasAnyCluster={hasAnyCluster}
         hasAnyClusterMatchingFilters={hasAnyClusterMatchingFilters}
         categoryOptions={categoryOptions}

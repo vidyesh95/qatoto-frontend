@@ -8,7 +8,7 @@
 // its results sideways.
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { type RefObject, useRef, useState, useSyncExternalStore } from "react";
 
 import type { MapViewportReport } from "@/components/home/research-and-development/sections/civic-pulse-vector-map";
 import ProblemMapBottomSheet from "@/components/home/research-and-development/sections/problem-map-bottom-sheet";
@@ -28,11 +28,16 @@ import {
 } from "@/lib/rnd/civic-pulse-map";
 import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import type { PaginationMeta } from "@/lib/http";
-import type { ProblemCluster, ProblemClusterSort } from "@/lib/rnd/discovery.schemas";
+import {
+  DEFAULT_PROBLEM_CLUSTER_SORT,
+  type ProblemCluster,
+  type ProblemClusterSort,
+} from "@/lib/rnd/discovery.schemas";
 import { OPPORTUNITY_BAND_PIN_SIZE_CLASS, type OpportunityBand } from "@/lib/rnd/map-projection";
 import { PIN_RING_CLASS } from "@/components/home/research-and-development/sections/problem-map-pins";
 import {
   type MapCamera,
+  toCentreMicrodegrees,
   toMapCameraSearchParams,
   type ViewportBoundsMicrodegrees,
 } from "@/lib/rnd/map-viewport";
@@ -131,6 +136,8 @@ function writeViewToAddressBar(patch: Record<string, string | undefined>) {
 type ProblemMapShellProps = {
   readonly initialClusters: ProblemCluster[];
   readonly initialPagination: PaginationMeta | null;
+  /** From the server's list envelope; `null` if the backend did not send it. Nothing draws it yet. */
+  readonly initialMatchRadiusMeters: number | null;
   /**
    * Whether ANY cluster exists, filters ignored.
    *
@@ -164,6 +171,7 @@ type ProblemMapShellProps = {
 export default function ProblemMapShell({
   initialClusters,
   initialPagination,
+  initialMatchRadiusMeters,
   hasAnyCluster,
   hasAnyClusterMatchingFilters,
   categoryOptions,
@@ -203,6 +211,12 @@ export default function ProblemMapShell({
    * in it. If it should survive a reload it folds into that blob and nowhere else.
    */
   const [viewMode, setViewMode] = useState<MapViewMode>(DEFAULT_MAP_VIEW_MODE);
+  /**
+   * Whichever element floats over the map right now — the docked panel, its collapsed tab or the
+   * mobile sheet. The map measures it when it eases to a selection, so the cluster lands in the
+   * part of the map the reader can see rather than under the list.
+   */
+  const mapOverlayRef = useRef<HTMLElement | null>(null);
   const mapCanvasMode = useResolvedMapCanvasMode();
   const isAtLeastMedium = useIsAtLeastViewport(MEDIUM_VIEWPORT_QUERY);
   const isAtLeastLarge = useIsAtLeastViewport(LARGE_VIEWPORT_QUERY);
@@ -214,14 +228,27 @@ export default function ProblemMapShell({
    */
   const activeViewportBounds = mapCanvasMode === "vector" ? reportedViewportBounds : null;
 
+  /**
+   * `sort=distance` orders from the middle of the map the reader is looking at. Until the map has
+   * reported a camera there is no centre, and a distance read without one is a 422 — so the query
+   * runs under the default sort for that moment rather than sending a request that cannot succeed.
+   */
+  const distanceCentre = liveCamera === null ? null : toCentreMicrodegrees(liveCamera);
+  const querySort =
+    selectedSort === "distance" && distanceCentre === null
+      ? DEFAULT_PROBLEM_CLUSTER_SORT
+      : selectedSort;
+
   const clustersQuery = useProblemClustersQuery({
     category: selectedCategorySlug,
     region: selectedRegionSlug,
-    sort: selectedSort,
+    sort: querySort,
     limit: clustersPageLimit,
     viewportBounds: activeViewportBounds,
+    centre: distanceCentre,
     initialRows: initialClusters,
     initialPagination,
+    initialMatchRadiusMeters,
   });
 
   const listState = toProblemMapListState({
@@ -235,12 +262,15 @@ export default function ProblemMapShell({
 
   const renderedClusters = listState.status === "ready" ? listState.clusters : NO_CLUSTERS;
 
+  // ⚠️ **THE ADDRESS BAR IS WRITTEN OUTSIDE THE STATE UPDATER, NEVER INSIDE IT.** An updater runs
+  // during React's render, and Next's router patches `history.replaceState` to update its own
+  // state — so writing the URL from in there was "Cannot update a component (`Router`) while
+  // rendering a different component (`ProblemMapShell`)" on every pin or row click. A click is one
+  // event, so reading `selectedClusterId` from this render is exact.
   function toggleSelectedCluster(clusterId: string) {
-    setSelectedClusterId((previousSelectedClusterId) => {
-      const nextSelectedClusterId = previousSelectedClusterId === clusterId ? null : clusterId;
-      writeViewToAddressBar({ cluster: nextSelectedClusterId ?? undefined });
-      return nextSelectedClusterId;
-    });
+    const nextSelectedClusterId = selectedClusterId === clusterId ? null : clusterId;
+    setSelectedClusterId(nextSelectedClusterId);
+    writeViewToAddressBar({ cluster: nextSelectedClusterId ?? undefined });
   }
 
   function handleViewportChange(viewport: MapViewportReport) {
@@ -308,6 +338,7 @@ export default function ProblemMapShell({
         initialCamera={initialCamera}
         onViewportChange={handleViewportChange}
         viewMode={viewMode}
+        mapOverlayRef={mapOverlayRef}
       />
 
       {/* ⚠️ **VECTOR ONLY.** The static SVG is one fixed overhead projection with no camera, so a
@@ -342,11 +373,12 @@ export default function ProblemMapShell({
           isCollapsed={isPanelCollapsed && !isAtLeastLarge}
           canCollapse={!isAtLeastLarge}
           onToggleCollapsed={() => setIsPanelCollapsed((previous) => !previous)}
+          overlayRef={mapOverlayRef}
         >
           {panel}
         </DockedPanel>
       ) : (
-        <ProblemMapBottomSheet>{panel}</ProblemMapBottomSheet>
+        <ProblemMapBottomSheet overlayRef={mapOverlayRef}>{panel}</ProblemMapBottomSheet>
       )}
     </div>
   );
@@ -434,16 +466,22 @@ function DockedPanel({
   isCollapsed,
   canCollapse,
   onToggleCollapsed,
+  overlayRef,
   children,
 }: {
   readonly isCollapsed: boolean;
   readonly canCollapse: boolean;
   readonly onToggleCollapsed: () => void;
+  /** Attached to whichever branch renders, so the map always measures what is actually over it. */
+  readonly overlayRef: RefObject<HTMLElement | null>;
   readonly children: React.ReactNode;
 }) {
   if (isCollapsed) {
     return (
       <button
+        ref={(tabElement) => {
+          overlayRef.current = tabElement;
+        }}
         type="button"
         onClick={onToggleCollapsed}
         aria-expanded={false}
@@ -458,6 +496,9 @@ function DockedPanel({
 
   return (
     <div
+      ref={(panelElement) => {
+        overlayRef.current = panelElement;
+      }}
       id="problem-map-docked-panel"
       className="absolute top-4 bottom-4 left-4 z-10 flex w-80 flex-col overflow-hidden rounded-2xl border border-outline-variant/60 bg-card shadow-lg lg:w-90"
     >

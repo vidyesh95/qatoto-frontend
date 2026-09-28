@@ -178,3 +178,145 @@ export function toMapCameraSearchParams(camera: MapCamera): Record<string, strin
     [MAP_ZOOM_QUERY_KEY]: camera.zoom.toFixed(2),
   };
 }
+
+/** A point in integer microdegrees — the shape `sort=distance`'s centre takes on the wire. */
+export interface CentreMicrodegrees {
+  readonly latitudeMicrodegrees: number;
+  readonly longitudeMicrodegrees: number;
+}
+
+function snapToCacheKeyGrid(microdegrees: number): number {
+  return Math.round(microdegrees / CACHE_KEY_GRID_MICRODEGREES) * CACHE_KEY_GRID_MICRODEGREES;
+}
+
+/**
+ * The camera's centre as the `sort=distance` centre: integer microdegrees, longitude wrapped into
+ * ±180°, both snapped to `CACHE_KEY_GRID_MICRODEGREES` so pixel jitter in a drag cannot mint a new
+ * cache entry — the reason the viewport box is rounded too.
+ *
+ * MapLibre can report a longitude outside ±180 after the reader pans across the antimeridian; the
+ * backend's schema would refuse that with a 422, so it is wrapped here rather than sent.
+ */
+export function toCentreMicrodegrees(camera: MapCamera): CentreMicrodegrees {
+  const wrappedLongitudeDegrees = ((((camera.longitudeDegrees + 180) % 360) + 360) % 360) - 180;
+  return {
+    latitudeMicrodegrees: Math.min(
+      MAXIMUM_LATITUDE_MICRODEGREES,
+      Math.max(
+        -MAXIMUM_LATITUDE_MICRODEGREES,
+        snapToCacheKeyGrid(camera.latitudeDegrees * 1_000_000),
+      ),
+    ),
+    longitudeMicrodegrees: Math.min(
+      MAXIMUM_LONGITUDE_MICRODEGREES,
+      Math.max(
+        -MAXIMUM_LONGITUDE_MICRODEGREES,
+        snapToCacheKeyGrid(wrappedLongitudeDegrees * 1_000_000),
+      ),
+    ),
+  };
+}
+
+/** A screen rectangle in CSS pixels — the fields of a `DOMRect` this module needs, and no more. */
+export interface ScreenRectPx {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/** Insets from each edge of the map container, in CSS pixels — MapLibre's `PaddingOptions`. */
+export interface EdgeInsetsPx {
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly left: number;
+}
+
+/**
+ * The largest part of the map container NOT covered by the overlay floating over it.
+ *
+ * The map is full-bleed and the list floats over it — a panel down the left from `md`, a sheet
+ * over the bottom 50–75% under it. This takes the four strips of container left beside the overlay
+ * (left, right, above, below) and keeps the one with the largest area. The whole container when
+ * nothing covers it.
+ *
+ * Measured rects rather than breakpoint or detent constants: a collapsed tab, a dragged sheet and a
+ * resized window all arrive here as whatever is actually on screen.
+ */
+function findLargestUncoveredRectPx(
+  containerRect: ScreenRectPx,
+  overlayRect: ScreenRectPx | null,
+): ScreenRectPx {
+  // ⚠️ **COPIED FIELD BY FIELD, NEVER SPREAD.** A `DOMRect`'s edges are prototype getters, so
+  // `{ ...domRect }` is `{}` — the strips below would get `undefined` edges and MapLibre would throw
+  // "Invalid LngLat object: (NaN, NaN)". Measured, which is how this line exists.
+  const containerRectCopy: ScreenRectPx = {
+    left: containerRect.left,
+    top: containerRect.top,
+    right: containerRect.right,
+    bottom: containerRect.bottom,
+  };
+  if (overlayRect === null) return containerRectCopy;
+
+  const clippedOverlayRect: ScreenRectPx = {
+    left: Math.max(overlayRect.left, containerRect.left),
+    top: Math.max(overlayRect.top, containerRect.top),
+    right: Math.min(overlayRect.right, containerRect.right),
+    bottom: Math.min(overlayRect.bottom, containerRect.bottom),
+  };
+  const isOverlayCoveringMap =
+    clippedOverlayRect.left < clippedOverlayRect.right &&
+    clippedOverlayRect.top < clippedOverlayRect.bottom;
+  if (!isOverlayCoveringMap) return containerRectCopy;
+
+  const uncoveredStrips: readonly ScreenRectPx[] = [
+    { ...containerRectCopy, right: clippedOverlayRect.left },
+    { ...containerRectCopy, left: clippedOverlayRect.right },
+    { ...containerRectCopy, bottom: clippedOverlayRect.top },
+    { ...containerRectCopy, top: clippedOverlayRect.bottom },
+  ];
+  return uncoveredStrips.reduce((largestStrip, candidateStrip) =>
+    measureRectAreaPx(candidateStrip) > measureRectAreaPx(largestStrip)
+      ? candidateStrip
+      : largestStrip,
+  );
+}
+
+/**
+ * How far from the map container's centre the middle of its uncovered part sits, as the `[x, y]`
+ * pixel offset MapLibre's `easeTo` takes. `[0, 0]` when nothing covers the map.
+ */
+export function computeUnobscuredCentreOffsetPx(
+  containerRect: ScreenRectPx,
+  overlayRect: ScreenRectPx | null,
+): [number, number] {
+  const uncoveredRect = findLargestUncoveredRectPx(containerRect, overlayRect);
+  return [
+    (uncoveredRect.left + uncoveredRect.right) / 2 - (containerRect.left + containerRect.right) / 2,
+    (uncoveredRect.top + uncoveredRect.bottom) / 2 - (containerRect.top + containerRect.bottom) / 2,
+  ];
+}
+
+/**
+ * Padding that fits a set of pins inside the uncovered part of the map, with `marginPx` to spare
+ * on every side — what the map passes as `fitBoundsOptions.padding` when it opens on the clusters,
+ * so none of them opens underneath the list.
+ */
+export function computeUncoveredFitPaddingPx(
+  containerRect: ScreenRectPx,
+  overlayRect: ScreenRectPx | null,
+  marginPx: number,
+): EdgeInsetsPx {
+  const uncoveredRect = findLargestUncoveredRectPx(containerRect, overlayRect);
+  return {
+    top: uncoveredRect.top - containerRect.top + marginPx,
+    right: containerRect.right - uncoveredRect.right + marginPx,
+    bottom: containerRect.bottom - uncoveredRect.bottom + marginPx,
+    left: uncoveredRect.left - containerRect.left + marginPx,
+  };
+}
+
+function measureRectAreaPx(rect: ScreenRectPx): number {
+  return Math.max(0, rect.right - rect.left) * Math.max(0, rect.bottom - rect.top);
+}

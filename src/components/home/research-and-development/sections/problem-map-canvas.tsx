@@ -10,7 +10,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 
 import CivicPulseVectorMap, {
   type MapViewportReport,
@@ -39,6 +39,8 @@ type ProblemMapCanvasProps = {
    * projection and no camera to pitch, which is also why the shell hides the control in that mode.
    */
   readonly viewMode: MapViewMode;
+  /** The panel or sheet over the map. Vector renderer only: the static SVG has no camera to ease. */
+  readonly mapOverlayRef: RefObject<HTMLElement | null>;
 };
 
 /**
@@ -60,6 +62,7 @@ export default function ProblemMapCanvas({
   initialCamera,
   onViewportChange,
   viewMode,
+  mapOverlayRef,
 }: ProblemMapCanvasProps) {
   /**
    * Set when the basemap cannot be shown — a dead tile host, or a browser that refuses the GL
@@ -78,6 +81,7 @@ export default function ProblemMapCanvas({
         onViewportChange={onViewportChange}
         viewMode={viewMode}
         onUnavailable={() => setHasVectorMapFailed(true)}
+        mapOverlayRef={mapOverlayRef}
       />
     );
   }

@@ -242,7 +242,10 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
 
     const chapterInput = toChapterInput(draftToSave.chapters);
     try {
-      if (chapterInput.length > 0) {
+      // An EDIT always sends the set, even an empty one: `[]` is how the backend clears chapters,
+      // so skipping it would leave every deleted chapter live with no error. A new video has
+      // none to clear, so it only sends when there is something to write.
+      if (chapterInput.length > 0 || existingVideoId !== null) {
         await replaceChaptersMutation.mutateAsync({
           videoId: savedVideoId,
           input: { chapters: chapterInput },

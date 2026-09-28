@@ -3,6 +3,7 @@ import {
   CompensationKindSchema,
   DiscoveryCategoryRefSchema,
   DiscoveryRegionRefSchema,
+  PaginationMetaSchema,
   RoleCommitmentSchema,
   TrendDirectionSchema,
 } from "@/lib/rnd/shared.schemas";
@@ -85,8 +86,44 @@ export const ProblemClusterDetailSchema = ProblemClusterSchema.extend({
 });
 export type ProblemClusterDetail = z.infer<typeof ProblemClusterDetailSchema>;
 
-export const PROBLEM_CLUSTER_SORTS = ["opportunity", "recent", "reporters"] as const;
+/**
+ * `distance` orders nearest-first from a CENTRE the caller sends — the middle of the reader's map,
+ * never their own location. The backend refuses it without a centre and refuses a centre with any
+ * other sort, so it is only ever sent with one.
+ */
+export const PROBLEM_CLUSTER_SORTS = ["opportunity", "recent", "reporters", "distance"] as const;
 export type ProblemClusterSort = (typeof PROBLEM_CLUSTER_SORTS)[number];
+
+/**
+ * The WHOLE list envelope, because it carries a sibling of `data` that `getPaginated` would drop.
+ *
+ * `matchRadiusMeters` is how far apart two reports may be and still join one cluster, so a pin
+ * marks the middle of a catchment that wide. ⚠️ **OPTIONAL ON PURPOSE:** the backend and this app
+ * deploy separately, and a frontend that goes live first must not blank the map over a field it
+ * does not yet render. Absent becomes `null` — never a copied 25 km, which is the hardcode the
+ * field exists to prevent. Nothing draws it yet; the radius ring is a separate proposal.
+ */
+export const ProblemClusterListEnvelopeSchema = z.object({
+  data: z.array(ProblemClusterSchema),
+  pagination: PaginationMetaSchema,
+  matchRadiusMeters: z.number().int().positive().optional(),
+});
+
+/**
+ * The sort the backend applies when `?sort=` is absent, mirrored from
+ * `ListProblemClustersQuerySchema`'s `.default("opportunity")`.
+ *
+ * ⚠️ **IT IS WRITTEN OUT OF THE URL, NOT INTO IT** — the `?view=business` precedent. Selecting
+ * Opportunity returns to the canonical `/research-and-development/problem-map` rather than pinning
+ * a parameter that means what the absence already meant.
+ *
+ * ⚠️ **IT LIVES HERE, NOT IN `problem-map-panel.tsx`, AND THAT IS A FIX.** The panel is a
+ * `"use client"` module, so the SERVER page importing this constant from it received a client
+ * reference instead of the string — its unbounded read sent that as `?sort=`, the backend answered
+ * 422, and every page load silently lost the server seed. A value both sides read belongs in a module
+ * with no directive.
+ */
+export const DEFAULT_PROBLEM_CLUSTER_SORT: ProblemClusterSort = "opportunity";
 
 // --- Market insights ---------------------------------------------------------
 

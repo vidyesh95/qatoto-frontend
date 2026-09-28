@@ -40,7 +40,7 @@ and `git log` are the record of what was built and why.
 **R&D / Civic Pulse:**
 
 - **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
-- **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The retention sweep (2 years / 90 days after resolution) is still unbuilt. See §19.5.
+- **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The 2-year retention purge runs (2026-09-28); the 90-days-after-resolution rule is still unbuilt. See §19.5.
 - **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
   map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
   fixed-height flex shell whose `<main>` is the scroll container. What remains of
@@ -297,13 +297,32 @@ from §18 instead.
   (multipart, 1 MB) parses it server-side with the format INFERRED from the bytes, and
   `GET /feed/watch/:videoId` carries it (`video_transcript` + `video_transcript_segment`, migration
   0205). Zero vendor cost. Captions inside the player stay YouTube's.
-- **`replaceChapters` has an unlocked replace race.** `videos.service.ts` deletes then inserts the
-  chapter set with no row lock, so two concurrent `PUT /videos/:videoId/chapters` can collide on
-  `video_chapter_position_unq` or interleave. `replaceVideoTranscript` beside it takes
-  `SELECT … FOR UPDATE` on the video row for exactly this; copy that. Found while building the
-  transcript, left alone as a different surface.
+- ~~**`replaceChapters` has an unlocked replace race.**~~ — **FIXED 2026-09-28.** It now takes
+  `SELECT … FOR UPDATE` on the owned video row, as `replaceVideoTranscript` does, and validates the
+  set under that lock so `recompute-video-durations` cannot move `duration_seconds` between the
+  check and the write. Same day: the upload modal now sends `[]` on an EDIT, because skipping an
+  empty set meant deleting every chapter left them all live with no error.
 - **`isPremium`**: Currently hardcoded to `false`. Requires a subscription entitlement model and recurring payment processing if paywalled creator content is offered.
-- **Trending**: Currently empty array. Requires a nightly or hourly background worker calculating popular search and discussion tags.
+- **Trending — DECIDED 2026-09-28, NOT BUILT.** This bullet used to say "currently empty array"
+  about trending in general, which was wrong: VIDEO trending ships, as the hourly
+  `recompute-trending-videos` job behind `GET /feed/videos?mode=trending`. What is empty is the
+  watch page's "Everyone is searching for:" line (`comments.tsx`, `TRANSPORT: mock`).
+  **Decision: fill it with trending TAGS, not search terms** — `video.tags` weighted by the 48h
+  engagement on the videos carrying them, from a new hourly tick + singleton job, carried on a new
+  `GET /feed/watch/:videoId` field. The line's copy changes with it, since tags are not searches.
+  ⚠️ **No search-query log.** Nothing stores search text today (`request-log.ts` drops the query
+  string on purpose), the privacy policy discloses no such collection, and adding one needs a PII
+  register entry, an erasure manifest entry and a retention rule — none worth it for one line.
+  There is no discussion "Trending" tab in either repo, and none is being built.
+
+**Remaining work from the 2026-09-28 request, in build order** (Part 1, the chapter lock, is done;
+this list starts at Part 2):
+
+1. ~~2-year problem-photo purge — §19.5 "The retention rule".~~ Done 2026-09-28.
+2. ~~PII advisory on the problem description — §19.1's "STILL OPEN" note.~~ Done 2026-09-28.
+3. ~~`easeTo` the centroid on selection — §19.8 "Still not built here".~~ Done 2026-09-28.
+4. ~~`sort=distance` + `matchRadiusMeters` on the wire — §19.10.~~ Done 2026-09-28 (ring still owed).
+5. Trending tags — the bullet above.
 
 ---
 
@@ -761,9 +780,10 @@ captured body was parsed by the real `CreateProblemReportSchema`. Clear removes 
 than sending `undefined`. Every submit test ran with `fetch` stubbed, so nothing reached the
 database — which is why the round trip below is still owed.
 
-⚠️ **STILL OPEN: `GEOLOCATION_PRIVACY.md` §5's PII SCREEN.** Its correction header keeps it as
-client-side UX feedback only. It is about the DESCRIPTION text rather than the pin, so it was not
-bundled here, and it is unbuilt.
+~~**STILL OPEN: `GEOLOCATION_PRIVACY.md` §5's PII SCREEN.**~~ — **SHIPPED 2026-09-28** as a
+non-blocking advisory under both Title and Description, which a new cluster publishes verbatim
+(`src/lib/rnd/contact-detail-screen.ts`). UX feedback only: it never disables submit and there is no
+server screen. `GEOLOCATION_PRIVACY.md`'s correction header records the two departures from §5.
 
 **1b. The 2D/3D view toggle — SHIPPED 2026-09-20, and why there is no satellite beside it.**
 
@@ -839,6 +859,22 @@ array → effect → `fitBounds` → `moveend` → refetch, with no exit, becaus
 camera move. It is now latched to once per map instance and skipped outright when the URL carries a
 camera. Do not remove `hasFittedToClustersRef`.
 
+**Superseded 2026-09-28 — the fit moved to construction, and the latch went with it.** The latched
+fit also RACED the first viewport read: the map reports its viewport the moment it exists, and on a
+375px phone the world view spans only longitude −43°…63°, so that read came back empty before the
+fit ran and a phone reader got "No clusters in this view". The map is now CONSTRUCTED fitted to the
+server's unbounded page, padded clear of the panel or sheet (`computeUncoveredFitPaddingPx`), so
+the first viewport report is already the fitted view — one read at load instead of two, and no
+effect left that could repeat a fit. Precedence is unchanged: a URL camera wins, the world view is
+only for a surface with no clusters. **Do not move the fit back into an effect.**
+
+⚠️ **ALSO FOUND: THE SERVER SEED HAD NEVER ARRIVED.** `problem-map-page.tsx` imported
+`DEFAULT_PROBLEM_CLUSTER_SORT` from `problem-map-panel.tsx`, a `"use client"` module, so on the
+server it was a client reference rather than `"opportunity"`. The unbounded read sent that as
+`?sort=`, the backend answered 422, and every load silently fell back to a client-side re-read
+(`initialPagination: null` in the RSC payload). The constant now lives in `discovery.schemas.ts`.
+A server component must never import a VALUE from a `"use client"` module — types are fine.
+
 ⚠️ **TRAP 2 — A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPS DESTROYS AND REBUILDS THE MAP.**
 Worse than trap 1 and it is the one that actually shipped. The effect listed `onUnavailable`, which
 the parent passes as an inline arrow. That was harmless only while the parent barely re-rendered;
@@ -887,8 +923,14 @@ found" would make `problem_submission_photo.id` an existence oracle. Do not "imp
 
 **Still open:**
 
-- **The retention rule.** `DATA_RETENTION.md` §3.2's 2 years / 90 days after resolution does not
-  run: there is no job for the first and no `resolved` cluster state to trigger the second.
+- **The retention rule — 2-YEAR HALF SHIPPED 2026-09-28.** The first step of the daily
+  `sweep-orphan-problem-photos` job deletes every photo 730 days after upload, row first, so a
+  failed Cloudinary delete is retried by the same run's folder listing. It is a step in that job
+  rather than a job of its own for exactly that reason. The privacy policy and Settings → Your
+  data & privacy now name the photos and the two years; neither did before.
+  **Still open: the 90-days-after-resolution half**, blocked until `problem_cluster_status` has a
+  `resolved` value, which also needs a moderator control and the "Photo removed upon verified
+  problem resolution" copy — a separate decision.
 - **Post-erasure CDN window.** A photo whose CDN delete failed during an erasure survives on
   Cloudinary until the next daily sweep finds it (up to about a day). Stated in `DATA_RETENTION.md`;
   closing it fully would need a retry queue for the erasure step.
@@ -938,10 +980,20 @@ keeps 25% of the region (measured 135px of 539px) and there is no detent that co
 `opportunity | recent | reporters` and carries no `distance`, so that ordering would be a client
 sort over a fetched page. Distance ordering is item 10.
 
-**Still not built here:** `easeTo` the centroid on selection (`docs/PROBLEM_MAP_UX.md` §6's
-"Cluster selected" row). Every camera mutation interacts with the `fitBounds` latch and the
-`moveend` refetch in item 4, and the row already highlights, so it was left rather than bolted on
-at the end of a large change.
+~~**Still not built here:** `easeTo` the centroid on selection~~ — **SHIPPED 2026-09-28.** A pin or
+row selection eases the camera, zoom unchanged, so the cluster lands in the middle of the part of
+the map the panel or sheet does not cover (measured at ease time, applied as `easeTo`'s `offset`).
+The effect keeps `clusters` out of its dependencies and acts only on a changed id, so the ease's
+`moveend` costs one read and cannot loop. `docs/PROBLEM_MAP_UX.md`'s status note has the detail.
+
+**Found and fixed while verifying it:** `toggleSelectedCluster` wrote the address bar from INSIDE
+its `setState` updater, which runs during render, and Next's router patches `replaceState` — so
+every pin or row click logged "Cannot update a component (`Router`) while rendering a different
+component (`ProblemMapShell`)". The write now happens beside the `setState`, not in it.
+
+⚠️ **KNOWN, NOT INTRODUCED BY THE EASE:** the viewport read is paged and sorted, so after any camera
+move — this ease included — a selected cluster can fall off the page and take its pin and row with
+it while `?cluster=` still names it.
 
 **9. The chrome height — SHIPPED 2026-09-20, AND NOT THE WAY THIS ITEM SAID.**
 
@@ -987,6 +1039,31 @@ Neither blocks item 8 and neither may be faked client-side.
   as data, draw no ring and print no accuracy figure.** thetraffic prints `±3911 m` because it holds
   a device accuracy reading; we hold none, and inventing one is the unattributed number PRODUCT.md
   bans.
+
+**BOTH SHIPPED 2026-09-28. The ring is still owed.**
+
+- `matchRadiusMeters` is on the list envelope (`PaginatedResponse & { matchRadiusMeters }`, the
+  `asOf` / `rankSeed` precedent), derived from `CLUSTER_RADIUS_MILLIMETRES` (25 000 today). The
+  frontend reads it through `getEnvelope` — `getPaginated` would drop it — and parses it as
+  OPTIONAL, `null` when absent, so a frontend deployed before the backend does not blank the map.
+  **Nothing draws it yet**; the ring's design is proposed separately, and when it ships it reads
+  this field and never a copied 25 km.
+- `sort=distance` takes `centreLatitudeMicrodegrees` + `centreLongitudeMicrodegrees`: both or
+  neither, required by that sort and refused with any other (all three are 422s from the query
+  schema's refine). ⚠️ **IT ORDERS BY THE QUANTIZED CENTROID** (`round(col::numeric / 1000) * 1000`
+  — the `::numeric` matters, integer `/` truncates), because sorting on the stored centroid lets a
+  caller choose centres and trilaterate a one-report cluster below the 111 m grid. The key is
+  `numeric` (it reaches ~3e24) and the cosine is the CENTRE's band, one parameter per request.
+  Measured: a centre north of both Mumbai clusters and one south of both flip the order.
+- ⚠️ **CORRECTION TO THE DECISION ABOVE: THE READ IS NOT REQUIRED TO BE BBOX-BOUNDED.** The
+  server page's first read is unbounded by design (it seeds the list and answers "does this filter
+  match anything"), and with `?sort=distance` and a URL camera it sends the centre too. Every
+  CLIENT read still carries the viewport. With no PostGIS there is no KNN index, so an unbounded
+  distance read is a scan over active clusters — fine at today's size, and the thing to revisit
+  first if this table grows.
+- The frontend offers "Near map centre" only when the map has a camera; `?sort=distance` with no
+  URL camera falls back to Opportunity on the server, and the shell never sends a distance read
+  before the map has reported one.
 
 **11. Four shipped defects on this surface — ALL FOUR CLOSED 2026-09-20.**
 

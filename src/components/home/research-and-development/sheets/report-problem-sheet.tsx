@@ -4,9 +4,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import ContactDetailAdvisory from "@/components/home/research-and-development/sheets/contact-detail-advisory";
 import RndSheet, {
   RndSheetConfirmation,
 } from "@/components/home/research-and-development/sheets/rnd-sheet";
@@ -112,6 +113,10 @@ export default function ReportProblemSheet({
   const [proposedCategories, setProposedCategories] = useState<ResearchCategory[]>([]);
   /** Photos picked for this report. Only `uploaded` tiles carry an id the submit can send. */
   const [photoTiles, setPhotoTiles] = useState<ProblemPhotoTile[]>([]);
+  // Title and description are both published verbatim as a new cluster's text, so both carry the
+  // contact-detail advisory. Neither advisory gates submit.
+  const titleAdvisoryId = useId();
+  const descriptionAdvisoryId = useId();
 
   const categoriesQuery = useResearchCategoriesQuery();
   const reportMutation = useCreateProblemReportMutation();
@@ -259,16 +264,22 @@ export default function ReportProblemSheet({
               });
             }}
           >
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Title</span>
-              <input
-                type="text"
-                value={title}
-                onChange={(changeEvent) => setTitle(changeEvent.target.value)}
-                placeholder="e.g. No reliable cold storage at the market"
-                className={INPUT_CLASS}
-              />
-            </label>
+            {/* The advisory sits BESIDE the label, not in it: text inside a <label> becomes part of
+                the field's accessible name, and the advisory is its description. */}
+            <div className="flex flex-col gap-1">
+              <label className="flex flex-col gap-1">
+                <span className={LABEL_CLASS}>Title</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+                  placeholder="e.g. No reliable cold storage at the market"
+                  aria-describedby={titleAdvisoryId}
+                  className={INPUT_CLASS}
+                />
+              </label>
+              <ContactDetailAdvisory id={titleAdvisoryId} text={title} />
+            </div>
 
             <CreatableCombobox
               labelText="Category"
@@ -300,16 +311,20 @@ export default function ReportProblemSheet({
                 inside that place the problem is. */}
             <PlacePicker pin={pin} onPinChange={setPin} />
 
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Description</span>
-              <textarea
-                value={description}
-                onChange={(changeEvent) => setDescription(changeEvent.target.value)}
-                placeholder="What's broken, who does it affect, how often?"
-                rows={3}
-                className={INPUT_CLASS}
-              />
-            </label>
+            <div className="flex flex-col gap-1">
+              <label className="flex flex-col gap-1">
+                <span className={LABEL_CLASS}>Description</span>
+                <textarea
+                  value={description}
+                  onChange={(changeEvent) => setDescription(changeEvent.target.value)}
+                  placeholder="What's broken, who does it affect, how often?"
+                  rows={3}
+                  aria-describedby={descriptionAdvisoryId}
+                  className={INPUT_CLASS}
+                />
+              </label>
+              <ContactDetailAdvisory id={descriptionAdvisoryId} text={description} />
+            </div>
 
             <ProblemPhotoPicker tiles={photoTiles} onTilesChange={setPhotoTiles} />
 

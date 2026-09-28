@@ -2,7 +2,7 @@
 // fetches nothing.
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useRef, useState } from "react";
 
 /**
  * The three heights the sheet rests at, as a share of the map region.
@@ -56,6 +56,8 @@ function stepDetent(current: SheetDetent, direction: 1 | -1): SheetDetent {
 
 type ProblemMapBottomSheetProps = {
   readonly children: ReactNode;
+  /** Given the sheet itself, which is what covers the map, so an ease can land above it. */
+  readonly overlayRef: RefObject<HTMLElement | null>;
 };
 
 /**
@@ -76,7 +78,10 @@ type ProblemMapBottomSheetProps = {
  * a pointermove does not re-render, a threshold before capture, and `setPointerCapture` in a
  * `try/catch` because a synthetic or already-released pointer must not throw.
  */
-export default function ProblemMapBottomSheet({ children }: ProblemMapBottomSheetProps) {
+export default function ProblemMapBottomSheet({
+  children,
+  overlayRef,
+}: ProblemMapBottomSheetProps) {
   const [detent, setDetent] = useState<SheetDetent>("peek");
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const dragGestureRef = useRef<{
@@ -159,7 +164,12 @@ export default function ProblemMapBottomSheet({ children }: ProblemMapBottomShee
 
   return (
     <div
-      ref={sheetRef}
+      // One element, two readers: the drag measures the sheet's region through `sheetRef`, and the
+      // map measures what covers it through `overlayRef`.
+      ref={(sheetElement) => {
+        sheetRef.current = sheetElement;
+        overlayRef.current = sheetElement;
+      }}
       className={`absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-2xl border-t border-outline-variant/60 bg-card shadow-lg transition-[height] duration-200 ${SHEET_HEIGHT_CLASS[detent]}`}
     >
       <button

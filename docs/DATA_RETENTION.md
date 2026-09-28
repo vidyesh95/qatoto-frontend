@@ -19,8 +19,8 @@
 > - ⚠️ **"Raw Ingest IP Hashes — 30 Days" — there is no `reporterIpHash` column.** Abuse control on
 >   `POST /discovery/problem-reports` is `requireIdentifiedUser` plus `problemReportLimiter`
 >   (10 per 15 minutes), not a stored hash.
-> - ⚠️ **"Processed Problem Photos — 2 Years" — THE PHOTOS EXIST NOW; THE 2-YEAR AND 90-DAY RULES
->   DO NOT.** Up to three photos per report, in `problem_submission_photo`, public on the cluster
+> - ⚠️ **"Processed Problem Photos — 2 Years" — THE PHOTOS EXIST NOW; THE 2-YEAR RULE RUNS, THE
+>   90-DAY RULE DOES NOT.** Up to three photos per report, in `problem_submission_photo`, public on the cluster
 >   page. What actually runs, and nothing more:
 >     - **Unclaimed uploads die after a day.** A photo picked but never sent with a report is
 >       deleted, row and Cloudinary file, by the daily `sweep-orphan-problem-photos` job.
@@ -34,8 +34,14 @@
 >       daily sweep lists the folder, finds files no row names, and deletes them once they are a
 >       day old — so a photo can outlive its owner's erasure by roughly a day, at an address nobody
 >       holds any more. Not forever, and not zero.
->     - **No 2-year expiry and no 90-days-after-resolution removal.** There is no `resolved` cluster
->       state to trigger the second, and no job for the first. Both stay unbuilt (`todo.md` §19.5).
+>     - **The 2-year expiry runs (since 2026-09-28).** The first step of the same daily
+>       `sweep-orphan-problem-photos` job deletes every photo, claimed or not, 730 days after upload —
+>       row first, then Cloudinary file. Fixed days rather than calendar years, so across a leap day
+>       it purges one day early. A file whose delete fails has already lost its row, so the same
+>       run's folder listing finds it and retries.
+>     - **No 90-days-after-resolution removal.** There is no `resolved` cluster state to trigger it,
+>       so it stays unbuilt (`todo.md` §19.5), and so does the "Photo removed upon verified problem
+>       resolution" badge. §2's "Archive to Cold Storage" is not built either: expiry is deletion.
 > - ⚠️ **§4's `pnpm run check:data-retention-compliance` IS NOT A SCRIPT IN EITHER REPO.**
 > - ✅ **WHAT IS TRUE TODAY:** cluster centroids and aggregate counts are anonymous and retained
 >   indefinitely, which is §3.3 and needs no job. `geocode_cache` is also permanent, and
