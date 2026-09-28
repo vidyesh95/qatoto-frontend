@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import type { UploadDraft } from "@/lib/videos/studio-view";
 import ChaptersEditor from "../chapters-editor";
+import TranscriptField, { type PendingTranscriptChange } from "../transcript-field";
 import { useMyProductsQuery } from "@/hooks/products";
 import { useAttachableProjectsQuery, useProjectOpenRolesQuery } from "@/hooks/rnd/projects";
 import { centsToPriceLabel } from "@/lib/products/schemas";
@@ -34,6 +35,9 @@ type VideoElementsStepProps = {
   onPendingDocumentFilesChange: (files: File[]) => void;
   /** Removes an ALREADY-SAVED document — a real DELETE, not a draft edit. */
   onRemoveSavedDocument: (documentId: string) => void;
+  /** What the next save does to the transcript. Held by the modal; see `TranscriptField`. */
+  pendingTranscriptChange: PendingTranscriptChange;
+  onPendingTranscriptChangeChange: (nextChange: PendingTranscriptChange) => void;
 };
 
 /** What `POST /videos/:videoId/documents` accepts. Mirrored from the backend, not guessed. */
@@ -54,6 +58,8 @@ export default function VideoElementsStep({
   pendingDocumentFiles,
   onPendingDocumentFilesChange,
   onRemoveSavedDocument,
+  pendingTranscriptChange,
+  onPendingTranscriptChangeChange,
 }: VideoElementsStepProps) {
   const [documentRejectionMessage, setDocumentRejectionMessage] = useState<string | null>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
@@ -521,6 +527,20 @@ export default function VideoElementsStep({
         <ChaptersEditor
           chapters={draft.chapters}
           onChaptersChange={(chapters) => onDraftChange({ chapters })}
+        />
+      </section>
+
+      <section className="flex flex-col gap-4 rounded-2xl border border-border p-6">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Transcript (optional)</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your own subtitle file or text, for viewers who would rather read.
+          </p>
+        </div>
+        <TranscriptField
+          savedTranscript={draft.savedTranscript}
+          pendingChange={pendingTranscriptChange}
+          onPendingChangeChange={onPendingTranscriptChangeChange}
         />
       </section>
 

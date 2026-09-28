@@ -18,7 +18,8 @@ type Chapter = {
 };
 
 type TranscriptLine = {
-  time: string;
+  /** NULL for a plain-text transcript, which carries no timing — no badge is drawn for it. */
+  time: string | null;
   text: string;
 };
 
@@ -49,8 +50,19 @@ export default function WatchInfoPanel({
   onClose,
   className = "",
 }: WatchInfoPanelProps) {
-  const [tab, setTab] = useState<Tab>("chapters");
   const hasTranscript = transcript.length > 0;
+  // A video with a transcript and no chapters opens on the transcript rather than an empty list.
+  const [tab, setTab] = useState<Tab>(
+    chapters.length === 0 && hasTranscript ? "transcript" : "chapters",
+  );
+  const [transcriptSearchText, setTranscriptSearchText] = useState("");
+  const normalizedTranscriptSearchText = transcriptSearchText.trim().toLowerCase();
+  const visibleTranscript =
+    normalizedTranscriptSearchText === ""
+      ? transcript
+      : transcript.filter((line) =>
+          line.text.toLowerCase().includes(normalizedTranscriptSearchText),
+        );
   const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.title ?? "");
   const [open, setOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -162,11 +174,9 @@ export default function WatchInfoPanel({
           Chapters
         </button>
         {/*
-          HIDDEN WHEN THERE IS NO TRANSCRIPT. The platform has no speech-to-text — no transcript
-          table, no ASR job, no column — so this list is always empty today. Leaving the tab
-          rendered gave the reader a control that opened a panel with a working search box and
-          nothing to search: a control that cannot do what it says, which is worse than an absent
-          one. It comes back the moment the field ships.
+          HIDDEN WHEN THERE IS NO TRANSCRIPT. The transcript is the creator's own uploaded subtitle
+          file or text — the platform runs no speech-to-text — so most videos have none, and a tab
+          that opens onto nothing is a control that cannot do what it says.
         */}
         {hasTranscript && (
           <button
@@ -247,19 +257,31 @@ export default function WatchInfoPanel({
               />
               <input
                 type="text"
-                aria-label="Search in video"
-                placeholder="Search in video"
+                aria-label="Search the transcript"
+                placeholder="Search the transcript"
+                value={transcriptSearchText}
+                onChange={(event) => setTranscriptSearchText(event.target.value)}
                 className="flex-1 bg-transparent text-base outline-none placeholder:text-outline-strong"
               />
             </div>
 
             <h3 className="px-5 pt-4 pb-2 text-xl font-bold">{transcriptTitle}</h3>
 
+            {visibleTranscript.length === 0 && (
+              <p className="px-5 pb-4 text-sm text-muted-foreground">
+                No lines match “{transcriptSearchText.trim()}”.
+              </p>
+            )}
+
             <ul className="px-5 pb-4">
-              {transcript.map((line) => (
-                <li key={line.time} className="flex flex-row gap-4 py-2.5">
-                  {showTimestamps && (
-                    <span className="shrink-0 self-start rounded-md bg-secondary px-1.5 py-0.5 text-xs font-medium text-primary-imprint">
+              {/* Index keys: the list is static per video, and neither times (a plain-text
+                  transcript has none) nor texts are unique. */}
+              {visibleTranscript.map((line, lineIndex) => (
+                <li key={lineIndex} className="flex flex-row gap-4 py-2.5">
+                  {/* `min-w-16` + tabular digits: "0:04", "12:30" and "1:02:03" are different widths,
+                      and without a shared minimum each row's text started at a different x. */}
+                  {showTimestamps && line.time !== null && (
+                    <span className="min-w-16 shrink-0 self-start rounded-md bg-secondary px-1.5 py-0.5 text-center text-xs font-medium text-primary-imprint tabular-nums">
                       {line.time}
                     </span>
                   )}
@@ -271,21 +293,8 @@ export default function WatchInfoPanel({
         )}
       </div>
 
-      {/* Footer (transcript only) */}
-      {tab === "transcript" && (
-        <div className="shrink-0 border-t border-border px-5 py-3">
-          <button type="button" className="flex flex-row items-center gap-1 text-sm font-medium">
-            English
-            <Image
-              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              width={18}
-              height={18}
-              alt=""
-              className="rotate-90"
-            />
-          </button>
-        </div>
-      )}
+      {/* NO LANGUAGE PICKER. There was an "English" button here with no handler: a creator uploads
+          one transcript per video, so there is no second language for it to switch to. */}
     </aside>
   );
 }

@@ -225,6 +225,47 @@ export function attachVideoDocument(
   );
 }
 
+/** The server's upload cap for a transcript file. Checked here first so a 1.2 MB file is refused
+ * with a sentence rather than a failed upload. */
+export const MAX_VIDEO_TRANSCRIPT_BYTES = 1024 * 1024;
+
+/**
+ * `PUT /videos/:videoId/transcript` — multipart, field name `transcript`. Full replace.
+ *
+ * The creator's OWN subtitle file (.srt / .vtt) or pasted text wrapped as a file; nothing is
+ * transcribed by Qatoto. There is NO format field: the server infers srt, vtt or text from the
+ * bytes, and a file it cannot parse is a 422 whose message names the line.
+ */
+export function replaceVideoTranscript(
+  videoId: string,
+  transcriptFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicVideo>> {
+  const formData = new FormData();
+  formData.append("transcript", transcriptFile);
+  return sendForm(
+    `/videos/${encodeURIComponent(videoId)}/transcript`,
+    "PUT",
+    formData,
+    PublicVideoSchema,
+    options,
+  );
+}
+
+/** `DELETE /videos/:videoId/transcript` — idempotent; answers the updated video either way. */
+export function deleteVideoTranscript(
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicVideo>> {
+  return sendJson(
+    `/videos/${encodeURIComponent(videoId)}/transcript`,
+    "DELETE",
+    undefined,
+    PublicVideoSchema,
+    options,
+  );
+}
+
 /** `DELETE /videos/:videoId/documents/:documentId`. Removes the stored bytes, then the row. */
 export function detachVideoDocument(
   videoId: string,

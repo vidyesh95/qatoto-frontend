@@ -30,9 +30,10 @@ submitted, the vertical is de-indexed (robots: { index: false, follow: false } a
 
 #### 5. Video Transcripts, Paywalls & Subtitles
 
-• What exists: YouTube embeds, chapters, and comments.
-• What is missing: Automated speech-to-text (transcripts) and creator paywalls are mock placeholders. Subtitle
-editing in Studio is a stub because videos are hosted on YouTube.
+• What exists: YouTube embeds, chapters, comments, and creator-supplied transcripts (.srt / .vtt / pasted
+text, shown in the watch page's Transcript tab; shipped 2026-09-28, no AI).
+• What is missing: Creator paywalls are a mock placeholder. Caption editing inside the player is a stub
+because videos are hosted on YouTube. Automated speech-to-text is not planned: it would need YouTube's audio.
 
 #### 6. Legal & Policy Placeholders
 

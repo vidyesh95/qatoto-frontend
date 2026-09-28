@@ -22,6 +22,14 @@ export default function StudioSubtitles() {
         "Add translations for other languages.",
         "Show which videos have no captions at all.",
       ]}
+      // A creator TRANSCRIPT ships (2026-09-28) and is not a caption track: it is shown in the watch
+      // page's Transcript tab, while the captions inside the embedded YouTube player stay YouTube's.
+      // So the stub stays, and points at what does exist.
+      insteadFor={{
+        label: "Your videos",
+        href: "/studio/videos",
+        note: "A transcript (.srt, .vtt or pasted text) can already be added to each video under Video elements, from",
+      }}
     />
   );
 }

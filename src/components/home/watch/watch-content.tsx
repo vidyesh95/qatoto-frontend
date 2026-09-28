@@ -4,18 +4,17 @@
 // `watch-page.tsx` (server-fetch); every control below writes to the backend.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// TWO THINGS ON THIS SCREEN HAVE NO BACKEND COUNTERPART AND ARE MARKED `TRANSPORT: mock`.
+// ONE THING ON THIS SCREEN HAS NO BACKEND COUNTERPART AND IS MARKED `TRANSPORT: mock`.
 //
 // It used to be four. The attached-product half moved to `comments.tsx` against a real
-// `attachedProducts` field, and `seasons` went with the anime vertical: the series catalogue,
-// its public read and the episode picker on this screen were all removed together.
+// `attachedProducts` field, `seasons` went with the anime vertical, and `transcript` shipped on
+// 2026-09-28 as the creator's OWN uploaded subtitle file or text (no speech-to-text runs).
 //
-// What is left is `transcript` and `isPremium`, and neither is a wiring gap: there is no ASR
-// pipeline and no transcript table, and there is no entitlement model, tier or paywall anywhere.
-// Each is held EMPTY rather than invented, so the component shells survive with their layout.
+// What is left is `isPremium`, and it is not a wiring gap: there is no entitlement model, tier or
+// paywall anywhere. It is held FALSE rather than invented, so the component shell survives.
 //
 // This DELIBERATELY breaks the `grep -rn "TRANSPORT: mock" src/` -> nothing invariant that the
-// R&D surface holds. That grep returns these blocks and only these blocks, and
+// R&D surface holds. That grep returns this block and the one below, and
 // docs/HOME_STRUCTURE.md §10 lists exactly them. If you are reading this while "fixing" a stray
 // mock banner: this is not a regression, it is the decision. Delete a placeholder only when its
 // field ships on the wire.
@@ -45,18 +44,21 @@ import {
   type WatchPayload,
 } from "@/lib/feed/schemas";
 
+const TRANSCRIPT_TITLE = "Transcript";
+
 /**
- * TRANSPORT: mock — `transcript` and `transcriptTitle` have no counterpart in
- * `GET /feed/watch/:videoId`.
- *
- * Speech-to-text is not a backend capability: no transcript table, no ASR job, no column on
- * `video`. The panel stays because the chapter list beside it IS real — `chapters` is on the
- * payload — and removing the transcript would take the chapter navigator with it. Empty rather
- * than invented, so the panel renders its chapters and simply shows no transcript rows.
- * Deliberate; docs/HOME_STRUCTURE.md §10.
+ * The creator's transcript as the panel draws it. A plain-text transcript has no timing, so its
+ * lines carry `time: null` and the panel draws no badge — never a "0:00" on every paragraph.
  */
-const PLACEHOLDER_TRANSCRIPT_TITLE = "Transcript";
-const PLACEHOLDER_TRANSCRIPT: { time: string; text: string }[] = [];
+function toTranscriptLines(
+  transcript: WatchPayload["transcript"],
+): { time: string | null; text: string }[] {
+  if (transcript === null) return [];
+  return transcript.segments.map((segment) => ({
+    time: transcript.format === "text" ? null : toChapterTimeLabel(segment.startOffsetSeconds),
+    text: segment.segmentText,
+  }));
+}
 
 /**
  * TRANSPORT: mock — `isPremium` has no counterpart anywhere in the backend.
@@ -113,6 +115,7 @@ export default function WatchContent({
     title: chapter.title,
     time: toChapterTimeLabel(chapter.startSeconds),
   }));
+  const transcriptLines = toTranscriptLines(video.transcript);
 
   return (
     <section className="mx-auto px-4 py-6 lg:px-6">
@@ -141,8 +144,8 @@ export default function WatchContent({
             <WatchInfoPanel
               videoId={video.videoId}
               chapters={chapterLabels}
-              transcriptTitle={PLACEHOLDER_TRANSCRIPT_TITLE}
-              transcript={PLACEHOLDER_TRANSCRIPT}
+              transcriptTitle={TRANSCRIPT_TITLE}
+              transcript={transcriptLines}
               className="h-100 w-full lg:hidden"
             />
           )}
@@ -286,8 +289,8 @@ export default function WatchContent({
             <WatchInfoPanel
               videoId={video.videoId}
               chapters={chapterLabels}
-              transcriptTitle={PLACEHOLDER_TRANSCRIPT_TITLE}
-              transcript={PLACEHOLDER_TRANSCRIPT}
+              transcriptTitle={TRANSCRIPT_TITLE}
+              transcript={transcriptLines}
               className="hidden w-full lg:block lg:h-68 xl:h-130 2xl:h-130"
             />
           )}

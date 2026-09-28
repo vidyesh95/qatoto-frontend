@@ -53,6 +53,38 @@ export const ProblemClusterSchema = z.object({
 });
 export type ProblemCluster = z.infer<typeof ProblemClusterSchema>;
 
+/**
+ * One reporter photo, as every read carries it. The size is measured by the server on the
+ * re-encoded file, never sent by a client, so a renderer can reserve the box before it loads.
+ *
+ * ⚠️ `blurDataUrl`'S PATTERN IS A SECURITY BOUNDARY, the `BlueprintWriteUpImageSchema` rule:
+ * `next/image` writes it into an inline CSS `url()`, so only an image MIME type and base64
+ * characters may pass. `url` is pinned to Cloudinary's delivery host for the same reason the
+ * showcase renderer pins it — it is the only host a reader's browser should be sent to.
+ */
+export const ProblemReportPhotoSchema = z.object({
+  photoId: z.string(),
+  url: z.url({ protocol: /^https$/, hostname: /^res\.cloudinary\.com$/ }).max(2048),
+  widthPx: z.number().int().positive(),
+  heightPx: z.number().int().positive(),
+  blurDataUrl: z
+    .string()
+    .max(2048)
+    .regex(/^data:image\/(webp|png|jpeg|avif);base64,[A-Za-z0-9+/]+={0,2}$/),
+});
+export type ProblemReportPhoto = z.infer<typeof ProblemReportPhotoSchema>;
+
+/**
+ * `GET /discovery/problem-clusters/:clusterId` — the list shape plus the reporter photos.
+ *
+ * `photos` is at most twelve, newest first, and EMPTY on a hidden cluster; a report a moderator
+ * struck from the count contributes none. Empty renders nothing.
+ */
+export const ProblemClusterDetailSchema = ProblemClusterSchema.extend({
+  photos: z.array(ProblemReportPhotoSchema),
+});
+export type ProblemClusterDetail = z.infer<typeof ProblemClusterDetailSchema>;
+
 export const PROBLEM_CLUSTER_SORTS = ["opportunity", "recent", "reporters"] as const;
 export type ProblemClusterSort = (typeof PROBLEM_CLUSTER_SORTS)[number];
 
@@ -349,6 +381,8 @@ export const MyProblemReportSchema = z.object({
   clusterTitle: z.string().nullable(),
   geocodeFailureReason: z.string().nullable(),
   submittedAt: z.string(),
+  /** The reporter's own photos on this report, in the order they were attached. */
+  photos: z.array(ProblemReportPhotoSchema),
 });
 export type MyProblemReport = z.infer<typeof MyProblemReportSchema>;
 

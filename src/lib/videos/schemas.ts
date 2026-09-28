@@ -69,6 +69,22 @@ export const VideoChapterSchema = z.object({
 });
 export type VideoChapter = z.infer<typeof VideoChapterSchema>;
 
+/** Detected from the file's bytes by the server, never declared by the client. */
+export const VIDEO_TRANSCRIPT_FORMATS = ["srt", "vtt", "text"] as const;
+export const VideoTranscriptFormatSchema = z.enum(VIDEO_TRANSCRIPT_FORMATS);
+export type VideoTranscriptFormat = z.infer<typeof VideoTranscriptFormatSchema>;
+
+/**
+ * That a creator-supplied transcript exists, and what kind. The segments themselves are not on
+ * the studio read; they travel on the public watch read (`WatchPayloadSchema.transcript`).
+ */
+export const VideoTranscriptSummarySchema = z.object({
+  format: VideoTranscriptFormatSchema,
+  segmentCount: z.number().int().positive(),
+  uploadedAt: z.string(),
+});
+export type VideoTranscriptSummary = z.infer<typeof VideoTranscriptSummarySchema>;
+
 export const ContentCategoryRefSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -213,6 +229,8 @@ export const PublicVideoSchema = z.object({
   category: z.string().nullable(),
 
   chapters: z.array(VideoChapterSchema),
+  /** NULL when the creator has uploaded none — the ordinary case. */
+  transcript: VideoTranscriptSummarySchema.nullable(),
   categories: z.array(ContentCategoryRefSchema),
   attachedProducts: z.array(VideoAttachedProductSchema),
   milestones: z.array(VideoLabelSchema),

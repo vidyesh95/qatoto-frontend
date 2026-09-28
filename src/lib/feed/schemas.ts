@@ -274,6 +274,23 @@ export const WatchPayloadSchema = z.object({
   videoType: VideoTypeSchema,
   areCommentsEnabled: z.boolean(),
   chapters: z.array(z.object({ startSeconds: z.number(), title: z.string() })),
+  /**
+   * The creator's OWN transcript (an uploaded .srt / .vtt or pasted text). NULL when there is
+   * none, the ordinary case. `endOffsetSeconds` is null on every `text` paragraph, whose start is
+   * always 0 — render no time for those.
+   */
+  transcript: z
+    .object({
+      format: z.enum(["srt", "vtt", "text"]),
+      segments: z.array(
+        z.object({
+          startOffsetSeconds: z.number().int().nonnegative(),
+          endOffsetSeconds: z.number().int().nonnegative().nullable(),
+          segmentText: z.string(),
+        }),
+      ),
+    })
+    .nullable(),
   creator: z.object({
     id: z.string(),
     handle: z.string().nullable(),

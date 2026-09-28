@@ -1,6 +1,6 @@
 // TRANSPORT: client-query — "use client" island. Reads GET /research-categories to resolve
-// the category id and writes POST /discovery/problem-reports. Needs QueryProvider, which
-// (home)/layout.tsx mounts.
+// the category id and writes POST /discovery/problem-reports (photos go through
+// ProblemPhotoPicker first). Needs QueryProvider, which (home)/layout.tsx mounts.
 "use client";
 
 import Link from "next/link";
@@ -12,6 +12,9 @@ import RndSheet, {
 } from "@/components/home/research-and-development/sheets/rnd-sheet";
 import CreatableCombobox, { type ComboboxOption } from "@/components/ui/creatable-combobox";
 import PlacePicker from "@/components/home/research-and-development/sheets/place-picker";
+import ProblemPhotoPicker, {
+  type ProblemPhotoTile,
+} from "@/components/home/research-and-development/sheets/problem-photo-picker";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useCreateProblemReportMutation } from "@/hooks/rnd/discovery";
 import {
@@ -107,6 +110,8 @@ export default function ReportProblemSheet({
    * keystroke, which the backend answers with a 409.
    */
   const [proposedCategories, setProposedCategories] = useState<ResearchCategory[]>([]);
+  /** Photos picked for this report. Only `uploaded` tiles carry an id the submit can send. */
+  const [photoTiles, setPhotoTiles] = useState<ProblemPhotoTile[]>([]);
 
   const categoriesQuery = useResearchCategoriesQuery();
   const reportMutation = useCreateProblemReportMutation();
@@ -156,6 +161,12 @@ export default function ReportProblemSheet({
     locationText.trim().length >= 2 &&
     description.trim().length >= 20;
 
+  // A report sent mid-upload would go without the photo the reporter can see on screen.
+  const isAnyPhotoUploading = photoTiles.some((tile) => tile.status === "uploading");
+  const uploadedPhotoIds = photoTiles.flatMap((tile) =>
+    tile.status === "uploaded" ? [tile.photo.photoId] : [],
+  );
+
   /**
    * Proposes the category the user typed, then selects it.
    *
@@ -186,6 +197,7 @@ export default function ReportProblemSheet({
     setDescription("");
     setPin(null);
     setProposedCategories([]);
+    setPhotoTiles([]);
   }
 
   return (
@@ -227,7 +239,7 @@ export default function ReportProblemSheet({
             className="flex flex-col gap-4 px-4 pb-6"
             onSubmit={(submitEvent) => {
               submitEvent.preventDefault();
-              if (!isFormValid) return;
+              if (!isFormValid || isAnyPhotoUploading) return;
               reportMutation.mutate({
                 title: title.trim(),
                 categoryId,
@@ -242,6 +254,8 @@ export default function ReportProblemSheet({
                       approxLatitudeMicrodegrees: pin.latitudeMicrodegrees,
                       approxLongitudeMicrodegrees: pin.longitudeMicrodegrees,
                     }),
+                // A failed tile is not sent: it has no id, and it stays on screen with its reason.
+                ...(uploadedPhotoIds.length === 0 ? {} : { photoIds: uploadedPhotoIds }),
               });
             }}
           >
@@ -297,12 +311,18 @@ export default function ReportProblemSheet({
               />
             </label>
 
+            <ProblemPhotoPicker tiles={photoTiles} onTilesChange={setPhotoTiles} />
+
             <button
               type="submit"
-              disabled={!isFormValid || reportMutation.isPending}
+              disabled={!isFormValid || isAnyPhotoUploading || reportMutation.isPending}
               className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
             >
-              {reportMutation.isPending ? "Sending…" : "Send my report"}
+              {reportMutation.isPending
+                ? "Sending…"
+                : isAnyPhotoUploading
+                  ? "Waiting for photos…"
+                  : "Send my report"}
             </button>
 
             {firstError && <MutationErrorNotice error={firstError.apiError} />}

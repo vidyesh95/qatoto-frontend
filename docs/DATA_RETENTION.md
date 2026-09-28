@@ -8,7 +8,8 @@
 
 > ## ⚠️ Correction header — read this before the document below
 >
-> **Status: THE COORDINATE AND IP ROWS ARE MOOT. THE MEDIA ROW IS UNBUILT. NOTHING HERE RUNS.**
+> **Status: THE COORDINATE AND IP ROWS ARE MOOT. PHOTOS SHIPPED 2026-09-28, BUT THEIR RETENTION
+> RULE DOES NOT RUN. NOTHING IN THE MATRIX BELOW RUNS.**
 >
 > - ⚠️ **"Exact GPS Coordinates (1e-6 deg) — 90 Days" DESCRIBES DATA THAT IS NEVER COLLECTED.**
 >   The client sends free text and, once a pin exists, a 3-decimal (~110 m) coordinate it rounded
@@ -18,8 +19,23 @@
 > - ⚠️ **"Raw Ingest IP Hashes — 30 Days" — there is no `reporterIpHash` column.** Abuse control on
 >   `POST /discovery/problem-reports` is `requireIdentifiedUser` plus `problemReportLimiter`
 >   (10 per 15 minutes), not a stored hash.
-> - ⚠️ **"Processed Problem Photos — 2 Years" — problem reports carry no media.** No attachment
->   route, table or column exists. The row becomes real only if `todo.md` §19 item 5 is built.
+> - ⚠️ **"Processed Problem Photos — 2 Years" — THE PHOTOS EXIST NOW; THE 2-YEAR AND 90-DAY RULES
+>   DO NOT.** Up to three photos per report, in `problem_submission_photo`, public on the cluster
+>   page. What actually runs, and nothing more:
+>     - **Unclaimed uploads die after a day.** A photo picked but never sent with a report is
+>       deleted, row and Cloudinary file, by the daily `sweep-orphan-problem-photos` job.
+>     - **Erasure deletes a reporter's photos although the report survives.** The report is
+>       retained under Art. 17(3)(e) as evidence behind `distinctReporterCount`; the photos are not
+>       needed for that. Step `purge_problem_submission_photos` deletes the Cloudinary files, then
+>       the manifest deletes the rows.
+>     - ⚠️ **THE CDN DELETE IN THAT ERASURE IS BEST-EFFORT, AND THIS IS A REAL PROPERTY OF THE
+>       SYSTEM.** If Cloudinary is down, the erasure still completes (an erasure must not fail
+>       because an image host did) and the file is left on the CDN with no row naming it. The same
+>       daily sweep lists the folder, finds files no row names, and deletes them once they are a
+>       day old — so a photo can outlive its owner's erasure by roughly a day, at an address nobody
+>       holds any more. Not forever, and not zero.
+>     - **No 2-year expiry and no 90-days-after-resolution removal.** There is no `resolved` cluster
+>       state to trigger the second, and no job for the first. Both stay unbuilt (`todo.md` §19.5).
 > - ⚠️ **§4's `pnpm run check:data-retention-compliance` IS NOT A SCRIPT IN EITHER REPO.**
 > - ✅ **WHAT IS TRUE TODAY:** cluster centroids and aggregate counts are anonymous and retained
 >   indefinitely, which is §3.3 and needs no job. `geocode_cache` is also permanent, and

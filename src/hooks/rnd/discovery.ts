@@ -22,6 +22,7 @@ import {
   publishMyTalentProfile,
   putMyTalentProfile,
   unpublishMyTalentProfile,
+  uploadProblemReportPhoto,
 } from "@/lib/rnd/discovery.api";
 import type {
   ProblemCluster,
@@ -247,5 +248,16 @@ export function useCreateProblemReportMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.myProblemReports(undefined) });
     },
+  });
+}
+
+/**
+ * Stage one photo for the report being written. **`201`** — stored and measured, not yet on
+ * any report. Invalidates nothing: an unclaimed photo appears in no read until a report claims
+ * it, and the report's own mutation invalidates the list that will show it.
+ */
+export function useUploadProblemReportPhotoMutation() {
+  return useMutation({
+    mutationFn: async (photoFile: File) => unwrap(await uploadProblemReportPhoto(photoFile)),
   });
 }

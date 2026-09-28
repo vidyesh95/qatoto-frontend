@@ -43,7 +43,15 @@
 >   once there is nothing precise to store. A tick-box asserting two untrue things is worse than one
 >   sentence asserting a true one, so the disclosure is a single line under the map:
 >   _"Rounded to about 110 m before it leaves your browser. We never receive a more precise point
->   than this."_ §4's media advisory still applies the day photos are accepted.
+>   than this."_
+> - ✅ **§4's MEDIA ADVISORY SHIPPED WITH PHOTOS ON 2026-09-28, REWORDED.** The banner below says
+>   the photo "should not contain" faces and plates, which reads as though something checks. Nothing
+>   does, and the photos are PUBLIC on the cluster page, so the shipped copy says both, above the
+>   picker in `problem-photo-picker.tsx`: _"Photos are public on the problem map. Keep out faces,
+>   number plates, house numbers and documents. We remove location data from the file, but nobody
+>   reviews or blurs what is in the picture: you are responsible for it."_ The EXIF/GPS strip is
+>   real: the backend decodes and re-encodes every photo with no metadata carried over
+>   (`validateAndNormalizeImage`), so the raw file never reaches storage.
 > - ⚠️ **§5's PII SCREEN IS STILL UNBUILT.** It is about the DESCRIPTION text rather than the pin, so
 >   it was not part of the pin work. It survives as **UX feedback only**: CLAUDE.md is explicit that
 >   a client-side check "exists only for fast UX feedback" and that the server must re-validate; a

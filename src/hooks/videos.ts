@@ -26,6 +26,8 @@ import {
   attachVideoDocument,
   detachVideoDocument,
   replaceVideoThumbnail,
+  replaceVideoTranscript,
+  deleteVideoTranscript,
   unpublishVideo,
   updateVideo,
 } from "@/lib/videos/api";
@@ -202,6 +204,32 @@ export function useAttachVideoDocumentMutation() {
     // on a slow connection is a cost the creator should choose, not one a hook chooses for them.
     retry: false,
     onSuccess: (_data, variables) => invalidateDetail(variables.videoId),
+  });
+}
+
+/**
+ * `PUT /videos/:videoId/transcript` — the creator's own subtitle file or pasted text.
+ *
+ * Detail only: a transcript changes nothing on a video card. Not retried, like every write here —
+ * a 422 names a line the creator has to fix, and a retry would only repeat it.
+ */
+export function useReplaceVideoTranscriptMutation() {
+  const { invalidateDetail } = useStudioVideoInvalidation();
+  return useMutation({
+    mutationFn: async (variables: { readonly videoId: string; readonly transcriptFile: File }) =>
+      unwrap(await replaceVideoTranscript(variables.videoId, variables.transcriptFile)),
+    retry: false,
+    onSuccess: (_data, variables) => invalidateDetail(variables.videoId),
+  });
+}
+
+/** `DELETE /videos/:videoId/transcript`. */
+export function useDeleteVideoTranscriptMutation() {
+  const { invalidateDetail } = useStudioVideoInvalidation();
+  return useMutation({
+    mutationFn: async (videoId: string) => unwrap(await deleteVideoTranscript(videoId)),
+    retry: false,
+    onSuccess: (_data, videoId) => invalidateDetail(videoId),
   });
 }
 

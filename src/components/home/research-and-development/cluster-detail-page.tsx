@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import ProblemReportPhotoRow from "@/components/home/research-and-development/sections/problem-report-photo-row";
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import HairlineDefinitionRow, {
   type HairlineDefinitionFact,
@@ -151,6 +152,24 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
 
       {cluster.description !== null && (
         <p className="max-w-prose text-sm leading-6">{cluster.description}</p>
+      )}
+
+      {/* Ground proof from the people who reported it, newest first and at most twelve. The
+          server sends none for a hidden cluster or a report struck from the count, and an empty
+          list renders nothing — most clusters have no photos. */}
+      {cluster.photos.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-medium">Photos from reporters</h2>
+          <ProblemReportPhotoRow
+            photos={cluster.photos}
+            size="regular"
+            altText={`A reporter's photo of: ${cluster.title}`}
+          />
+          <p className="text-xs text-muted-foreground">
+            Posted by reporters and not reviewed by Qatoto. Location data is removed from every file
+            before it is stored.
+          </p>
+        </section>
       )}
 
       {/* ⚠️ **ONE HAIRLINE ROW, NOT FOUR BOXES** (`todo.md` §19.11). This was a

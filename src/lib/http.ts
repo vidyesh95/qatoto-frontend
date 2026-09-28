@@ -359,7 +359,7 @@ export async function sendJson<T>(
 /** Multipart mutation. Never sets Content-Type — the browser sets the boundary. */
 export async function sendForm<T>(
   path: string,
-  method: "POST" | "PATCH",
+  method: "POST" | "PATCH" | "PUT",
   formData: FormData,
   dataSchema: z.ZodType<T>,
   options?: RequestOptions,

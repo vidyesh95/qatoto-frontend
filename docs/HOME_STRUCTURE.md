@@ -55,13 +55,12 @@ The video vertical consists of two primary visitor surfaces and the creator stud
 
 ## 10. The `TRANSPORT: mock` Placeholders
 
-A strict codebase invariant is that mock data should not exist in production paths. However, three specific UI areas on the watch surface deliberately retain mock or empty placeholders because their corresponding backend services do not yet exist. Each is marked with `// TRANSPORT: mock`:
+A strict codebase invariant is that mock data should not exist in production paths. However, two specific UI areas on the watch surface deliberately retain mock or empty placeholders because their corresponding backend services do not yet exist. Each is marked with `// TRANSPORT: mock`. (`transcript` left this table on 2026-09-28: it is now the creator's own uploaded subtitle file or text, carried by `GET /feed/watch/:videoId`. No speech-to-text runs.)
 
-| Component                      | Placeholder Field                 | Reason & Backend Status                                                                                                              |
-| :----------------------------- | :-------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| `home/watch/watch-content.tsx` | `transcript`, `transcriptTitle`   | No backend speech-to-text (ASR) service or database table exists. Held empty to preserve the layout alongside the chapter navigator. |
-| `home/watch/watch-content.tsx` | `isPremium`                       | No paid subscription tier, paywall, or entitlement engine exists. Hardcoded to `false` so viewers are never blocked.                 |
-| `home/watch/comments.tsx`      | `saleItem`, `reviews`, `trending` | No product-video review joins or search trending aggregations exist. Held empty so the reviews tab cleanly collapses.                |
+| Component                      | Placeholder Field                 | Reason & Backend Status                                                                                               |
+| :----------------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `home/watch/watch-content.tsx` | `isPremium`                       | No paid subscription tier, paywall, or entitlement engine exists. Hardcoded to `false` so viewers are never blocked.  |
+| `home/watch/comments.tsx`      | `saleItem`, `reviews`, `trending` | No product-video review joins or search trending aggregations exist. Held empty so the reviews tab cleanly collapses. |
 
 > **Rule:** These placeholders are kept empty or inert, never fabricated with fake data. They will be wired as their respective backend features ship.
 

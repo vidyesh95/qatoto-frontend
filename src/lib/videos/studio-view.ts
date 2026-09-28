@@ -26,6 +26,7 @@ import type {
   StudioVideoVisibility,
   UpdateVideoInput,
   VideoDocument,
+  VideoTranscriptSummary,
 } from "@/lib/videos/schemas";
 import { VIDEO_STAGE_BADGES } from "@/lib/videos/schemas";
 
@@ -99,6 +100,12 @@ export type UploadDraft = {
    */
   savedDocuments: VideoDocument[];
   /**
+   * The transcript already on the server, READ-ONLY here like `savedDocuments`. A replacement or a
+   * removal is a `File` or an intent, not JSON, so the modal holds it and sends it to `PUT` /
+   * `DELETE /videos/:videoId/transcript` in its follow-up pass.
+   */
+  savedTranscript: VideoTranscriptSummary | null;
+  /**
    * Recruiting blurbs. Objects since the venture link landed: a blurb may point at a real
    * open role, which is what puts an Apply button under the video instead of a label.
    *
@@ -159,6 +166,7 @@ export function createEmptyUploadDraft(): UploadDraft {
     hasFundingCallToAction: false,
     researchProjectSlug: null,
     savedDocuments: [],
+    savedTranscript: null,
     openRoles: [],
     teamMemberNames: [],
     milestones: [],
@@ -389,6 +397,7 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
     // Carried straight through: these are server rows, and the editor renders them read-only with
     // a Remove control that calls the delete route rather than mutating the draft.
     savedDocuments: video.documents,
+    savedTranscript: video.transcript,
     openRoles: video.openRoles.map((role) => ({
       roleTitle: role.roleTitle,
       roleDescription: role.roleDescription,

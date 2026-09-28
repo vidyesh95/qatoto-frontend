@@ -12,16 +12,16 @@ This document outlines **exactly what is done, what is incomplete, what external
 
 ## Executive Summary: What is the Real State of the App?
 
-| Domain                   | What Works Today (Complete)                                                                                | What Is Incomplete / Missing                                                                                                                                           |
-| :----------------------- | :--------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Payments & Checkout**  | Cart, order creation, order ledger state machine, refund request UI, payment intent polling.               | **No real Payment Gateway.** Only a `fake` adapter exists; Stripe is a placeholder string; Razorpay is absent. No payment modal/card entry on frontend.                |
-| **Logistics & Shipping** | Shipment leg data models, tracking events schema, transport mode selection (air/sea).                      | **No Carrier API.** Rates and bookings use a `fake` adapter; rate cards in database are empty (`shippingInCents = 0`); no tracking integration.                        |
-| **Escrow & FX**          | Multi-milestone escrow state machines, strict ledger accounting rules.                                     | **No Licensed Escrow Provider.** Uses `FakeExternalEscrowProviderAdapter`; Escrow.com and Shieldpay are not implemented. Foreign exchange is a 1:1 fake.               |
-| **Auth & Security**      | Email OTP login, password auth, session management, RBAC / staff capabilities.                             | **Phone SMS verification is dead.** The Settings phone verification UI was made inert because backend has no SMS provider (e.g. Twilio/Msg91).                         |
-| **Blueprints Hub**       | 32 engineering teardowns, 3D exploded view WebGL engine, case studies, maker launches, admin review queue. | **Invented Content & De-indexed.** All 32 blueprints are seeded fixtures; all 7 routes have `noindex` and are excluded from `sitemap.ts`. Rights claims use `mailto:`. |
-| **Video & Watch**        | YouTube video feed, chapters, likes, comments, project association.                                        | **Transcripts & Premium are Mock.** No Speech-to-Text (ASR) pipeline; no paywall; no subtitle authoring (`/studio/subtitles` is stubbed).                              |
-| **Creator / Studio**     | Sales, earnings overview, pitch management, product listing wizard, video upload.                          | `/studio/subtitles` and `/studio/learn` are placeholder stubs. Multi-axis variants (Color × Size) are not built (only single-level variants).                          |
-| **Legal & Policy**       | Comprehensive policy text and disclaimer pages.                                                            | **Legal placeholders.** Company name, jurisdiction, and registered address are `[TO BE CONFIRMED]`; inbox addresses are hardcoded.                                     |
+| Domain                   | What Works Today (Complete)                                                                                | What Is Incomplete / Missing                                                                                                                                                      |
+| :----------------------- | :--------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Payments & Checkout**  | Cart, order creation, order ledger state machine, refund request UI, payment intent polling.               | **No real Payment Gateway.** Only a `fake` adapter exists; Stripe is a placeholder string; Razorpay is absent. No payment modal/card entry on frontend.                           |
+| **Logistics & Shipping** | Shipment leg data models, tracking events schema, transport mode selection (air/sea).                      | **No Carrier API.** Rates and bookings use a `fake` adapter; rate cards in database are empty (`shippingInCents = 0`); no tracking integration.                                   |
+| **Escrow & FX**          | Multi-milestone escrow state machines, strict ledger accounting rules.                                     | **No Licensed Escrow Provider.** Uses `FakeExternalEscrowProviderAdapter`; Escrow.com and Shieldpay are not implemented. Foreign exchange is a 1:1 fake.                          |
+| **Auth & Security**      | Email OTP login, password auth, session management, RBAC / staff capabilities.                             | **Phone SMS verification is dead.** The Settings phone verification UI was made inert because backend has no SMS provider (e.g. Twilio/Msg91).                                    |
+| **Blueprints Hub**       | 32 engineering teardowns, 3D exploded view WebGL engine, case studies, maker launches, admin review queue. | **Invented Content & De-indexed.** All 32 blueprints are seeded fixtures; all 7 routes have `noindex` and are excluded from `sitemap.ts`. Rights claims use `mailto:`.            |
+| **Video & Watch**        | YouTube video feed, chapters, likes, comments, project association.                                        | **Premium is Mock.** Transcripts are creator-supplied (.srt / .vtt / text) since 2026-09-28, no ASR; no paywall; no in-player caption authoring (`/studio/subtitles` is stubbed). |
+| **Creator / Studio**     | Sales, earnings overview, pitch management, product listing wizard, video upload.                          | `/studio/subtitles` and `/studio/learn` are placeholder stubs. Multi-axis variants (Color × Size) are not built (only single-level variants).                                     |
+| **Legal & Policy**       | Comprehensive policy text and disclaimer pages.                                                            | **Legal placeholders.** Company name, jurisdiction, and registered address are `[TO BE CONFIRMED]`; inbox addresses are hardcoded.                                                |
 
 ---
 
@@ -142,7 +142,7 @@ This document outlines **exactly what is done, what is incomplete, what external
 #### What Needs to Be Done:
 
 1. Add brand SVG icons for WhatsApp, X (Twitter), and LinkedIn into `public/icons/`.
-2. If video transcripts are desired: Integrate Whisper or deepgram API to generate transcripts upon video ingestion, stored in a new `video_transcript` table.
+2. ~~Video transcripts~~ — shipped 2026-09-28 as creator-uploaded files, not ASR. Whisper/Deepgram would need YouTube's audio, which the backend never holds.
 3. If subscriptions are desired: Introduce an entitlement model in backend with recurring payment processing.
 
 ---

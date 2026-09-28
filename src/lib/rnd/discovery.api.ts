@@ -10,6 +10,7 @@ import {
   buildQueryString,
   getJson,
   getPaginated,
+  sendForm,
   sendJson,
   type ActionResponse,
   type PaginationMeta,
@@ -18,6 +19,8 @@ import {
 import {
   DemandSignalSchema,
   MyProblemReportSchema,
+  ProblemClusterDetailSchema,
+  ProblemReportPhotoSchema,
   ProblemSubmissionReceiptSchema,
   TalentProfileMeSchema,
   DiscoveryRegionSchema,
@@ -32,6 +35,8 @@ import {
   type MarketInsightStatKind,
   type MyProblemReport,
   type ProblemCluster,
+  type ProblemClusterDetail,
+  type ProblemReportPhoto,
   type ProblemSubmissionReceipt,
   type ProblemClusterSort,
   type TalentAvailability,
@@ -85,8 +90,8 @@ export function listProblemClusters(
 export function getProblemCluster(
   clusterId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<ProblemCluster>> {
-  return getJson(`/discovery/problem-clusters/${clusterId}`, ProblemClusterSchema, options);
+): Promise<ActionResponse<ProblemClusterDetail>> {
+  return getJson(`/discovery/problem-clusters/${clusterId}`, ProblemClusterDetailSchema, options);
 }
 
 // --- Knowledge hub -----------------------------------------------------------
@@ -234,6 +239,34 @@ export interface CreateProblemReportInput {
    */
   readonly approxLatitudeMicrodegrees?: number;
   readonly approxLongitudeMicrodegrees?: number;
+  /**
+   * Photos staged by `uploadProblemReportPhoto`, at most three and each once. The submit claims
+   * them in the same transaction as the report; one the server cannot claim refuses the whole
+   * report with a single 422 on `photoIds`.
+   */
+  readonly photoIds?: readonly string[];
+}
+
+/**
+ * Stage one photo for a report that does not exist yet. **`201`** — stored, measured, unclaimed.
+ *
+ * The server re-encodes the bytes with no metadata carried over, so the GPS a phone writes into
+ * a JPEG never reaches storage. It does NOT review or blur what is in the picture. A photo not
+ * named by a report within a day is deleted by the server's sweep.
+ */
+export function uploadProblemReportPhoto(
+  photoFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProblemReportPhoto>> {
+  const formData = new FormData();
+  formData.append("photo", photoFile);
+  return sendForm(
+    "/discovery/problem-reports/photos",
+    "POST",
+    formData,
+    ProblemReportPhotoSchema,
+    options,
+  );
 }
 
 /**

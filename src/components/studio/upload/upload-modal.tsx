@@ -25,6 +25,7 @@ import DetailsStep from "./steps/details-step";
 import PlaylistsPicker from "./playlists-picker";
 import StoreProductsPicker from "./store-products-picker";
 import VideoElementsStep from "./steps/video-elements-step";
+import type { PendingTranscriptChange } from "./transcript-field";
 import VideoPreviewCard from "./video-preview-card";
 import VisibilityStep from "./steps/visibility-step";
 import {
@@ -32,10 +33,12 @@ import {
   useMyVideoQuery,
   usePublishVideoMutation,
   useAttachVideoDocumentMutation,
+  useDeleteVideoTranscriptMutation,
   useDetachVideoDocumentMutation,
   useReplaceVideoChaptersMutation,
   useReplaceVideoPlaylistsMutation,
   useReplaceVideoThumbnailMutation,
+  useReplaceVideoTranscriptMutation,
   useUpdateVideoMutation,
 } from "@/hooks/videos";
 import { ApiRequestError, isForbidden, isUnauthorized } from "@/lib/http";
@@ -123,6 +126,19 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
    * promising a download under the video. An array of `File` is the whole fix on this side.
    */
   const [pendingDocumentFiles, setPendingDocumentFiles] = useState<File[]>([]);
+  const [pendingTranscriptChange, setPendingTranscriptChange] = useState<PendingTranscriptChange>({
+    kind: "unchanged",
+  });
+  /**
+   * The id `POST /videos` answered with, once this modal has created the row.
+   *
+   * ⚠️ WITHOUT IT A RETRY DUPLICATES THE VIDEO. A create-mode save whose follow-up failed returns
+   * `saved_with_problem` and keeps the modal open so the creator can fix it — and the next Save
+   * used to call `POST /videos` again, making a second video. Every save after the first create now
+   * takes the update path against this id, so a retry re-runs only what failed. A transcript whose
+   * line 214 is wrong is the likeliest such failure, which is why this landed with it.
+   */
+  const [createdVideoId, setCreatedVideoId] = useState<string | null>(null);
 
   const createVideoMutation = useCreateVideoMutation();
   const updateVideoMutation = useUpdateVideoMutation();
@@ -131,6 +147,8 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
   const replaceThumbnailMutation = useReplaceVideoThumbnailMutation();
   const attachDocumentMutation = useAttachVideoDocumentMutation();
   const detachDocumentMutation = useDetachVideoDocumentMutation();
+  const replaceTranscriptMutation = useReplaceVideoTranscriptMutation();
+  const deleteTranscriptMutation = useDeleteVideoTranscriptMutation();
   const publishMutation = usePublishVideoMutation();
   const isSaving =
     createVideoMutation.isPending ||
@@ -139,6 +157,8 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     replacePlaylistsMutation.isPending ||
     replaceThumbnailMutation.isPending ||
     attachDocumentMutation.isPending ||
+    replaceTranscriptMutation.isPending ||
+    deleteTranscriptMutation.isPending ||
     publishMutation.isPending;
 
   // Fills the form once the detail read lands. Guarded so a background refetch cannot throw
@@ -198,14 +218,19 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       ? { ...draft, visibility: "private" }
       : draft;
 
+    // The row this save targets: the edited video, or the one an earlier save in this modal
+    // created. `null` only before the first successful create.
+    const existingVideoId = props.mode === "edit" ? props.videoIdToEdit : createdVideoId;
+
     let savedVideoId: string;
     try {
-      if (props.mode === "create") {
+      if (existingVideoId === null) {
         const created = await createVideoMutation.mutateAsync(toCreateVideoInput(draftToSave));
         savedVideoId = created.video.id;
+        setCreatedVideoId(savedVideoId);
       } else {
         const updated = await updateVideoMutation.mutateAsync({
-          videoId: props.videoIdToEdit,
+          videoId: existingVideoId,
           input: toUpdateVideoInput(draftToSave),
         });
         savedVideoId = updated.id;
@@ -275,6 +300,38 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       }
     } catch (error) {
       setSaveErrorMessage(`Video saved, but a document was not: ${describeSaveError(error)}`);
+      return { kind: "saved_with_problem", videoId: savedVideoId };
+    }
+
+    // A FIFTH FOLLOW-UP: the creator's own transcript, its own multipart route. The server's 422
+    // names the line ("Line 214: expected a timestamp like …"), so it is passed through untouched,
+    // and the chosen file stays staged so a corrected re-save sends it again.
+    try {
+      switch (pendingTranscriptChange.kind) {
+        case "unchanged":
+          break;
+        case "replace": {
+          const updatedVideo = await replaceTranscriptMutation.mutateAsync({
+            videoId: savedVideoId,
+            transcriptFile: pendingTranscriptChange.transcriptFile,
+          });
+          applyDraftPatch({ savedTranscript: updatedVideo.transcript });
+          setPendingTranscriptChange({ kind: "unchanged" });
+          break;
+        }
+        case "remove": {
+          const updatedVideo = await deleteTranscriptMutation.mutateAsync(savedVideoId);
+          applyDraftPatch({ savedTranscript: updatedVideo.transcript });
+          setPendingTranscriptChange({ kind: "unchanged" });
+          break;
+        }
+        default: {
+          const exhaustiveCheck: never = pendingTranscriptChange;
+          return exhaustiveCheck;
+        }
+      }
+    } catch (error) {
+      setSaveErrorMessage(`Video saved, but the transcript was not: ${describeSaveError(error)}`);
       return { kind: "saved_with_problem", videoId: savedVideoId };
     }
 
@@ -408,6 +465,8 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
             pendingDocumentFiles={pendingDocumentFiles}
             onPendingDocumentFilesChange={setPendingDocumentFiles}
             onRemoveSavedDocument={handleRemoveSavedDocument}
+            pendingTranscriptChange={pendingTranscriptChange}
+            onPendingTranscriptChangeChange={setPendingTranscriptChange}
           />
         );
       case "checks":

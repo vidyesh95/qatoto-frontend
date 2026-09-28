@@ -34,12 +34,13 @@ and `git log` are the record of what was built and why.
 
 **Platform & Media Capabilities:**
 
-- **Video Transcripts & Paywalls** — Transcripts are mock placeholders (no Speech-to-Text ASR pipeline or table); `isPremium` has no entitlement or paywall model in the backend.
+- **Video Transcripts & Paywalls** — Transcripts **SHIPPED 2026-09-28** as creator-supplied files (.srt / .vtt / pasted text, no AI, no cost); see §5. `isPremium` still has no entitlement or paywall model in the backend.
 - **Third-Party Escrow & FX Adapters** — Escrow and FX adapters are deterministic fakes. The **logistics** adapter is a fake on purpose and stays one — see §4.
 
 **R&D / Civic Pulse:**
 
 - **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+- **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The retention sweep (2 years / 90 days after resolution) is still unbuilt. See §19.5.
 - **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
   map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
   fixed-height flex shell whose `<main>` is the scroll container. What remains of
@@ -118,11 +119,16 @@ seller paid. That copy is correct and stays:
 Sellers cannot submit custom category attribute templates; attribute definitions are controlled by
 platform administrators via the category attributes console (`0151`/`0152`).
 
-### On-platform video subtitle authoring — DECIDED: NOT BUILDING IT
+### On-platform video subtitle authoring — DECIDED: NOT BUILDING IT (player captions only)
 
 `/studio/subtitles` is marked as a planned stub. Because videos are embedded from YouTube, subtitle tracks
-and closed captions are natively managed by YouTube's player. On-platform subtitle editing is architecturally
-inapplicable unless native video file hosting is built.
+and closed captions INSIDE THE PLAYER are natively managed by YouTube's player. Editing those is
+architecturally inapplicable unless native video file hosting is built.
+
+⚠️ **WHAT CHANGED ON 2026-09-28, AND WHAT DID NOT.** A creator may now attach their OWN transcript
+(.srt / .vtt / pasted text) to a video; it is stored as text and shown in the watch page's
+Transcript tab (§5). That is not caption authoring and does not reach inside the player, so this
+decision still stands. The stub now points at the per-video transcript field.
 
 ---
 
@@ -281,9 +287,21 @@ from §18 instead.
 
 ### 5. Video Domain: Transcripts & Subscriptions
 
-Two `TRANSPORT: mock` banners remain in `src/components/home/watch/watch-content.tsx` and `comments.tsx`:
+`TRANSPORT: mock` banners remain in `src/components/home/watch/watch-content.tsx` (`isPremium` only, since transcripts shipped) and `comments.tsx`:
 
-- **Transcripts**: The watch page has a transcript accordion rendering empty data. Requires an automated Speech-to-Text (ASR) pipeline (e.g. OpenAI Whisper or Deepgram) upon video ingestion, stored in a `video_transcript` table.
+- ~~**Transcripts**~~ — **SHIPPED 2026-09-28, CREATOR-SUPPLIED, NOT ASR.** Whisper/Deepgram "on
+  ingestion" could never have worked: ingestion is a YouTube id plus one oEmbed call, and running
+  speech-to-text would first mean downloading YouTube's audio, which the backend refuses by rule
+  ("never touches video bytes", no ffmpeg). Instead the creator uploads a subtitle file or pastes
+  text in the upload modal (Video elements → Transcript), `PUT /videos/:videoId/transcript`
+  (multipart, 1 MB) parses it server-side with the format INFERRED from the bytes, and
+  `GET /feed/watch/:videoId` carries it (`video_transcript` + `video_transcript_segment`, migration
+  0205). Zero vendor cost. Captions inside the player stay YouTube's.
+- **`replaceChapters` has an unlocked replace race.** `videos.service.ts` deletes then inserts the
+  chapter set with no row lock, so two concurrent `PUT /videos/:videoId/chapters` can collide on
+  `video_chapter_position_unq` or interleave. `replaceVideoTranscript` beside it takes
+  `SELECT … FOR UPDATE` on the video row for exactly this; copy that. Found while building the
+  transcript, left alone as a different surface.
 - **`isPremium`**: Currently hardcoded to `false`. Requires a subscription entitlement model and recurring payment processing if paywalled creator content is offered.
 - **Trending**: Currently empty array. Requires a nightly or hourly background worker calculating popular search and discussion tags.
 
@@ -855,9 +873,25 @@ therefore refits to the filtered clusters. That is defensible — you want to se
 are — but it is NOT what `docs/PROBLEM_MAP_UX.md` §7 claims. Fixing it means the chips become
 client controls, which is §19.8's panel work, not a patch here.
 
-**5. Media on problem reports.** The backend pipeline exists — `sharp`, `multer`, `cloudinary`,
-`src/lib/image.ts`, 21 other upload routes — but problem reports have no attachment route, table or
-column. Until then `DATA_RETENTION.md`'s "Processed Problem Photos" row describes nothing.
+**5. ~~Media on problem reports~~ — SHIPPED 2026-09-28 (photos).** Up to three photos per
+report, staged by `POST /discovery/problem-reports/photos` and claimed by the report's submit in one
+transaction (`problem_submission_photo`, migration 0204). EXIF/GPS is dropped by the re-encode,
+the report sheet carries the §4 advisory, and the cluster page shows the twelve newest (none on a
+hidden cluster or from a struck report). Erasure deletes the photos while the report is retained;
+unclaimed uploads and any file an erasure's CDN delete missed are removed by the daily
+`sweep-orphan-problem-photos`.
+
+⚠️ **THE `photoIds` 422 IS ONE GENERIC MESSAGE ON PURPOSE** — not-yours, already-claimed, swept and
+never-existed all read "One or more photos could not be attached. Upload them again." A per-id "not
+found" would make `problem_submission_photo.id` an existence oracle. Do not "improve" it.
+
+**Still open:**
+
+- **The retention rule.** `DATA_RETENTION.md` §3.2's 2 years / 90 days after resolution does not
+  run: there is no job for the first and no `resolved` cluster state to trigger the second.
+- **Post-erasure CDN window.** A photo whose CDN delete failed during an erasure survives on
+  Cloudinary until the next daily sweep finds it (up to about a day). Stated in `DATA_RETENTION.md`;
+  closing it fully would need a retry queue for the erasure step.
 
 **6. Tile tiers 2 and 3, and the abuse controls.** MapTiler hot-failover needs an account and a
 public key with a metered quota; PMTiles-on-R2 is ~$1.50/month for a ~110 GB planet file. Neither is
@@ -1217,18 +1251,22 @@ different words; a mechanical pass yields `reprogrammeming` and `programmemer`.
 `cms.ts:257`, `vulnerability-disclosure-policy.tsx:28` (bug-bounty sense) — different domains, an
 editorial call rather than a consistency bug.
 
-#### 20e. The three items 20b/c/d left open — TWO CLOSED 2026-09-20, ONE AWAITING A DB WRITE
+#### 20e. The three items 20b/c/d left open — TWO CLOSED 2026-09-20, THE THIRD 2026-09-28
 
-##### 20e.1 ⚠️ The Project Immortal mission row — **CODE DONE, THE WRITE IS STILL OUTSTANDING**
+##### 20e.1 ~~The Project Immortal mission row~~ — **DONE 2026-09-28**
 
-`research_program.mission_statement` for slug `project-immortal` still reads "an open research
-**program**" under an eyebrow that now says PROGRAMME. **The frontend cannot reach it.**
+**APPLIED 2026-09-28** on the shared Aiven database: the guarded UPDATE below changed exactly 1 row,
+440 → 442 chars, now reading "an open research **programme**:". The SQL stays for the revert and for
+any future staging database, which the seed will not reach.
+
+`research_program.mission_statement` for slug `project-immortal` read "an open research
+**program**" under an eyebrow that says PROGRAMME. **The frontend cannot reach it.**
 
 ⚠️ **THE SEED IS A PLAIN `INSERT` GUARDED BY A SELECT ON THE SLUG, NOT AN UPSERT**
 (`seed-research-programs.ts:184-187`), so the two halves do not substitute for each other:
 editing the seed changes **nothing** on the running site, and updating the row alone leaves every
-FRESH database seeding `program` back. **Done:** the seed literal, in the backend repo. **Not done:**
-the row.
+FRESH database seeding `program` back. **Done:** the seed literal, in the backend repo, and
+(2026-09-28) the row.
 
 ```sql
 -- 1. CONFIRM, read-only. (`DATABASE_POOL_MAX=2` — max_connections is 20 SERVER-WIDE.)

@@ -20,9 +20,9 @@
 //
 // `insteadFor` IS OPTIONAL, AND ABSENT WHENEVER THERE IS GENUINELY NOWHERE TO SEND ANYONE.
 // Inventing a destination there would be the same failure in a smaller font — a link that does not
-// answer the need costs more than no link, because it spends the reader's trust. `/studio/subtitles`
-// is the current example: captions belong to the player Qatoto embeds, so there is no second page
-// that does this.
+// answer the need costs more than no link, because it spends the reader's trust. (`/studio/subtitles`
+// was the example until creator transcripts shipped; it now points at the per-video field, while
+// the captions inside the embedded player stay YouTube's.)
 //
 // ⚠️ AN `insteadFor` THAT FITS TOO WELL IS A SIGN THE ROUTE IS READY TO GRADUATE, NOT A REASON TO
 // KEEP THE STUB. `/studio/support` pointed at `/customer-service` and described, in its own

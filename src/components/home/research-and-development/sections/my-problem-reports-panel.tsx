@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 
+import ProblemReportPhotoRow from "@/components/home/research-and-development/sections/problem-report-photo-row";
 import { useMyProblemReportsQuery } from "@/hooks/rnd/discovery";
 import { ApiRequestError, isUnauthorized } from "@/lib/http";
 import type { ProblemSubmissionStatus } from "@/lib/rnd/discovery.schemas";
@@ -74,6 +75,15 @@ export default function MyProblemReportsPanel() {
               {CLUSTERING_STATUS_MESSAGES[report.clusteringStatus]}
               {report.geocodeFailureReason !== null && ` ${report.geocodeFailureReason}`}
             </p>
+            {report.photos.length > 0 && (
+              <div className="mt-2">
+                <ProblemReportPhotoRow
+                  photos={report.photos}
+                  size="compact"
+                  altText={`Your photo for: ${report.title}`}
+                />
+              </div>
+            )}
             {report.clusterId !== null && (
               <Link
                 href={`/research-and-development/problem-map/cluster/${report.clusterId}`}
