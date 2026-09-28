@@ -15,7 +15,7 @@ import type { BusinessTool } from "@/lib/store/business-tools";
 export default function BusinessToolTile({ tool }: { tool: BusinessTool }) {
   return (
     <Link href={tool.href} className="group flex w-40 shrink-0 flex-col items-center gap-1">
-      <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-blue-100 transition group-hover:bg-blue-200">
+      <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-secondary transition group-hover:bg-primary">
         <Image src={tool.iconSrc} width={28} height={28} alt="" />
       </div>
       <span className="text-center text-xs font-medium">{tool.label}</span>

@@ -167,7 +167,7 @@ function ForumThreadRow({ thread }: { thread: ForumThreadCard }) {
   return (
     <Link
       href={`/store/forum/${thread.slug}`}
-      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-primary-imprint"
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs leading-4 font-medium text-primary-imprint">

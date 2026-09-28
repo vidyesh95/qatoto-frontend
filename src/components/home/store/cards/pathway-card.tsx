@@ -18,7 +18,7 @@ export default function PathwayCard({ pathway }: { pathway: StoreHomePathwayCard
   return (
     <Link
       href={`/store/pathways/${pathway.slug}`}
-      className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-blue-600 sm:w-52"
+      className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-primary-imprint sm:w-52"
     >
       <div
         className={`relative aspect-video w-full overflow-hidden ${accentSurfaceClass(pathway.accent)}`}

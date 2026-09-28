@@ -180,7 +180,7 @@ export default function CompanyDetailsSheet({
                 <Link
                   href={`/store/organizations/${storefront.slug}`}
                   onClick={onClose}
-                  className="font-medium text-blue-600"
+                  className="font-medium text-primary-imprint"
                 >
                   See visiting terms
                 </Link>

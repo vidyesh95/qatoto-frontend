@@ -19,7 +19,7 @@ export const COMPENSATION_KIND_LABELS: Record<CompensationKind, string> = {
 // Canonical per-kind chip colors — matches the research-program contributor chips so a
 // compensation kind reads the same everywhere in the app.
 const COMPENSATION_KIND_BADGE_CLASS: Record<CompensationKind, string> = {
-  salary: "bg-secondary text-blue-900",
+  salary: "bg-secondary text-secondary-foreground",
   one_time: "bg-amber-100 text-amber-800",
   equity: "bg-primary-imprint/10 text-primary-imprint",
 };

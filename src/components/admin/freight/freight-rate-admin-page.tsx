@@ -258,7 +258,7 @@ function RateCardsPanel({
         )}
 
       {uncoveredCount > 0 && (
-        <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+        <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
           {uncoveredCount} active card{uncoveredCount === 1 ? " has" : "s have"} no band starting at
           0 g. Consignments below their smallest band reach the buyer as an empty delivery list,
           which looks the same as an unserved lane. (Counted from the loaded rows.)

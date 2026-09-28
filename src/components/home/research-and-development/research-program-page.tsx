@@ -161,7 +161,7 @@ export default async function ResearchProgramPage({
             rather than softening it — the program is invisible on the index and closed to
             contributions until a moderator publishes it.
           */}
-          <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="rounded-2xl bg-warning-container p-4 text-sm text-warning-container-foreground">
             This programme is awaiting review. It is not listed publicly and cannot take
             contributions yet — including from you.
           </p>

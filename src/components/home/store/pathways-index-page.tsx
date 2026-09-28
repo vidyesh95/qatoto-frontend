@@ -114,7 +114,7 @@ function PathwayCard({ pathway }: { pathway: StorePathwayCard }) {
   return (
     <Link
       href={`/store/pathways/${pathway.slug}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-blue-600"
+      className="group flex flex-col overflow-hidden rounded-xl border border-outline-variant/60 transition-colors hover:border-primary-imprint"
     >
       {/* No image falls back to the accent tint — a real server-owned token mapped to classes on
           this side, never a class name from the API. */}

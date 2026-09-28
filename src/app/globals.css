@@ -37,6 +37,12 @@
      `text-destructive` error message. Now 6.42:1 on white and ≥ 4.99:1 on the `/10` wash. */
   --destructive: oklch(0.505 0.213 27.518);
   --destructive-foreground: oklch(0.9851 0 0);
+  /* Warning, as an M3 set. `--warning` (≈ amber-700) is text, border or dot straight on the page:
+     5.05:1 on white, 4.71:1 on `--background`. A caution banner or status chip is
+     `bg-warning-container text-warning-container-foreground` (≈ amber-100 / amber-900, 8.17:1). */
+  --warning: oklch(0.555 0.163 49);
+  --warning-container: oklch(0.962 0.059 95.6);
+  --warning-container-foreground: oklch(0.414 0.112 45.9);
   --border: oklch(0.9276 0.0058 264.5313);
   --input: oklch(1 0 0);
   --ring: oklch(0.9109 0.0295 199.2757);
@@ -111,6 +117,10 @@
   --accent-foreground: oklch(0.9761 0 0);
   --destructive: oklch(0.6368 0.2078 25.3313);
   --destructive-foreground: oklch(0.9851 0 0);
+  /* ≈ amber-400 at 10.13:1 on the ground; container foreground 10.53:1 on its container. */
+  --warning: oklch(0.828 0.189 84.4);
+  --warning-container: oklch(0.31 0.06 65);
+  --warning-container-foreground: oklch(0.92 0.07 90);
   --border: oklch(0.36 0 0);
   --input: oklch(0.252 0 0);
   --ring: oklch(0.3351 0.033 198.7355);
@@ -156,6 +166,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-container: var(--warning-container);
+  --color-warning-container-foreground: var(--warning-container-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

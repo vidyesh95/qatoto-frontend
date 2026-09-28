@@ -148,7 +148,7 @@ function QuoteComparisonRow({ quote }: { quote: QuoteComparisonItem }) {
           accepted" is nonsense, and on an awarded RFQ this row is the outcome rather than a rejected
           option. */}
       {!isActionable && revision !== null && (
-        <p className="mt-1 text-xs leading-4 text-amber-900">
+        <p className="mt-1 text-xs leading-4 text-warning">
           {quote.status === "accepted"
             ? "This is the quote that was accepted. An order was created from it."
             : `This total cannot be accepted — ${QUOTE_STATUS_LABELS[quote.status].toLowerCase()}.`}

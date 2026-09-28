@@ -140,7 +140,7 @@ export default function StatementWalkthrough({
                         </p>
                       )}
                       {line.verificationNote && (
-                        <p className="mt-1 text-xs text-amber-800">{line.verificationNote}</p>
+                        <p className="mt-1 text-xs text-warning">{line.verificationNote}</p>
                       )}
                     </td>
                     <td className="py-3 pr-3 text-right font-medium">{describeLineAmount(line)}</td>

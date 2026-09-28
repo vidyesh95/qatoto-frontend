@@ -117,7 +117,7 @@ function EngagementRow({
       {/* `awaiting_buyer` SPELLED OUT PER SIDE. The generic label above is accurate; this line says who is
           actually holding it up, which the enum name cannot. */}
       {engagement.state === "awaiting_buyer" && viewerOrganizationIds !== null && (
-        <p className="mt-1 text-xs leading-4 text-amber-900">
+        <p className="mt-1 text-xs leading-4 text-warning">
           {isViewerTheBuyer
             ? "Waiting on you to accept the work."
             : "Waiting on the buyer to accept the work."}

@@ -1390,7 +1390,11 @@ Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its code
 - **Measured with `.dark` forced:** home 38/41 inverted (the 3 are the promo opt-outs), teardown page 46/48 (the 2 are inside the stage), sign-in all 4.
 - ⚠️ **Only `_000000_` icons.** Other-coloured icons (`_6F7979_`, `_00696E_`, …) and unnamed brand SVGs (the GitHub mark on the auth pages) are untouched and need their own look before a theme switch ships.
 
-- **Still token-less:** amber (≈64 text, 41 bg) and blue (≈28). Register `--warning` / `--info` pairs with `.dark` counterparts and measured contrast first; borrowing `--destructive` or an accent is forbidden.
+#### Part 4 — SHIPPED 2026-09-28: amber → `--warning`, store blue → Primary Imprint
+
+- **`--warning`, `--warning-container`, `--warning-container-foreground`** (M3 set, `.dark` counterparts, contrast in `docs/Design.md`). A caution banner or status chip (needs attention, not ready to save, pending, flagged, disputed, behind schedule, waived, unconfirmed) is `bg-warning-container text-warning-container-foreground`, with `border-warning/40` when bordered. Caution text straight on the page is `text-warning`. 64 files.
+- **Blue was never "info", so there is no `--info`.** Every `blue-600` was the store's interaction accent: card hover borders, the selected variant, image or price row, and links such as "See all" and "Visit store". Per Design.md's One Hue Rule, interaction is teal, so it is `primary-imprint` now. `text-blue-900` on `bg-secondary` → `text-secondary-foreground`; the business-tool tiles `bg-blue-100` → `bg-secondary`. This is a VISIBLE change across the store.
+- ⚠️ **AMBER THAT STAYS AMBER — not caution, so `--warning` on them is a semantic lie:** the branch-map legend (`research-branch-map.constants.ts`, `emerging` and `missing` are two DIFFERENT ambers, told apart by shade and a dash) and the detail-panel note that matches it; the map pin and opportunity-band palette; the telemetry `marginal` severity (beside the red `critical`); the workshop `medium` priority dot; the `image` file-type letter; the `one_time` compensation-kind badge; the decorative category-tile and accent palettes (`category-tiles-section.tsx`, `src/lib/store/labels.ts`, also sky and yellow); the `/developers` window dots.
 
 ---
 

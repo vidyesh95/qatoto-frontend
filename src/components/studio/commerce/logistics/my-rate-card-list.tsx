@@ -96,7 +96,7 @@ export default function MyRateCardList() {
         )}
 
       {uncoveredCount > 0 && (
-        <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+        <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
           {uncoveredCount} live card{uncoveredCount === 1 ? " has" : "s have"} no band starting at 0
           kg. Consignments below their smallest band reach the buyer as an empty delivery sheet,
           which looks the same as a lane you do not serve. (Counted from the rows loaded here.)

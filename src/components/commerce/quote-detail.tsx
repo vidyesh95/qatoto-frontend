@@ -427,7 +427,7 @@ function LineTerms({
       {/* EXCLUSIONS ARE THE MOST IMPORTANT LINE ON A QUOTE and the easiest to bury, because they are the
           reason one total is lower than another. Null means the provider stated none — which is not the
           same as nothing being excluded, and is said as such rather than left blank. */}
-      <p className="mt-1 text-xs leading-4 text-amber-900">
+      <p className="mt-1 text-xs leading-4 text-warning">
         {exclusions === null ? "No exclusions stated by the provider." : `Excludes: ${exclusions}`}
       </p>
     </>
@@ -553,7 +553,7 @@ function BuyerQuoteActions({
           reading, so the terms on screen are stale — and pressing again with a bumped number would accept
           terms they never saw. */}
       {errorCode === "409" && errorMessage !== null && (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-4 text-amber-900">
+        <p className="mt-2 rounded-lg bg-warning-container px-3 py-2 text-xs leading-4 text-warning-container-foreground">
           {errorMessage} Nothing was accepted. Reload to read the current revision before deciding
           again.
         </p>

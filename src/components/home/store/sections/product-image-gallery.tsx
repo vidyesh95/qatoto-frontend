@@ -90,7 +90,7 @@ export default function ProductImageGallery({
             aria-label={`Image ${imageIndex + 1}`}
             aria-current={imageIndex === activeImageIndex}
             className={`relative size-16 overflow-hidden rounded outline -outline-offset-1 ${
-              imageIndex === activeImageIndex ? "outline-blue-600" : "outline-border"
+              imageIndex === activeImageIndex ? "outline-primary-imprint" : "outline-border"
             }`}
           >
             <Image src={image.url} fill sizes="64px" alt="" className="object-cover" />

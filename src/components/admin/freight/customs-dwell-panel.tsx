@@ -346,7 +346,7 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
         {/* Reported exactly once, here — the same shape of silent side effect as a superseded
             rate card. No later read mentions it. */}
         {createResult.data.closedDwellEstimateId !== null && (
-          <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">
+          <p className="rounded-lg bg-warning-container p-2 text-xs text-warning-container-foreground">
             This closed the open estimate on the same scope, id{" "}
             <code>{createResult.data.closedDwellEstimateId}</code>. That is the only time you will
             be told.

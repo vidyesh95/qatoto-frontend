@@ -141,7 +141,7 @@ function TextField({
         required={isRequired}
         placeholder={placeholder}
         onChange={(changeEvent) => onChange(changeEvent.target.value)}
-        className="rounded border border-outline-variant px-3 py-2 text-sm text-foreground focus:outline-blue-600"
+        className="rounded border border-outline-variant px-3 py-2 text-sm text-foreground focus:outline-primary-imprint"
       />
     </label>
   );

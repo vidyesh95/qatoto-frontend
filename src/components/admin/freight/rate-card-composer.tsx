@@ -197,7 +197,7 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
         {/* Reported EXACTLY ONCE, here. No later read announces it, so it is surfaced plainly
             rather than folded into a toast that scrolls away. */}
         {supersededRateCardId !== null && (
-          <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+          <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
             This create closed the previous card on the lane, id <code>{supersededRateCardId}</code>
             . That is the only time you will be told.
           </p>
@@ -368,20 +368,20 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
           {/* The pre-flight. Runs as soon as the lane five-tuple is complete, so the warning is on
               screen before the operator reaches the submit button rather than after. */}
           {incumbentCard !== null && (
-            <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
-              <p className="text-sm font-medium text-amber-900">
+            <div className="space-y-2 rounded-xl border border-warning/40 bg-warning-container p-3">
+              <p className="text-sm font-medium text-warning-container-foreground">
                 This lane already has an active card. Creating this one will close it.
               </p>
-              <p className="text-xs text-amber-900">
+              <p className="text-xs text-warning-container-foreground">
                 {incumbentCard.sourceForwarderName} · in force from{" "}
                 {formatIsoInstantLabel(incumbentCard.validFrom)} · id {incumbentCard.id}
               </p>
-              <p className="text-xs text-amber-900">
+              <p className="text-xs text-warning-container-foreground">
                 Nothing asks for confirmation on the server and there is no way to opt out — the
                 incumbent is superseded in the same transaction, even though this card is
                 future-dated. Its <code>validUntil</code> becomes this card&apos;s start.
               </p>
-              <label className="flex items-start gap-2 text-xs text-amber-900">
+              <label className="flex items-start gap-2 text-xs text-warning-container-foreground">
                 <input
                   type="checkbox"
                   checked={hasAcknowledgedSupersede}

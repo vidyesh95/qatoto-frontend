@@ -269,7 +269,7 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
   return (
     <Link
       href={`/store/providers/${provider.slug}`}
-      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-primary-imprint"
     >
       <div className="flex items-start gap-3">
         {provider.logoUrl === null ? (

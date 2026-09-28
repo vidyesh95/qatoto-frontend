@@ -109,7 +109,7 @@ export default function CompensationPeriodsIsland({
             </p>
 
             {period.supersededByPeriodId !== null && (
-              <p className="mt-1 text-xs text-amber-800">
+              <p className="mt-1 text-xs text-warning">
                 Corrected by a later statement. Nothing here was edited — a correction is always a
                 new statement.
               </p>

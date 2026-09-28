@@ -384,7 +384,7 @@ export default function TeardownExplorer({
       </div>
 
       {missingNodeNames.length === 0 ? null : (
-        <p className="mt-2 text-xs text-amber-700">
+        <p className="mt-2 text-xs text-warning">
           Not found in the model: {missingNodeNames.join(", ")}
         </p>
       )}

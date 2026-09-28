@@ -28,7 +28,7 @@ const PROPOSAL_STATUS_LABELS: Record<AllocationProposalStatus, string> = {
 
 const PROPOSAL_STATUS_BADGE_CLASS: Record<AllocationProposalStatus, string> = {
   open: "bg-secondary text-foreground",
-  disputed: "bg-amber-100 text-amber-800",
+  disputed: "bg-warning-container text-warning-container-foreground",
   locked: "bg-primary-imprint/10 text-primary-imprint",
   consensus_reached: "bg-primary-imprint/10 text-primary-imprint",
 };

@@ -23,6 +23,9 @@ colors:
     muted-field: "oklch(0.931 0 0)"
     destructive: "oklch(0.505 0.213 27.518)"
     destructive-dark: "oklch(0.6368 0.2078 25.3313)"
+    warning: "oklch(0.555 0.163 49)"
+    warning-container: "oklch(0.962 0.059 95.6)"
+    warning-container-foreground: "oklch(0.414 0.112 45.9)"
     chart-1: "oklch(0.4203 0.0688 248.4323)"
     chart-2: "oklch(0.5632 0.073 236.7296)"
     chart-3: "oklch(0.6788 0.0765 238.3401)"
@@ -242,17 +245,19 @@ the same system, half of it written down.
 
 ### Token Reference & Measured Contrast Ratios
 
-| Token Name                     | Light Value (from hex)                    | Dark Value                                        | Light Contrast                                      | Dark Contrast             | WCAG Status                                                                                                                                      |
-| :----------------------------- | :---------------------------------------- | :------------------------------------------------ | :-------------------------------------------------- | :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--primary-imprint`            | `oklch(0.4736 0.0805 200.55)` ← `#00696E` | `oklch(0.7278 0.1195 200.43)` (`#1DBDC5`)         | **6.47:1** vs white                                 | **7.57:1** vs ground      | **AA & AAA Pass** (> 4.5:1 floor)                                                                                                                |
-| `--primary-imprint-deep`       | `oklch(0.3133 0.0533 200.58)` ← `#00393C` | `oklch(0.2500 0.0400 200.58)`                     | **11.60:1** vs white                                | **1.15:1** (ground)       | Hover/active on imprint; dark hero ground                                                                                                        |
-| `--primary-imprint-foreground` | `oklch(1 0 0)` (white)                    | `oklch(0.2178 0 0)` (dark ink)                    | **6.47:1** on imprint                               | **7.57:1** on imprint     | **AA & AAA Pass** (> 4.5:1 floor)                                                                                                                |
-| `--destructive`                | `oklch(0.5050 0.2130 27.52)` (≈ red-700)  | `oklch(0.6368 0.2078 25.33)`                      | **6.42:1** vs white; **≥ 4.99:1** on the `/10` wash | **4.62:1** vs ground      | **AA Pass**. Was `oklch(0.6368 …)` in light too, 3.76:1 on white, which failed every error message. White `destructive-foreground` on it: 6.42:1 |
-| `--outline-strong`             | `oklch(0.5677 0.0120 196.82)` ← `#6F7979` | `oklch(0.6800 0.0120 196.82)` (_designer-chosen_) | **4.48:1** vs white                                 | **6.09:1** vs ground      | **AA Pass** (> 3:1 UI component floor)                                                                                                           |
-| `--outline-variant`            | `oklch(0.8287 0.0178 308.22)` ← `#CAC4D0` | `oklch(0.4382 0.0154 308.22)` (_designer-chosen_) | **1.35:1** vs white                                 | **2.02:1** vs surface     | Decorative hairline only; never for meaningful boundary                                                                                          |
-| `--color-cad-selection`        | `oklch(0.6759 0.2175 38.8)` ← `#ff5500`   | Same as light (fixed)                             | **3.21:1** vs white                                 | **5.43:1** vs ground      | 3D engine viewport mesh & UI callout parity. Note: callout pins use `text-black` (6.55:1 AAA pass)                                               |
-| `--tracking-eyebrow`           | `0.18em`                                  | `0.18em`                                          | N/A                                                 | N/A                       | Documented Eyebrow kicker letter-spacing                                                                                                         |
-| `--color-band-*`               | `oklch(0.2178)` → `oklch(0.4736)`         | Same as light (fixed)                             | **> 6.5:1** vs text-white                           | **> 6.5:1** vs text-white | Permanent dark hero gradient in both themes                                                                                                      |
+| Token Name                            | Light Value (from hex)                                | Dark Value                                        | Light Contrast                                      | Dark Contrast               | WCAG Status                                                                                                                                      |
+| :------------------------------------ | :---------------------------------------------------- | :------------------------------------------------ | :-------------------------------------------------- | :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--primary-imprint`                   | `oklch(0.4736 0.0805 200.55)` ← `#00696E`             | `oklch(0.7278 0.1195 200.43)` (`#1DBDC5`)         | **6.47:1** vs white                                 | **7.57:1** vs ground        | **AA & AAA Pass** (> 4.5:1 floor)                                                                                                                |
+| `--primary-imprint-deep`              | `oklch(0.3133 0.0533 200.58)` ← `#00393C`             | `oklch(0.2500 0.0400 200.58)`                     | **11.60:1** vs white                                | **1.15:1** (ground)         | Hover/active on imprint; dark hero ground                                                                                                        |
+| `--primary-imprint-foreground`        | `oklch(1 0 0)` (white)                                | `oklch(0.2178 0 0)` (dark ink)                    | **6.47:1** on imprint                               | **7.57:1** on imprint       | **AA & AAA Pass** (> 4.5:1 floor)                                                                                                                |
+| `--destructive`                       | `oklch(0.5050 0.2130 27.52)` (≈ red-700)              | `oklch(0.6368 0.2078 25.33)`                      | **6.42:1** vs white; **≥ 4.99:1** on the `/10` wash | **4.62:1** vs ground        | **AA Pass**. Was `oklch(0.6368 …)` in light too, 3.76:1 on white, which failed every error message. White `destructive-foreground` on it: 6.42:1 |
+| `--warning`                           | `oklch(0.555 0.163 49)` (≈ amber-700)                 | `oklch(0.828 0.189 84.4)` (≈ amber-400)           | **5.05:1** vs white; **4.71:1** vs `--background`   | **10.13:1** vs ground       | **AA Pass**. Caution text, border or dot straight on the page                                                                                    |
+| `--warning-container` / `-foreground` | `oklch(0.962 0.059 95.6)` / `oklch(0.414 0.112 45.9)` | `oklch(0.31 0.06 65)` / `oklch(0.92 0.07 90)`     | **8.17:1** fg on container                          | **10.53:1** fg on container | **AA & AAA Pass**. Caution banner and status chip: `bg-warning-container text-warning-container-foreground`                                      |
+| `--outline-strong`                    | `oklch(0.5677 0.0120 196.82)` ← `#6F7979`             | `oklch(0.6800 0.0120 196.82)` (_designer-chosen_) | **4.48:1** vs white                                 | **6.09:1** vs ground        | **AA Pass** (> 3:1 UI component floor)                                                                                                           |
+| `--outline-variant`                   | `oklch(0.8287 0.0178 308.22)` ← `#CAC4D0`             | `oklch(0.4382 0.0154 308.22)` (_designer-chosen_) | **1.35:1** vs white                                 | **2.02:1** vs surface       | Decorative hairline only; never for meaningful boundary                                                                                          |
+| `--color-cad-selection`               | `oklch(0.6759 0.2175 38.8)` ← `#ff5500`               | Same as light (fixed)                             | **3.21:1** vs white                                 | **5.43:1** vs ground        | 3D engine viewport mesh & UI callout parity. Note: callout pins use `text-black` (6.55:1 AAA pass)                                               |
+| `--tracking-eyebrow`                  | `0.18em`                                              | `0.18em`                                          | N/A                                                 | N/A                         | Documented Eyebrow kicker letter-spacing                                                                                                         |
+| `--color-band-*`                      | `oklch(0.2178)` → `oklch(0.4736)`                     | Same as light (fixed)                             | **> 6.5:1** vs text-white                           | **> 6.5:1** vs text-white   | Permanent dark hero gradient in both themes                                                                                                      |
 
 _Note on `--outline-variant`: At 1.35:1 (light) and 2.02:1 (dark), `--outline-variant` fails the 3:1 WCAG non-text contrast floor. It must **never** be used for an interactive boundary or a boundary that carries structural meaning. It is strictly reserved for subtle hairline dividers and decorative empty-state frames. (Known wart: `--outline-strong` and `--outline-variant` collide with Tailwind's `outline-*` utility → `outline-outline-strong`. If ever renamed: `--border-subtle` / `--border-strong`)._
 
@@ -266,8 +271,13 @@ If a control needs to show that it is current, it takes Surface Wash. Confusing 
 produces a pale mint button that reads as disabled.
 
 **The One Hue Rule.** Every meaningful colour in this system lives between 196 and 201 degrees.
-The blue at 265 is one emphasized nav item and the red at 25 is destruction. A fourth hue
-requires a role that does not exist yet, not a preference.
+The blue at 265 is one emphasized nav item and the red at 25 is destruction. Amber at 49 to 96
+is caution (`--warning`), and it is the ONE fourth hue with a role: a banner or chip saying
+something needs the reader's attention before it goes wrong. A fifth hue requires a role that
+does not exist yet, not a preference. The store's `blue-600` hovers, selections and links were
+folded into Primary Imprint on 2026-09-28 for exactly this reason: they were interaction, which
+is teal, not information. There is no `--info` token because nothing on the surface is merely
+informational in a colour of its own.
 
 **The Untinted Neutral Debt.** Every grey in the token scale is chroma 0, and `--card`,
 `--input` and `--popover` are literally `oklch(1 0 0)`, pure white. This is a departure from
@@ -496,8 +506,8 @@ false affordance.
   of text, the content wanted a table or a list.
 - **Don't** reach for a modal first. Exhaust inline and progressive alternatives.
 - **Don't** put a serif face in `(home)`, `(studio)` or `(admin)` chrome.
-- **Don't** add a fourth hue. Everything meaningful lives between 196 and 201 degrees, plus one
-  blue for a single emphasized nav item and one red for destruction.
+- **Don't** add a fifth hue. Everything meaningful lives between 196 and 201 degrees, plus one
+  blue for a single emphasized nav item, one red for destruction and one amber for caution.
 - **Don't** write a new hardcoded hex. There are 2,119 of them already and each one is a place
   the theme cannot reach. `#00696E` appears 636 times, `#6F7979` 567, `#CAC4D0` 551,
   `#191C1C` 288. New work uses the token; converting an existing file is its own change with

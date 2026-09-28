@@ -1857,7 +1857,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
               {/* The reason a moderator gave, shown only when there is one. A rejected claim the
                   seller cannot see the reason for is one they will simply resubmit. */}
               {certification.decisionReason !== null && (
-                <p className="mt-1 text-xs leading-4 text-amber-800">
+                <p className="mt-1 text-xs leading-4 text-warning">
                   {certification.decisionReason}
                 </p>
               )}

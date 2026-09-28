@@ -226,7 +226,7 @@ export default function WeightBandEditor({
         unserved rather than mispriced, so nobody reports it.
       */}
       {bandDrafts.length > 0 && !hasZeroFloorDraft && (
-        <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
+        <p className="rounded-xl bg-warning-container p-2 text-xs text-warning-container-foreground">
           No band starts at 0 g. Anything lighter than your smallest band will price as nothing at
           all — the buyer sees an empty delivery list, indistinguishable from a lane you never
           loaded.

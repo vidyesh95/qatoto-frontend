@@ -106,7 +106,7 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
         )}
 
       {item.pricingError !== undefined && (
-        <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs leading-4 text-amber-900">
+        <p className="mt-1 rounded bg-warning-container px-2 py-1 text-xs leading-4 text-warning-container-foreground">
           {pricingErrorLabel(item.pricingError)}
         </p>
       )}

@@ -54,7 +54,7 @@ export function ResearchBranchDetailPanel({
       )}
 
       {hasOverlappingGroups && (
-        <p className="rounded-xl bg-secondary p-3 text-xs text-blue-900">
+        <p className="rounded-xl bg-secondary p-3 text-xs text-secondary-foreground">
           {branch.overlappingGroupCount} other branches ask a near-identical question — consider
           joining forces instead of duplicating the work. Detected by comparing branch wording, so
           treat it as a prompt to look rather than a verdict.

@@ -319,7 +319,7 @@ function CertificationRow({ certification }: { certification: ModerationCertific
         </p>
       )}
       {certification.decisionReason !== null && (
-        <p className="mt-1 text-xs leading-4 text-amber-800">{certification.decisionReason}</p>
+        <p className="mt-1 text-xs leading-4 text-warning">{certification.decisionReason}</p>
       )}
 
       {/*

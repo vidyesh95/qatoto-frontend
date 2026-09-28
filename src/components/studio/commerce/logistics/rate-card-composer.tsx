@@ -194,7 +194,7 @@ export default function ProviderRateCardComposer({ onClose }: { onClose: () => v
            * The ONLY report this ever gets. No later read announces it, so a composer that dropped
            * this line would lose the fact that a live price of theirs stopped applying.
            */
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <p className="mt-3 rounded-lg bg-warning-container px-3 py-2 text-xs text-warning-container-foreground">
             This replaced your previous card on the lane ({createResult.data.supersededRateCardId}).
             It has been closed and stops pricing when this one starts.
           </p>
@@ -371,14 +371,14 @@ export default function ProviderRateCardComposer({ onClose }: { onClose: () => v
          * — which reaches the buyer as an empty delivery sheet, indistinguishable from a lane
          * nobody ever priced.
          */
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="mt-3 rounded-lg bg-warning-container px-3 py-2 text-xs text-warning-container-foreground">
           Add a band starting at 0 kg before publishing. Without one, every consignment lighter than
           your smallest band prices nothing and buyers see an empty delivery sheet.
         </p>
       )}
 
       {incumbentCard !== null && (
-        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        <div className="mt-4 rounded-xl border border-warning/40 bg-warning-container p-3 text-xs text-warning-container-foreground">
           <p className="font-medium">You already price this lane.</p>
           <p className="mt-1">
             {incumbentCard.sourceForwarderName} · starts{" "}

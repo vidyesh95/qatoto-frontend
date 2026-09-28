@@ -154,7 +154,7 @@ export default function ResearchBranchMap({
                       {branch.contributorCount} contributors · {branch.discussionCount} threads
                     </span>
                     {hasOverlappingGroups && (
-                      <span className="w-fit rounded-full bg-secondary px-1.5 text-xs text-blue-900">
+                      <span className="w-fit rounded-full bg-secondary px-1.5 text-xs text-secondary-foreground">
                         {branch.overlappingGroupCount} overlap
                       </span>
                     )}

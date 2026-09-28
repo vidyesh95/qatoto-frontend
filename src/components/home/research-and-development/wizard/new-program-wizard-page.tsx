@@ -205,7 +205,7 @@ export default function NewProgramWizardPage() {
           </button>
         </fieldset>
 
-        <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-2xl bg-warning-container p-4 text-sm text-warning-container-foreground">
           Submitting sends this to a moderator. It stays private, and closed to contributions, until
           they publish it.
         </div>

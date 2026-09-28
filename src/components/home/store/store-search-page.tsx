@@ -445,7 +445,7 @@ function SearchHitShell({
   return (
     <Link
       href={href}
-      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-primary-imprint"
     >
       <div className="flex items-center gap-2 text-xs leading-4 font-medium tracking-wider">
         {badge}

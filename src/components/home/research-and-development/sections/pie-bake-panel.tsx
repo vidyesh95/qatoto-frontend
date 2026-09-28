@@ -126,7 +126,7 @@ export default function PieBakePanel({
       </p>
 
       {openProposalCount > 0 && (
-        <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-2xl bg-warning-container p-3 text-sm text-warning-container-foreground">
           {openProposalCount} allocation{openProposalCount === 1 ? " is" : "s are"} still inside a
           dispute window. Baking will be refused until they settle.
         </p>

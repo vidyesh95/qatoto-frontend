@@ -37,7 +37,7 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
   return (
     <Link
       href={`/store/product/${product.publicSlug}`}
-      className="group flex flex-col rounded-xl outline -outline-offset-1 outline-border transition-colors hover:outline-blue-600"
+      className="group flex flex-col rounded-xl outline -outline-offset-1 outline-border transition-colors hover:outline-primary-imprint"
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-t-xl bg-muted">
         {product.mainImageUrl && (

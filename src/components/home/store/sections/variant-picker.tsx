@@ -54,7 +54,7 @@ export default function VariantPicker({ currency }: { readonly currency: string 
             >
               <span
                 className={`relative block aspect-square overflow-hidden rounded outline -outline-offset-1 ${
-                  isSelected ? "outline-blue-600" : "outline-border"
+                  isSelected ? "outline-primary-imprint" : "outline-border"
                 }`}
               >
                 {tileImage === null ? (
@@ -73,7 +73,7 @@ export default function VariantPicker({ currency }: { readonly currency: string 
               </span>
               <span
                 className={`mt-1 block truncate text-center text-xs font-medium tracking-wide ${
-                  isSelected ? "text-blue-600" : "text-foreground"
+                  isSelected ? "text-primary-imprint" : "text-foreground"
                 }`}
               >
                 {variant.name}

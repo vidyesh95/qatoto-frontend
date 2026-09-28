@@ -301,7 +301,7 @@ export default function ProductDetailsSheet({
                 }}
                 className={`shrink-0 cursor-pointer rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition-colors ${
                   isActive
-                    ? "border-blue-600 bg-secondary font-medium text-foreground"
+                    ? "border-primary-imprint bg-secondary font-medium text-foreground"
                     : "border-outline-variant text-outline-strong"
                 }`}
               >

@@ -40,7 +40,7 @@ const STEP_STATUS_LABELS: Record<VerificationStepStatus, string> = {
 const STEP_STATUS_BADGE_CLASS: Record<VerificationStepStatus, string> = {
   pending: "bg-muted text-muted-foreground",
   passed: "bg-primary-imprint/10 text-primary-imprint",
-  flagged: "bg-amber-100 text-amber-800",
+  flagged: "bg-warning-container text-warning-container-foreground",
   failed: "bg-destructive/10 text-destructive",
   skipped: "bg-muted text-muted-foreground",
 };
@@ -148,7 +148,7 @@ export default function ClaimDetailDisclosure({
         </p>
 
         {step.overrideReason !== null && (
-          <p className="text-xs text-amber-800">Reviewer&apos;s reason: {step.overrideReason}</p>
+          <p className="text-xs text-warning">Reviewer&apos;s reason: {step.overrideReason}</p>
         )}
 
         {canOverride(viewerProjectRole) && step.overriddenStatus === null && (
@@ -280,7 +280,7 @@ export default function ClaimDetailDisclosure({
           </dl>
 
           {claimQuery.data.overriddenMinutes !== null && (
-            <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+            <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
               A reviewer overrode a step and the formula recomputed this claim to{" "}
               {claimQuery.data.overriddenMinutes} minutes.
               {claimQuery.data.overrideReason !== null &&

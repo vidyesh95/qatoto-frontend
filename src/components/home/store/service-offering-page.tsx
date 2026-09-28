@@ -93,7 +93,7 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
 
             <Link
               href={`/store/providers/${provider.slug}`}
-              className="mt-1 inline-block text-xs font-medium text-blue-600"
+              className="mt-1 inline-block text-xs font-medium text-primary-imprint"
             >
               {provider.displayName} · {countryLabelFromCode(provider.countryCode)}
             </Link>

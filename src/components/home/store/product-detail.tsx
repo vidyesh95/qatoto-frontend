@@ -199,7 +199,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                       }
                       productTitle={product.title}
                     >
-                      <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-blue-600">
+                      <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-primary-imprint">
                         <div className="flex flex-1 flex-col gap-1">
                           <p className="text-sm font-medium text-foreground">View in 360º</p>
                           <p className="text-xs font-medium tracking-wider text-outline-strong">
@@ -229,7 +229,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                         made the one link a buyer uses to vet a supplier go somewhere else. */}
                     <Link
                       href={`/store/organizations/${product.seller.slug}`}
-                      className="text-xs font-medium tracking-wide text-blue-600"
+                      className="text-xs font-medium tracking-wide text-primary-imprint"
                     >
                       {product.seller.displayName}
                     </Link>

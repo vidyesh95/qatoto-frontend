@@ -201,7 +201,7 @@ function FactoryRow({ factory }: { factory: FactoryCard }) {
   return (
     <Link
       href={`/store/factories/${factory.slug}`}
-      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
+      className="block rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-primary-imprint"
     >
       <div className="flex items-start gap-3">
         {factory.logoUrl === null ? (

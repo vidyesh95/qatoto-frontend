@@ -162,7 +162,7 @@ export default function RateCardRow({
         source of truth.
       */}
       {!isZeroFloorCovered && smallestFloorGrams !== null && (
-        <p className="mt-2 rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
+        <p className="mt-2 rounded-xl bg-warning-container p-2 text-xs text-warning-container-foreground">
           No band starts at 0 g — the lightest this card prices is{" "}
           {formatGramsLabel(smallestFloorGrams)}. Anything under that reaches the buyer as an empty
           delivery list, which looks exactly like a lane with no card at all. (Worked out from the

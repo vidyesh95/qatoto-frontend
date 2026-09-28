@@ -55,7 +55,7 @@ export default function ProductHighlights({
               <p className="line-clamp-3 text-sm leading-5 tracking-normal text-foreground group-open:line-clamp-none">
                 {highlight.bodyText}
               </p>
-              <span className="text-right text-xs font-medium tracking-wider text-blue-600">
+              <span className="text-right text-xs font-medium tracking-wider text-primary-imprint">
                 <span className="group-open:hidden">read more</span>
                 <span className="hidden group-open:inline">read less</span>
               </span>

@@ -21,7 +21,7 @@ import { callerRequestOptions } from "@/lib/server-http";
 // step in progress, not a finding against the partner. Same mapping as the card.
 const VERIFICATION_STATE_BADGE_CLASS: Record<SupplierVerificationState, string> = {
   verified: "bg-primary-imprint/10 text-primary-imprint",
-  documents_pending: "bg-amber-100 text-amber-800",
+  documents_pending: "bg-warning-container text-warning-container-foreground",
   unverified: "bg-muted text-muted-foreground",
   suspended: "bg-destructive/10 text-destructive",
 };

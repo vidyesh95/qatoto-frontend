@@ -65,7 +65,7 @@ export default function OverrideQueueIsland({
       {overrideQueue.data.map((queuedStep) => (
         <li
           key={queuedStep.stepId}
-          className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4"
+          className="rounded-2xl border border-warning/40 bg-warning-container/40 p-4"
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
@@ -74,7 +74,7 @@ export default function OverrideQueueIsland({
                 For {formatIsoDate(queuedStep.claimedForDate)} · attempt {queuedStep.attemptNumber}
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+            <span className="shrink-0 rounded-full bg-warning-container px-2 py-0.5 text-xs font-medium text-warning-container-foreground">
               {VERIFICATION_STEP_KIND_LABELS[queuedStep.stepKind]}
             </span>
           </div>
@@ -85,7 +85,9 @@ export default function OverrideQueueIsland({
               that renders as nothing rather than as "no reason given" — the second reads
               as a fault in the machine when it is simply a step that flagged on a score. */}
           {queuedStep.findingSummary !== null && (
-            <p className="mt-2 text-sm text-amber-900">{queuedStep.findingSummary}</p>
+            <p className="mt-2 text-sm text-warning-container-foreground">
+              {queuedStep.findingSummary}
+            </p>
           )}
 
           {/* Provenance, on the same principle as the step rows inside the disclosure: a

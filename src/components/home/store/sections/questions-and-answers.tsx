@@ -287,7 +287,7 @@ function QuestionRow({
         <button
           type="button"
           onClick={() => setIsExpanded(true)}
-          className="pt-1 text-xs font-medium text-blue-600"
+          className="pt-1 text-xs font-medium text-primary-imprint"
         >
           Read {question.answerCount - 1} more{" "}
           {question.answerCount - 1 === 1 ? "answer" : "answers"}

@@ -42,7 +42,7 @@ const VERIFICATION_STATUS_BADGE_CLASS: Record<EffortVerificationStatus, string> 
   queued: "bg-muted text-muted-foreground",
   running: "bg-secondary text-foreground",
   verified: "bg-primary-imprint/10 text-primary-imprint",
-  flagged_for_review: "bg-amber-100 text-amber-800",
+  flagged_for_review: "bg-warning-container text-warning-container-foreground",
   unverified: "bg-destructive/10 text-destructive",
 };
 

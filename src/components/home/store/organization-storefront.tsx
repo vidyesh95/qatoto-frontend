@@ -159,7 +159,7 @@ function StorefrontBody({
       <div className="flex justify-center px-4 py-4 lg:px-6">
         <Link
           href={`/store/organizations/${storefront.slug}/reviews`}
-          className="text-xs font-medium tracking-wide text-blue-600"
+          className="text-xs font-medium tracking-wide text-primary-imprint"
         >
           Read buyer reviews of this seller
         </Link>

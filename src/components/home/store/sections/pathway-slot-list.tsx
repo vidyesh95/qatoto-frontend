@@ -29,7 +29,7 @@ import {
 
 const SLOT_STATE_CLASS: Record<StorePathwaySlot["state"], string> = {
   available: "bg-secondary text-primary-imprint",
-  substituted: "bg-amber-100 text-amber-900",
+  substituted: "bg-warning-container text-warning-container-foreground",
   unavailable: "bg-muted text-outline-strong",
 };
 
@@ -99,7 +99,7 @@ function SlotBlock({ slot }: { slot: StorePathwaySlot }) {
           slot fell through to rank 1 instead of disappearing. That fall-through is what candidates
           exist for — a set is only as robust as its substitutes. */}
       {slot.state === "substituted" && (
-        <p className="mt-1 text-xs leading-4 text-amber-900">
+        <p className="mt-1 text-xs leading-4 text-warning">
           The first choice for this role could not be supplied, so an alternative is shown.
         </p>
       )}

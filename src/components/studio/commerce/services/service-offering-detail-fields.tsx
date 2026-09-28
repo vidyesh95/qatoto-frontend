@@ -439,7 +439,7 @@ export default function ServiceOfferingDetailFields({
             !draft.loadingSupervision && (
               // A WARNING, NOT A BLOCK. All four false is a legal offering, and whether to publish an
               // inspection service that lists no stages is the provider's call to make.
-              <p className="text-xs leading-4 text-amber-900">
+              <p className="text-xs leading-4 text-warning">
                 No stages are ticked, so this listing will say you carry out none of them.
               </p>
             )}

@@ -51,7 +51,10 @@ function describeVariance(varianceBasisPoints: number): {
   if (varianceBasisPoints > 0) {
     return { label: `${magnitudePercent}% ahead`, chipClassName: "bg-green-100 text-green-800" };
   }
-  return { label: `${magnitudePercent}% behind`, chipClassName: "bg-amber-100 text-amber-800" };
+  return {
+    label: `${magnitudePercent}% behind`,
+    chipClassName: "bg-warning-container text-warning-container-foreground",
+  };
 }
 
 /**

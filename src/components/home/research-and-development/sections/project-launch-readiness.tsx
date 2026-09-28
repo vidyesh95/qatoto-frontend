@@ -23,7 +23,7 @@ const READINESS_STATE_LABELS: Record<LaunchReadinessState, string> = {
 const READINESS_STATE_BADGE_CLASS: Record<LaunchReadinessState, string> = {
   met: "bg-primary-imprint/10 text-primary-imprint",
   not_met: "bg-muted text-muted-foreground",
-  waived: "bg-amber-100 text-amber-800",
+  waived: "bg-warning-container text-warning-container-foreground",
 };
 
 /**

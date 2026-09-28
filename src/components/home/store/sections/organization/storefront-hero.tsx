@@ -136,7 +136,7 @@ export default function StorefrontHero({ storefront }: { storefront: Organizatio
             href={storefront.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium tracking-wide text-blue-600"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium tracking-wide text-primary-imprint"
           >
             <Image
               src="/icons/link_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

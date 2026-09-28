@@ -108,13 +108,15 @@ export default function OrderFulfillmentPanel({
       </section>
 
       {fulfillment.attentionItems.length > 0 && (
-        <section aria-label="Needs attention" className="rounded-xl bg-amber-50 px-4 py-3">
-          <p className="text-sm leading-5 font-medium text-amber-900">Needs attention</p>
+        <section aria-label="Needs attention" className="rounded-xl bg-warning-container px-4 py-3">
+          <p className="text-sm leading-5 font-medium text-warning-container-foreground">
+            Needs attention
+          </p>
           <ul className="mt-1 space-y-1">
             {fulfillment.attentionItems.map((item) => (
               <li
                 key={`${item.kind}-${item.engagementId}`}
-                className="text-xs leading-4 text-amber-900"
+                className="text-xs leading-4 text-warning-container-foreground"
               >
                 {attentionItemLabel(item.kind)}{" "}
                 <Link

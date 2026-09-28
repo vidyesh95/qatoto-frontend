@@ -298,7 +298,7 @@ function ReviewCard({
                   href={`https://www.youtube.com/watch?v=${video.youtubeVideoId}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-medium text-blue-600"
+                  className="text-xs font-medium text-primary-imprint"
                 >
                   Watch buyer video
                 </a>

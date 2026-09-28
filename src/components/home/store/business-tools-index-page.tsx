@@ -50,9 +50,9 @@ function BusinessToolCard({ businessTool }: { businessTool: BusinessTool }) {
   return (
     <Link
       href={businessTool.href}
-      className="flex h-full items-start gap-3 rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-blue-600"
+      className="flex h-full items-start gap-3 rounded-xl border border-outline-variant/60 px-4 py-3 transition-colors hover:border-primary-imprint"
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-100">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary">
         <Image src={businessTool.iconSrc} width={24} height={24} alt="" />
       </span>
       <span className="min-w-0">

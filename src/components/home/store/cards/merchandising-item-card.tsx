@@ -20,7 +20,7 @@ import type { MerchandisingItem } from "@/lib/store/merchandising.schemas";
 import { SERVICE_PRICING_MODEL_LABELS } from "@/lib/store/providers.schemas";
 
 const TILE_CLASS =
-  "flex h-full flex-col rounded-xl border border-outline-variant/60 p-3 transition-colors hover:border-blue-600";
+  "flex h-full flex-col rounded-xl border border-outline-variant/60 p-3 transition-colors hover:border-primary-imprint";
 
 export default function MerchandisingItemCard({ item }: { item: MerchandisingItem }) {
   switch (item.entityKind) {

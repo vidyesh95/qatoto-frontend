@@ -105,7 +105,7 @@ export default function PriceChart({
                   key={tier.minimumOrderQuantity}
                   className={`flex flex-1 flex-col gap-1 rounded p-1 ${
                     tierIndex === activeTierIndex
-                      ? "bg-secondary outline -outline-offset-1 outline-blue-600"
+                      ? "bg-secondary outline -outline-offset-1 outline-primary-imprint"
                       : ""
                   }`}
                 >
@@ -159,7 +159,7 @@ export default function PriceChart({
             onChange={handleQuantityInputChange}
             onBlur={handleQuantityInputBlur}
             aria-label="Quantity"
-            className="mx-1 w-14 rounded py-1 text-center text-sm font-medium text-foreground outline -outline-offset-1 outline-border focus:outline-blue-600"
+            className="mx-1 w-14 rounded py-1 text-center text-sm font-medium text-foreground outline -outline-offset-1 outline-border focus:outline-primary-imprint"
           />
           <button
             type="button"

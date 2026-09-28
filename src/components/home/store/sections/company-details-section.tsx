@@ -103,7 +103,7 @@ export default function CompanyDetailsSection({
         <div className="flex flex-col gap-2 px-4 pb-2 lg:px-6">
           <Link
             href={`/store/organizations/${storefront.slug}`}
-            className="text-base leading-6 font-medium tracking-normal text-blue-600"
+            className="text-base leading-6 font-medium tracking-normal text-primary-imprint"
           >
             {storefront.displayName}
           </Link>

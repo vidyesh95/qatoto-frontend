@@ -147,7 +147,7 @@ function CartBody({ cart }: { cart: CommerceCart }) {
       {/* Stated ONCE at the top rather than only beside the offending line, because a buyer who
           scrolls straight to the total needs to know it does not cover everything in the list. */}
       {unpriceableLineCount > 0 && (
-        <p className="mx-4 mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-4 text-amber-900 lg:mx-6">
+        <p className="mx-4 mt-4 rounded-lg bg-warning-container px-3 py-2 text-xs leading-4 text-warning-container-foreground lg:mx-6">
           {unpriceableLineCount === 1
             ? "One item cannot be supplied as ordered and is not included in the totals below."
             : `${unpriceableLineCount} items cannot be supplied as ordered and are not included in the totals below.`}{" "}

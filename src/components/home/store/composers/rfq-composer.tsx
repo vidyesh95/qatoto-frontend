@@ -350,7 +350,7 @@ export default function RfqComposer({
               </label>
             </div>
             {isDeliveryWindowHalfFilled(draft) && (
-              <p className="text-xs leading-4 text-amber-900">
+              <p className="text-xs leading-4 text-warning">
                 Only one end is filled, so the window will be left off this request entirely.
               </p>
             )}
@@ -835,9 +835,11 @@ function ReviewStep({
   return (
     <div className="space-y-3">
       {input === null ? (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-medium text-amber-900">Not ready to save yet</p>
-          <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs leading-4 text-amber-900">
+        <div className="rounded-xl border border-warning/40 bg-warning-container px-4 py-3">
+          <p className="text-sm font-medium text-warning-container-foreground">
+            Not ready to save yet
+          </p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs leading-4 text-warning-container-foreground">
             {collectMissingRequirements(draft).map((missingRequirement) => (
               <li key={missingRequirement}>{missingRequirement}</li>
             ))}

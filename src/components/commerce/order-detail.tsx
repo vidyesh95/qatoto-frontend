@@ -163,7 +163,7 @@ function OrderBody({
         </p>
 
         {relation === "neither" && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-4 text-amber-900">
+          <p className="mt-3 rounded-lg bg-warning-container px-3 py-2 text-xs leading-4 text-warning-container-foreground">
             You are not a member of either organization on this order, so no actions are available.
             If you expected to be, reload — this page may be showing a cached result from another
             session.

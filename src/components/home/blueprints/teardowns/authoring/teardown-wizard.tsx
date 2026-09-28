@@ -347,8 +347,8 @@ export default function TeardownWizard() {
       ) : null}
 
       {resubmitNote ? (
-        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
-          <p className="text-xs font-semibold tracking-wide text-amber-800 uppercase">
+        <div className="mt-4 rounded-xl border border-warning/40 bg-warning-container p-4 text-warning-container-foreground">
+          <p className="text-xs font-semibold tracking-wide text-warning-container-foreground uppercase">
             Revising rejected submission
           </p>
           <p className="mt-1 text-sm">{resubmitNote}</p>
