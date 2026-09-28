@@ -15,6 +15,7 @@ export default function ProductsPage() {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   function handleConfirmDelete(productId: string) {
+    deleteProductMutation.reset();
     deleteProductMutation.mutate(productId, {
       onSettled: () => setConfirmingDeleteId(null),
     });
@@ -85,6 +86,15 @@ export default function ProductsPage() {
                     {PRODUCT_MODERATION_NOTICES[product.moderationState]}
                   </p>
                 )}
+                {/* The backend's own refusal, verbatim: a 409 NAMES what holds the listing
+                    ("orders", "checkouts"), and a bare "couldn't delete" would send the seller
+                    looking in the wrong place. The row stays — nothing here is optimistic. */}
+                {deleteProductMutation.isError &&
+                  deleteProductMutation.variables === product.id && (
+                    <p role="alert" className="text-xs font-medium text-red-500">
+                      {deleteProductMutation.error.message}
+                    </p>
+                  )}
               </div>
             </div>
 
@@ -142,7 +152,10 @@ export default function ProductsPage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => setConfirmingDeleteId(product.id)}
+                    onClick={() => {
+                      deleteProductMutation.reset();
+                      setConfirmingDeleteId(product.id);
+                    }}
                     className="cursor-pointer text-sm text-red-500 hover:underline"
                   >
                     Delete
