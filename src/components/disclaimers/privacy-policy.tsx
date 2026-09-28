@@ -87,12 +87,12 @@ export default function PrivacyPolicy() {
             place you describe and, if you drop a pin, a position your browser rounds to about 110
             metres before sending it, and any photos you attach — which anyone can see on the
             problem map, have the location your camera recorded removed, and are deleted two years
-            after you add them or when you erase your account. If you publish a teardown, a product
-            launch or a case study, we hold it and the statements you make with it — and if you
-            withhold a company's name from a case study, our moderators still see it, though readers
-            never do. If you list yourself in the cofounder directory, we hold that profile. The
-            same inventory, in the same words, is in your account under Settings → Your data &amp;
-            privacy.
+            after you add them, 90 days after the problem is marked fixed, or when you erase your
+            account, whichever comes first. If you publish a teardown, a product launch or a case
+            study, we hold it and the statements you make with it — and if you withhold a company's
+            name from a case study, our moderators still see it, though readers never do. If you
+            list yourself in the cofounder directory, we hold that profile. The same inventory, in
+            the same words, is in your account under Settings → Your data &amp; privacy.
           </dd>
         </div>
         <div>

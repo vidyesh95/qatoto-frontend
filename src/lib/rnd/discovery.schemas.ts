@@ -16,7 +16,11 @@ import {
 
 // --- Problem clusters --------------------------------------------------------
 
-export const PROBLEM_CLUSTER_STATUSES = ["active", "merged", "hidden"] as const;
+/**
+ * `resolved` is a moderator's record that the problem was FIXED, with a public note saying how.
+ * Like `merged`, a resolved cluster is off the map and the list; its own page stays readable.
+ */
+export const PROBLEM_CLUSTER_STATUSES = ["active", "merged", "hidden", "resolved"] as const;
 
 /**
  * One clustered problem. A CLUSTER, not a submission — `distinctReporterCount` is a
@@ -51,8 +55,28 @@ export const ProblemClusterSchema = z.object({
   lastReportedAt: z.string(),
   status: z.enum(PROBLEM_CLUSTER_STATUSES),
   mergedIntoClusterId: z.string().nullable(),
+  // ⚠️ `.default(null)` on the three resolution fields so a frontend deployed before the backend
+  // still parses a cluster. Absent and null mean the same thing — not resolved, no photos purged.
+  /** ISO-8601 UTC. Non-null exactly when `status` is `resolved`. */
+  resolvedAt: z.string().nullable().default(null),
+  /** The moderator's PUBLIC account of how the problem was fixed. Non-null when resolved. */
+  resolutionNote: z.string().nullable().default(null),
+  /**
+   * When the 90-days-after-resolution purge removed this cluster's photos. Set only if photos
+   * were actually removed and never cleared, so the removal notice is printed only where true.
+   */
+  photosRemovedAt: z.string().nullable().default(null),
 });
 export type ProblemCluster = z.infer<typeof ProblemClusterSchema>;
+
+/** What a moderator's resolve or reopen returns: the cluster's lifecycle after the write. */
+export const ClusterResolutionSchema = z.object({
+  clusterId: z.string(),
+  status: z.enum(PROBLEM_CLUSTER_STATUSES),
+  resolvedAt: z.string().nullable(),
+  resolutionNote: z.string().nullable(),
+});
+export type ClusterResolution = z.infer<typeof ClusterResolutionSchema>;
 
 /**
  * One reporter photo, as every read carries it. The size is measured by the server on the
@@ -101,7 +125,7 @@ export type ProblemClusterSort = (typeof PROBLEM_CLUSTER_SORTS)[number];
  * marks the middle of a catchment that wide. ⚠️ **OPTIONAL ON PURPOSE:** the backend and this app
  * deploy separately, and a frontend that goes live first must not blank the map over a field it
  * does not yet render. Absent becomes `null` — never a copied 25 km, which is the hardcode the
- * field exists to prevent. Nothing draws it yet; the radius ring is a separate proposal.
+ * field exists to prevent. It is drawn as the catchment ring around the selected cluster.
  */
 export const ProblemClusterListEnvelopeSchema = z.object({
   data: z.array(ProblemClusterSchema),

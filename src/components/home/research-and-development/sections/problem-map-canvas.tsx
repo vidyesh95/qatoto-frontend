@@ -41,6 +41,8 @@ type ProblemMapCanvasProps = {
   readonly viewMode: MapViewMode;
   /** The panel or sheet over the map. Vector renderer only: the static SVG has no camera to ease. */
   readonly mapOverlayRef: RefObject<HTMLElement | null>;
+  /** The catchment ring's radius. Vector renderer only: the SVG's projection is approximate. */
+  readonly matchRadiusMeters: number | null;
 };
 
 /**
@@ -63,6 +65,7 @@ export default function ProblemMapCanvas({
   onViewportChange,
   viewMode,
   mapOverlayRef,
+  matchRadiusMeters,
 }: ProblemMapCanvasProps) {
   /**
    * Set when the basemap cannot be shown — a dead tile host, or a browser that refuses the GL
@@ -82,6 +85,7 @@ export default function ProblemMapCanvas({
         viewMode={viewMode}
         onUnavailable={() => setHasVectorMapFailed(true)}
         mapOverlayRef={mapOverlayRef}
+        matchRadiusMeters={matchRadiusMeters}
       />
     );
   }

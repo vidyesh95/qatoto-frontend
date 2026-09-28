@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import ClusterResolutionControl from "@/components/home/research-and-development/sections/cluster-resolution-control";
 import ProblemReportPhotoRow from "@/components/home/research-and-development/sections/problem-report-photo-row";
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import HairlineDefinitionRow, {
@@ -46,6 +47,7 @@ function buildClusterFacts(cluster: {
   readonly scoreComputedAt: string | null;
   readonly firstReportedAt: string;
   readonly lastReportedAt: string;
+  readonly resolvedAt: string | null;
 }): readonly HairlineDefinitionFact[] {
   return [
     // People, not submissions — "342 reports" and "342 people" are different claims and only the
@@ -66,6 +68,11 @@ function buildClusterFacts(cluster: {
     {
       label: "Reported between",
       value: `${formatIsoInstant(cluster.firstReportedAt)} — ${formatIsoInstant(cluster.lastReportedAt)}`,
+    },
+    // `null` drops the cell, like `Score computed` above: an unresolved cluster says nothing here.
+    {
+      label: "Resolved",
+      value: cluster.resolvedAt === null ? null : formatIsoInstant(cluster.resolvedAt),
     },
   ];
 }
@@ -150,6 +157,23 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
         </div>
       )}
 
+      {/* A resolved cluster is off the map, like a merged one, and its page says why. The note is
+          the moderator's PUBLIC account of the fix — the "verified" in "verified problem
+          resolution" — never anything a reporter wrote. */}
+      {cluster.status === "resolved" && cluster.resolvedAt !== null && (
+        <div className="space-y-1 rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
+          <p className="font-medium">Marked resolved on {formatIsoInstant(cluster.resolvedAt)}</p>
+          {cluster.resolutionNote !== null && (
+            <p className="max-w-prose text-muted-foreground">{cluster.resolutionNote}</p>
+          )}
+        </div>
+      )}
+
+      {/* Rendered only for a `moderate_clusters` holder, and only where a verb exists. */}
+      {(cluster.status === "active" || cluster.status === "resolved") && (
+        <ClusterResolutionControl clusterId={cluster.id} status={cluster.status} />
+      )}
+
       {cluster.description !== null && (
         <p className="max-w-prose text-sm leading-6">{cluster.description}</p>
       )}
@@ -170,6 +194,15 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
             before it is stored.
           </p>
         </section>
+      )}
+
+      {/* ⚠️ **ONLY WHERE IT IS TRUE.** `photosRemovedAt` is stamped by the 90-days-after-resolution
+          purge only when it actually removed photos, so a cluster that never had any — most of
+          them — still renders nothing here. New photos after a reopen show instead of this. */}
+      {cluster.photos.length === 0 && cluster.photosRemovedAt !== null && (
+        <p className="text-sm text-muted-foreground">
+          Photo removed upon verified problem resolution.
+        </p>
       )}
 
       {/* ⚠️ **ONE HAIRLINE ROW, NOT FOUR BOXES** (`todo.md` §19.11). This was a

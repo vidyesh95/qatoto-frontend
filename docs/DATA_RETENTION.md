@@ -8,8 +8,8 @@
 
 > ## ⚠️ Correction header — read this before the document below
 >
-> **Status: THE COORDINATE AND IP ROWS ARE MOOT. PHOTOS SHIPPED 2026-09-28, BUT THEIR RETENTION
-> RULE DOES NOT RUN. NOTHING IN THE MATRIX BELOW RUNS.**
+> **Status: THE COORDINATE AND IP ROWS ARE MOOT. PHOTOS SHIPPED 2026-09-28 AND BOTH HALVES OF
+> THEIR RETENTION RULE RUN (2 years; 90 days after resolution). NOTHING ELSE IN THE MATRIX RUNS.**
 >
 > - ⚠️ **"Exact GPS Coordinates (1e-6 deg) — 90 Days" DESCRIBES DATA THAT IS NEVER COLLECTED.**
 >   The client sends free text and, once a pin exists, a 3-decimal (~110 m) coordinate it rounded
@@ -39,9 +39,14 @@
 >       row first, then Cloudinary file. Fixed days rather than calendar years, so across a leap day
 >       it purges one day early. A file whose delete fails has already lost its row, so the same
 >       run's folder listing finds it and retries.
->     - **No 90-days-after-resolution removal.** There is no `resolved` cluster state to trigger it,
->       so it stays unbuilt (`todo.md` §19.5), and so does the "Photo removed upon verified problem
->       resolution" badge. §2's "Archive to Cold Storage" is not built either: expiry is deletion.
+>     - **The 90-days-after-resolution removal runs (since 2026-09-28).** A `moderate_clusters`
+>       moderator marks a cluster `resolved` with a REQUIRED, PUBLIC note — the "verified" in
+>       "verified problem resolution" — on the cluster's own page. The resolved cluster leaves the
+>       map; its page keeps its photos for 90 days. Then the same daily sweep deletes them, row
+>       first, and stamps `photos_removed_at`, and the page prints "Photo removed upon verified
+>       problem resolution." — ONLY where photos were actually removed. Reopening stops the clock
+>       but cannot restore purged files, so the stamp is never cleared. §2's "Archive to Cold
+>       Storage" is still not built: expiry is deletion.
 > - ⚠️ **§4's `pnpm run check:data-retention-compliance` IS NOT A SCRIPT IN EITHER REPO.**
 > - ✅ **WHAT IS TRUE TODAY:** cluster centroids and aggregate counts are anonymous and retained
 >   indefinitely, which is §3.3 and needs no job. `geocode_cache` is also permanent, and

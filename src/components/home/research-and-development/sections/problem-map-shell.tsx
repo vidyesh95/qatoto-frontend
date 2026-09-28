@@ -20,6 +20,7 @@ import ProblemMapPanel, {
 import { useProblemClustersQuery } from "@/hooks/rnd/discovery";
 import {
   DEFAULT_MAP_VIEW_MODE,
+  formatCatchmentRadiusLabel,
   getMapCanvasModeSnapshot,
   getServerMapCanvasModeSnapshot,
   MAP_VIEW_MODE_LABELS,
@@ -136,7 +137,7 @@ function writeViewToAddressBar(patch: Record<string, string | undefined>) {
 type ProblemMapShellProps = {
   readonly initialClusters: ProblemCluster[];
   readonly initialPagination: PaginationMeta | null;
-  /** From the server's list envelope; `null` if the backend did not send it. Nothing draws it yet. */
+  /** From the server's list envelope; `null` if the backend did not send it, which draws no ring. */
   readonly initialMatchRadiusMeters: number | null;
   /**
    * Whether ANY cluster exists, filters ignored.
@@ -262,6 +263,15 @@ export default function ProblemMapShell({
 
   const renderedClusters = listState.status === "ready" ? listState.clusters : NO_CLUSTERS;
 
+  // The live read's radius, falling back to the server's; `null` only if neither carried it.
+  const matchRadiusMeters = clustersQuery.data?.matchRadiusMeters ?? initialMatchRadiusMeters;
+  // The legend explains the ring only while one is drawn: vector map, a selected cluster that is
+  // on screen, and a radius from the server.
+  const isCatchmentRingDrawn =
+    mapCanvasMode === "vector" &&
+    matchRadiusMeters !== null &&
+    renderedClusters.some((cluster) => cluster.id === selectedClusterId);
+
   // ⚠️ **THE ADDRESS BAR IS WRITTEN OUTSIDE THE STATE UPDATER, NEVER INSIDE IT.** An updater runs
   // during React's render, and Next's router patches `history.replaceState` to update its own
   // state — so writing the URL from in there was "Cannot update a component (`Router`) while
@@ -339,6 +349,7 @@ export default function ProblemMapShell({
         onViewportChange={handleViewportChange}
         viewMode={viewMode}
         mapOverlayRef={mapOverlayRef}
+        matchRadiusMeters={matchRadiusMeters}
       />
 
       {/* ⚠️ **VECTOR ONLY.** The static SVG is one fixed overhead projection with no camera, so a
@@ -356,17 +367,34 @@ export default function ProblemMapShell({
           behind it. The offsets clear the panel at each of its two widths (320px at `md`, 360px at
           `lg`, both inset 16px). When the tablet panel is collapsed to its tab the legend simply
           starts further right than it needs to, which costs nothing. */}
-      <p className="pointer-events-none absolute bottom-3 left-4 z-10 hidden items-center gap-3 text-xs text-muted-foreground md:left-88 md:flex lg:left-98">
-        {LEGEND_BANDS.map((legendBand) => (
-          <span key={legendBand.band} className="flex items-center gap-1.5">
+      {/* ⚠️ **TWO LINES, AND THE RING NOTE IS THE UPPER ONE.** On one line it ran under MapLibre's
+          attribution in the bottom-right corner — measured at 1440px, "Reports within 25 km…"
+          overlapped "Data from OpenStreetMap", and the ODbL credit must stay legible. The band row
+          keeps its old width, so the credit sees exactly what it saw before the ring shipped. */}
+      <div className="pointer-events-none absolute bottom-3 left-4 z-10 hidden flex-col items-start gap-1.5 text-xs text-muted-foreground md:left-88 md:flex lg:left-98">
+        {/* "may", not "will": a report must also share the category and the wording to join
+            (`geocode-and-cluster-submission.ts`). The figure is the server's, never a copied 25. */}
+        {isCatchmentRingDrawn && matchRadiusMeters !== null && (
+          <p className="flex items-center gap-1.5">
             <span
               aria-hidden="true"
-              className={`inline-block rounded-full bg-white ring-2 ${OPPORTUNITY_BAND_PIN_SIZE_CLASS[legendBand.band]} ${PIN_RING_CLASS[legendBand.band]}`}
+              className="inline-block size-3 rounded-full border border-dashed border-primary-imprint"
             />
-            {legendBand.label}
-          </span>
-        ))}
-      </p>
+            Reports within {formatCatchmentRadiusLabel(matchRadiusMeters)} may join this cluster
+          </p>
+        )}
+        <p className="flex items-center gap-3">
+          {LEGEND_BANDS.map((legendBand) => (
+            <span key={legendBand.band} className="flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className={`inline-block rounded-full bg-white ring-2 ${OPPORTUNITY_BAND_PIN_SIZE_CLASS[legendBand.band]} ${PIN_RING_CLASS[legendBand.band]}`}
+              />
+              {legendBand.label}
+            </span>
+          ))}
+        </p>
+      </div>
 
       {isAtLeastMedium ? (
         <DockedPanel

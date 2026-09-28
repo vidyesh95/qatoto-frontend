@@ -282,6 +282,7 @@ Every one of these is a variant of one discriminated union rendered by an exhaus
 | **Cluster selected**                      | Pin takes `ring-[3px] ring-offset-2` and `aria-pressed="true"`; the list row takes the `Primary Imprint` border and ground; map `easeTo` the centroid; `?cluster=<id>` enters the URL; the row reveals `Open this cluster →`.                                                                                |
 | **Cluster unscored**                      | Badge reads "Not scored yet", pin takes the grey ring at the smallest diameter. Never "Opportunity 0".                                                                                                                                                                                                       |
 | **Cluster with `locationLabel: null`**    | "Location not resolved yet". Never a fabricated place name, never the raw coordinate standing in for one.                                                                                                                                                                                                    |
+| **Cluster resolved**                      | Off the map and the list, like merged. The detail page shows "Marked resolved on {date}" with the moderator's public note; photos stay 90 days, then "Photo removed upon verified problem resolution." A `moderate_clusters` holder sees Mark resolved / Reopen on the page. (2026-09-28)                    |
 | **Cluster merged**                        | Detail page keeps its existing merged notice. On the map a merged cluster is not a pin; the getters already decide that.                                                                                                                                                                                     |
 
 ### Report sheet states
@@ -423,11 +424,17 @@ published on the wire is quantized. So the pin marks the middle of a catchment t
   word `Centroid`, never beside the word "Location".
 - The standing note in the panel header stays: each pin is a cluster of reports from separate
   people.
-- ⚠️ **Do not draw a radius ring yet.** A 25 km circle would be the most honest possible
-  rendering of what a pin means, and it is the right eventual answer — but the radius is a
-  backend constant the frontend would have to hardcode, and a hardcoded circle silently
-  becomes a lie the day the backend tunes it. It ships when the radius ships on the wire
-  (`todo.md` §19.8).
+- ✅ **The radius ring SHIPPED 2026-09-28, around the SELECTED cluster only.** The radius
+  arrived on the wire as `matchRadiusMeters`, so the ring is drawn from data and a tuned
+  backend constant moves it with no frontend change. A dashed `--primary-imprint` outline over
+  a faint fill, a canvas layer under the DOM pins. From `md` the legend adds "Reports within
+  25 km may join this cluster" on its own line while a ring is drawn — **"may"** because a
+  report must also share the category and the wording to join
+  (`geocode-and-cluster-submission.ts`). Every pin ringed was rejected: 50 km circles pile up
+  wherever clusters sit close. Two constraints found building it: MapLibre 6.11 cannot parse
+  `oklch()`/`lab()` tokens, so the colour is resolved to rgb through a 1×1 canvas; and a theme
+  swap calls `setStyle`, which drops custom layers, so they are re-added on `style.load`. The
+  note sits ABOVE the band row because on one line it ran under the ODbL attribution.
 - ⚠️ **Do not render a precision or accuracy figure anywhere on the public map.** thetraffic
   prints `±3911 m` on a device-located grievance because it has a device accuracy reading to
   print. We have no such field and inventing one would be the unattributed number PRODUCT.md

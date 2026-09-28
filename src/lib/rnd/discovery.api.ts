@@ -18,6 +18,8 @@ import {
   type RequestOptions,
 } from "@/lib/http";
 import {
+  ClusterResolutionSchema,
+  type ClusterResolution,
   DemandSignalSchema,
   MyProblemReportSchema,
   ProblemClusterDetailSchema,
@@ -110,6 +112,42 @@ export async function listProblemClusters(
       matchRadiusMeters: envelopeResult.data.matchRadiusMeters ?? null,
     },
   };
+}
+
+/**
+ * Marks a problem cluster RESOLVED — `moderate_clusters` only, and the backend decides that.
+ *
+ * The note is required and PUBLIC. Not optimistic: the resolution starts a 90-day clock after
+ * which every photo on the cluster is purged. A 409 means the cluster is not active any more
+ * (another moderator got there first) and carries the state it is in.
+ */
+export function resolveProblemCluster(
+  clusterId: string,
+  input: { readonly note: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ClusterResolution>> {
+  return sendJson(
+    `/discovery/admin/problem-clusters/${encodeURIComponent(clusterId)}/resolve`,
+    "POST",
+    input,
+    ClusterResolutionSchema,
+    options,
+  );
+}
+
+/** Returns a RESOLVED cluster to active. The note is optional and audit-only. 409 if not resolved. */
+export function reopenProblemCluster(
+  clusterId: string,
+  input: { readonly note?: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ClusterResolution>> {
+  return sendJson(
+    `/discovery/admin/problem-clusters/${encodeURIComponent(clusterId)}/reopen`,
+    "POST",
+    input,
+    ClusterResolutionSchema,
+    options,
+  );
 }
 
 export function getProblemCluster(

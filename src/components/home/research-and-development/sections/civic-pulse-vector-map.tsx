@@ -4,7 +4,12 @@
 // the parent does the fetching, so the canvas still owns no transport of its own.
 "use client";
 
-import type { Map as MapLibreMap, MapOptions, Marker as MapLibreMarker } from "maplibre-gl";
+import type {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  MapOptions,
+  Marker as MapLibreMarker,
+} from "maplibre-gl";
 import Image from "next/image";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,9 +20,12 @@ import {
   PIN_SIZE_CLASS,
 } from "@/components/home/research-and-development/sections/problem-map-pins";
 import {
+  buildCatchmentRingPolygon,
+  type CatchmentRingPolygon,
   isDarkThemeActive,
   MAP_VIEW_PITCH_DEGREES,
   type MapViewMode,
+  resolveCssColorToRgb,
   resolveMapStyleUrl,
 } from "@/lib/rnd/civic-pulse-map";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
@@ -107,6 +115,12 @@ type CivicPulseVectorMapProps = {
    * the list. `null` inside the ref when nothing is mounted over the map.
    */
   readonly mapOverlayRef: RefObject<HTMLElement | null>;
+  /**
+   * How far apart two reports may be and still join one cluster, from the list envelope. Drawn as
+   * a ring around the SELECTED cluster only; `null` (the backend did not send it) draws nothing —
+   * never a copied 25 km.
+   */
+  readonly matchRadiusMeters: number | null;
 };
 
 /**
@@ -146,6 +160,55 @@ const OPENING_FIT_MARGIN_PX = 64;
  */
 const VIEWPORT_REPORT_DEBOUNCE_MS = 300;
 
+const CATCHMENT_SOURCE_ID = "selected-cluster-catchment";
+const CATCHMENT_FILL_LAYER_ID = "selected-cluster-catchment-fill";
+const CATCHMENT_LINE_LAYER_ID = "selected-cluster-catchment-line";
+
+/** Points the ring's source at `catchmentRing`, or at nothing. A no-op until the source exists. */
+function applyCatchmentRing(map: MapLibreMap, catchmentRing: CatchmentRingPolygon | null): void {
+  // `setData` resolves once the worker has re-tiled the source; nothing waits on that.
+  void map.getSource<GeoJSONSource>(CATCHMENT_SOURCE_ID)?.setData({
+    type: "FeatureCollection",
+    features:
+      catchmentRing === null ? [] : [{ type: "Feature", properties: {}, geometry: catchmentRing }],
+  });
+}
+
+/**
+ * Adds the ring's source and its two layers — a faint fill and a dashed outline, both in
+ * `--primary-imprint` (the One Hue Rule) resolved to rgb because MapLibre cannot read `oklch()`.
+ * Canvas layers, never interactive, and always under the DOM pins, which stay `<button>`s.
+ */
+function addCatchmentRingLayers(
+  map: MapLibreMap,
+  catchmentRing: CatchmentRingPolygon | null,
+): void {
+  const ringColor = resolveCssColorToRgb("--primary-imprint");
+  if (map.getSource(CATCHMENT_SOURCE_ID) === undefined) {
+    map.addSource(CATCHMENT_SOURCE_ID, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+  }
+  if (map.getLayer(CATCHMENT_FILL_LAYER_ID) === undefined) {
+    map.addLayer({
+      id: CATCHMENT_FILL_LAYER_ID,
+      type: "fill",
+      source: CATCHMENT_SOURCE_ID,
+      paint: { "fill-color": ringColor, "fill-opacity": 0.08 },
+    });
+  }
+  if (map.getLayer(CATCHMENT_LINE_LAYER_ID) === undefined) {
+    map.addLayer({
+      id: CATCHMENT_LINE_LAYER_ID,
+      type: "line",
+      source: CATCHMENT_SOURCE_ID,
+      paint: { "line-color": ringColor, "line-width": 1.5, "line-dasharray": [2, 2] },
+    });
+  }
+  applyCatchmentRing(map, catchmentRing);
+}
+
 /**
  * The west/south/east/north box around a set of clusters, in degrees, as MapLibre's `bounds` takes
  * it. A single cluster gives a zero-area box, which `OPENING_FIT_MAX_ZOOM` keeps from zooming in
@@ -175,6 +238,7 @@ export default function CivicPulseVectorMap({
   viewMode,
   onUnavailable,
   mapOverlayRef,
+  matchRadiusMeters,
 }: CivicPulseVectorMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   /**
@@ -237,6 +301,11 @@ export default function CivicPulseVectorMap({
    * opening fit, and easing on top of either would throw that view away.
    */
   const lastEasedSelectionIdRef = useRef(selectedClusterId);
+  /**
+   * The ring currently owed to the map, kept here because a theme swap REPLACES the style and with
+   * it every custom source: the `style.load` handler re-adds the layers and re-applies this.
+   */
+  const selectedCatchmentRef = useRef<CatchmentRingPolygon | null>(null);
   // `import type` is ERASED AT COMPILE TIME, so naming MapLibre's own types here costs nothing at
   // runtime — the package still arrives only through the `await import()` below. An earlier draft
   // hand-rolled structural types (`{ remove: () => void }`) to avoid an import that was never a
@@ -385,6 +454,13 @@ export default function CivicPulseVectorMap({
         viewportReportTimer = setTimeout(() => reportViewport(false), VIEWPORT_REPORT_DEBOUNCE_MS);
       });
 
+      // The catchment ring's layers. `style.load` fires for the first style AND after every
+      // `setStyle` — the theme observer below swaps the whole style, which drops custom sources.
+      map.on("style.load", () => {
+        if (!isEffectStillMounted) return;
+        addCatchmentRingLayers(map, selectedCatchmentRef.current);
+      });
+
       // `load` now only clears the "Loading map…" caption. Nothing depends on it.
       map.on("load", () => {
         if (!isEffectStillMounted) return;
@@ -506,6 +582,31 @@ export default function CivicPulseVectorMap({
       duration: 600,
     });
   }, [selectedClusterId, readyMapToken, mapOverlayRef]);
+
+  // --- The selected cluster's catchment ring (`docs/PROBLEM_MAP_UX.md` §8) -------------------
+  //
+  // A report joins a cluster only if it is within `matchRadiusMeters` of the centroid AND in the
+  // same category AND worded alike (`geocode-and-cluster-submission.ts`), so this is a catchment,
+  // not a promise — the legend says "may". It never moves the camera, so it costs no read, and
+  // like the ease above it reads the clusters through a ref rather than depending on them.
+  useEffect(() => {
+    const selectedCluster =
+      selectedClusterId === null || matchRadiusMeters === null
+        ? undefined
+        : latestClustersRef.current.find((cluster) => cluster.id === selectedClusterId);
+    const catchmentRing =
+      selectedCluster === undefined || matchRadiusMeters === null
+        ? null
+        : buildCatchmentRingPolygon(
+            selectedCluster.centroidLongitudeMicrodegrees / 1_000_000,
+            selectedCluster.centroidLatitudeMicrodegrees / 1_000_000,
+            matchRadiusMeters,
+          );
+    selectedCatchmentRef.current = catchmentRing;
+    const map = mapInstanceRef.current;
+    // Before the style has loaded there is no source yet; `style.load` applies the ref then.
+    if (map !== null) applyCatchmentRing(map, catchmentRing);
+  }, [selectedClusterId, matchRadiusMeters, readyMapToken]);
 
   // --- Follow the container -------------------------------------------------------------
   // ⚠️ **THE MAP'S BOX NOW CHANGES WITHOUT THE WINDOW CHANGING.** Collapsing the tablet panel or

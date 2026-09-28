@@ -15,6 +15,8 @@ import type { PaginationMeta } from "@/lib/http";
 import type { CreateProblemReportInput } from "@/lib/rnd/discovery.api";
 import {
   createProblemReport,
+  reopenProblemCluster,
+  resolveProblemCluster,
   getMyTalentProfile,
   listDiscoverySkills,
   listMyProblemReports,
@@ -279,5 +281,40 @@ export function useCreateProblemReportMutation() {
 export function useUploadProblemReportPhotoMutation() {
   return useMutation({
     mutationFn: async (photoFile: File) => unwrap(await uploadProblemReportPhoto(photoFile)),
+  });
+}
+
+/**
+ * A moderator marks a cluster resolved (note required, public) — `moderate_clusters`. Not
+ * optimistic; on success every cluster list is invalidated because the cluster left the map.
+ * The page itself is a server component, so the island that calls this refreshes the route.
+ */
+export function useResolveProblemClusterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: { clusterId: string; note: string }) =>
+      unwrap(await resolveProblemCluster(variables.clusterId, { note: variables.note })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "problem-clusters"] });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
+    },
+  });
+}
+
+/** A moderator reopens a resolved cluster; it returns to the map. The note is audit-only. */
+export function useReopenProblemClusterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: { clusterId: string; note: string | undefined }) =>
+      unwrap(
+        await reopenProblemCluster(
+          variables.clusterId,
+          variables.note === undefined ? {} : { note: variables.note },
+        ),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "problem-clusters"] });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
+    },
   });
 }

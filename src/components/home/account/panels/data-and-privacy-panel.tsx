@@ -210,7 +210,7 @@ const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Teardowns, product launches and case studies, with the statements you made with them",
       "A company name you withheld from a case study, which moderators see and readers do not",
       "Problems you reported on the map, with a pin rounded to about 110 metres",
-      "Photos you attached to a problem report, which are public and deleted after two years",
+      "Photos you attached to a problem report, which are public and deleted after two years, or 90 days after the problem is marked fixed",
       "Your cofounder directory profile",
     ],
     absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,

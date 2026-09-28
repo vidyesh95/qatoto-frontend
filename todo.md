@@ -331,9 +331,19 @@ this list starts at Part 2):
 1. ~~2-year problem-photo purge — §19.5 "The retention rule".~~ Done 2026-09-28.
 2. ~~PII advisory on the problem description — §19.1's "STILL OPEN" note.~~ Done 2026-09-28.
 3. ~~`easeTo` the centroid on selection — §19.8 "Still not built here".~~ Done 2026-09-28.
-4. ~~`sort=distance` + `matchRadiusMeters` on the wire — §19.10.~~ Done 2026-09-28 (ring still owed).
-5. ~~Trending tags — the bullet above.~~ Done 2026-09-28. **All five parts are done**; the only
-   follow-up left from this request is the radius ring (§19.10).
+4. ~~`sort=distance` + `matchRadiusMeters` on the wire — §19.10.~~ Done 2026-09-28 (the ring followed as item 7).
+5. ~~Trending tags — the bullet above.~~ Done 2026-09-28. **All five parts are done.**
+
+**Remaining work from the SECOND 2026-09-28 request, in build order** (items previously declined,
+now asked for). Each is its own part with its own plan:
+
+7. ~~The 25 km catchment ring — §19.10.~~ Done 2026-09-28.
+8. ~~**The 90-days-after-resolution photo rule** — §19.5.~~ Built 2026-09-28; migration 0206.
+9. **A search-query log** — so "Everyone is searching for" can be real. Privacy work first: the
+   policy and Settings disclosure, the PII register, the erasure manifest, a retention and prune
+   rule, and reversing `request-log.ts`'s never-log-the-query rule on purpose.
+10. **Discussion trending** — a server-side "Trending" sort for research-programme discussions
+    (reactions and replies over a recent window); the discussion UI has no sort control today.
 
 ---
 
@@ -939,9 +949,12 @@ found" would make `problem_submission_photo.id` an existence oracle. Do not "imp
   failed Cloudinary delete is retried by the same run's folder listing. It is a step in that job
   rather than a job of its own for exactly that reason. The privacy policy and Settings → Your
   data & privacy now name the photos and the two years; neither did before.
-  **Still open: the 90-days-after-resolution half**, blocked until `problem_cluster_status` has a
-  `resolved` value, which also needs a moderator control and the "Photo removed upon verified
-  problem resolution" copy — a separate decision.
+  ~~**Still open: the 90-days-after-resolution half**~~ — **BUILT 2026-09-28 (Part 8).**
+  `problem_cluster_status` gained `resolved` (migration 0206), a moderator marks it with a required
+  PUBLIC note from the cluster page (`POST /discovery/admin/problem-clusters/:id/resolve|reopen`,
+  `moderate_clusters`), resolved clusters leave the map, and the daily sweep purges their photos 90
+  days after `resolved_at` and stamps `photos_removed_at` for the notice. A new report near a
+  resolved problem starts a NEW cluster — recurrence is recorded, not silently reopened.
 - **Post-erasure CDN window.** A photo whose CDN delete failed during an erasure survives on
   Cloudinary until the next daily sweep finds it (up to about a day). Stated in `DATA_RETENTION.md`;
   closing it fully would need a retry queue for the erasure step.
@@ -1051,14 +1064,14 @@ Neither blocks item 8 and neither may be faked client-side.
   a device accuracy reading; we hold none, and inventing one is the unattributed number PRODUCT.md
   bans.
 
-**BOTH SHIPPED 2026-09-28. The ring is still owed.**
+**BOTH SHIPPED 2026-09-28, AND THE RING SHIPPED THE SAME DAY** (selected cluster only;
+`docs/PROBLEM_MAP_UX.md` §8 has the design and the two MapLibre constraints it met).
 
 - `matchRadiusMeters` is on the list envelope (`PaginatedResponse & { matchRadiusMeters }`, the
   `asOf` / `rankSeed` precedent), derived from `CLUSTER_RADIUS_MILLIMETRES` (25 000 today). The
   frontend reads it through `getEnvelope` — `getPaginated` would drop it — and parses it as
   OPTIONAL, `null` when absent, so a frontend deployed before the backend does not blank the map.
-  **Nothing draws it yet**; the ring's design is proposed separately, and when it ships it reads
-  this field and never a copied 25 km.
+  The ring reads this field, never a copied 25 km, and `null` draws no ring.
 - `sort=distance` takes `centreLatitudeMicrodegrees` + `centreLongitudeMicrodegrees`: both or
   neither, required by that sort and refused with any other (all three are 422s from the query
   schema's refine). ⚠️ **IT ORDERS BY THE QUANTIZED CENTROID** (`round(col::numeric / 1000) * 1000`

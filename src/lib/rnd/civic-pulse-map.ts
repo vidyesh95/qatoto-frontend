@@ -208,3 +208,72 @@ export function subscribeToMapCanvasMode(onStoreChange: () => void): () => void 
     return () => {};
   }
 }
+
+// --- The selected cluster's catchment ring (`docs/PROBLEM_MAP_UX.md` §8) ---------------------
+
+/** A GeoJSON polygon, declared locally: `@types/geojson` is MapLibre's dependency, not ours. */
+export interface CatchmentRingPolygon {
+  readonly type: "Polygon";
+  readonly coordinates: [number, number][][];
+}
+
+/** Metres in one degree of latitude — the equirectangular constant, fine at a 25 km scale. */
+const METRES_PER_DEGREE_OF_LATITUDE = 111_320;
+
+/**
+ * A circle of `radiusMeters` around a centroid, as a closed ring of `vertexCount` points.
+ *
+ * Equirectangular offsets rather than a geodesic: at 25 km the error is a few metres, far under
+ * one pixel at any zoom the map offers. The longitude step widens with latitude, which is what
+ * keeps the ring round on a Mercator map rather than squashed.
+ */
+export function buildCatchmentRingPolygon(
+  centreLongitudeDegrees: number,
+  centreLatitudeDegrees: number,
+  radiusMeters: number,
+  vertexCount = 64,
+): CatchmentRingPolygon {
+  const latitudeRadiusDegrees = radiusMeters / METRES_PER_DEGREE_OF_LATITUDE;
+  const longitudeRadiusDegrees =
+    radiusMeters /
+    (METRES_PER_DEGREE_OF_LATITUDE * Math.cos((centreLatitudeDegrees * Math.PI) / 180));
+  const ringPoints: [number, number][] = [];
+  for (let vertexIndex = 0; vertexIndex <= vertexCount; vertexIndex += 1) {
+    const angleRadians = (vertexIndex / vertexCount) * 2 * Math.PI;
+    ringPoints.push([
+      centreLongitudeDegrees + longitudeRadiusDegrees * Math.cos(angleRadians),
+      centreLatitudeDegrees + latitudeRadiusDegrees * Math.sin(angleRadians),
+    ]);
+  }
+  return { type: "Polygon", coordinates: [ringPoints] };
+}
+
+/** `25 km`, `12.5 km`, `800 m` — the radius as the legend prints it. */
+export function formatCatchmentRadiusLabel(radiusMeters: number): string {
+  if (radiusMeters < 1_000) return `${Math.round(radiusMeters)} m`;
+  const radiusKilometres = radiusMeters / 1_000;
+  return `${Number.isInteger(radiusKilometres) ? radiusKilometres : radiusKilometres.toFixed(1)} km`;
+}
+
+/**
+ * A theme colour token as `rgb(r, g, b)`, for MapLibre paint properties.
+ *
+ * ⚠️ **MAPLIBRE 6.11 CANNOT PARSE `oklch()`, AND EVERY THEME TOKEN IS ONE.** Its colour parser
+ * knows rgb and lab only, so `--primary-imprint` passed through as written would fail to paint.
+ * A 1×1 canvas does the conversion the browser already knows how to do. Read at the moment the
+ * layers are (re)added, so a theme swap — which replaces the style — picks up the dark value.
+ */
+export function resolveCssColorToRgb(cssVariableName: string): string {
+  const cssColor = getComputedStyle(document.documentElement)
+    .getPropertyValue(cssVariableName)
+    .trim();
+  const pixelCanvas = document.createElement("canvas");
+  pixelCanvas.width = 1;
+  pixelCanvas.height = 1;
+  const pixelContext = pixelCanvas.getContext("2d");
+  if (pixelContext === null || cssColor === "") return "rgb(0, 0, 0)";
+  pixelContext.fillStyle = cssColor;
+  pixelContext.fillRect(0, 0, 1, 1);
+  const [red, green, blue] = pixelContext.getImageData(0, 0, 1, 1).data;
+  return `rgb(${red}, ${green}, ${blue})`;
+}
