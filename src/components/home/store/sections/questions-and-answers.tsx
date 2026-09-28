@@ -14,13 +14,12 @@
 // `authorKind` IS DERIVED BY THE SERVER, never sent. "Seller" and "Verified buyer" are claims about
 // standing, and a client that could assert either would make the badge meaningless.
 //
-// ⚠️ THE DELETE CONTROLS APPEAR ONLY ON ROWS THIS SESSION POSTED, and that is a backend gap rather
-// than a design choice. Retraction is author-only and matched on the USER, but the question
-// projection carries no `viewer` object at all and an answer's `author` is the ORGANIZATION — so
-// nothing in either payload says whether the reader wrote the row. The ids returned by the two 201s
-// are the only authorship this client can prove, so they are the only rows that get a control. A
-// control rendered on every row would 404 for almost everyone, which is the thing this codebase
-// refuses to ship. The fix is `viewer.canDelete` on both projections.
+// THE WITHDRAW CONTROLS FOLLOW `viewer.canDelete`, THE SERVER'S VERDICT, ON EVERY ROW. A question is
+// withdrawable by its asker; an answer by its author, or — for a seller answer — by any active member
+// of the seller organization, because the answer is published under the organization's name. The
+// client never works this out itself: it used to remember the ids its own 201s returned, which lost
+// the control on reload and could never show a teammate the org's answer. A row the server says no to
+// gets no control, because a control that 404s is the thing this codebase refuses to ship.
 "use client";
 
 import { useState } from "react";
@@ -52,17 +51,6 @@ import {
   type ProductQuestionListPage,
 } from "@/lib/store/products.schemas";
 
-/**
- * The rows this session created, which is the only authorship the client can prove.
- *
- * Two sets rather than one, because the ids come from different routes and are deleted by different
- * ones — collapsing them would let an answer id be sent to the question retraction.
- */
-interface AuthoredThisSession {
-  readonly questionIds: ReadonlySet<string>;
-  readonly answerIds: ReadonlySet<string>;
-}
-
 export default function QuestionsAndAnswers({
   productSlug,
   productId,
@@ -82,25 +70,6 @@ export default function QuestionsAndAnswers({
 }) {
   const questionsQuery = useProductQuestionsQuery(productSlug, initialPage);
   const result = questionsQuery.data;
-
-  const [authoredThisSession, setAuthoredThisSession] = useState<AuthoredThisSession>({
-    questionIds: new Set(),
-    answerIds: new Set(),
-  });
-
-  function rememberAuthoredQuestion(questionId: string) {
-    setAuthoredThisSession((previous) => ({
-      ...previous,
-      questionIds: new Set(previous.questionIds).add(questionId),
-    }));
-  }
-
-  function rememberAuthoredAnswer(answerId: string) {
-    setAuthoredThisSession((previous) => ({
-      ...previous,
-      answerIds: new Set(previous.answerIds).add(answerId),
-    }));
-  }
 
   const isViewerSignedIn = contactAffordance !== "sign_in";
 
@@ -135,11 +104,7 @@ export default function QuestionsAndAnswers({
         )}
 
         {isViewerSignedIn && (
-          <AskQuestionComposer
-            productSlug={productSlug}
-            productId={productId}
-            onQuestionPosted={rememberAuthoredQuestion}
-          />
+          <AskQuestionComposer productSlug={productSlug} productId={productId} />
         )}
 
         {result === undefined ? (
@@ -158,8 +123,6 @@ export default function QuestionsAndAnswers({
                   productSlug={productSlug}
                   question={question}
                   isViewerSignedIn={isViewerSignedIn}
-                  authoredThisSession={authoredThisSession}
-                  onAnswerPosted={rememberAuthoredAnswer}
                 />
               </li>
             ))}
@@ -182,11 +145,9 @@ export default function QuestionsAndAnswers({
 function AskQuestionComposer({
   productSlug,
   productId,
-  onQuestionPosted,
 }: {
   readonly productSlug: string;
   readonly productId: string;
-  readonly onQuestionPosted: (questionId: string) => void;
 }) {
   const [bodyText, setBodyText] = useState("");
   const askQuestion = useAskProductQuestion(productSlug, productId);
@@ -213,7 +174,6 @@ function AskQuestionComposer({
               if (!mutationResult.success) return;
               setBodyText("");
               resetIdempotencyKey();
-              onQuestionPosted(mutationResult.data.id);
             },
           },
         );
@@ -259,14 +219,10 @@ function QuestionRow({
   productSlug,
   question,
   isViewerSignedIn,
-  authoredThisSession,
-  onAnswerPosted,
 }: {
   readonly productSlug: string;
   readonly question: ProductQuestion;
   readonly isViewerSignedIn: boolean;
-  readonly authoredThisSession: AuthoredThisSession;
-  readonly onAnswerPosted: (answerId: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
@@ -279,7 +235,7 @@ function QuestionRow({
 
   // One more answer exists than the preview shows.
   const hasMoreAnswers = question.answerCount > (question.topAnswer === null ? 0 : 1);
-  const canRetractQuestion = authoredThisSession.questionIds.has(question.id);
+  const canRetractQuestion = question.viewer?.canDelete ?? false;
 
   return (
     <article className="border-b border-outline-variant/60 pb-3">
@@ -324,7 +280,6 @@ function QuestionRow({
           productSlug={productSlug}
           questionId={question.id}
           answer={question.topAnswer}
-          authoredThisSession={authoredThisSession}
         />
       )}
 
@@ -355,7 +310,6 @@ function QuestionRow({
                       productSlug={productSlug}
                       questionId={question.id}
                       answer={answer}
-                      authoredThisSession={authoredThisSession}
                     />
                   </li>
                 ))}
@@ -370,8 +324,7 @@ function QuestionRow({
             productSlug={productSlug}
             questionId={question.id}
             onCancel={() => setIsAnswering(false)}
-            onAnswerPosted={(answerId) => {
-              onAnswerPosted(answerId);
+            onAnswerPosted={() => {
               setIsAnswering(false);
               setIsExpanded(true);
             }}
@@ -407,7 +360,7 @@ function AnswerComposer({
   readonly productSlug: string;
   readonly questionId: string;
   readonly onCancel: () => void;
-  readonly onAnswerPosted: (answerId: string) => void;
+  readonly onAnswerPosted: () => void;
 }) {
   const [bodyText, setBodyText] = useState("");
   const answerQuestion = useAnswerProductQuestion(productSlug);
@@ -432,7 +385,7 @@ function AnswerComposer({
               if (!mutationResult.success) return;
               setBodyText("");
               resetIdempotencyKey();
-              onAnswerPosted(mutationResult.data.id);
+              onAnswerPosted();
             },
           },
         );
@@ -484,22 +437,22 @@ function AnswerBlock({
   productSlug,
   questionId,
   answer,
-  authoredThisSession,
 }: {
   readonly productSlug: string;
   readonly questionId: string;
   readonly answer: ProductAnswer;
-  readonly authoredThisSession: AuthoredThisSession;
 }) {
   const setHelpfulVote = useSetProductAnswerHelpfulVote(productSlug);
   const retractAnswer = useRetractProductAnswer(productSlug);
 
-  // `viewer` IS THE PERMISSION, not just the current state. Null means the caller has no active
-  // commerce organization — the vote table is keyed on the organization — so the count renders with
-  // nothing to press rather than a button that would 403.
-  const canVote = answer.viewer !== null;
-  const hasVotedHelpful = answer.viewer?.hasVotedHelpful ?? false;
-  const canRetractAnswer = authoredThisSession.answerIds.has(answer.id);
+  // `hasVotedHelpful` IS THE VOTE PERMISSION, not just the current state. `null` means the caller has
+  // no active commerce organization — the vote table is keyed on the organization — so the count
+  // renders with nothing to press rather than a button that would 403. A `null` viewer is a caller
+  // who is not signed in at all.
+  const helpfulVoteState = answer.viewer?.hasVotedHelpful ?? null;
+  const canVote = helpfulVoteState !== null;
+  const hasVotedHelpful = helpfulVoteState === true;
+  const canRetractAnswer = answer.viewer?.canDelete ?? false;
 
   return (
     <div className="pt-1.5">

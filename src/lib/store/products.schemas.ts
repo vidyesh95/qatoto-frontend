@@ -551,8 +551,15 @@ export const ProductAnswerSchema = z.object({
   bodyText: z.string(),
   createdAt: IsoDateTimeSchema,
   helpfulCount: z.number().int(),
-  // Rule 1, again. Keyed on the ORGANIZATION, because the vote table is.
-  viewer: z.object({ hasVotedHelpful: z.boolean() }).nullable(),
+  /**
+   * `null` only when the caller is NOT SIGNED IN. Inside it:
+   *  - `hasVotedHelpful` is `null` — not `false` — when the caller has no active organization.
+   *    The vote table is keyed on the ORGANIZATION, so such a caller cannot vote, and "you have
+   *    not endorsed this" is a different fact from "you cannot".
+   *  - `canDelete` is the server's verdict: the author, or any active member of the seller
+   *    organization on a SELLER answer. Never inferred here.
+   */
+  viewer: z.object({ hasVotedHelpful: z.boolean().nullable(), canDelete: z.boolean() }).nullable(),
   author: ReviewOrganizationSchema.nullable(),
 });
 
@@ -564,6 +571,8 @@ export const ProductQuestionSchema = z.object({
   hasSellerAnswer: z.boolean(),
   /** The asker's display handle. Their EMPLOYER is never projected. */
   askedBy: z.object({ name: z.string(), handle: z.string().nullable() }).nullable(),
+  /** `null` when not signed in. `canDelete` is the server's verdict — the asker and nobody else. */
+  viewer: z.object({ canDelete: z.boolean() }).nullable(),
   /**
    * At most one answer, the seller's first. The full list is its own paginated route, because a
    * cursor over a computed preference rank is how pagination starts skipping rows.
