@@ -287,7 +287,7 @@ from §18 instead.
 
 ### 5. Video Domain: Transcripts & Subscriptions
 
-`TRANSPORT: mock` banners remain in `src/components/home/watch/watch-content.tsx` (`isPremium` only, since transcripts shipped) and `comments.tsx`:
+A `TRANSPORT: mock` banner remains only in `src/components/home/watch/watch-content.tsx` (`isPremium`); `comments.tsx` lost its banner when trending tags shipped (2026-09-28):
 
 - ~~**Transcripts**~~ — **SHIPPED 2026-09-28, CREATOR-SUPPLIED, NOT ASR.** Whisper/Deepgram "on
   ingestion" could never have worked: ingestion is a YouTube id plus one oEmbed call, and running
@@ -303,17 +303,27 @@ from §18 instead.
   check and the write. Same day: the upload modal now sends `[]` on an EDIT, because skipping an
   empty set meant deleting every chapter left them all live with no error.
 - **`isPremium`**: Currently hardcoded to `false`. Requires a subscription entitlement model and recurring payment processing if paywalled creator content is offered.
-- **Trending — DECIDED 2026-09-28, NOT BUILT.** This bullet used to say "currently empty array"
-  about trending in general, which was wrong: VIDEO trending ships, as the hourly
-  `recompute-trending-videos` job behind `GET /feed/videos?mode=trending`. What is empty is the
-  watch page's "Everyone is searching for:" line (`comments.tsx`, `TRANSPORT: mock`).
-  **Decision: fill it with trending TAGS, not search terms** — `video.tags` weighted by the 48h
-  engagement on the videos carrying them, from a new hourly tick + singleton job, carried on a new
-  `GET /feed/watch/:videoId` field. The line's copy changes with it, since tags are not searches.
-  ⚠️ **No search-query log.** Nothing stores search text today (`request-log.ts` drops the query
-  string on purpose), the privacy policy discloses no such collection, and adding one needs a PII
-  register entry, an erasure manifest entry and a retention rule — none worth it for one line.
-  There is no discussion "Trending" tab in either repo, and none is being built.
+- ~~**Trending**~~ — **SHIPPED 2026-09-28, AS TRENDING TAGS, NOT SEARCHES.** VIDEO trending already
+  shipped (hourly `recompute-trending-videos`, `GET /feed/videos?mode=trending`); what was empty
+  was the watch page's "Everyone is searching for:" line. It is now **"Trending tags:"**, fed by
+  `trendingTags` on `GET /feed/watch/:videoId` (backend `src/modules/home/feed/trending-tags.ts`),
+  each tag linking to `/search?query=`.
+    - **A PROJECTION, NOT A JOB — a departure from the decision as first written** (which said "a
+      new hourly tick + singleton job"). The hourly job already stores every ranked video's score in
+      `trending_video_snapshot`, so the tags are aggregated from the latest snapshot at read time:
+      no job, no table, no migration.
+    - `video.tags` only, lowercased, once per video, ranked by the summed trending score of the
+      videos carrying them, at most five. ⚠️ **A tag needs at least TWO DIFFERENT CREATORS**, so no
+      single creator can put a word on every watch page — tags were never public before this.
+    - Re-checked against the CURRENT public gate at read time, and EMPTY if the newest snapshot is
+      over three hours old (a stalled job must not present an old answer as trending now).
+    - ⚠️ **IT RENDERS NOTHING TODAY, AND THAT IS CORRECT.** Measured 2026-09-28: 0 public videos carry
+      any `tags`. The line appears once creators tag and two of them share a tag on trending videos.
+      Per-tag moderation is the next control if abuse appears, not a lower floor.
+      ⚠️ **No search-query log.** Nothing stores search text today (`request-log.ts` drops the query
+      string on purpose), the privacy policy discloses no such collection, and adding one needs a PII
+      register entry, an erasure manifest entry and a retention rule — none worth it for one line.
+      There is no discussion "Trending" tab in either repo, and none is being built.
 
 **Remaining work from the 2026-09-28 request, in build order** (Part 1, the chapter lock, is done;
 this list starts at Part 2):
@@ -322,7 +332,8 @@ this list starts at Part 2):
 2. ~~PII advisory on the problem description — §19.1's "STILL OPEN" note.~~ Done 2026-09-28.
 3. ~~`easeTo` the centroid on selection — §19.8 "Still not built here".~~ Done 2026-09-28.
 4. ~~`sort=distance` + `matchRadiusMeters` on the wire — §19.10.~~ Done 2026-09-28 (ring still owed).
-5. Trending tags — the bullet above.
+5. ~~Trending tags — the bullet above.~~ Done 2026-09-28. **All five parts are done**; the only
+   follow-up left from this request is the radius ring (§19.10).
 
 ---
 

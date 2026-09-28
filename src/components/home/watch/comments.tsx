@@ -14,9 +14,13 @@
 // `{ productSlug, initialPage }` — so the tab mounts the store's own component against the
 // attached product instead of a mock `Review[]`. One review surface, not two.
 //
-// `trending` STAYS MOCK. "Everyone is searching for…" needs a search-term aggregation that does
-// not exist anywhere in the backend, and it is held `undefined` rather than invented.
+// TRENDING IS REAL NOW, AND IT IS TAGS, NOT SEARCHES. The line used to read "Everyone is
+// searching for…" over an `undefined` placeholder, because nothing logs what anyone searches for —
+// and nothing will. What ships instead is `trendingTags` on the watch payload: the tags creators
+// put on currently trending videos, used by at least two different creators, projected from the
+// hourly trending-video snapshot. The copy says "Trending tags" because that is what they are.
 
+import Link from "next/link";
 import { useState } from "react";
 
 import CatalogProductCard from "@/components/home/store/cards/catalog-product-card";
@@ -24,15 +28,6 @@ import RatingsAndReviews from "@/components/home/store/sections/ratings-and-revi
 import VideoCommentThread from "@/components/home/watch/video-comment-thread";
 import { formatCompactCountLabel } from "@/lib/feed/format";
 import type { VideoComment, WatchPayload } from "@/lib/feed/schemas";
-
-/**
- * TRANSPORT: mock — `trending` has no counterpart in `GET /feed/watch/:videoId`.
- *
- * There is no search-term aggregation behind "everyone is searching for…" — no table, no job, no
- * route. Held `undefined` so the block renders nothing rather than a fabricated phrase.
- * Deliberate; docs/HOME_STRUCTURE.md §10.
- */
-const PLACEHOLDER_TRENDING_SEARCH: string | undefined = undefined;
 
 type CommentsTab = "comments" | "reviews";
 
@@ -44,6 +39,7 @@ export default function Comments({
   isViewerSignedIn,
   commentCount,
   attachedProducts,
+  trendingTags,
   className = "",
 }: {
   readonly videoId: string;
@@ -59,6 +55,8 @@ export default function Comments({
    * length is not "how many the creator attached" and must not be labelled as such.
    */
   readonly attachedProducts: WatchPayload["attachedProducts"];
+  /** Platform-wide, not about this video. `[]` is ordinary and renders no line at all. */
+  readonly trendingTags: WatchPayload["trendingTags"];
   readonly className?: string;
 }) {
   // THE REVIEWS TAB FOLLOWS THE FIRST ATTACHED PRODUCT. Reviews belong to a product, not to a
@@ -102,10 +100,23 @@ export default function Comments({
         </>
       ) : (
         <>
-          {PLACEHOLDER_TRENDING_SEARCH !== undefined && (
+          {trendingTags.length > 0 && (
             <div className="px-4 py-3">
-              <p className="text-sm font-medium">Everyone is searching for:</p>
-              <p className="text-sm text-primary-imprint">{PLACEHOLDER_TRENDING_SEARCH}</p>
+              <p className="text-sm font-medium">Trending tags:</p>
+              {/* Each tag opens search, which already indexes `video.tags` — `?query=` is the
+                  search route's fixed contract, set by the navbar form. */}
+              <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                {trendingTags.map((trendingTag) => (
+                  <li key={trendingTag}>
+                    <Link
+                      href={`/search?query=${encodeURIComponent(trendingTag)}`}
+                      className="text-sm text-primary-imprint hover:underline"
+                    >
+                      {trendingTag}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           <div className="border-b-2 border-primary-imprint px-4 pt-1 pb-3 text-center">

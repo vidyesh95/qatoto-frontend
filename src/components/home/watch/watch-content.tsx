@@ -279,6 +279,7 @@ export default function WatchContent({
               isViewerSignedIn={isViewerSignedIn}
               commentCount={video.stats.commentCount}
               attachedProducts={video.attachedProducts}
+              trendingTags={video.trendingTags}
             />
           )}
         </div>

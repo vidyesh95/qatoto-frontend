@@ -387,6 +387,14 @@ export const WatchPayloadSchema = z.object({
       downloadPath: z.string(),
     }),
   ),
+  /**
+   * PLATFORM-WIDE, NOT ABOUT THIS VIDEO: tags creators put on currently trending videos, each used
+   * by at least two different creators. NOT search terms — nothing logs searches.
+   *
+   * `.default([])` so a frontend deployed before the backend still parses the payload. That
+   * invents nothing: absent and empty both render no line at all.
+   */
+  trendingTags: z.array(z.string().min(1).max(40)).max(5).default([]),
 });
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
 

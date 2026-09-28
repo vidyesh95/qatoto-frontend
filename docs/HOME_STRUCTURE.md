@@ -57,10 +57,10 @@ The video vertical consists of two primary visitor surfaces and the creator stud
 
 A strict codebase invariant is that mock data should not exist in production paths. However, two specific UI areas on the watch surface deliberately retain mock or empty placeholders because their corresponding backend services do not yet exist. Each is marked with `// TRANSPORT: mock`. (`transcript` left this table on 2026-09-28: it is now the creator's own uploaded subtitle file or text, carried by `GET /feed/watch/:videoId`. No speech-to-text runs.)
 
-| Component                      | Placeholder Field                 | Reason & Backend Status                                                                                               |
-| :----------------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
-| `home/watch/watch-content.tsx` | `isPremium`                       | No paid subscription tier, paywall, or entitlement engine exists. Hardcoded to `false` so viewers are never blocked.  |
-| `home/watch/comments.tsx`      | `saleItem`, `reviews`, `trending` | No product-video review joins or search trending aggregations exist. Held empty so the reviews tab cleanly collapses. |
+| Component                      | Placeholder Field                     | Reason & Backend Status                                                                                                                                                                                                 |
+| :----------------------------- | :------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `home/watch/watch-content.tsx` | `isPremium`                           | No paid subscription tier, paywall, or entitlement engine exists. Hardcoded to `false` so viewers are never blocked.                                                                                                    |
+| `home/watch/comments.tsx`      | ~~`saleItem`, `reviews`, `trending`~~ | **All three are real now.** Attached products and the reviews tab read the backend; `trending` shipped 2026-09-28 as **trending tags** (`trendingTags` on the watch payload), not search terms — nothing logs searches. |
 
 > **Rule:** These placeholders are kept empty or inert, never fabricated with fake data. They will be wired as their respective backend features ship.
 

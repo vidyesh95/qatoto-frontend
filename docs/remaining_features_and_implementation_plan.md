@@ -135,7 +135,7 @@ This document outlines **exactly what is done, what is incomplete, what external
 - `src/components/home/watch/watch-content.tsx` and `comments.tsx` contain `TRANSPORT: mock` markers:
     - `transcript`: Displays empty array because the backend has no transcription table or ASR (Automatic Speech Recognition) pipeline.
     - `isPremium`: Always `false`; no paywall, membership tier, or subscription billing model exists in the backend.
-    - `trending`: Empty array; no backend aggregation query computes trending tags from video comments/searches.
+    - ~~`trending`~~: **Shipped 2026-09-28 as trending tags** — creators' `video.tags` on currently trending videos, used by at least two creators, projected from `trending_video_snapshot` onto the watch payload. Not search terms: no search log exists or is planned.
 - `/studio/subtitles`: Marked as `StudioPlannedPage`. Because videos are embedded from YouTube, subtitle tracks are managed on YouTube's player, making on-platform subtitle generation inapplicable unless custom video hosting is introduced.
 - Social Share Icons: WhatsApp, X, and LinkedIn render generic share icons because their brand SVGs are missing from `public/icons/`.
 
