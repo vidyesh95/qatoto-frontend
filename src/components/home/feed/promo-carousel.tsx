@@ -111,6 +111,7 @@ export default function PromoCarousel({ slides }: { slides: PromotionalCarouselS
       >
         <Image
           src={"/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+          className="icon-fixed"
           width={24}
           height={24}
           alt=""
@@ -128,6 +129,7 @@ export default function PromoCarousel({ slides }: { slides: PromotionalCarouselS
       >
         <Image
           src={"/icons/arrow_back_ios_new_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+          className="icon-fixed"
           width={24}
           height={24}
           alt=""
@@ -143,6 +145,7 @@ export default function PromoCarousel({ slides }: { slides: PromotionalCarouselS
       >
         <Image
           src={"/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+          className="icon-fixed"
           width={24}
           height={24}
           alt=""

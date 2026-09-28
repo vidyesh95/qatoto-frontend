@@ -193,7 +193,6 @@ export default function ThreeDimensionalModelViewer({
               alt=""
               width={20}
               height={20}
-              className="dark:invert"
             />
           </button>
           {canFullscreen && (
@@ -212,7 +211,6 @@ export default function ThreeDimensionalModelViewer({
                 alt=""
                 width={20}
                 height={20}
-                className="dark:invert"
               />
             </button>
           )}

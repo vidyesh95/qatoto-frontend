@@ -219,6 +219,16 @@
   .theme-light {
     color: var(--foreground);
   }
+
+  /* THE BLACK ICONS INVERT IN DARK MODE HERE, ONCE, NOT PER FILE. Every Material icon under
+     `public/icons` carries its colour in its name (`…_24dp_000000_…`), and many are picked from
+     data (`src/lib/store/labels.ts`), so a `dark:invert` on each `<Image>` would miss those and
+     rot the first time somebody adds an icon. Two exits: a `.theme-light` subtree stays light, so
+     its icons stay black; and `.icon-fixed` marks an icon on a surface that does not change with
+     the theme (the promo carousel's grey image band). Icons in other colours are untouched. */
+  .dark img[src*="_000000_"]:not(.theme-light *, .icon-fixed) {
+    filter: invert(1);
+  }
 }
 
 @keyframes live-ring {

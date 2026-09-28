@@ -266,7 +266,7 @@ export default function VideoCardMenu({
         aria-haspopup="menu"
         aria-expanded={isMenuOpen}
         onClick={handleTriggerClick}
-        className="relative z-10 cursor-pointer rounded-full p-1 hover:bg-black/20"
+        className="relative z-10 cursor-pointer rounded-full p-1 hover:bg-muted"
       >
         {/*
           `size-4` IS THE ORIGINAL SIZE, not a shrink. Before this was a button the `p-1` sat on

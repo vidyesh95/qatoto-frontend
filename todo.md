@@ -1383,9 +1383,13 @@ Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its code
 - **`dark:invert`** on the sidebar and mobile bottom-nav icons, and on the studio navbar account cluster, which Part 1 missed.
 - **Kept on purpose (≈140):** everything on the band gradient, photo scrims and text over images, modal scrims `bg-black/40`, video letterbox `bg-black`, badges over thumbnails, the promo carousel's controls, map pins, `print:text-black`, the CAD callout pin's `text-black`, the macOS window dots on `/developers`. Re-list with `rg --pcre2 -o "(?<![\w-])[\w:-]*-(black|white)(/\d+)?(?![\w-])" src --glob '!*.svg' --glob '!*.css'`.
 
-#### Part 3 — OPEN
+#### Part 3 — SHIPPED 2026-09-28: black icons invert in dark mode
 
-- **112 files still render black `*_000000_*.svg` icons with no `dark:invert`** (auth pages' mail, lock, eye and back-arrow, account panels, cards, …). Only the navbars, sidebar, bottom nav and model viewer are done. This is inert until a theme switch exists; do it before one ships. Measure with `rg --files-without-match "dark:invert" $(rg -l "_000000_" src --glob '*.tsx')`.
+- **ONE RULE in `globals.css`, not a class per file:** `.dark img[src*="_000000_"]:not(.theme-light *, .icon-fixed) { filter: invert(1) }`. The icons render as plain `<img>` (next/image passes SVGs through), their colour is in their filename, and many are chosen from data (`src/lib/store/labels.ts`), which a per-`<Image>` `dark:invert` would miss. The 25 `dark:invert` classes Parts 1–2 added were removed so there is one mechanism.
+- **Exits:** a `.theme-light` subtree keeps its icons black (the teardown stage); `.icon-fixed` marks an icon on a surface that does not follow the theme — today only the promo carousel's close/arrow icons, on its `bg-gray-200` image band.
+- **Measured with `.dark` forced:** home 38/41 inverted (the 3 are the promo opt-outs), teardown page 46/48 (the 2 are inside the stage), sign-in all 4.
+- ⚠️ **Only `_000000_` icons.** Other-coloured icons (`_6F7979_`, `_00696E_`, …) and unnamed brand SVGs (the GitHub mark on the auth pages) are untouched and need their own look before a theme switch ships.
+
 - **Still token-less:** amber (≈64 text, 41 bg) and blue (≈28). Register `--warning` / `--info` pairs with `.dark` counterparts and measured contrast first; borrowing `--destructive` or an accent is forbidden.
 
 ---

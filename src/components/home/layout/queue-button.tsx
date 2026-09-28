@@ -87,7 +87,6 @@ export default function QueueButton() {
       >
         <Image
           src="/icons/playlist_play_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-          className="dark:invert"
           alt=""
           width={24}
           height={24}
@@ -160,7 +159,6 @@ export default function QueueButton() {
                   >
                     <Image
                       src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      className="dark:invert"
                       alt=""
                       width={18}
                       height={18}

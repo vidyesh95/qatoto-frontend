@@ -72,7 +72,6 @@ export default function AdminNavbarAccountCluster({
         >
           <Image
             src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-            className="dark:invert"
             alt={"Signin"}
             width={24}
             height={24}

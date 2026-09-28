@@ -25,7 +25,6 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
           >
             <Image
               src="/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              className="dark:invert"
               alt="toggle sidebar"
               width={24}
               height={24}
@@ -63,7 +62,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
               alt=""
               width={24}
               height={24}
-              className="absolute top-2 left-2 hidden group-focus-within:block dark:invert"
+              className="absolute top-2 left-2 hidden group-focus-within:block"
             />
             <button
               type="submit"
@@ -72,7 +71,6 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
             >
               <Image
                 src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                className="dark:invert"
                 alt="Search"
                 width={24}
                 height={24}
@@ -86,7 +84,6 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
           >
             <Image
               src="/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              className="dark:invert"
               alt="Voice input"
               width={24}
               height={24}
@@ -103,7 +100,6 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
           >
             <Image
               src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              className="dark:invert"
               alt="Search"
               width={24}
               height={24}

@@ -101,7 +101,6 @@ export default function NotificationBell({
       >
         <Image
           src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-          className="dark:invert"
           alt={""}
           width={24}
           height={24}

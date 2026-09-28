@@ -42,7 +42,6 @@ export default function StudioNavbarAccountCluster({
           >
             <Image
               src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              className="dark:invert"
               alt=""
               width={24}
               height={24}
@@ -89,7 +88,6 @@ export default function StudioNavbarAccountCluster({
         >
           <Image
             src="/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            className="dark:invert"
             alt="Signin"
             width={24}
             height={24}
