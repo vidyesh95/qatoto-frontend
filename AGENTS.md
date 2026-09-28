@@ -302,6 +302,7 @@ When in planning mode (`/plan`) or asked to plan/audit a task:
 - TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.
 - `pnpm-workspace.yaml` pins `@types/react`/`@types/react-dom` overrides and allows `sharp` + `unrs-resolver` builds. Don't remove these — they prevent React 19 type drift.
 - `pnpm lint` and `pnpm lint:fix` both run **oxlint** (`.oxlintrc.json`), not ESLint. There is no separate eslint script — an `eslint.config.mjs` may still exist but is not wired to any package.json script.
+- **A server component must never import a VALUE from a `"use client"` module** — on the server it is a client reference, not the value. Components and `import type` are fine; a constant, hook or helper is not. It renders correctly when passed straight into a prop, which hides it until the first server-side use: `problem-map-page.tsx` built its cluster read from a client module's `DEFAULT_PROBLEM_CLUSTER_SORT`, sent the reference as `?sort=`, got a 422 and silently lost its server seed. Put shared values in a module with no directive, and run `pnpm check:client-boundary` (`scripts/check-client-value-imports.mjs`), which walks the server graph from `src/app` and fails on any such import.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

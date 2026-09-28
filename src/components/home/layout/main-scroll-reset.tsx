@@ -4,13 +4,10 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-/**
- * The id `(home)/layout.tsx` puts on its `<main>`, which is the group's scroll container.
- *
- * Exported rather than written twice: the whole point of this component is that it targets that
- * exact element, and a typo would fail silently as "scrolling just stopped resetting".
- */
-export const HOME_SCROLL_CONTAINER_ID = "home-scroll-container";
+// Shared with `(home)/layout.tsx` rather than written twice: this component targets that exact
+// element, and a typo would fail silently as "scrolling just stopped resetting". It lives in a
+// module with no directive because the SERVER layout imports it too (`home-scroll-container.ts`).
+import { HOME_SCROLL_CONTAINER_ID } from "@/components/home/layout/home-scroll-container";
 
 /**
  * Puts the group's scroll container back to the top when the route changes.

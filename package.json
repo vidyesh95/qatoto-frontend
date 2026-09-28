@@ -10,6 +10,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
+    "check:client-boundary": "node scripts/check-client-value-imports.mjs",
     "fixtures:blueprint-models": "node scripts/generate-blueprint-fixture-models.mts",
     "test": "vitest run",
     "test:watch": "vitest",

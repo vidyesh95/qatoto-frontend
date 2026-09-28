@@ -922,7 +922,7 @@ only for a surface with no clusters. **Do not move the fit back into an effect.*
 server it was a client reference rather than `"opportunity"`. The unbounded read sent that as
 `?sort=`, the backend answered 422, and every load silently fell back to a client-side re-read
 (`initialPagination: null` in the RSC payload). The constant now lives in `discovery.schemas.ts`.
-A server component must never import a VALUE from a `"use client"` module — types are fine.
+A server component must never import a VALUE from a `"use client"` module — types are fine. **Swept 2026-09-28:** one more existed (`HOME_SCROLL_CONTAINER_ID`, harmless only because it was a prop) and was moved to `home-scroll-container.ts`; `pnpm check:client-boundary` now fails on the pattern.
 
 ⚠️ **TRAP 2 — A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPS DESTROYS AND REBUILDS THE MAP.**
 Worse than trap 1 and it is the one that actually shipped. The effect listed `onUnavailable`, which

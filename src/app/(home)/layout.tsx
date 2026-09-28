@@ -13,9 +13,8 @@ import NavbarAccountCluster from "@/components/home/layout/navbar-account-cluste
 import NavbarAccountSlot from "@/components/home/layout/navbar-account-slot";
 import Sidebar from "@/components/home/layout/sidebar";
 import SidebarSlot from "@/components/home/layout/sidebar-slot";
-import MainScrollReset, {
-  HOME_SCROLL_CONTAINER_ID,
-} from "@/components/home/layout/main-scroll-reset";
+import { HOME_SCROLL_CONTAINER_ID } from "@/components/home/layout/home-scroll-container";
+import MainScrollReset from "@/components/home/layout/main-scroll-reset";
 import MobileBottomNav from "@/components/home/layout/mobile-bottom-nav";
 import QueryProvider from "@/components/providers/query-provider";
 import { QueueProvider } from "@/state/queue-context";
