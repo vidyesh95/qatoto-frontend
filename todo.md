@@ -24,7 +24,7 @@ and `git log` are the record of what was built and why.
 
 - **Payment Gateway Integration** — **Razorpay is SHIPPED** (adapter, both signature checks, webhook inbox, Standard Checkout modal). Stripe is an enum label with no implementation, and **neither provider may run in production until a marketplace split exists** — without one a captured payment lands in Qatoto's own account, which is the custody §14 refused. See §1.
 - ~~**"Buy Now" Checkout**~~ — **DONE.** `checkout/prepare` takes an `items` selection, and the PDP button adds its line then sends the buyer to `/checkout?buyNow=…`. The rest of the cart is untouched.
-- **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
+- **Four Minor Store Items** — Two remain: service-offering coverage read and `viewer.canDelete` on Q&A. The `standardCode` filter and the `DELETE /products/:id` 500 are **DONE** (§3).
 - ~~**§18 (Provider freight rate cards)**~~ — **DONE.** Backend routes plus the Studio composer at `/studio/logistics/rate-cards`, with the TSV paste box. A verified forwarder can publish a lane end to end. What remains is onboarding: until an organization holds a `verified` `freight_forwarder` or `logistics_operator` kind link, every call is a correct 403.
 
 **Content & Launch Blockers:**
@@ -242,9 +242,9 @@ The checkout page says when it is scoped and links to the full cart.
 ### 3. Four Minor Store Gaps
 
 1. **Service-offering coverage read**: Link service offering locations to buyer delivery destinations.
-2. **`standardCode` filter**: The manufacturer directory standard certification names should filter over a controlled vocabulary (`ISO 9001`, `CE`, `RoHS`, etc.) rather than free text.
+2. ~~**`standardCode` filter**~~ — **DONE.** Closed on both sides: the directory chips, the profile editor's `<select>` and the admin review all read the eight-value `FACTORY_CERTIFICATIONS` (`src/lib/store/factories.schemas.ts`), and the backend's `certification` query param is a `z.enum` matched by `EXISTS` over approved, unexpired rows carrying that code (`store-factories.service.ts`). Free-text `standardName` stays the display string and is never matched.
 3. **`viewer.canDelete` on Product Q&A**: Ensure the question/answer author or seller has explicit permission flags in the read projection to render the delete control.
-4. **`DELETE /products/:id` 500 on customized listing**: Resolves an internal server error when a seller deletes a draft/inactive product that contains customized attributes.
+4. ~~**`DELETE /products/:id` 500 on customized listing**~~ — **DONE.** The cause was buyer cart lines, not attributes: a listing unpublished while in a cart kept a RESTRICT cart line (and, through its customization options, a RESTRICT cart-line customization) that the preflight never checked, so the delete destroyed the assets and then 500'd. `deleteProduct` now clears buyers' cart lines in its transaction, refuses a checkout prepare as a 409 naming `checkouts`, and catches any missed RESTRICT FK as a 409. The studio row shows the refusal.
 
 ---
 
