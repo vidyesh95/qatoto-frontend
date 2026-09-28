@@ -96,6 +96,14 @@ export const RESEARCH_POST_TRACKS = ["informal_paper", "idea"] as const;
 export const ResearchPostTrackSchema = z.enum(RESEARCH_POST_TRACKS);
 export type ResearchPostTrack = z.infer<typeof ResearchPostTrackSchema>;
 
+/**
+ * A discussion feed's order. `trending` is the backend's STORED hourly score — reactions plus
+ * twice the visible replies in the last seven days — then newest; hidden posts are not in it.
+ * `newest` is the default and is written OUT of the URL.
+ */
+export const RESEARCH_POST_SORTS = ["newest", "trending"] as const;
+export type ResearchPostSort = (typeof RESEARCH_POST_SORTS)[number];
+
 export const CONTENT_REPORT_REASONS = [
   "spam",
   "plagiarism",

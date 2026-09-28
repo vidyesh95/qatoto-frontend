@@ -39,16 +39,35 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * A repeated query key gives an array; take the first, and let the page validate it against its
+ * enum. Passing an array through would fail a read for a malformed URL.
+ */
+function firstValueOf(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function Page({
   params,
   searchParams,
 }: {
   params: Promise<{ programSlug: string }>;
-  searchParams: Promise<{ role?: string | string[] }>;
+  searchParams: Promise<{
+    role?: string | string[];
+    ideasSort?: string | string[];
+    papersSort?: string | string[];
+  }>;
 }) {
-  const [{ programSlug }, { role }] = await Promise.all([params, searchParams]);
-  // A repeated `?role=` gives an array; take the first, and let the page validate it against the
-  // enum. Passing an array through would fail the roster read for a malformed URL.
-  const roleFilter = Array.isArray(role) ? role[0] : role;
-  return <ResearchProgramPage programSlug={programSlug} roleFilter={roleFilter} />;
+  const [{ programSlug }, { role, ideasSort, papersSort }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  return (
+    <ResearchProgramPage
+      programSlug={programSlug}
+      roleFilter={firstValueOf(role)}
+      ideasSortParam={firstValueOf(ideasSort)}
+      papersSortParam={firstValueOf(papersSort)}
+    />
+  );
 }

@@ -28,6 +28,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { toCursorKeysetPage, useKeysetList, type KeysetListResult } from "@/hooks/keyset-list";
 import { rndKeys, type ProgramPaperFilter } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import {
@@ -48,6 +49,7 @@ import {
   createPaperDownloadLink,
   joinResearchProgram,
   listOwnResearchPrograms,
+  listProgramPosts,
   listPostReplies,
   listProgramModerationActions,
   listProgramModerationQueue,
@@ -70,6 +72,8 @@ import type {
   ContentReportReason,
   ResearchContributionKind,
   ResearchParticipantRole,
+  ResearchPost,
+  ResearchPostSort,
   ResearchPostTrack,
 } from "@/lib/rnd/research-programs.schemas";
 
@@ -764,3 +768,31 @@ export function useProgramOpportunityMutation(programSlug: string) {
  * front door to the transport layer.
  */
 export type { ProgramPaperFilter };
+
+/**
+ * A discussion track's feed, paged by "Load more", SEEDED with the server-rendered first page.
+ *
+ * THIS IS ALSO THE REFRESH FIX. Every post and reaction mutation already invalidated
+ * `["rnd","programs",slug,"posts"]`, but the feed arrived as props and nothing subscribed to that
+ * key, so a new post did not appear until a reload. This query lives under that prefix, so the
+ * existing invalidation now refetches it.
+ */
+export function useProgramPostFeed(
+  programSlug: string,
+  track: ResearchPostTrack,
+  sort: ResearchPostSort,
+  initialPage: { readonly rows: ResearchPost[]; readonly nextCursor: string | null },
+): KeysetListResult<ResearchPost> {
+  return useKeysetList<ResearchPost>({
+    queryKey: rndKeys.programPosts(programSlug, track, sort),
+    initialPage: { rows: initialPage.rows, nextToken: initialPage.nextCursor },
+    fetchPage: async (token) =>
+      toCursorKeysetPage(
+        await listProgramPosts(programSlug, {
+          track,
+          sort,
+          ...(typeof token === "string" ? { cursor: token } : {}),
+        }),
+      ),
+  });
+}

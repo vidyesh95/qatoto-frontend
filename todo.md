@@ -354,8 +354,24 @@ now asked for). Each is its own part with its own plan:
       (`DELETE /feed/admin/search-terms/suppressions/:term`) — an admin list page is the follow-up.
     - The privacy policy's new "Searches" paragraph and the Settings card say all of this.
     - `/feed` has no OpenAPI entries (the module never had any); these routes follow suit.
-10. **Discussion trending** — a server-side "Trending" sort for research-programme discussions
-    (reactions and replies over a recent window); the discussion UI has no sort control today.
+10. ~~**Discussion trending**~~ — **BUILT 2026-09-28 (migration 0208).** Each programme discussion
+    section (Ideas, Informal papers) has "Newest | Trending" chips in its own URL key
+    (`?ideasSort=` / `?papersSort=`, default written out) and a "Load more" button — the page used
+    to render only the first 10 posts and discard `nextCursor`.
+    - `trending_score` is STORED, written only by the hourly `recompute-program-post-trending` (:38):
+      reactions + 2 × visible replies in the last 7 days, top-level posts only, rows rewritten only
+      when the score changes. Stored because the feed is keyset-paged and a live count cannot be a
+      stable key (the blueprint/video comment threads' stated reason for having no like sort).
+    - Trending omits hidden posts; Newest still shows them as placeholders. The cursor is
+      sort-prefixed, and a cursor from the other sort is a 422.
+    - ⚠️ **ALSO FIXED: NEW POSTS DID NOT APPEAR UNTIL A RELOAD.** Every post/reaction mutation
+      invalidated `["rnd","programs",slug,"posts"]`, but the feed was props and nothing subscribed to
+      that key. The feed is now a `useKeysetList` query under that prefix, seeded with the server page,
+      so the existing invalidation refetches it. Found by reading, confirmed by the query now existing
+      — not by posting on the shared DB.
+    - **Follow-up, deliberately not built:** a sort for blueprint comment threads. They are a
+      conversation read oldest-first, and `blueprint-engagement.schemas.ts` documents why they carry
+      no like-count sort; if one is wanted, reuse this stored-score + prefixed-cursor shape.
 
 ---
 

@@ -59,6 +59,7 @@ import {
   type ResearchParticipant,
   type ResearchParticipantRole,
   type ResearchPost,
+  type ResearchPostSort,
   type ResearchPostTrack,
   type ResearchProgramDetail,
   type ResearchProgramStats,
@@ -502,6 +503,8 @@ export function moderateProgramPaper(
 
 export interface ListPostsFilter {
   readonly track: ResearchPostTrack;
+  /** Omitted means `newest`. A cursor is bound to the sort that minted it — a mismatch is a 422. */
+  readonly sort?: ResearchPostSort | undefined;
   readonly limit?: number | undefined;
   readonly cursor?: string | undefined;
 }
@@ -514,6 +517,8 @@ export function listProgramPosts(
 ): Promise<ActionResponse<{ rows: ResearchPost[]; nextCursor: string | null }>> {
   const query = buildQueryString({
     track: filter.track,
+    // The default is left off the wire, so the newest feed's request is byte-identical to before.
+    sort: filter.sort === "trending" ? filter.sort : undefined,
     limit: filter.limit,
     cursor: filter.cursor,
   });

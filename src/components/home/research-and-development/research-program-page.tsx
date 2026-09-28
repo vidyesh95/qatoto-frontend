@@ -25,13 +25,26 @@ import {
   listProgramPosts,
 } from "@/lib/rnd/research-programs.api";
 import {
+  RESEARCH_POST_SORTS,
   ResearchParticipantRoleSchema,
   type ResearchParticipantRole,
+  type ResearchPostSort,
 } from "@/lib/rnd/research-programs.schemas";
+import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 
 const PAPERS_PAGE_LIMIT = 20;
 const POSTS_PAGE_LIMIT = 10;
+
+/** What each discussion order answers, in the reader's words rather than the enum's. */
+const RESEARCH_POST_SORT_LABELS: Record<ResearchPostSort, string> = {
+  newest: "Newest",
+  trending: "Trending",
+};
+
+function readResearchPostSort(rawSort: string | undefined): ResearchPostSort {
+  return RESEARCH_POST_SORTS.find((sort) => sort === rawSort) ?? "newest";
+}
 const CONTRIBUTORS_PAGE_LIMIT = 24;
 
 /**
@@ -59,10 +72,15 @@ const CONTRIBUTORS_PAGE_LIMIT = 24;
 export default async function ResearchProgramPage({
   programSlug,
   roleFilter,
+  ideasSortParam,
+  papersSortParam,
 }: {
   programSlug: string;
   /** From `?role=`, already narrowed by the route. Filters the roster IN SQL. */
   roleFilter?: string | undefined;
+  /** From `?ideasSort=` / `?papersSort=` — one order per discussion section, validated below. */
+  ideasSortParam?: string | undefined;
+  papersSortParam?: string | undefined;
 }) {
   const [requestOptions, isSignedIn] = await Promise.all([
     callerRequestOptions(),
@@ -88,6 +106,26 @@ export default async function ResearchProgramPage({
   const activeRole: ResearchParticipantRole | null =
     parsedRole !== null && parsedRole.success ? parsedRole.data : null;
 
+  // ONE ORDER PER SECTION, in its own URL key, because the two discussions are read independently:
+  // trending the ideas says nothing about how a reader wants the informal papers. An unknown value
+  // falls back to `newest` rather than reaching the backend's `.strict()` schema as a 422.
+  const ideasSort = readResearchPostSort(ideasSortParam);
+  const papersSort = readResearchPostSort(papersSortParam);
+  const currentSearchParams: RawSearchParams = {
+    role: activeRole ?? undefined,
+    ideasSort: ideasSort === "newest" ? undefined : ideasSort,
+    papersSort: papersSort === "newest" ? undefined : papersSort,
+  };
+  const buildSortChips = (sortKey: "ideasSort" | "papersSort", selectedSort: ResearchPostSort) =>
+    RESEARCH_POST_SORTS.map((sort) => ({
+      label: RESEARCH_POST_SORT_LABELS[sort],
+      // The default is written OUT of the URL, the showcase and problem-map precedent.
+      href: buildFilterHref(currentSearchParams, {
+        [sortKey]: sort === "newest" ? undefined : sort,
+      }),
+      isSelected: sort === selectedSort,
+    }));
+
   const [
     statsResult,
     branchesResult,
@@ -101,10 +139,14 @@ export default async function ResearchProgramPage({
     getResearchProgramStats(programSlug, requestOptions),
     listProgramBranches(programSlug, requestOptions),
     listProgramPapers(programSlug, { limit: PAPERS_PAGE_LIMIT }, requestOptions),
-    listProgramPosts(programSlug, { track: "idea", limit: POSTS_PAGE_LIMIT }, requestOptions),
     listProgramPosts(
       programSlug,
-      { track: "informal_paper", limit: POSTS_PAGE_LIMIT },
+      { track: "idea", sort: ideasSort, limit: POSTS_PAGE_LIMIT },
+      requestOptions,
+    ),
+    listProgramPosts(
+      programSlug,
+      { track: "informal_paper", sort: papersSort, limit: POSTS_PAGE_LIMIT },
       requestOptions,
     ),
     listProgramContributors(
@@ -245,7 +287,9 @@ export default async function ResearchProgramPage({
           <ResearchProgramDiscussion
             programSlug={programSlug}
             track="informal_paper"
-            posts={informalPostsResult.data.rows}
+            sort={papersSort}
+            sortChips={buildSortChips("papersSort", papersSort)}
+            initialPage={informalPostsResult.data}
             branches={branches}
             canPost={canContribute}
             canModerate={canModerate}
@@ -292,7 +336,9 @@ export default async function ResearchProgramPage({
           <ResearchProgramDiscussion
             programSlug={programSlug}
             track="idea"
-            posts={ideasResult.data.rows}
+            sort={ideasSort}
+            sortChips={buildSortChips("ideasSort", ideasSort)}
+            initialPage={ideasResult.data}
             branches={branches}
             canPost={canContribute}
             canModerate={canModerate}

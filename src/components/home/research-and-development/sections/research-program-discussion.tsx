@@ -1,14 +1,17 @@
-// TRANSPORT: client-query — the composer, the reactions, the replies and the report control all
-// call hooks in `@/hooks/rnd/research-programs`. The first page arrives as props.
+// TRANSPORT: client-query — the feed (paged by "Load more"), the composer, the reactions, the replies
+// and the report control all call hooks in `@/hooks/rnd/research-programs`. The first page arrives
+// as props and seeds the feed query.
 "use client";
 
 import { useState, type FormEvent } from "react";
 
-import { useProgramPostMutation } from "@/hooks/rnd/research-programs";
+import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
+import { useProgramPostFeed, useProgramPostMutation } from "@/hooks/rnd/research-programs";
 import { ApiRequestError } from "@/lib/http";
 import type {
   ResearchBranch,
   ResearchPost,
+  ResearchPostSort,
   ResearchPostTrack,
 } from "@/lib/rnd/research-programs.schemas";
 
@@ -19,7 +22,12 @@ import { ResearchPostItem } from "./research-post-item";
 type ResearchProgramDiscussionProps = {
   programSlug: string;
   track: ResearchPostTrack;
-  posts: ResearchPost[];
+  /** This section's order, from its own URL key. */
+  sort: ResearchPostSort;
+  /** "Newest | Trending" as links, built server-side from the live URL so `?role=` survives. */
+  sortChips: FilterChipOption[];
+  /** The server-rendered first page under `sort`, which seeds the paged feed. */
+  initialPage: { rows: ResearchPost[]; nextCursor: string | null };
   /** Only offered on the `idea` track, where filing a thread against a branch makes sense. */
   branches: ResearchBranch[];
   canPost: boolean;
@@ -43,12 +51,16 @@ type ResearchProgramDiscussionProps = {
 export default function ResearchProgramDiscussion({
   programSlug,
   track,
-  posts,
+  sort,
+  sortChips,
+  initialPage,
   branches,
   canPost,
   canModerate,
 }: ResearchProgramDiscussionProps) {
   const postMutation = useProgramPostMutation(programSlug);
+  const postFeed = useProgramPostFeed(programSlug, track, sort, initialPage);
+  const posts = postFeed.rows;
 
   const [title, setTitle] = useState("");
   const [bodyText, setBodyText] = useState("");
@@ -147,6 +159,20 @@ export default function ResearchProgramDiscussion({
 
       {mutationError && <MutationErrorNotice error={mutationError.apiError} />}
 
+      <div className="space-y-1">
+        <FilterChipRow
+          options={sortChips}
+          ariaLabel={isTitled ? "Sort informal papers" : "Sort ideas"}
+        />
+        {/* Says what "Trending" means rather than leaving the word to be guessed — and that it is
+            hourly, so a reaction a minute ago is not expected to move anything yet. */}
+        {sort === "trending" && (
+          <p className="text-xs text-muted-foreground">
+            Reactions and replies from the last 7 days, updated hourly.
+          </p>
+        )}
+      </div>
+
       {posts.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {isTitled ? "No informal posts yet." : "No ideas posted yet. Be the first."}
@@ -163,6 +189,23 @@ export default function ResearchProgramDiscussion({
             />
           ))}
         </ul>
+      )}
+
+      {/* A failed page two must not blank page one, and must not silently do nothing either. */}
+      {postFeed.loadMoreErrorMessage !== null && (
+        <p role="alert" className="text-sm text-destructive">
+          {postFeed.loadMoreErrorMessage}
+        </p>
+      )}
+      {postFeed.hasNextPage && (
+        <button
+          type="button"
+          onClick={postFeed.loadNextPage}
+          disabled={postFeed.isFetchingNextPage}
+          className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-60"
+        >
+          {postFeed.isFetchingNextPage ? "Loading…" : "Load more"}
+        </button>
       )}
     </div>
   );

@@ -209,8 +209,10 @@ export const rndKeys = {
       filter.branchId,
       filter.moderationStatus,
     ] as const,
-  programPosts: (programSlug: string, track: string) =>
-    ["rnd", "programs", programSlug, "posts", track] as const,
+  // Under `["rnd","programs",slug,"posts"]`, the prefix every post/reaction mutation invalidates —
+  // which is what makes a new post appear in the feed without a reload.
+  programPosts: (programSlug: string, track: string, sort: string) =>
+    ["rnd", "programs", programSlug, "posts", track, sort] as const,
   programPostReplies: (programSlug: string, postId: string) =>
     ["rnd", "programs", programSlug, "posts", postId, "replies"] as const,
   programContributors: (programSlug: string, role: string | undefined) =>
