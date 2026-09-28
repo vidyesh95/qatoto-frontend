@@ -1,4 +1,34 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * macOS 27 privacy protection (TCC) blocks `~/Library/Application Support/Firefox` for processes
+ * started from a terminal. Firefox 155 reads its profile registry there before it honours
+ * `-profile`, so every launch dies with "Could not find profile folder." Reinstalling does not help.
+ * `CFFIXED_USER_HOME` moves Firefox's notion of home to an empty directory it is allowed to use.
+ * https://github.com/microsoft/playwright/issues/42768
+ *
+ * `launchOptions.env` REPLACES the browser's environment rather than merging into it, hence the
+ * copy of `process.env`. Scoped to Firefox only: Chromium and WebKit launch fine and have no reason
+ * to see a fake home.
+ */
+function buildFirefoxLaunchEnvironment(): Record<string, string> | undefined {
+  if (process.platform !== "darwin") return undefined;
+
+  const inheritedEnvironment = Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+  return {
+    ...inheritedEnvironment,
+    CFFIXED_USER_HOME:
+      process.env.CFFIXED_USER_HOME ?? mkdtempSync(join(tmpdir(), "playwright-firefox-home-")),
+  };
+}
 
 /**
  * Read environment variables from file.
@@ -40,7 +70,10 @@ export default defineConfig({
 
     {
       name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
+      use: {
+        ...devices["Desktop Firefox"],
+        launchOptions: { env: buildFirefoxLaunchEnvironment() },
+      },
     },
 
     {
