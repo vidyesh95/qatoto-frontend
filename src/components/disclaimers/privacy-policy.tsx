@@ -11,11 +11,19 @@
 // bracketed "to be confirmed" text until incorporation completes. That is the intended state: a
 // blank a reader can see beats a plausible-sounding company name in a legal document.
 //
-// COOKIES ARE ESSENTIAL-ONLY TODAY, WHICH IS THE ONLY REASON THERE IS NO CONSENT BANNER. The auth
-// session cookie and one `localStorage` key are the whole inventory, and the only `<Script>` in
-// `app/layout.tsx` is dev-gated. THE MOMENT ANY ANALYTICS, ADVERTISING OR EMBEDDED THIRD-PARTY
-// SCRIPT SHIPS, prior consent becomes required and the cookie section below becomes false — the
-// banner is part of that change, not a follow-up to it.
+// COOKIES ARE STILL ESSENTIAL-ONLY, BUT "NO THIRD-PARTY SCRIPT" STOPPED BEING TRUE. This comment used
+// to say that the day any embedded third-party script shipped, the cookie section would become false
+// and a consent banner would be part of that change. Four have shipped without one: the YouTube
+// player, the Google Maps embed on /contact-us, OpenFreeMap tiles on the problem map and Razorpay
+// checkout. The section below now NAMES them instead of denying them, and it no longer says there
+// is nothing to ask consent for. Whether each needs click-to-load or a banner is open in `todo.md` §7.
+//
+// THE RECIPIENTS ARE NAMED, NOT CATEGORISED. "Service providers such as hosting and payment
+// processing" told a reader nothing they could act on. When a provider changes — the frontend is on
+// Vercel today and is planned to move to Cloudflare — the Sharing section changes in the same edit.
+//
+// THE INVENTORY IN `account/panels/data-and-privacy-panel.tsx` MIRRORS THE COLLECTION SECTION. A
+// category added here and not there makes the policy's "same inventory" sentence false.
 
 import {
   LEGAL_ENTITY_NAME,
@@ -24,10 +32,15 @@ import {
 } from "@/lib/site";
 import { PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL } from "@/lib/privacy-request";
 
+const PRIVACY_POLICY_LAST_UPDATED_LABEL = "28 September 2026";
+
 export default function PrivacyPolicy() {
   return (
     <main>
-      <h1 className="px-6 py-6 text-xl md:px-25">Privacy Policy</h1>
+      <h1 className="px-6 pt-6 text-xl md:px-25">Privacy Policy</h1>
+      <p className="px-6 pt-1 pb-6 text-sm text-muted-foreground md:px-25">
+        Last updated {PRIVACY_POLICY_LAST_UPDATED_LABEL}
+      </p>
       <dl className="space-y-4 px-6 pb-25 text-justify text-sm md:px-25">
         <div>
           <dt>Introduction</dt>
@@ -59,8 +72,24 @@ export default function PrivacyPolicy() {
             forum posts you make, the products you view, your cart and your orders, the projects you
             found, join or apply to, the effort you log, and the records of equity, pay and payments
             that follow from them. Each signed-in device is recorded with the IP address and browser
-            it signed in from. The same inventory, in the same words, is in your account under
-            Settings → Your data &amp; privacy.
+            it signed in from.
+            <br />
+            <br />
+            Some parts of Qatoto collect more, and only from the people who use them. If you sell,
+            we hold the business details you give us — including registration and tax numbers, which
+            we store encrypted — and the documents you upload as evidence of your business. If you
+            buy, we hold the delivery address you give and any artwork you upload to customise a
+            product, and your seller sees both. If you contact a factory, we hold the inquiry. If
+            you log work on a project, we hold your daily updates — their text and any video link —
+            the transcript and claims drawn from them, and any receipt photos you upload as
+            evidence. If you post a pitch or record how one was funded, we hold it, including the
+            name of the funder you type. If you report a problem on the problem map, we hold the
+            place you describe and, if you drop a pin, a position your browser rounds to about 110
+            metres before sending it. If you publish a teardown, a product launch or a case study,
+            we hold it and the statements you make with it — and if you withhold a company's name
+            from a case study, our moderators still see it, though readers never do. If you list
+            yourself in the cofounder directory, we hold that profile. The same inventory, in the
+            same words, is in your account under Settings → Your data &amp; privacy.
           </dd>
         </div>
         <div>
@@ -101,11 +130,11 @@ export default function PrivacyPolicy() {
           <dt>Use of Information</dt>
           <dd>
             The information we collect is used to provide and improve the services we offer, to
-            communicate with you, and to personalize your experience on the site. We may use your
-            information to send you updates, newsletters, and other marketing materials, and we may
-            also use it to respond to your questions and requests. We may also use aggregated and
-            anonymized information to perform research and analysis, to create reports, and to
-            support other business purposes.
+            communicate with you, and to personalize your experience on the site. We send email only
+            about your account and what you do on Qatoto — we send no newsletters or marketing — and
+            we use your information to respond to your questions and requests. We may also use
+            aggregated and anonymized information to perform research and analysis, to create
+            reports, and to support other business purposes.
           </dd>
         </div>
         <div>
@@ -125,14 +154,42 @@ export default function PrivacyPolicy() {
           </dd>
         </div>
         <div>
+          <dt>Automated Assessment of Your Work</dt>
+          <dd>
+            When you post a daily update on a project, Google Gemini reads it, transcribes any video
+            it links to, and draws out the claims it makes about the work you did. When you claim
+            effort, our systems then check that claim against its evidence — the times on your
+            receipt photos, the commits in a GitHub repository you have chosen to connect, and the
+            links you gave — and reach a verdict. That verdict can change your share of the
+            project's equity records; it never moves money. A claim the checks cannot confirm is
+            flagged for a person to look at rather than rejected, a failed check awards nothing
+            rather than guessing, and every verdict opens a 24-hour window in which you and your
+            team can dispute it before anything is written to the project's records. You can also
+            ask a person to review any verdict about you by writing to {PRIVACY_CONTACT_EMAIL}.
+          </dd>
+        </div>
+        <div>
           <dt>Sharing of Information</dt>
           <dd>
-            We may share your information with third-party service providers who help us provide the
-            services we offer, such as hosting, payment processing, and customer support. We may
-            also share your information with law enforcement or other government agencies when
-            required by law, or when necessary to protect the safety, rights, or property of Qatoto,
-            its users, or others. We will never sell or rent your personal information to third
-            parties for marketing purposes without your consent.
+            We share your information with the service providers who run Qatoto for us, and only for
+            the job each one does: Vercel, which serves this website; Amazon Web Services, which
+            runs our servers; Aiven, which hosts our database; Cloudinary, which stores and serves
+            images; Backblaze, which stores research-paper files and the data exports you request;
+            Brevo, which sends our email; and Google, whose Gemini model transcribes daily updates
+            as described above. If you sign in with Google or GitHub, or connect a GitHub repository
+            to a project, that provider exchanges information with us to make it work. When you
+            report a problem, the place you describe is sent to OpenStreetMap's Nominatim service to
+            find its country and region. When you pay for an order, the seller's payment provider
+            receives what it needs to take the payment.
+            <br />
+            <br />
+            Other people on Qatoto see some of your information because that is the point of the
+            feature: a seller sees the orders you place with them and where to deliver them, a buyer
+            sees the seller they bought from, project members see the records of the project they
+            share with you, and anything you publish is public. We may also share information with
+            law enforcement or other government agencies when required by law, or when necessary to
+            protect the safety, rights, or property of Qatoto, its users, or others. We never sell
+            or rent your personal information.
           </dd>
         </div>
         <div>
@@ -150,13 +207,20 @@ export default function PrivacyPolicy() {
         <div>
           <dt>Cookies and Storage on Your Device</dt>
           <dd>
-            We use one cookie, and it is the one that keeps you signed in — without it every page
+            The only cookies we set are the ones that keep you signed in — without them every page
             would ask you to sign in again. We also keep a single entry in your browser's local
             storage, under the name <code>qatoto.browser-preferences</code>, holding your language,
             your browse country and whether AI assist is on. That entry never leaves your browser
-            and is never sent to us. We run no analytics, advertising or tracking scripts, and we
-            set no cookies for any of those purposes, so there is nothing here to ask your consent
-            for and no consent banner to click through. If that ever changes, we will ask you first.
+            and is never sent to us. We run no analytics or advertising scripts.
+            <br />
+            <br />
+            Some pages load content from other companies, and when they do, your browser contacts
+            that company directly: it receives your IP address and browser details, and it may set
+            its own cookies under its own policy. Those pages are video players, which load from
+            YouTube; the map on the contact page, which loads from Google Maps; the problem map,
+            whose map tiles load from OpenFreeMap; and order payment, which loads the payment
+            provider's checkout. Video stills on some pages also load straight from YouTube. Nothing
+            is loaded from these companies on pages that show none of their content.
           </dd>
         </div>
         <div>

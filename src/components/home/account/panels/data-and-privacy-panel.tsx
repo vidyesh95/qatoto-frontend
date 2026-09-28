@@ -27,6 +27,10 @@
 // `disclaimers/privacy-policy.tsx`; if those two disagree, the policy is the document with legal
 // weight and this panel is the one that is wrong.
 //
+// "Buying and selling", "What you publish" and the new lines under "Work you have done" are HELD
+// AND NOT EXPORTED — the backend's export predates them. Each says so in `absentFromExport` and
+// points at the mailbox, which is a valid Art. 15 channel. Adding them to the export is `todo.md` §7.
+//
 // NOT A TRUST BOUNDARY. Clearing device data removes a display preference; it grants nothing and
 // hides nothing from the backend, which never trusted those values in the first place.
 
@@ -174,9 +178,41 @@ const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
     items: [
       "Projects you founded, joined, or applied to",
       "Effort you logged and claims you submitted",
+      "Daily updates you posted, and the transcript and claims drawn from them",
+      "Receipt photos you uploaded as evidence",
       "Equity, pay records, and payments",
     ],
     note: "This is the category that outlives a deleted account, without your name attached.",
+    // THE EXPORT CARRIES ONLY THE FIRST LINE. `data-export.service.ts` selects projects founded,
+    // memberships and applications; every other line above is held and not in the file. Saying so
+    // here is the difference between an incomplete download and one that looks like it withholds.
+    absentFromExport: `Only the projects you founded, joined or applied to are in the download so far. For a copy of the rest, email ${PRIVACY_CONTACT_EMAIL}.`,
+  },
+  {
+    // ADDED WITH THE PRIVACY POLICY'S 2026-09-28 REWRITE, which started naming what the store's
+    // seller and buyer flows hold. The policy's "same inventory, in the same words" sentence made
+    // this card owed the moment the policy named it.
+    title: "Buying and selling",
+    icon: "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    items: [
+      "Business details you gave as a seller, with registration and tax numbers stored encrypted",
+      "Documents you uploaded as evidence of your business",
+      "Delivery addresses and customisation artwork you gave with an order",
+      "Inquiries you sent to factories",
+    ],
+    absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,
+  },
+  {
+    title: "What you publish",
+    icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    items: [
+      "Pitches you posted, and funding outcomes you recorded, including the funder's name",
+      "Teardowns, product launches and case studies, with the statements you made with them",
+      "A company name you withheld from a case study, which moderators see and readers do not",
+      "Problems you reported on the map, with a pin rounded to about 110 metres",
+      "Your cofounder directory profile",
+    ],
+    absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,
   },
   {
     title: "Settings on this device",

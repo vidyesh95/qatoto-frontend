@@ -311,13 +311,34 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
     - `LEGAL_ENTITY_REGISTERED_ADDRESS`
     - `GOVERNING_LAW_JURISDICTION`
     - `GOVERNING_LAW_COURTS`
-2. **Terms of Service & Privacy Policy Rewrite**:
-   Both documents still describe Qatoto as a "Video Sharing Site". They must be updated to cover:
-    - Marketplace commerce, purchase orders, refunds, and cancellations.
-    - R&D projects, team formation, and equity compensation claims.
-    - Engineering teardowns, reverse engineering disclaimers, and clean-room provenance rules.
+2. ~~**Terms of Service & Privacy Policy Rewrite**~~ — **SHIPPED 2026-09-28.** The terms now cover the
+   store (Qatoto is the venue, never the seller; no returns process; disputes and refunds are records),
+   projects and equity (records, not instruments; not legal, tax or investment advice), blueprints
+   (publisher attestations, no clearance check) and a general content licence. The privacy policy names
+   its recipients (Vercel, AWS, Aiven, Cloudinary, Backblaze, Brevo, Google Gemini, Google/GitHub sign-in,
+   Nominatim, the payment provider), the new data categories, the automated assessment of effort claims
+   and the third-party content pages load. Both carry a "Last updated" date. Left open by that rewrite:
+    - **No terms acceptance is recorded anywhere.** `sign-up.tsx` links neither document and the backend
+      has no `terms_accepted_at` or terms version. Needs a backend column plus a sign-up line.
+    - **The data export lags the inventory.** `data-export.service.ts` omits orders and cart (which "What
+      you do here" has always listed), effort, claims, daily logs, receipts, equity and pay, and every
+      line of the panel's new "Buying and selling" and "What you publish" cards. Each new card says so
+      and points at the mailbox; the older "What you do here" card does not yet.
+    - **`information/how-qatoto-works.tsx:37,124` contradicts the terms** — "Qatoto Store ships your
+      product worldwide… returns, customer support… the platform runs operations" is the principal claim
+      Terms clause 5 denies.
+    - **The "not legal or tax advice" notice is missing on equity surfaces**, which
+      `docs/PROOF_OF_EFFORT_SPEC.md` promises; it is only in the terms and the CSV export.
+    - **Community Guidelines are video-era, and the Copyright Policy's licence covers video only.** Terms
+      clause 3 is now the general grant; align both with it.
+    - **When the frontend moves from Vercel to Cloudflare**, the privacy policy's Sharing section names
+      Vercel and must change in the same edit.
 3. **Cookie / Privacy Consent Banner**:
-   Cookies are essential-only today. A consent banner becomes mandatory the moment analytics, advertising, or third-party tracking scripts are deployed.
+   Cookies are essential-only today, but the embedded-third-party trigger HAS ALREADY FIRED: the YouTube
+   player and stills, the Google Maps iframe on `/contact-us`, OpenFreeMap tiles on the problem map and
+   Razorpay checkout all load without consent. The privacy policy now discloses them rather than denying
+   them. Decide per embed between click-to-load (the blueprint player already works this way) and a
+   banner; the Maps iframe is the cheapest to replace with a static image and a link.
 4. **Contact Mailbox Verification**:
    Verify monitoring for `support@qatoto.com`, `security@qatoto.com`, `careers@qatoto.com`, and `press@qatoto.com`.
 
