@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { emailOtp } from "@/lib/auth-client";
+import ToggleSwitch from "@/components/ui/toggle-switch";
 
 const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
 
@@ -165,7 +166,7 @@ export default function ForgotPassword() {
               <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
                 <label
                   htmlFor="email"
-                  className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
+                  className="absolute -top-2 left-3 bg-background px-1 text-xs text-foreground"
                 >
                   Email
                 </label>
@@ -258,7 +259,7 @@ export default function ForgotPassword() {
               <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
                 <label
                   htmlFor="password"
-                  className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
+                  className="absolute -top-2 left-3 bg-background px-1 text-xs text-foreground"
                 >
                   New password
                 </label>
@@ -302,45 +303,12 @@ export default function ForgotPassword() {
               <label htmlFor="remember-me" className="w-full text-sm font-medium">
                 Remember me
               </label>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  id="remember-me"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="peer sr-only"
-                  aria-label="Remember me toggle switch"
-                />
-                <div className="h-8 w-13 rounded-full border-2 border-outline-strong bg-muted transition-colors duration-200 ease-in-out peer-checked:border-primary-imprint peer-checked:bg-primary-imprint"></div>
-                <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-outline-strong shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
-                  <svg
-                    className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                  <svg
-                    className="check-icon absolute h-4 w-4 text-primary-imprint opacity-0 transition-opacity duration-200"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-              </label>
+              <ToggleSwitch
+                id="remember-me"
+                accessibleName="Remember me"
+                isChecked={rememberMe}
+                onCheckedChange={setRememberMe}
+              />
             </div>
             <button
               type="submit"

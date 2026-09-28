@@ -46,7 +46,7 @@ export default function TeardownViewerTabs({
       // but focus belongs on the active tab, not the list, hence -1 here and 0 on the tab.
       tabIndex={-1}
       onKeyDown={handleTabKeyDown}
-      className="flex flex-wrap gap-1 rounded-full border border-outline-variant/60 bg-white p-1"
+      className="flex flex-wrap gap-1 rounded-full border border-outline-variant/60 bg-card p-1"
     >
       {orderedTabs.map((tab) => {
         const isActive = tab === activeTab;

@@ -69,7 +69,7 @@ export default function CreateMenu({ onClose }: CreateMenuProps) {
     <div
       ref={menuPanelRef}
       role="menu"
-      className="absolute top-12 right-0 z-50 w-56 rounded-lg border border-black/10 bg-background py-2 shadow-lg"
+      className="absolute top-12 right-0 z-50 w-56 rounded-lg border border-border bg-background py-2 shadow-lg"
     >
       {CREATE_MENU_ITEMS.map((menuItem) => (
         <Link

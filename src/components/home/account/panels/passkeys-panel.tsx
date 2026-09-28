@@ -176,7 +176,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     return (
       <li
         key={rowPasskey.id}
-        className="flex flex-col gap-3 rounded-xl border border-black/10 bg-card p-4"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
       >
         <div className="flex flex-row items-center gap-4">
           <Image
@@ -194,7 +194,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
                 value={renameDraftName}
                 onChange={(inputEvent) => setRenameDraftName(inputEvent.target.value)}
                 placeholder="Passkey name"
-                className="rounded-lg border border-black/10 bg-background px-3 py-1.5 text-sm text-secondary-foreground outline-none focus:border-primary"
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-secondary-foreground outline-none focus:border-primary"
               />
             ) : (
               <span className="text-sm font-medium text-secondary-foreground">
@@ -326,7 +326,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}

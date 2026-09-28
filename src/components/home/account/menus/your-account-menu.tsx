@@ -227,7 +227,7 @@ export function YourAccountPanel({ onBack, onOpenEditor }: YourAccountPanelProps
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}

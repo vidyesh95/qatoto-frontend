@@ -178,7 +178,7 @@ export default function ProblemMapBottomSheet({ children }: ProblemMapBottomShee
         // scoped to the handle alone — the list below must still scroll with a finger.
         className="flex shrink-0 cursor-grab touch-none items-center justify-center py-3 active:cursor-grabbing"
       >
-        <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-black/15" />
+        <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
       </button>
 
       <div id="problem-map-sheet-contents" className="min-h-0 flex-1">

@@ -124,7 +124,7 @@ export default function ClaimDetailDisclosure({
     const isOverriding = overridingStepId === step.id;
 
     return (
-      <li key={step.id} className="space-y-1 rounded-lg bg-white/60 p-2">
+      <li key={step.id} className="space-y-1 rounded-lg bg-card/60 p-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-sm">{VERIFICATION_STEP_KIND_LABELS[step.stepKind]}</span>
           <span

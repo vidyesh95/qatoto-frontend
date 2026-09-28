@@ -62,11 +62,11 @@ export default function RndSheet({
 
       <div
         aria-label={title}
-        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
+        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-border"
       >
         {/* Drag handle — mobile affordance only. */}
         <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
+          <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
         </div>
 
         <header className="flex shrink-0 items-center gap-2 px-4 py-3">

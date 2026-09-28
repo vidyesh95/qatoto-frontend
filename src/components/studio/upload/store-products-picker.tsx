@@ -61,7 +61,7 @@ export default function StoreProductsPicker({
         onClick={onDone}
         className="fixed inset-0 z-60 cursor-default bg-black/40"
       />
-      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-md -translate-y-1/2 flex-col rounded-2xl border border-black/10 bg-background shadow-lg">
+      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-md -translate-y-1/2 flex-col rounded-2xl border border-border bg-background shadow-lg">
         {myProductsQuery.isPending ? (
           <p className="p-8 text-center text-sm text-muted-foreground">Loading your listings…</p>
         ) : ownProducts.length === 0 ? (
@@ -82,7 +82,7 @@ export default function StoreProductsPicker({
           </div>
         ) : (
           <>
-            <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-black/10 bg-background p-4">
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background p-4">
               <Image
                 src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt=""
@@ -149,7 +149,7 @@ export default function StoreProductsPicker({
               )}
             </ul>
 
-            <div className="flex items-center justify-end border-t border-black/10 p-3">
+            <div className="flex items-center justify-end border-t border-border p-3">
               <button
                 type="button"
                 onClick={onDone}

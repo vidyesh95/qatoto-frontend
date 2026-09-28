@@ -240,7 +240,7 @@ export function ProfilePhotoPanel({
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -268,13 +268,13 @@ export function ProfilePhotoPanel({
                 width={160}
                 height={160}
                 unoptimized
-                className="aspect-square size-40 rounded-full border border-black/10 object-cover"
+                className="aspect-square size-40 rounded-full border border-border object-cover"
               />
               <button
                 type="button"
                 onClick={handleRecrop}
                 disabled={isBusy}
-                className="cursor-pointer rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted disabled:opacity-50"
               >
                 Recrop
               </button>
@@ -313,14 +313,14 @@ export function ProfilePhotoPanel({
                 <button
                   type="button"
                   onClick={() => setRotation((current) => (current - 90 + 360) % 360)}
-                  className="cursor-pointer rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                  className="cursor-pointer rounded-full border border-border px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
                 >
                   Rotate left
                 </button>
                 <button
                   type="button"
                   onClick={() => setRotation((current) => (current + 90) % 360)}
-                  className="cursor-pointer rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                  className="cursor-pointer rounded-full border border-border px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
                 >
                   Rotate right
                 </button>
@@ -340,7 +340,7 @@ export function ProfilePhotoPanel({
               alt="Profile photo preview"
               width={160}
               height={160}
-              className="aspect-square size-40 rounded-full border border-black/10 object-cover"
+              className="aspect-square size-40 rounded-full border border-border object-cover"
             />
           )}
           <input
@@ -354,7 +354,7 @@ export function ProfilePhotoPanel({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             Choose photo
           </button>

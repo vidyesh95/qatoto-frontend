@@ -94,7 +94,7 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
             className="object-cover"
           />
           <div className="absolute inset-0 grid place-items-center">
-            <span className="grid size-12 place-items-center rounded-full bg-white/90 text-foreground">
+            <span className="grid size-12 place-items-center rounded-full bg-card/90 text-foreground">
               ▶
             </span>
           </div>

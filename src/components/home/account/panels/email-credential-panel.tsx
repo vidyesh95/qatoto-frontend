@@ -6,6 +6,7 @@ import { z } from "zod";
 import { authClient, useSession } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/api";
 import { findOriginalProviderId } from "@/lib/account-links";
+import ToggleSwitch from "@/components/ui/toggle-switch";
 
 const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
 
@@ -213,7 +214,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -244,7 +245,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             Email &amp; password sign-in is already enabled for this account.
           </p>
           {email ? (
-            <div className="flex flex-row items-center gap-2 self-stretch rounded-xl border border-black/10 bg-muted px-4 py-3">
+            <div className="flex flex-row items-center gap-2 self-stretch rounded-xl border border-border bg-muted px-4 py-3">
               <Image
                 src="/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
                 alt=""
@@ -273,7 +274,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
               <button
                 type="button"
                 onClick={() => setUnlinkState({ status: "idle" })}
-                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-black/10 px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-border px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
               >
                 Cancel
               </button>
@@ -334,7 +335,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
                 value={otp[index]}
                 onChange={(inputEvent) => handleOtpChange(index, inputEvent.target.value)}
                 onKeyDown={(keyEvent) => handleOtpKeyDown(index, keyEvent)}
-                className="h-14 w-12 rounded-xl border border-black/10 bg-card text-center text-xl font-semibold text-secondary-foreground outline-none focus:border-primary"
+                className="h-14 w-12 rounded-xl border border-border bg-card text-center text-xl font-semibold text-secondary-foreground outline-none focus:border-primary"
                 required
               />
             ))}
@@ -347,7 +348,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             >
               Password
             </label>
-            <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
+            <div className="flex flex-row items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 focus-within:border-primary">
               <input
                 id={passwordInputId}
                 type={isPasswordVisible ? "text" : "password"}
@@ -398,50 +399,12 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             <label htmlFor="email-credential-remember-me" className="w-full text-sm font-medium">
               Remember me
             </label>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                id="email-credential-remember-me"
-                checked={rememberMe}
-                onChange={(inputEvent) => setRememberMe(inputEvent.target.checked)}
-                className="peer sr-only"
-                aria-label="Remember me toggle switch"
-              />
-              {/* Track */}
-              <div className="h-8 w-13 rounded-full border-2 border-outline-strong bg-muted transition-colors duration-200 ease-in-out peer-checked:border-primary-imprint peer-checked:bg-primary-imprint"></div>
-
-              {/* Thumb */}
-              <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-outline-strong shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
-                {/* X Icon - shown when unchecked */}
-                <svg
-                  className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                {/* Checkmark Icon - shown when checked */}
-                <svg
-                  className="check-icon absolute h-4 w-4 text-primary-imprint opacity-0 transition-opacity duration-200"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-            </label>
+            <ToggleSwitch
+              id="email-credential-remember-me"
+              accessibleName="Remember me"
+              isChecked={rememberMe}
+              onCheckedChange={setRememberMe}
+            />
           </div>
 
           <button
@@ -464,7 +427,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
         <div className="flex flex-col gap-6 p-4">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-secondary-foreground">Email address</span>
-            <div className="flex flex-row items-center gap-2 rounded-xl border border-black/10 bg-muted px-4 py-3">
+            <div className="flex flex-row items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
               <Image
                 src="/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
                 alt=""

@@ -70,7 +70,7 @@ export function FullNamePanel({ initialFullName, onBack }: FullNamePanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -100,7 +100,7 @@ export function FullNamePanel({ initialFullName, onBack }: FullNamePanelProps) {
             }}
             placeholder="Enter your full name"
             maxLength={100}
-            className="rounded-xl border border-black/10 bg-card px-4 py-3 text-base text-secondary-foreground outline-none focus:border-primary"
+            className="rounded-xl border border-border bg-card px-4 py-3 text-base text-secondary-foreground outline-none focus:border-primary"
           />
           <span className="text-xs text-muted-foreground">
             This is the name shown on your profile. You can change it anytime.

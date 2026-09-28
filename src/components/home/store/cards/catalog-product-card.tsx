@@ -63,7 +63,7 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
           </span>
         ) : (
           product.stockState !== "in_stock" && (
-            <span className="absolute top-2 left-2 rounded bg-white/90 px-2 py-0.5 text-xs leading-4 font-medium tracking-wider text-muted-foreground">
+            <span className="absolute top-2 left-2 rounded bg-card/90 px-2 py-0.5 text-xs leading-4 font-medium tracking-wider text-muted-foreground">
               {STOCK_STATE_LABELS[product.stockState]}
             </span>
           )
@@ -118,7 +118,7 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
 
         <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
           {product.reviewMetrics.averageRating !== null && (
-            <span className="inline-flex items-center gap-0.5 rounded-sm bg-muted-foreground px-1 py-0.5 text-xs leading-4 font-medium text-white">
+            <span className="inline-flex items-center gap-0.5 rounded-sm bg-muted-foreground px-1 py-0.5 text-xs leading-4 font-medium text-card">
               {product.reviewMetrics.averageRating.toFixed(1)}
               <span aria-hidden>★</span>
             </span>

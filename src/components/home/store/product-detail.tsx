@@ -349,7 +349,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             {/* Sticky action bar — sits above the mobile bottom nav (md:hidden adds its ~80px
                 height); on md+ there is no bottom nav so it drops to 0. Hidden at lg+ where the buy
                 column shows the CTAs inline. */}
-            <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-20 mx-auto max-w-md bg-white px-4 py-2 md:bottom-0 lg:hidden">
+            <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-20 mx-auto max-w-md bg-card px-4 py-2 md:bottom-0 lg:hidden">
               <BuyActionButtons
                 productId={product.id}
                 productSlug={product.publicSlug}

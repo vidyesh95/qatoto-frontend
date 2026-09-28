@@ -20,7 +20,7 @@ export interface ViewportToolRailProps {
 
 const RAIL_BUTTON_CLASS =
   "pointer-events-auto grid size-9 cursor-pointer place-items-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40";
-const RAIL_OFF_CLASS = "border-black/10 bg-white/85 backdrop-blur hover:border-black/30";
+const RAIL_OFF_CLASS = "border-border bg-card/85 backdrop-blur hover:border-foreground/30";
 const RAIL_ON_CLASS = "border-cad-selection bg-cad-selection/10";
 
 const STRESS_GRADIENT = `linear-gradient(180deg, ${SPECTRAL_STRESS_STOP_HEXES.join(", ")})`;

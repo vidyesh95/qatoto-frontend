@@ -93,7 +93,7 @@ export default function VerifiedCapabilitiesSheet({
               key={certification.id}
               className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2"
             >
-              <span className="shrink-0 rounded-sm bg-muted-foreground px-1.5 py-0.5 text-xs font-medium text-white">
+              <span className="shrink-0 rounded-sm bg-muted-foreground px-1.5 py-0.5 text-xs font-medium text-card">
                 {certification.standardName}
               </span>
               <span className="flex-1 text-xs text-foreground">

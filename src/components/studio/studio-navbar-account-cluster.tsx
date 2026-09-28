@@ -38,10 +38,11 @@ export default function StudioNavbarAccountCluster({
             type="button"
             aria-haspopup="menu"
             onClick={() => setIsCreateMenuOpen((isOpen) => !isOpen)}
-            className="flex cursor-pointer items-center gap-2 rounded-full border border-primary bg-white px-3 py-1.75"
+            className="flex cursor-pointer items-center gap-2 rounded-full border border-primary bg-card px-3 py-1.75"
           >
             <Image
               src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              className="dark:invert"
               alt=""
               width={24}
               height={24}
@@ -84,10 +85,11 @@ export default function StudioNavbarAccountCluster({
       ) : (
         <Link
           href="/sign-in"
-          className="flex gap-2 rounded-full border border-primary bg-white px-2 py-1.75 text-primary-imprint"
+          className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint"
         >
           <Image
             src="/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            className="dark:invert"
             alt="Signin"
             width={24}
             height={24}

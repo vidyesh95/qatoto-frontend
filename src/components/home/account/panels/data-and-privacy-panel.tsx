@@ -309,7 +309,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         <button
           type="button"
           disabled
-          className="flex cursor-not-allowed flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50"
+          className="flex cursor-not-allowed flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50"
         >
           <DownloadIcon />
           Checking your account…
@@ -327,7 +327,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <button
             type="button"
             disabled
-            className="flex cursor-not-allowed flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50"
+            className="flex cursor-not-allowed flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50"
           >
             <DownloadIcon />
             Checking…
@@ -349,7 +349,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
             <button
               type="button"
               onClick={() => void dataExportQuery.refetch()}
-              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
             >
               Try again
             </button>
@@ -370,7 +370,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
             <button
               type="button"
               onClick={handleRequestExport}
-              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
             >
               <DownloadIcon />
               Download your data
@@ -383,7 +383,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <button
             type="button"
             onClick={handleRequestExport}
-            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             <DownloadIcon />
             Download your data
@@ -439,7 +439,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
             <button
               type="button"
               onClick={() => void dataExportQuery.refetch()}
-              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
             >
               <DownloadIcon />
               Get a fresh link
@@ -504,7 +504,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <button
             type="button"
             onClick={handleClearDeviceDataClick}
-            className="cursor-pointer self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            className="cursor-pointer self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             Clear data on this device
           </button>
@@ -530,7 +530,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -554,7 +554,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
             {HELD_DATA_CATEGORIES.map((heldDataCategory) => (
               <li
                 key={heldDataCategory.title}
-                className="flex flex-row gap-3 rounded-xl border border-black/10 bg-card p-3"
+                className="flex flex-row gap-3 rounded-xl border border-border bg-card p-3"
               >
                 <Image
                   src={heldDataCategory.icon}
@@ -611,7 +611,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <button
             type="button"
             onClick={() => onOpenEditor("switch-account")}
-            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             <Image
               src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

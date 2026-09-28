@@ -81,7 +81,7 @@ export default function SignIn({
         </Link>
         <h1 className="mx-5 text-3xl">Sign in</h1>
         {hasJustDeletedAccount ? (
-          <output className="mx-5 block rounded-xl border border-black/10 bg-card p-3 text-sm text-secondary-foreground">
+          <output className="mx-5 block rounded-xl border border-border bg-card p-3 text-sm text-secondary-foreground">
             Your account is deactivated. Sign in again within 30 days and it comes back
             automatically — there is nothing else to do. After that it cannot be restored.
           </output>

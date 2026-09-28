@@ -272,7 +272,7 @@ type LanguagePanelProps = {
 export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps) {
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -355,7 +355,7 @@ export default function LanguageMenu({ onClose }: LanguageMenuProps) {
   return (
     <div
       ref={menuPanelRef}
-      className="absolute top-12 right-0 z-50 max-h-[calc(100dvh-4rem)] w-95 overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg"
+      className="absolute top-12 right-0 z-50 max-h-[calc(100dvh-4rem)] w-95 overflow-y-auto rounded-lg border border-border bg-background shadow-lg"
     >
       <LanguagePanel selected={language} onSelect={setLanguage} onBack={onClose} />
     </div>

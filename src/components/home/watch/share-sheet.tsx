@@ -185,11 +185,11 @@ export function ShareSheet({ onClose, shareUrl, videoTitle, onShared }: ShareShe
       <div
         ref={panelRef}
         aria-label="Share"
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-1rem)] sm:rounded-2xl sm:border sm:border-black/10 sm:pb-6"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-1rem)] sm:rounded-2xl sm:border sm:border-border sm:pb-6"
       >
         {/* Drag handle — mobile affordance only. */}
         <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
+          <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
         </div>
 
         <header className="flex flex-row items-center gap-4 px-4 py-3">

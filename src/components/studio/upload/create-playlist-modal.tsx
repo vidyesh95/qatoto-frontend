@@ -103,7 +103,7 @@ export default function CreatePlaylistModal({
         onClick={onCancel}
         className="fixed inset-0 z-80 cursor-default bg-black/40"
       />
-      <div className="fixed inset-x-4 top-1/2 z-90 mx-auto flex max-h-[80dvh] w-auto max-w-sm -translate-y-1/2 flex-col overflow-y-auto rounded-2xl border border-black/10 bg-background p-6 shadow-lg">
+      <div className="fixed inset-x-4 top-1/2 z-90 mx-auto flex max-h-[80dvh] w-auto max-w-sm -translate-y-1/2 flex-col overflow-y-auto rounded-2xl border border-border bg-background p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-foreground">
           {playlistToEdit ? "Edit playlist" : "Create a new playlist"}
         </h2>

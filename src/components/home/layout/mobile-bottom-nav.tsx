@@ -74,6 +74,7 @@ export default function MobileBottomNav() {
                 width={24}
                 height={24}
                 alt=""
+                className="dark:invert"
               />
             </span>
             <span

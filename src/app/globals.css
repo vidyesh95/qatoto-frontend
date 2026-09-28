@@ -13,7 +13,12 @@
   --color-band-imprint: oklch(0.4736 0.0805 200.55); /* #00696E */
 }
 
-:root {
+/* `.theme-light` re-declares the light tokens on a subtree that is light in BOTH themes, such as the
+   teardown stage, whose backdrop is a fixed light gradient. Custom properties inherit, so the
+   nearest declaration wins over `.dark` on `<html>`. It carries tokens only: `dark:` utilities still
+   match inside it, so a light-in-both-themes subtree must not use them. */
+:root,
+.theme-light {
   --background: oklch(0.9761 0 0);
   --foreground: oklch(0.2178 0 0);
   --card: oklch(1 0 0);
@@ -207,6 +212,11 @@
 @layer base {
   body {
     background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  /* `color` inherits as a computed value from `body`, so a light subtree re-resolves it itself. */
+  .theme-light {
     color: var(--foreground);
   }
 }

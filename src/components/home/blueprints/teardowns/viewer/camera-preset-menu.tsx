@@ -61,7 +61,7 @@ export default function CameraPresetMenu({ store, isInteractive }: CameraPresetM
         <ul
           role="menu"
           aria-label="Camera view"
-          className="absolute bottom-full left-0 mb-1.5 min-w-44 rounded-xl border border-black/10 bg-white p-1 shadow-lg"
+          className="absolute bottom-full left-0 mb-1.5 min-w-44 rounded-xl border border-border bg-card p-1 shadow-lg"
         >
           {TEARDOWN_CAMERA_PRESETS.map((preset) => (
             <li key={preset}>
@@ -88,7 +88,7 @@ export default function CameraPresetMenu({ store, isInteractive }: CameraPresetM
         aria-expanded={isOpen}
         disabled={!isInteractive}
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 bg-white/85 px-2.5 py-1.5 text-xs text-foreground backdrop-blur transition-colors hover:border-black/30 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card/85 px-2.5 py-1.5 text-xs text-foreground backdrop-blur transition-colors hover:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {TEARDOWN_CAMERA_PRESET_LABELS[requestedPreset]}
         <span aria-hidden className="text-outline-strong">

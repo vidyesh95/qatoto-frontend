@@ -296,7 +296,7 @@ export default function VideoCardMenu({
           >
             {/* Drag handle — bottom-sheet affordance only. */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <span className="h-1.5 w-10 rounded-full bg-black/15" />
+              <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
             </div>
 
             {/*

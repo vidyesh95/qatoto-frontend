@@ -428,10 +428,10 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       <div className="fixed inset-0 z-40 bg-black/40" />
       <div
         aria-label="Upload video"
-        className="fixed inset-x-2 inset-y-4 z-50 mx-auto flex max-w-5xl flex-col rounded-2xl border border-black/10 bg-background shadow-lg sm:inset-x-6"
+        className="fixed inset-x-2 inset-y-4 z-50 mx-auto flex max-w-5xl flex-col rounded-2xl border border-border bg-background shadow-lg sm:inset-x-6"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 border-b border-black/10 px-6 py-4">
+        <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <h2 className="min-w-0 truncate text-lg font-semibold text-foreground">{modalTitle}</h2>
           <button
             type="button"
@@ -454,7 +454,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
         </div>
 
         {/* Stepper */}
-        <ol className="flex items-center gap-2 border-b border-black/10 px-6 py-4">
+        <ol className="flex items-center gap-2 border-b border-border px-6 py-4">
           {UPLOAD_STEPS.map((step, stepIndex) => {
             const isCompleted = stepIndex < currentStepIndex;
             const isCurrent = stepIndex === currentStepIndex;
@@ -512,13 +512,13 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
               renderCurrentStep(currentStep.id)
             )}
           </div>
-          <div className="hidden w-80 shrink-0 overflow-y-auto border-l border-black/10 p-6 lg:block">
+          <div className="hidden w-80 shrink-0 overflow-y-auto border-l border-border p-6 lg:block">
             {renderPreviewCard(props, draft)}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-4 border-t border-black/10 px-6 py-4">
+        <div className="flex items-center justify-between gap-4 border-t border-border px-6 py-4">
           {saveErrorMessage === null ? (
             <p className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
               Checks complete. No issues found.
@@ -714,7 +714,7 @@ function InviteCollaboratorOverlay({
         onClick={onDone}
         className="fixed inset-0 z-60 cursor-default bg-black/40"
       />
-      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-sm -translate-y-1/2 flex-col gap-4 rounded-2xl border border-black/10 bg-background p-6 shadow-lg">
+      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-sm -translate-y-1/2 flex-col gap-4 rounded-2xl border border-border bg-background p-6 shadow-lg">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Invite collaborator</h2>
           <p className="mt-1 text-sm text-muted-foreground">

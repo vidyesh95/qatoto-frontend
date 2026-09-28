@@ -57,7 +57,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
             alt={deal.projectName}
             className="object-cover transition duration-300 group-hover:scale-105"
           />
-          <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-foreground">
+          <span className="absolute top-2 left-2 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-foreground">
             {PROJECT_STAGE_LABELS[deal.projectStage]}
           </span>
         </div>

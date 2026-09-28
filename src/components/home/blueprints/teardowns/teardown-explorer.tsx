@@ -126,7 +126,7 @@ async function fetchModelBytes(url: string, signal: AbortSignal): Promise<ArrayB
 function StageStatusPill({ label }: { readonly label: string }) {
   return (
     <div className="absolute inset-0 grid place-items-center">
-      <p className="rounded-full border border-black/10 bg-white/85 px-3 py-1.5 font-mono text-xs text-foreground backdrop-blur">
+      <p className="rounded-full border border-border bg-card/85 px-3 py-1.5 font-mono text-xs text-foreground backdrop-blur">
         {label}
       </p>
     </div>
@@ -136,7 +136,7 @@ function StageStatusPill({ label }: { readonly label: string }) {
 function StageErrorPanel({ message }: { readonly message: string }) {
   return (
     <div className="absolute inset-0 grid place-items-center p-4">
-      <p className="max-w-xs rounded-lg border border-black/10 bg-white/85 px-4 py-3 text-center text-xs leading-5 text-foreground backdrop-blur">
+      <p className="max-w-xs rounded-lg border border-border bg-card/85 px-4 py-3 text-center text-xs leading-5 text-foreground backdrop-blur">
         {message}
       </p>
     </div>

@@ -202,7 +202,7 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
                 );
               }}
               aria-label="Previous slide"
-              className="absolute top-1/2 left-2 z-20 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-card opacity-0 shadow-lg ring-1 ring-black/5 transition group-hover/hero:opacity-100 hover:bg-muted focus-visible:opacity-100"
+              className="absolute top-1/2 left-2 z-20 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-card opacity-0 shadow-lg ring-1 ring-border transition group-hover/hero:opacity-100 hover:bg-muted focus-visible:opacity-100"
             >
               <Image
                 src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -218,7 +218,7 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
                 setCurrentIndex((previousIndex) => (previousIndex + 1) % slides.length);
               }}
               aria-label="Next slide"
-              className="absolute top-1/2 right-2 z-20 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-card opacity-0 shadow-lg ring-1 ring-black/5 transition group-hover/hero:opacity-100 hover:bg-muted focus-visible:opacity-100"
+              className="absolute top-1/2 right-2 z-20 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-card opacity-0 shadow-lg ring-1 ring-border transition group-hover/hero:opacity-100 hover:bg-muted focus-visible:opacity-100"
             >
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"

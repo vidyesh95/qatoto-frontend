@@ -95,7 +95,7 @@ function CompositionElementTable({
               const weightPercentLabel = formatWeightPercentLabel(element);
 
               return (
-                <tr key={element.symbol} className="border-b border-black/5 align-top">
+                <tr key={element.symbol} className="border-b border-border/60 align-top">
                   <td className="py-1.5 pr-4 text-sm text-foreground">{element.symbol}</td>
                   <td className="py-1.5 pr-4 text-sm text-foreground tabular-nums">
                     {/*

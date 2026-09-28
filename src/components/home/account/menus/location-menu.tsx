@@ -174,7 +174,7 @@ export function LocationPanel({ selected, onSelect, onBack }: LocationPanelProps
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -202,7 +202,7 @@ export function LocationPanel({ selected, onSelect, onBack }: LocationPanelProps
           onChange={(changeEvent) => setQuery(changeEvent.target.value)}
           placeholder="Search countries"
           aria-label="Search countries"
-          className="w-full rounded-lg border border-black/10 bg-background px-4 py-2 text-sm text-secondary-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+          className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-secondary-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:outline-none"
         />
       </div>
       <ul>

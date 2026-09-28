@@ -64,7 +64,7 @@ export default function ViewportZoomControl({
   }
 
   return (
-    <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-black/10 bg-white/85 px-1 py-1 backdrop-blur">
+    <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/85 px-1 py-1 backdrop-blur">
       <button
         type="button"
         aria-label="Zoom out"
@@ -92,7 +92,7 @@ export default function ViewportZoomControl({
           aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
           disabled={!isInteractive}
           onClick={handleFullscreenToggleClick}
-          className={`${CONTROL_BUTTON_CLASS} border-l border-black/10`}
+          className={`${CONTROL_BUTTON_CLASS} border-l border-border`}
         >
           <span aria-hidden className="text-sm">
             {isFullscreen ? "⤡" : "⤢"}

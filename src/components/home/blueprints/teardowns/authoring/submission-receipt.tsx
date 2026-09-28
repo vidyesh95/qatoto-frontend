@@ -41,11 +41,11 @@ export default function SubmissionReceipt({
       </div>
 
       <dl className="mt-4">
-        <div className="border-t border-black/5 py-2">
+        <div className="border-t border-border/60 py-2">
           <dt className="text-xs tracking-wider text-muted-foreground uppercase">Submission</dt>
           <dd className="mt-0.5 font-mono text-sm text-foreground">{receipt.submissionId}</dd>
         </div>
-        <div className="border-t border-black/5 py-2">
+        <div className="border-t border-border/60 py-2">
           <dt className="text-xs tracking-wider text-muted-foreground uppercase">Received</dt>
           <dd className="mt-0.5 text-sm text-foreground">
             {formatIsoInstantLabel(receipt.receivedAt)}

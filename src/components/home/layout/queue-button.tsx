@@ -112,7 +112,7 @@ export default function QueueButton() {
             className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-2 sm:w-80 sm:max-w-[calc(100vw-1rem)] sm:rounded-xl sm:border sm:border-border sm:pb-0"
           >
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <span className="h-1.5 w-10 rounded-full bg-black/15" />
+              <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
             </div>
 
             <header className="flex shrink-0 flex-row items-center justify-between border-b border-border px-4 py-3">

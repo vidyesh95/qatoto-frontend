@@ -105,7 +105,7 @@ export function FeedPreferencesPanel({ onBack }: { readonly onBack: () => void }
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -123,7 +123,7 @@ export function FeedPreferencesPanel({ onBack }: { readonly onBack: () => void }
       </header>
 
       {removalErrorMessage !== null && (
-        <output className="m-4 block rounded-2xl border border-black/10 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="m-4 block rounded-2xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
           {removalErrorMessage}
         </output>
       )}
@@ -220,7 +220,7 @@ function FeedPreferencesBody({
 
     case "error":
       return (
-        <output className="m-4 block rounded-2xl border border-black/10 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="m-4 block rounded-2xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
           {view.message}
         </output>
       );

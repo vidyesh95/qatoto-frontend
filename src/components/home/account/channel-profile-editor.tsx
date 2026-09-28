@@ -199,7 +199,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
             }}
             rows={6}
             maxLength={CHANNEL_BIO_MAXIMUM_LENGTH}
-            className="mt-1 w-full rounded-xl border border-black/10 bg-card px-4 py-3 text-base text-secondary-foreground outline-none focus:border-primary"
+            className="mt-1 w-full rounded-xl border border-border bg-card px-4 py-3 text-base text-secondary-foreground outline-none focus:border-primary"
           />
         </label>
         {isBioTooShort ? (
@@ -238,7 +238,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
                   placeholder="Label"
                   aria-label={`Link ${linkIndex + 1} label`}
                   maxLength={CHANNEL_LINK_LABEL_MAXIMUM_LENGTH}
-                  className="h-10 rounded-lg border border-black/10 bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
+                  className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
                 />
                 <input
                   type="url"
@@ -248,7 +248,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
                   }
                   placeholder="https://example.com"
                   aria-label={`Link ${linkIndex + 1} URL`}
-                  className="h-10 rounded-lg border border-black/10 bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
+                  className="h-10 rounded-lg border border-border bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
                 />
                 {linkErrors[linkIndex] !== null && linkErrors[linkIndex] !== undefined && (
                   <p className="text-xs text-destructive">{linkErrors[linkIndex]}</p>
@@ -346,7 +346,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
 
       <section>
         <p className="text-xs font-medium text-muted-foreground">How this looks on your channel</p>
-        <div className="mt-1 rounded-xl border border-black/10 p-3">
+        <div className="mt-1 rounded-xl border border-border p-3">
           {/* The real renderer, not a mock-up of it — so the preview cannot drift from the page. */}
           <ChannelProfileDetails
             bio={trimmedBio === "" ? null : trimmedBio}

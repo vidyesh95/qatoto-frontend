@@ -120,7 +120,7 @@ export default function TeardownProvenanceBlock({
       </h3>
       <ul className="mt-2 max-w-2xl">
         {orderedSurveyMethods.map((method) => (
-          <li key={method} className="border-t border-black/5 py-2">
+          <li key={method} className="border-t border-border/60 py-2">
             <p className="text-sm text-foreground">{TEARDOWN_SURVEY_METHOD_LABELS[method]}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {TEARDOWN_SURVEY_METHOD_NOTES[method]}

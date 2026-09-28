@@ -236,7 +236,7 @@ export default function Filter({
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(-1)}
           title="Scroll filter chips left"
-          className="absolute top-0 bottom-0 left-0 z-10 cursor-pointer bg-linear-to-r from-white via-white to-transparent py-4 pr-18 pl-2.5 lg:pl-4"
+          className="absolute top-0 bottom-0 left-0 z-10 cursor-pointer bg-linear-to-r from-background via-background to-transparent py-4 pr-18 pl-2.5 lg:pl-4"
         >
           <Image
             src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -287,7 +287,7 @@ export default function Filter({
               tabIndex={chipIndex === focusedChipIndex ? 0 : -1}
               onClick={() => setFocusedChipIndex(chipIndex)}
               className={`cursor-pointer rounded-lg border px-4 py-1.5 text-sm text-nowrap ${
-                isSelected ? "border-primary bg-primary" : "border-outline hover:bg-black/5"
+                isSelected ? "border-primary bg-primary" : "border-outline hover:bg-muted"
               }`}
             >
               {chip.label}
@@ -302,7 +302,7 @@ export default function Filter({
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(1)}
           title="Scroll filter chips right"
-          className="absolute top-0 right-0 bottom-0 z-10 cursor-pointer bg-linear-to-l from-white via-white to-transparent py-4 pr-2.5 pl-18 lg:pr-4"
+          className="absolute top-0 right-0 bottom-0 z-10 cursor-pointer bg-linear-to-l from-background via-background to-transparent py-4 pr-2.5 pl-18 lg:pr-4"
         >
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"

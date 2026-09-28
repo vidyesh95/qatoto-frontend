@@ -19,7 +19,7 @@ export default function StressLegend({ store }: { readonly store: ExplosionStore
   if (!isStressViewEnabled) return null;
 
   return (
-    <div className="pointer-events-none absolute top-3 right-3 max-w-56 rounded-lg border border-black/10 bg-white/85 px-2.5 py-2 text-right shadow-xs backdrop-blur">
+    <div className="pointer-events-none absolute top-3 right-3 max-w-56 rounded-lg border border-border bg-card/85 px-2.5 py-2 text-right shadow-xs backdrop-blur">
       <p className="font-mono text-xs tracking-eyebrow text-outline-strong uppercase">
         Stress, fraction of yield
       </p>

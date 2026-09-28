@@ -258,7 +258,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                 {RETAINED_DATA_ENTRIES.map((retainedDataEntry) => (
                   <li
                     key={retainedDataEntry.label}
-                    className="flex flex-col rounded-xl border border-black/10 bg-card p-3"
+                    className="flex flex-col rounded-xl border border-border bg-card p-3"
                   >
                     <span className="text-sm font-medium text-secondary-foreground">
                       {retainedDataEntry.label}
@@ -336,7 +336,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                     setView({ status: "confirming", typedHandle: inputEvent.target.value })
                   }
                   placeholder={accountHandle}
-                  className="rounded-lg border border-black/10 bg-background px-3 py-2 text-sm text-secondary-foreground outline-none focus:border-primary disabled:opacity-50"
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-secondary-foreground outline-none focus:border-primary disabled:opacity-50"
                 />
                 <div className="flex flex-row items-center justify-end gap-4">
                   <button
@@ -369,7 +369,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
             {/* NO CONTROLS. The session behind this tab is already gone, so anything
                 clickable here would 401. It is a status line for the moment before the
                 hard navigate that follows it. */}
-            <output className="flex flex-col gap-2 rounded-xl border border-black/10 bg-card p-4">
+            <output className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
               <h3 className="text-sm font-medium text-secondary-foreground">
                 Your account is deactivated
               </h3>
@@ -394,7 +394,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}

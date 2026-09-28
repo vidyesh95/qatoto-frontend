@@ -63,7 +63,7 @@ export default function TeardownMarketSignalBand({
             {marketSignal.storeListings.map((listing) => (
               <li
                 key={listing.productSlug}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-black/5 py-2"
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-border/60 py-2"
               >
                 <Link
                   href={`/store/product/${listing.productSlug}`}
@@ -97,7 +97,7 @@ export default function TeardownMarketSignalBand({
             {marketSignal.showcases.map((showcase) => (
               <li
                 key={showcase.slug}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-black/5 py-2"
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-border/60 py-2"
               >
                 <Link
                   /*

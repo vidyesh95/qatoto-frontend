@@ -114,7 +114,7 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
   return (
     <div
       ref={menuPanelRef}
-      className="fixed top-15 right-14 left-1 z-50 max-h-[calc(100dvh-9rem)] w-auto overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg sm:absolute sm:top-12 sm:right-2 sm:left-auto sm:max-h-[calc(100dvh-4rem)] sm:w-95"
+      className="fixed top-15 right-14 left-1 z-50 max-h-[calc(100dvh-9rem)] w-auto overflow-y-auto rounded-lg border border-border bg-background shadow-lg sm:absolute sm:top-12 sm:right-2 sm:left-auto sm:max-h-[calc(100dvh-4rem)] sm:w-95"
     >
       {view === "ai-assist" ? (
         <AiAssistPanel

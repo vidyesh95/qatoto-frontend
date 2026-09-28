@@ -79,7 +79,7 @@ export function WatchTimePanel({ onBack }: WatchTimePanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -108,7 +108,7 @@ function WatchTimeBody({ view }: { readonly view: WatchTimeView }) {
 
     case "error":
       return (
-        <output className="m-4 block rounded-2xl border border-black/10 bg-muted/40 p-3 text-sm text-muted-foreground">
+        <output className="m-4 block rounded-2xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
           {view.message}
         </output>
       );
@@ -252,7 +252,7 @@ function TotalCell({
   readonly watchedSeconds: number | null;
 }) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-1 text-base font-medium text-foreground">
         {formatWatchTimeLabel(watchedSeconds)}

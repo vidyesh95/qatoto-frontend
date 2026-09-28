@@ -28,7 +28,7 @@ export default function SpecificationList({
   return (
     <dl className={className}>
       {specifications.map((specification) => (
-        <div key={specification.label} className="border-t border-black/5 py-2">
+        <div key={specification.label} className="border-t border-border/60 py-2">
           <dt className="text-xs tracking-wider text-outline-strong uppercase">
             {specification.label}
           </dt>

@@ -186,13 +186,14 @@ export default function ThreeDimensionalModelViewer({
             type="button"
             onClick={handleResetViewClick}
             aria-label="Reset view"
-            className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 shadow-sm transition-colors hover:bg-white"
+            className="grid size-9 cursor-pointer place-items-center rounded-full bg-card/90 shadow-sm transition-colors hover:bg-card"
           >
             <Image
               src="/icons/restart_alt_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""
               width={20}
               height={20}
+              className="dark:invert"
             />
           </button>
           {canFullscreen && (
@@ -200,7 +201,7 @@ export default function ThreeDimensionalModelViewer({
               type="button"
               onClick={handleFullscreenToggleClick}
               aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 shadow-sm transition-colors hover:bg-white"
+              className="grid size-9 cursor-pointer place-items-center rounded-full bg-card/90 shadow-sm transition-colors hover:bg-card"
             >
               <Image
                 src={
@@ -211,6 +212,7 @@ export default function ThreeDimensionalModelViewer({
                 alt=""
                 width={20}
                 height={20}
+                className="dark:invert"
               />
             </button>
           )}
@@ -227,7 +229,7 @@ function renderViewerOverlay(viewerState: ThreeDimensionalModelViewerState) {
     case "loading-model":
       return (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-outline-strong shadow-sm">
+          <span className="rounded-full bg-card/90 px-3 py-1 text-xs font-medium text-outline-strong shadow-sm">
             {viewerState.status === "loading-library" ? "Loading viewer…" : "Loading 3D model…"}
           </span>
         </div>
@@ -237,7 +239,7 @@ function renderViewerOverlay(viewerState: ThreeDimensionalModelViewerState) {
     case "error":
       return (
         <div className="absolute inset-0 flex items-center justify-center p-6">
-          <p className="rounded-lg bg-white px-4 py-3 text-center text-sm text-destructive shadow-sm">
+          <p className="rounded-lg bg-card px-4 py-3 text-center text-sm text-destructive shadow-sm">
             {viewerState.message}
           </p>
         </div>

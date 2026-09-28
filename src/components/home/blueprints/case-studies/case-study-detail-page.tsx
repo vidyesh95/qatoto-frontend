@@ -113,7 +113,7 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
 
       <BlueprintTagList tags={caseStudy.tags} />
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-black/5 pt-4">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border/60 pt-4">
         <div className="flex items-center gap-3">
           <p className="text-xs text-outline-strong">
             {formatCountLabel(caseStudy.viewCount)} views
@@ -323,7 +323,7 @@ function RelatedLessons({ lessons }: { lessons: readonly CaseStudyOption[] }) {
       <h2 className="text-sm font-medium text-foreground">Related lessons</h2>
       <ul className="mt-2">
         {lessons.map((lesson) => (
-          <li key={lesson.slug} className="border-t border-black/5">
+          <li key={lesson.slug} className="border-t border-border/60">
             <Link
               // `buildBlueprintHref` is the only thing that mints a blueprint URL, and it needs
               // exactly the two fields the server sends.

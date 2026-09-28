@@ -107,7 +107,7 @@ export function ScatterSeries({
         // rather than a different colour, so selection reads at any palette.
         const appearanceClassName = isFloored
           ? `border-2 border-primary-imprint/70 bg-transparent`
-          : `${colorClassName} border border-white/60`;
+          : `${colorClassName} border border-background/60`;
         const selectionClassName = isSelected
           ? "z-10 ring-2 ring-primary-imprint ring-offset-1 ring-offset-background opacity-100"
           : "opacity-70";

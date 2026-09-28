@@ -68,11 +68,11 @@ export default function StorefrontHero({ storefront }: { storefront: Organizatio
           {/* `logoUrl` is nullable on the wire — a seller that never uploaded a mark
               gets its initials rather than an empty grey square. */}
           {storefront.logoUrl ? (
-            <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted outline-2 outline-white">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted outline-2 outline-background">
               <Image src={storefront.logoUrl} fill sizes="64px" alt="" className="object-cover" />
             </div>
           ) : (
-            <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-secondary text-lg font-medium text-primary-imprint outline-2 outline-white">
+            <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-secondary text-lg font-medium text-primary-imprint outline-2 outline-background">
               {storefront.displayName
                 .split(/\s+/)
                 .slice(0, 2)
@@ -115,7 +115,7 @@ export default function StorefrontHero({ storefront }: { storefront: Organizatio
 
         {catalogRating && (
           <div className="mt-2 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-sm bg-muted-foreground p-1 text-xs leading-4 font-medium tracking-wider text-white">
+            <span className="inline-flex items-center gap-1 rounded-sm bg-muted-foreground p-1 text-xs leading-4 font-medium tracking-wider text-card">
               {catalogRating.rating.toFixed(1)}
               <span aria-hidden>★</span>
             </span>

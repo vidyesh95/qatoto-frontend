@@ -84,7 +84,7 @@ export default function WatchInfoPanel({
                 aria-label="more options"
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
-                className="cursor-pointer rounded-full p-2 hover:bg-black/10"
+                className="cursor-pointer rounded-full p-2 hover:bg-muted"
                 onClick={() => setMenuOpen((v) => !v)}
               >
                 <Image
@@ -137,7 +137,7 @@ export default function WatchInfoPanel({
           <button
             type="button"
             aria-label="close"
-            className="cursor-pointer rounded-full p-2 hover:bg-black/10"
+            className="cursor-pointer rounded-full p-2 hover:bg-muted"
             onClick={handleClose}
           >
             <Image
@@ -221,7 +221,7 @@ export default function WatchInfoPanel({
                   <button
                     type="button"
                     aria-label={`share chapter "${chapter.title}"`}
-                    className="cursor-pointer rounded-full p-2 hover:bg-black/10"
+                    className="cursor-pointer rounded-full p-2 hover:bg-muted"
                     onClick={() => shareChapter(chapter.time)}
                   >
                     <Image

@@ -197,7 +197,7 @@ const SidebarIcon = memo(function SidebarIcon({ isActive, iconKey, alt }: IconPr
   const src =
     "static" in iconConfig ? iconConfig.static : isActive ? iconConfig.active : iconConfig.inactive;
 
-  return <Image width={24} height={24} src={src} alt={alt} />;
+  return <Image width={24} height={24} src={src} alt={alt} className="dark:invert" />;
 });
 
 /* ---------- Navigation Item Component ---------- */

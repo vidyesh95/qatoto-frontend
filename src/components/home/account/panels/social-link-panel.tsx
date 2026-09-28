@@ -181,7 +181,7 @@ export function SocialLinkPanel({ provider, linkedEmail, onBack }: SocialLinkPan
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -318,7 +318,7 @@ function SocialLinkBody({
           <button
             type="button"
             onClick={() => onCancelUnlink(state.accountId)}
-            className="flex w-full cursor-pointer items-center justify-center rounded-full border border-black/10 px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            className="flex w-full cursor-pointer items-center justify-center rounded-full border border-border px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             Cancel
           </button>

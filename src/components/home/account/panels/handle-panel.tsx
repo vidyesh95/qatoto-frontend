@@ -335,7 +335,7 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-border bg-background p-4">
         <button
           type="button"
           onClick={onBack}
@@ -387,7 +387,7 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
             <button
               type="button"
               onClick={() => handleSuggestionPick(revertableHandle)}
-              className="cursor-pointer self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              className="cursor-pointer self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
             >
               Revert to @{revertableHandle}
             </button>
@@ -395,7 +395,7 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-secondary-foreground">Handle</span>
-            <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
+            <div className="flex flex-row items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 focus-within:border-primary">
               <span className="text-base text-muted-foreground">@</span>
               <input
                 type="text"
@@ -480,7 +480,7 @@ function HandleAvailabilityRow({
                   key={suggestion}
                   type="button"
                   onClick={() => onPickSuggestion(suggestion)}
-                  className="cursor-pointer rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                  className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-muted"
                 >
                   @{suggestion}
                 </button>

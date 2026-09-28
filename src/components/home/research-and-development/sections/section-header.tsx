@@ -25,7 +25,7 @@ export default function SectionHeader({ title, href }: SectionHeaderProps) {
         <Link
           href={href}
           aria-label={`See all ${title}`}
-          className="grid size-8 place-items-center rounded-full transition hover:bg-black/5"
+          className="grid size-8 place-items-center rounded-full transition hover:bg-muted"
         >
           <Image
             src="/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

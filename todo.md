@@ -1373,22 +1373,19 @@ Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its code
   ⚠️ **NOTHING WRITES `.dark` TODAY.** This section used to say "the `.dark` class the theme switcher sets" — there is no theme switcher; Appearance was removed 2026-08-18 (`src/lib/browser-preferences.ts:11-14`). The pass is readiness only, verified by adding `.dark` to `<html>` by hand.
 - **One visible light-mode fix rode along:** the queue count badge (`queue-button.tsx:94`) was `bg-primary text-white` — white on the pale mint wash, ≈1.2:1. It is `text-primary-foreground` now (the Container Rule).
 
-#### Part 2 — OPEN: the neutrals (classified 2026-09-28, 533 matches / 153 files at that date)
+#### Part 2 — SHIPPED 2026-09-28: the neutrals
 
-About 147 sites migrate; about 144 are correct as they are. Do not sweep blind.
+- **Hairlines:** `border-black/10` → `border-border`, `border-black/5` → `border-border/60`, `hover:border-black/30` → `hover:border-foreground/30`. Sheet grabbers `bg-black/15` → `bg-muted-foreground/30`; icon-button `hover:bg-black/{5,10}` → `hover:bg-muted`; carousel buttons `ring-black/5` → `ring-border`.
+- **Surfaces:** image-card chips, the store model viewer's controls (its stage is `bg-muted`, so they follow the theme and their icons got `dark:invert`), the camera menu, the product sticky bar, certifications, the viewer tab bar and the claim step card → `bg-card` (plus its `/60`, `/85`, `/90` variants). `--card` is white, so light mode is unchanged. The filter fades → `from-background`. The floating auth field labels → `bg-background text-foreground`: that is a small light-mode fix too, since they were a white patch on the off-white page.
+- **Text on fills:** badges on `bg-muted-foreground` → `text-card`; the own-message timestamp → `text-primary-imprint-foreground/80`; the storefront logo ring and chart dots → `background`.
+- **`ToggleSwitch` (`src/components/ui/toggle-switch.tsx`) replaced five copies.** Its checked thumb is `primary-imprint-foreground` and its X icon `text-card`. Its accessible name is now "Remember me", no longer "Remember me toggle switch".
+- ⚠️ **THE TEARDOWN STAGE IS `theme-light`.** Its backdrop is a fixed light gradient (`teardown-stage.tsx`), so a chip that followed the theme would go light-on-white. `globals.css` now declares the light tokens on `:root, .theme-light`, plus a `.theme-light { color }` rule, so everything inside the stage (chips, pins, legend, status pill) resolves LIGHT under `.dark`. Put `theme-light` on any future subtree that is light in both themes, and keep `dark:` utilities out of it, because they still match inside.
+- **`dark:invert`** on the sidebar and mobile bottom-nav icons, and on the studio navbar account cluster, which Part 1 missed.
+- **Kept on purpose (≈140):** everything on the band gradient, photo scrims and text over images, modal scrims `bg-black/40`, video letterbox `bg-black`, badges over thumbnails, the promo carousel's controls, map pins, `print:text-black`, the CAD callout pin's `text-black`, the macOS window dots on `/developers`. Re-list with `rg --pcre2 -o "(?<![\w-])[\w:-]*-(black|white)(/\d+)?(?![\w-])" src --glob '!*.svg' --glob '!*.css'`.
 
-- **Migrate:**
-    - `border-black/10` ×87 (hairlines on `bg-background`/`bg-card`) → `border-border`. Composited on white it is ≈ `--border`; in dark it is invisible on the card, so this also fixes a real dark bug.
-    - `border-black/5` ×9 (in-content row dividers) → `border-border/60`. Not `--outline-variant` — that is darker, violet and decorative-only.
-    - Sheet grabber `bg-black/15` ×10 → `bg-border`; icon-button `hover:bg-black/{5,10}` ×6 → `hover:bg-muted`.
-    - Floating auth field labels `bg-white px-1 text-xs text-black` ×6 (`sign-up.tsx`, `forgot-password.tsx`, `sign-in-with-password.tsx`) → `bg-background text-foreground` — must match the field's ground.
-    - Scroll-fade masks `from-white via-white` (`feed/filter.tsx:239,305`) → `from-background via-background`.
-    - Other surfaces: `product-detail.tsx:352` sticky bar, `storefront-certifications.tsx:60`, `teardown-viewer-tabs.tsx:49`.
-    - Toggle-switch thumb `peer-checked:bg-white` + `text-white` ×5, copy-pasted across the three auth pages and two account panels → extract ONE component, then `primary-imprint-foreground` (the track is `bg-primary-imprint`, which brightens in dark).
-    - `text-white` on `bg-muted-foreground` badges (`rating-badge.tsx`, `catalog-product-card.tsx:121`, `verified-capabilities-sheet.tsx:96`, `storefront-hero.tsx:118`) → `text-background`; `text-white/80` on `bg-primary-imprint` (`manufacturer-chat-sheet/index.tsx:260`) → `text-primary-imprint-foreground/80`.
-    - Sidebar and mobile bottom-nav `*_000000_*.svg` icons → `dark:invert` (the navbar has it; these do not yet).
-- ⚠️ **Hazard, decide per site:** 3D-viewer and image-card chips are `bg-white/85`–`/90` with `text-foreground` (`viewport-tool-rail.tsx:23`, `viewport-zoom-control.tsx`, `camera-preset-menu.tsx`, `part-callout-pin.tsx:67`, `funding-deal-card.tsx:60`, `project-card.tsx:38`, …). In dark mode the text goes light on a still-white chip. Either pin the text to a literal dark ink or tokenise the whole chip — not half of it.
-- **Keep as is (≈144):** everything on the permanent band gradient (`from-band-ink …`, Design.md: band is dark in both themes), photo scrims and text over images, modal scrims `bg-black/40`, video/crop letterbox `bg-black`, badges over thumbnails and video, the map pins, `print:text-black`, and `text-black` on the CAD callout pin (Design.md: deliberate, 6.55:1).
+#### Part 3 — OPEN
+
+- **112 files still render black `*_000000_*.svg` icons with no `dark:invert`** (auth pages' mail, lock, eye and back-arrow, account panels, cards, …). Only the navbars, sidebar, bottom nav and model viewer are done. This is inert until a theme switch exists; do it before one ships. Measure with `rg --files-without-match "dark:invert" $(rg -l "_000000_" src --glob '*.tsx')`.
 - **Still token-less:** amber (≈64 text, 41 bg) and blue (≈28). Register `--warning` / `--info` pairs with `.dark` counterparts and measured contrast first; borrowing `--destructive` or an accent is forbidden.
 
 ---

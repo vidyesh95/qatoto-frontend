@@ -57,7 +57,7 @@ export default function StorefrontCertifications({
           return (
             <li
               key={certification.id}
-              className="rounded-lg bg-white px-3 py-2.5 outline -outline-offset-1 outline-border"
+              className="rounded-lg bg-card px-3 py-2.5 outline -outline-offset-1 outline-border"
             >
               <div className="flex items-start gap-2">
                 <Image
