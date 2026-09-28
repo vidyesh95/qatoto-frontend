@@ -221,7 +221,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
         {isRowRenaming ? (
           <div className="flex flex-row items-center justify-end gap-4">
             {rowRenameErrorMessage ? (
-              <span className="flex-1 text-xs text-red-600">{rowRenameErrorMessage}</span>
+              <span className="flex-1 text-xs text-destructive">{rowRenameErrorMessage}</span>
             ) : null}
             <button
               type="button"
@@ -256,7 +256,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
               <button
                 type="button"
                 onClick={() => handleConfirmDelete(rowPasskey.id)}
-                className="cursor-pointer text-sm font-medium text-red-600"
+                className="cursor-pointer text-sm font-medium text-destructive"
               >
                 Remove
               </button>
@@ -278,7 +278,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
                 setMutationState({ status: "confirm-delete", passkeyId: rowPasskey.id })
               }
               disabled={isMutationInFlight}
-              className="cursor-pointer text-sm font-medium text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer text-sm font-medium text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isRowDeleting ? "Removing…" : "Remove"}
             </button>
@@ -295,7 +295,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
       case "error":
         return (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-red-600">Couldn't load your passkeys.</p>
+            <p className="text-sm text-destructive">Couldn't load your passkeys.</p>
             <button
               type="button"
               onClick={() => void loadPasskeys()}
@@ -352,7 +352,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
         {renderListSection()}
 
         {mutationState.status === "error" ? (
-          <span className="text-xs text-red-600">{mutationState.message}</span>
+          <span className="text-xs text-destructive">{mutationState.message}</span>
         ) : null}
 
         <button

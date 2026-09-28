@@ -47,7 +47,7 @@ export default function ProjectAuditTrailTab({
         // A non-404 failure here is the CHAIN_BROKEN case, and it is not a loading
         // problem. It says so in the strongest terms the page has.
         return (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
             <p className="font-medium">The audit chain did not verify.</p>
             <p className="mt-1">{chainVerificationState.message}</p>
             <p className="mt-1 text-xs">

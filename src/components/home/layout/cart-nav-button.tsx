@@ -44,10 +44,11 @@ export default function CartNavButton() {
       // The count is in the accessible name rather than left to the badge, which is `aria-hidden`
       // below — a screen reader should hear "Cart, 3 items" once, not "Cart" and then a loose "3".
       aria-label={lineCount === null ? "Cart" : `Cart, ${formatCountLabel(lineCount)} items`}
-      className={"relative cursor-pointer rounded-full border border-primary bg-white p-1.75"}
+      className={"relative cursor-pointer rounded-full border border-primary bg-card p-1.75"}
     >
       <Image
         src={"/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+        className="dark:invert"
         alt={""}
         width={24}
         height={24}

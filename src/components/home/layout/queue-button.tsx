@@ -83,15 +83,16 @@ export default function QueueButton() {
         aria-haspopup="menu"
         aria-expanded={isPanelOpen}
         onClick={() => setIsPanelOpen((wasOpen) => !wasOpen)}
-        className="relative cursor-pointer rounded-full border border-primary bg-white p-1.75"
+        className="relative cursor-pointer rounded-full border border-primary bg-card p-1.75"
       >
         <Image
           src="/icons/playlist_play_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          className="dark:invert"
           alt=""
           width={24}
           height={24}
         />
-        <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-xs font-medium text-white">
+        <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
           {entries.length}
         </span>
       </button>
@@ -159,6 +160,7 @@ export default function QueueButton() {
                   >
                     <Image
                       src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                      className="dark:invert"
                       alt=""
                       width={18}
                       height={18}

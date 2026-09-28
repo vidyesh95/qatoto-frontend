@@ -155,7 +155,7 @@ export function SwitchAccountPanel({ onBack, onSignOutAll }: SwitchAccountPanelP
       </header>
 
       {actionError ? (
-        <p className="px-4 pt-4 text-sm text-red-600" role="alert">
+        <p className="px-4 pt-4 text-sm text-destructive" role="alert">
           {actionError}
         </p>
       ) : null}

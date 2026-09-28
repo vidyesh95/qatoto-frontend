@@ -256,6 +256,7 @@ function ApplicationCard({ application }: { readonly application: ReceivedApplic
         className={`${INPUT_CLASS} mt-3`}
         value={reviewNote}
         placeholder="A note back to them (they will read this)"
+        aria-label={`Note back to ${application.applicantName}`}
         onChange={(changeEvent) => {
           setReviewNote(changeEvent.target.value);
         }}

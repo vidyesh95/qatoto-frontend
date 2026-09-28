@@ -1344,7 +1344,7 @@ function DiscardConfirmation({
           type="button"
           disabled={isDiscarding}
           onClick={onConfirm}
-          className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
         >
           {isDiscarding ? "Discarding…" : "Yes, discard it"}
         </button>

@@ -279,7 +279,7 @@ export default function ReportContentSheet({
             </div>
 
             {refusalMessage !== null && (
-              <p role="alert" className="shrink-0 px-4 pb-2 text-xs text-red-700">
+              <p role="alert" className="shrink-0 px-4 pb-2 text-xs text-destructive">
                 {refusalMessage}
               </p>
             )}

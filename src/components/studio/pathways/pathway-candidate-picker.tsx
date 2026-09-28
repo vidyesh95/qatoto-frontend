@@ -142,6 +142,7 @@ export default function PathwayCandidatePicker({
               setPickerState({ status: "searching" });
             }}
             placeholder="Search every listing on the store"
+            aria-label="Search store listings"
             className="mt-2 w-full rounded-lg border border-border px-2 py-1.5 text-sm"
           />
 
@@ -149,7 +150,7 @@ export default function PathwayCandidatePicker({
             <p className="mt-2 text-xs text-muted-foreground">Checking that listing…</p>
           )}
           {pickerState.status === "productUnavailable" && (
-            <output role="alert" className="mt-2 block text-xs text-red-700">
+            <output role="alert" className="mt-2 block text-xs text-destructive">
               {pickerState.message}
             </output>
           )}
@@ -158,7 +159,7 @@ export default function PathwayCandidatePicker({
             <p className="mt-2 text-xs text-muted-foreground">Searching…</p>
           )}
           {searchQuery.data?.success === false && (
-            <output role="alert" className="mt-2 block text-xs text-red-700">
+            <output role="alert" className="mt-2 block text-xs text-destructive">
               {searchQuery.data.error.message}
             </output>
           )}

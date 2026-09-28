@@ -63,22 +63,24 @@ export default async function ResearchProgramsIndexPage({
 
       {/* A search box that submits — the filter is applied by the backend, not over a page. */}
       <form action="/research-and-development/programs" className="px-4 lg:px-6">
-        <label className="flex max-w-xl items-center gap-2">
-          <span className="sr-only">Search research programmes</span>
-          <input
-            type="search"
-            name="q"
-            defaultValue={searchText ?? ""}
-            placeholder="Search programmes"
-            className="w-full rounded-full border border-outline-variant/60 px-4 py-2 text-sm"
-          />
+        <div className="flex max-w-xl items-center gap-2">
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">Search research programmes</span>
+            <input
+              type="search"
+              name="q"
+              defaultValue={searchText ?? ""}
+              placeholder="Search programmes"
+              className="w-full rounded-full border border-outline-variant/60 px-4 py-2 text-sm"
+            />
+          </label>
           <button
             type="submit"
             className="shrink-0 cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep"
           >
             Search
           </button>
-        </label>
+        </div>
       </form>
 
       <section className="space-y-4">

@@ -318,7 +318,7 @@ function PathwayCard({ pathway }: { readonly pathway: PathwayModeration }) {
       )}
 
       {cardState.status === "refused" && (
-        <output role="alert" className="mt-2 block text-xs text-red-700">
+        <output role="alert" className="mt-2 block text-xs text-destructive">
           {cardState.message}
         </output>
       )}

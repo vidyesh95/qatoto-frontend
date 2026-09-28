@@ -176,31 +176,37 @@ export default function FundingManagementIsland({
               className={INPUT_CLASS}
             />
           </label>
-          <select
-            value={roundType}
-            onChange={(changeEvent) => {
-              const candidate = FUNDING_ROUND_TYPES.find(
-                (roundTypeOption) => roundTypeOption === changeEvent.target.value,
-              );
-              if (candidate) setRoundType(candidate);
-            }}
-            className={INPUT_CLASS}
-          >
-            {FUNDING_ROUND_TYPES.map((option) => (
-              <option key={option} value={option}>
-                {ROUND_TYPE_LABELS[option]}
-              </option>
-            ))}
-          </select>
-          <input
-            required
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={goalAmountInCents}
-            onChange={(changeEvent) => setGoalAmountInCents(changeEvent.target.value)}
-            placeholder="Goal in whole cents"
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Round type</span>
+            <select
+              value={roundType}
+              onChange={(changeEvent) => {
+                const candidate = FUNDING_ROUND_TYPES.find(
+                  (roundTypeOption) => roundTypeOption === changeEvent.target.value,
+                );
+                if (candidate) setRoundType(candidate);
+              }}
+              className={INPUT_CLASS}
+            >
+              {FUNDING_ROUND_TYPES.map((option) => (
+                <option key={option} value={option}>
+                  {ROUND_TYPE_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Goal in cents</span>
+            <input
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={goalAmountInCents}
+              onChange={(changeEvent) => setGoalAmountInCents(changeEvent.target.value)}
+              placeholder="Goal in whole cents"
+              className={INPUT_CLASS}
+            />
+          </label>
           <p className="text-xs text-muted-foreground">
             Equity and venture rounds are securities offerings and are refused by the API — the
             option is shown so the reason is visible rather than hidden. A round records
@@ -283,21 +289,27 @@ export default function FundingManagementIsland({
               className={INPUT_CLASS}
             />
           </label>
-          <input
-            required
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={plannedPayoutInCents}
-            onChange={(changeEvent) => setPlannedPayoutInCents(changeEvent.target.value)}
-            placeholder={`Planned payout in whole cents (${projectCurrency})`}
-            className={INPUT_CLASS}
-          />
-          <input
-            type="date"
-            value={milestoneDueDate}
-            onChange={(changeEvent) => setMilestoneDueDate(changeEvent.target.value)}
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Planned payout in cents</span>
+            <input
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={plannedPayoutInCents}
+              onChange={(changeEvent) => setPlannedPayoutInCents(changeEvent.target.value)}
+              placeholder={`Planned payout in whole cents (${projectCurrency})`}
+              className={INPUT_CLASS}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Due date (optional)</span>
+            <input
+              type="date"
+              value={milestoneDueDate}
+              onChange={(changeEvent) => setMilestoneDueDate(changeEvent.target.value)}
+              className={INPUT_CLASS}
+            />
+          </label>
           <p className="text-xs text-muted-foreground">
             A planned payout records intent. Completing a milestone moves no money — there is no
             payment rail behind this figure, and there is deliberately no escrow.

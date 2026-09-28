@@ -236,6 +236,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
                     handleLinkFieldChange(linkRow.localId, { label: changeEvent.target.value })
                   }
                   placeholder="Label"
+                  aria-label={`Link ${linkIndex + 1} label`}
                   maxLength={CHANNEL_LINK_LABEL_MAXIMUM_LENGTH}
                   className="h-10 rounded-lg border border-black/10 bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
                 />
@@ -246,6 +247,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
                     handleLinkFieldChange(linkRow.localId, { url: changeEvent.target.value })
                   }
                   placeholder="https://example.com"
+                  aria-label={`Link ${linkIndex + 1} URL`}
                   className="h-10 rounded-lg border border-black/10 bg-card px-3 text-sm text-secondary-foreground outline-none focus:border-primary"
                 />
                 {linkErrors[linkIndex] !== null && linkErrors[linkIndex] !== undefined && (

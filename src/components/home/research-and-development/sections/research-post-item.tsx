@@ -228,6 +228,7 @@ export function ResearchPostItem({
             onChange={(event) => setReplyText(event.target.value)}
             maxLength={10_000}
             rows={2}
+            aria-label="Add a reply"
             placeholder="Add a reply"
             className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />

@@ -10,6 +10,7 @@ import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import {
   useCompensationPeriodQuery,
   useStatementChainVerificationQuery,
@@ -160,7 +161,7 @@ export default function CompensationPeriodIsland({
 
     if (verificationError !== null) {
       return (
-        <div className="space-y-1 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="space-y-1 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
           <p className="font-medium">The statement chain did not verify.</p>
           <p className="text-xs">
             {verificationError.code} · {verificationError.message}
@@ -317,46 +318,58 @@ export default function CompensationPeriodIsland({
                             });
                           }}
                         >
-                          <input
-                            required
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={paidAmountInCents}
-                            onChange={(changeEvent) =>
-                              setPaidAmountInCents(changeEvent.target.value)
-                            }
-                            placeholder="Amount in whole cents"
-                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                          />
-                          <input
-                            required
-                            type="date"
-                            value={paidOnDate}
-                            onChange={(changeEvent) => setPaidOnDate(changeEvent.target.value)}
-                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                          />
-                          <select
-                            value={methodKey}
-                            onChange={(changeEvent) => {
-                              const parsed = CompensationPaymentMethodKeySchema.safeParse(
-                                changeEvent.target.value,
-                              );
-                              if (parsed.success) setMethodKey(parsed.data);
-                            }}
-                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                          >
-                            {COMPENSATION_PAYMENT_METHOD_KEYS.map((method) => (
-                              <option key={method} value={method}>
-                                {PAYMENT_METHOD_LABELS[method]}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            value={referenceNote}
-                            onChange={(changeEvent) => setReferenceNote(changeEvent.target.value)}
-                            placeholder="Your own reference (optional)"
-                            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                          />
+                          <label className="flex flex-col gap-1">
+                            <span className={LABEL_CLASS}>Amount paid in cents</span>
+                            <input
+                              required
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={paidAmountInCents}
+                              onChange={(changeEvent) =>
+                                setPaidAmountInCents(changeEvent.target.value)
+                              }
+                              placeholder="Amount in whole cents"
+                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span className={LABEL_CLASS}>Paid on</span>
+                            <input
+                              required
+                              type="date"
+                              value={paidOnDate}
+                              onChange={(changeEvent) => setPaidOnDate(changeEvent.target.value)}
+                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span className={LABEL_CLASS}>Payment method</span>
+                            <select
+                              value={methodKey}
+                              onChange={(changeEvent) => {
+                                const parsed = CompensationPaymentMethodKeySchema.safeParse(
+                                  changeEvent.target.value,
+                                );
+                                if (parsed.success) setMethodKey(parsed.data);
+                              }}
+                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                            >
+                              {COMPENSATION_PAYMENT_METHOD_KEYS.map((method) => (
+                                <option key={method} value={method}>
+                                  {PAYMENT_METHOD_LABELS[method]}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            <span className={LABEL_CLASS}>Reference (optional)</span>
+                            <input
+                              value={referenceNote}
+                              onChange={(changeEvent) => setReferenceNote(changeEvent.target.value)}
+                              placeholder="Your own reference (optional)"
+                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                            />
+                          </label>
                           {/* Said plainly, because the form looks like a payment form and
                               is not one. */}
                           <p className="text-xs text-muted-foreground">

@@ -152,7 +152,7 @@ export default function BlueprintHeroSlideAdminPage() {
         return (
           <p
             role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
           >
             {listState.message}
           </p>
@@ -555,7 +555,7 @@ function SlideRow({
               type="button"
               disabled={isDeleting}
               onClick={onDelete}
-              className="cursor-pointer rounded-full bg-red-600 px-3 py-1 text-xs text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               Yes, delete
             </button>
@@ -571,7 +571,7 @@ function SlideRow({
           <button
             type="button"
             onClick={() => setIsConfirmingDelete(true)}
-            className="cursor-pointer rounded-full border border-red-200 px-3 py-1 text-xs text-red-700"
+            className="cursor-pointer rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive"
           >
             Delete
           </button>

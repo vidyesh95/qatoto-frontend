@@ -180,6 +180,7 @@ export default function RoleCompensationComposer({
               className={INPUT_CLASS}
               inputMode="decimal"
               value={draft.equityMinPercent}
+              aria-label="Minimum equity percent"
               placeholder="2"
               onChange={(changeEvent) => {
                 onDraftChange({ equityMinPercent: changeEvent.target.value });
@@ -190,6 +191,7 @@ export default function RoleCompensationComposer({
               className={INPUT_CLASS}
               inputMode="decimal"
               value={draft.equityMaxPercent}
+              aria-label="Maximum equity percent"
               placeholder="4 (optional)"
               onChange={(changeEvent) => {
                 onDraftChange({ equityMaxPercent: changeEvent.target.value });
@@ -218,6 +220,7 @@ export default function RoleCompensationComposer({
             className={INPUT_CLASS}
             inputMode="decimal"
             value={draft.salaryMinPerMonth}
+            aria-label="Minimum monthly cash"
             placeholder="40000"
             onChange={(changeEvent) => {
               onDraftChange({ salaryMinPerMonth: changeEvent.target.value });
@@ -228,6 +231,7 @@ export default function RoleCompensationComposer({
             className={INPUT_CLASS}
             inputMode="decimal"
             value={draft.salaryMaxPerMonth}
+            aria-label="Maximum monthly cash"
             placeholder="60000 (optional)"
             onChange={(changeEvent) => {
               onDraftChange({ salaryMaxPerMonth: changeEvent.target.value });
@@ -250,6 +254,7 @@ export default function RoleCompensationComposer({
             className={INPUT_CLASS}
             inputMode="decimal"
             value={draft.oneTimeMin}
+            aria-label="Minimum one-time payment"
             placeholder="100000"
             onChange={(changeEvent) => {
               onDraftChange({ oneTimeMin: changeEvent.target.value });
@@ -260,6 +265,7 @@ export default function RoleCompensationComposer({
             className={INPUT_CLASS}
             inputMode="decimal"
             value={draft.oneTimeMax}
+            aria-label="Maximum one-time payment"
             placeholder="optional"
             onChange={(changeEvent) => {
               onDraftChange({ oneTimeMax: changeEvent.target.value });

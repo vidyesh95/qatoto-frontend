@@ -119,7 +119,7 @@ export function ListingCategoryPicker({
       {rootsQuery.isError && (
         <p
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-800"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
         >
           Couldn&apos;t load the categories. Reload the page and try again.
         </p>
@@ -299,7 +299,7 @@ function CategoryRequestPanel({
       {submitError && (
         <p
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-800"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
         >
           {submitError.apiError.message}
         </p>

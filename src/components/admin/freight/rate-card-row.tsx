@@ -35,7 +35,7 @@ const FIELD_CLASS = "w-full rounded-lg border border-border bg-background px-2 p
 const STATE_BADGE_CLASSES: Record<AdminFreightRateCard["state"], string> = {
   active: "bg-primary-imprint/10 text-primary-imprint",
   superseded: "bg-muted text-muted-foreground",
-  withdrawn: "bg-red-50 text-red-800",
+  withdrawn: "bg-destructive/10 text-destructive",
 };
 
 function toBandDrafts(card: AdminFreightRateCard): WeightBandDraft[] {
@@ -232,11 +232,13 @@ export default function RateCardRow({
           )}
 
           {localError !== null && (
-            <p className="rounded-xl bg-red-50 p-3 text-xs text-red-800">{localError}</p>
+            <p className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
+              {localError}
+            </p>
           )}
 
           {breaksError !== null && (
-            <div className="space-y-1 rounded-xl bg-red-50 p-3 text-xs text-red-800">
+            <div className="space-y-1 rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
               <p className="font-medium">{breaksError.message}</p>
               {renderFieldErrors(breaksError.fieldErrors)}
               {breaksError.code === "409" && (
@@ -328,7 +330,7 @@ export default function RateCardRow({
           )}
 
           {updateError !== null && (
-            <div className="space-y-1 rounded-xl bg-red-50 p-3 text-xs text-red-800">
+            <div className="space-y-1 rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
               <p className="font-medium">{updateError.message}</p>
               {renderFieldErrors(updateError.fieldErrors)}
             </div>

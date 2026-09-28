@@ -341,7 +341,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <div className="flex flex-col gap-2">
             <div
               role="alert"
-              className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+              className="flex flex-col gap-1 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
             >
               <span>We could not check on your download. {view.error.message}</span>
               <span className="text-xs opacity-70">Code {view.error.code}</span>
@@ -452,7 +452,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <div className="flex flex-col gap-2">
             <div
               role="alert"
-              className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+              className="flex flex-col gap-1 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
             >
               <span>{view.error.message}</span>
               <span className="text-xs opacity-70">Code {view.error.code}</span>
@@ -642,7 +642,7 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <button
             type="button"
             onClick={() => onOpenEditor("delete-account")}
-            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-red-600 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-600/5"
+            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-destructive px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5"
           >
             <Image
               src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

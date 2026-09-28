@@ -181,6 +181,7 @@ export default function NewProgramWizardPage() {
                 value={branch.title}
                 onChange={(event) => updateSeedBranch(index, { title: event.target.value })}
                 maxLength={120}
+                aria-label={`Branch ${index + 1} title`}
                 placeholder="Branch title"
                 className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />
@@ -189,6 +190,7 @@ export default function NewProgramWizardPage() {
                 onChange={(event) => updateSeedBranch(index, { summary: event.target.value })}
                 maxLength={2000}
                 rows={2}
+                aria-label={`What branch ${index + 1} is asking`}
                 placeholder="What this branch is asking"
                 className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />

@@ -8,6 +8,7 @@ import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { useCreatePledgeMutation, usePledgeOptionsQuery } from "@/hooks/rnd/funding";
 import { ApiRequestError } from "@/lib/http";
 import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
@@ -91,15 +92,18 @@ export default function PledgeIsland({
         </p>
       )}
 
-      <input
-        required
-        inputMode="numeric"
-        pattern="[0-9]*"
-        value={amountInCents}
-        onChange={(changeEvent) => setAmountInCents(changeEvent.target.value)}
-        placeholder="Amount in whole cents"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Amount in cents</span>
+        <input
+          required
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={amountInCents}
+          onChange={(changeEvent) => setAmountInCents(changeEvent.target.value)}
+          placeholder="Amount in whole cents"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
 
       <p className="text-xs text-muted-foreground">
         This records a commitment. Qatoto takes no card, holds no funds, charges no fee and moves no

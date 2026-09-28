@@ -222,7 +222,9 @@ export default function ThumbnailPicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-foreground">Thumbnail</span>
+      <label htmlFor="upload-thumbnail-file" className="text-sm font-medium text-foreground">
+        Thumbnail
+      </label>
 
       <div className="flex flex-wrap items-start gap-3">
         <div className="flex aspect-video w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-secondary">

@@ -542,7 +542,7 @@ function InviteProvidersControl({ rfq }: { rfq: RfqDetailValue }) {
             <p className="mt-2 text-xs text-muted-foreground">Loading providers…</p>
           )}
           {directoryQuery.data?.success === false && (
-            <output role="alert" className="mt-2 block text-xs text-red-700">
+            <output role="alert" className="mt-2 block text-xs text-destructive">
               {directoryQuery.data.error.message}
             </output>
           )}
@@ -604,7 +604,7 @@ function InviteProvidersControl({ rfq }: { rfq: RfqDetailValue }) {
           </div>
 
           {inviteProviders.data?.success === false && (
-            <output role="alert" className="mt-2 block text-xs text-red-700">
+            <output role="alert" className="mt-2 block text-xs text-destructive">
               {/* The server's own sentence. A 409 here names no provider, so paraphrasing it
                   would be inventing detail the backend did not give. */}
               {inviteProviders.data.error.message}

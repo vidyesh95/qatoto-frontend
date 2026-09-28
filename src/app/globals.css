@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* `dark:` follows the `.dark` class, not `prefers-color-scheme`. Nothing writes `.dark` today (see
+   `src/lib/browser-preferences.ts`), so every `dark:` utility is inert until a theme switch returns;
+   without this line they would fire for any visitor whose OS is dark while the page stayed light. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --tracking-eyebrow: 0.18em;
   --color-cad-selection: oklch(0.6759 0.2175 38.8); /* #ff5500 3D viewport line parity */
@@ -23,7 +28,9 @@
   --muted-foreground: oklch(0.5452 0 0);
   --accent: oklch(0.9552 0.0127 196.9434);
   --accent-foreground: oklch(0.2178 0 0);
-  --destructive: oklch(0.6368 0.2078 25.3313);
+  /* ≈ red-700. Was oklch(0.6368 0.2078 25.33), 3.76:1 on white, which failed AA for every
+     `text-destructive` error message. Now 6.42:1 on white and ≥ 4.99:1 on the `/10` wash. */
+  --destructive: oklch(0.505 0.213 27.518);
   --destructive-foreground: oklch(0.9851 0 0);
   --border: oklch(0.9276 0.0058 264.5313);
   --input: oklch(1 0 0);

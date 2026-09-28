@@ -119,6 +119,7 @@ export default function OptimizationTab({
                         }))
                       }
                       placeholder="Note (optional)"
+                      aria-label={`Decision note for ${suggestion.title} (optional)`}
                       className="w-full rounded-xl border border-outline-variant p-2 text-sm"
                     />
                     <div className="flex gap-2">

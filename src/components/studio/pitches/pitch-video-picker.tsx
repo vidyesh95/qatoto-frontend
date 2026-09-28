@@ -117,6 +117,7 @@ export default function PitchVideoPicker({
                   setSearchQuery(changeEvent.target.value);
                 }}
                 placeholder="Search this venture's videos"
+                aria-label="Search this venture's videos"
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>

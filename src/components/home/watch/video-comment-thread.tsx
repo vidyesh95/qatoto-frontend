@@ -85,7 +85,7 @@ export default function VideoCommentThread({
       {thread.isLoadingFirstPage ? (
         <p className="px-4 py-6 text-sm text-outline-strong">Loading comments…</p>
       ) : thread.firstPageErrorMessage !== null ? (
-        <p role="alert" className="px-4 py-6 text-sm text-red-700">
+        <p role="alert" className="px-4 py-6 text-sm text-destructive">
           {thread.firstPageErrorMessage}
         </p>
       ) : thread.rows.length === 0 ? (
@@ -183,7 +183,7 @@ function CommentComposer({
       />
       <div className="flex flex-row items-center justify-end gap-3">
         {refusal !== null && (
-          <p role="alert" className="flex-1 text-xs text-red-700">
+          <p role="alert" className="flex-1 text-xs text-destructive">
             {refusal.message}
           </p>
         )}
@@ -345,7 +345,7 @@ function CommentItem({
         </div>
 
         {deleteComment.error !== null && (
-          <p role="alert" className="mt-1 text-xs text-red-700">
+          <p role="alert" className="mt-1 text-xs text-destructive">
             {describeEngagementError(deleteComment.error).message}
           </p>
         )}
@@ -423,7 +423,7 @@ function ReplyThread({
       {replies.isLoadingFirstPage ? (
         <p className="py-2 text-xs text-outline-strong">Loading replies…</p>
       ) : replies.firstPageErrorMessage !== null ? (
-        <p role="alert" className="py-2 text-xs text-red-700">
+        <p role="alert" className="py-2 text-xs text-destructive">
           {replies.firstPageErrorMessage}
         </p>
       ) : replies.rows.length === 0 ? (
@@ -530,7 +530,7 @@ function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly repl
           </button>
         </div>
         {deleteComment.error !== null && (
-          <p role="alert" className="mt-1 text-xs text-red-700">
+          <p role="alert" className="mt-1 text-xs text-destructive">
             {describeEngagementError(deleteComment.error).message}
           </p>
         )}
@@ -586,7 +586,7 @@ function CommentEditor({
       />
       <div className="flex flex-row items-center gap-3">
         {refusal !== null && (
-          <p role="alert" className="flex-1 text-xs text-red-700">
+          <p role="alert" className="flex-1 text-xs text-destructive">
             {refusal.message}
           </p>
         )}

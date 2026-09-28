@@ -294,7 +294,7 @@ function SocialLinkBody({
             <button
               type="button"
               onClick={() => onRequestUnlink(state.accountId)}
-              className="flex w-full cursor-pointer items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+              className="flex w-full cursor-pointer items-center justify-center rounded-full border border-destructive/40 px-4 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
               Disconnect {providerLabel}
             </button>
@@ -311,7 +311,7 @@ function SocialLinkBody({
           <button
             type="button"
             onClick={() => onConfirmUnlink(state.accountId)}
-            className="flex w-full cursor-pointer items-center justify-center rounded-full bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="flex w-full cursor-pointer items-center justify-center rounded-full bg-destructive px-4 py-3 text-sm font-medium text-destructive-foreground transition-opacity hover:opacity-90"
           >
             Disconnect {providerLabel}
           </button>
@@ -331,7 +331,7 @@ function SocialLinkBody({
           <button
             type="button"
             disabled
-            className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 opacity-50"
+            className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-destructive/40 px-4 py-3 text-sm font-medium text-destructive opacity-50"
           >
             Disconnecting…
           </button>
@@ -340,7 +340,7 @@ function SocialLinkBody({
     case "error":
       return (
         <div className="flex w-full flex-col gap-4">
-          <p className="text-center text-sm text-red-600">{state.message}</p>
+          <p className="text-center text-sm text-destructive">{state.message}</p>
           {connectButton(`Connect ${providerLabel}`, false)}
         </div>
       );

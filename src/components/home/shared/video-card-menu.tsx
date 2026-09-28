@@ -414,7 +414,7 @@ export default function VideoCardMenu({
               decided; this repo has no toast, so the message renders inline.
             */}
             {refusal !== null && (
-              <p role="alert" className="px-4 py-2 text-xs text-red-700">
+              <p role="alert" className="px-4 py-2 text-xs text-destructive">
                 {refusal.message}
               </p>
             )}

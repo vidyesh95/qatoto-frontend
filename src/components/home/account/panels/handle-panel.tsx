@@ -355,11 +355,11 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
       {metadataState.status === "loading" ? (
         <p className="p-4 text-sm text-muted-foreground">Loading…</p>
       ) : metadataState.status === "error" ? (
-        <p className="p-4 text-sm text-red-600">{metadataState.message}</p>
+        <p className="p-4 text-sm text-destructive">{metadataState.message}</p>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4">
           {isChangeLocked ? (
-            <div className="flex flex-col gap-1 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-700">
+            <div className="flex flex-col gap-1 rounded-xl bg-destructive/10 px-4 py-3 text-xs text-destructive">
               <p className="font-medium">
                 You&apos;ve used all {metadataState.maxChanges} handle changes for now.
               </p>
@@ -424,7 +424,7 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
               onPickSuggestion={handleSuggestionPick}
             />
             {saveState.status === "error" ? (
-              <span className="text-xs text-red-600">{saveState.message}</span>
+              <span className="text-xs text-destructive">{saveState.message}</span>
             ) : null}
           </label>
 
@@ -457,7 +457,7 @@ function HandleAvailabilityRow({
     case "checking":
       return <span className="text-xs text-muted-foreground">Checking availability…</span>;
     case "invalid":
-      return <span className="text-xs text-red-600">{state.reason}</span>;
+      return <span className="text-xs text-destructive">{state.reason}</span>;
     case "available":
       return <span className="text-xs text-green-600">@{normalizedHandle} is available ✓</span>;
     case "current":
@@ -472,7 +472,7 @@ function HandleAvailabilityRow({
     case "taken":
       return (
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-red-600">@{normalizedHandle} is unavailable</span>
+          <span className="text-xs text-destructive">@{normalizedHandle} is unavailable</span>
           {state.suggestions.length > 0 ? (
             <div className="flex flex-row flex-wrap gap-2">
               {state.suggestions.map((suggestion) => (
@@ -490,7 +490,7 @@ function HandleAvailabilityRow({
         </div>
       );
     case "error":
-      return <span className="text-xs text-red-600">{state.message}</span>;
+      return <span className="text-xs text-destructive">{state.message}</span>;
     default: {
       const exhaustiveCheck: never = state;
       return exhaustiveCheck;

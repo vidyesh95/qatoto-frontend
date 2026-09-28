@@ -116,6 +116,7 @@ export default function PaperModerationQueue({
                   maxLength={2000}
                   rows={2}
                   placeholder="Why? The author reads this."
+                  aria-label={`Reviewer note for ${paper.title}`}
                   className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 />
 
@@ -191,6 +192,7 @@ export default function PaperModerationQueue({
                   }
                   maxLength={2000}
                   placeholder="Why is this fine?"
+                  aria-label={`Dismissal note for the ${REPORT_REASON_LABELS[report.reason]} report`}
                   className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
                 />
 

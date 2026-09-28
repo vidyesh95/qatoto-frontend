@@ -51,7 +51,7 @@ export default function FocusButton({
         generic failure line.
       */}
       {refusal !== null && (
-        <p role="alert" className="max-w-60 text-right text-xs text-red-700">
+        <p role="alert" className="max-w-60 text-right text-xs text-destructive">
           {refusal.message}
         </p>
       )}

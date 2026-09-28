@@ -82,7 +82,7 @@ export default function ProductsPage() {
                     which is exactly how the studio came to show "Active" for something buyers
                     could not see. Only the two states a seller must act on render. */}
                 {PRODUCT_MODERATION_NOTICES[product.moderationState] !== null && (
-                  <p className="text-xs font-medium text-red-500">
+                  <p className="text-xs font-medium text-destructive">
                     {PRODUCT_MODERATION_NOTICES[product.moderationState]}
                   </p>
                 )}
@@ -91,7 +91,7 @@ export default function ProductsPage() {
                     looking in the wrong place. The row stays — nothing here is optimistic. */}
                 {deleteProductMutation.isError &&
                   deleteProductMutation.variables === product.id && (
-                    <p role="alert" className="text-xs font-medium text-red-500">
+                    <p role="alert" className="text-xs font-medium text-destructive">
                       {deleteProductMutation.error.message}
                     </p>
                   )}
@@ -130,7 +130,7 @@ export default function ProductsPage() {
                     type="button"
                     onClick={() => handleConfirmDelete(product.id)}
                     disabled={deleteProductMutation.isPending}
-                    className="cursor-pointer text-sm font-medium text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                    className="cursor-pointer text-sm font-medium text-destructive hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {deleteProductMutation.isPending ? "Deleting…" : "Confirm"}
                   </button>
@@ -156,7 +156,7 @@ export default function ProductsPage() {
                       deleteProductMutation.reset();
                       setConfirmingDeleteId(product.id);
                     }}
-                    className="cursor-pointer text-sm text-red-500 hover:underline"
+                    className="cursor-pointer text-sm text-destructive hover:underline"
                   >
                     Delete
                   </button>

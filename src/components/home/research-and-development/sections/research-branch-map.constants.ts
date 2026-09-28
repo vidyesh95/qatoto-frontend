@@ -30,7 +30,7 @@ export const BRANCH_STATUS_STYLES: Record<ResearchBranchStatus, BranchStatusStyl
   contested: {
     nodeBorderClassName: "border-destructive",
     statusDotClassName: "bg-destructive",
-    statusChipClassName: "bg-red-100 text-red-800",
+    statusChipClassName: "bg-destructive/10 text-destructive",
     edgeStrokeColor: "var(--destructive)",
   },
   // DASHED, and that is the point: a gap is drawn as an absence rather than as a colour, so it

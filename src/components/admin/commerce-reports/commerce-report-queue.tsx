@@ -344,7 +344,7 @@ function ReportCard({ report }: { readonly report: CommerceContentReport }) {
       )}
 
       {rowState.status === "refused" && (
-        <output role="alert" className="mt-2 block text-xs text-red-700">
+        <output role="alert" className="mt-2 block text-xs text-destructive">
           {rowState.message}
         </output>
       )}

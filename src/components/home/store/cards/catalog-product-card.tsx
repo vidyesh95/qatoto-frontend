@@ -58,7 +58,7 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
           `selling` renders nothing, like `in_stock`: the ordinary case on every tile is noise.
         */}
         {product.sellingState !== "selling" ? (
-          <span className="absolute top-2 left-2 rounded bg-destructive px-2 py-0.5 text-xs leading-4 font-medium tracking-wider text-white">
+          <span className="absolute top-2 left-2 rounded bg-destructive px-2 py-0.5 text-xs leading-4 font-medium tracking-wider text-destructive-foreground">
             {SELLING_STATE_LABELS[product.sellingState]}
           </span>
         ) : (

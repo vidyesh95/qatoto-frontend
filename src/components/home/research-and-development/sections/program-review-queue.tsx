@@ -92,6 +92,7 @@ function ReviewQueueRow({
         onChange={(event) => setReviewerNote(event.target.value)}
         maxLength={2000}
         placeholder="Your note — the submitter reads this"
+        aria-label={`Reviewer note for ${title}`}
         className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
       />
 

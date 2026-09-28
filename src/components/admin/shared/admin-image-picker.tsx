@@ -254,7 +254,7 @@ export function AdminImagePicker({
           <div className="space-y-2">
             <p
               role="alert"
-              className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+              className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
             >
               {pickState.message}
             </p>

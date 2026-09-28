@@ -5,6 +5,7 @@
 import { useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { useWorkshopTaskMutation } from "@/hooks/rnd/workshop";
 import { ApiRequestError } from "@/lib/http";
 import {
@@ -72,15 +73,19 @@ export default function WorkshopTaskComposer({
         );
       }}
     >
-      <input
-        required
-        value={title}
-        onChange={(changeEvent) => setTitle(changeEvent.target.value)}
-        placeholder="What needs doing?"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Task</span>
+        <input
+          required
+          value={title}
+          onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+          placeholder="What needs doing?"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
       <div className="flex flex-wrap gap-2">
         <select
+          aria-label="Column"
           value={columnId}
           onChange={(changeEvent) => setColumnId(changeEvent.target.value)}
           className="rounded-xl border border-outline-variant p-2 text-sm"
@@ -92,6 +97,7 @@ export default function WorkshopTaskComposer({
           ))}
         </select>
         <select
+          aria-label="Priority"
           value={priority}
           onChange={(changeEvent) => {
             const parsed = WorkshopTaskPrioritySchema.safeParse(changeEvent.target.value);

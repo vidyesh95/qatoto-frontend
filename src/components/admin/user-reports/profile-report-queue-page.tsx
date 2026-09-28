@@ -207,7 +207,7 @@ export default function ProfileReportQueuePage() {
                     type="button"
                     disabled={decideReportMutation.isPending}
                     onClick={() => handleDecide(report.reportId, "actioned")}
-                    className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                    className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
                   >
                     Hide the profile text
                   </button>

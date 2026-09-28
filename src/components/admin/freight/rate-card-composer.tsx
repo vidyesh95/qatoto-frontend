@@ -352,7 +352,7 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
               another.
             </p>
             {!isValidFromInFuture && validFromLocal.length > 0 && (
-              <p className="text-xs font-medium text-red-700">
+              <p className="text-xs font-medium text-destructive">
                 That start time is not in the future. This card&apos;s bands would be frozen
                 immediately.
               </p>
@@ -394,11 +394,13 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
           )}
 
           {localError !== null && (
-            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{localError}</p>
+            <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              {localError}
+            </p>
           )}
 
           {createResult !== undefined && !createResult.success && (
-            <div className="space-y-1 rounded-xl bg-red-50 p-3 text-sm text-red-800">
+            <div className="space-y-1 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
               <p className="font-medium">{createResult.error.message}</p>
               {renderFieldErrors(createResult.error.fieldErrors)}
             </div>

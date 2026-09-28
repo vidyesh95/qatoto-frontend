@@ -20,7 +20,7 @@ const EFFORT_VERIFICATION_STATUS_CLASSES: Record<EffortVerificationStatus, strin
   running: "bg-secondary text-foreground",
   verified: "bg-primary-imprint/10 text-primary-imprint",
   flagged_for_review: "bg-amber-100 text-amber-800",
-  unverified: "bg-red-100 text-red-800",
+  unverified: "bg-destructive/10 text-destructive",
 };
 
 /**

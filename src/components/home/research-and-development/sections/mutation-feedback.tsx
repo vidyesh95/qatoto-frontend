@@ -26,7 +26,7 @@ export function MutationErrorNotice({ error }: { error: ApiError }) {
   return (
     <div
       role="alert"
-      className="space-y-1 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+      className="space-y-1 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
     >
       <p>{error.message}</p>
       {fieldErrorEntries.length > 0 && (

@@ -158,6 +158,7 @@ export default function TeamManagementIsland({
                   [application.id]: changeEvent.target.value,
                 }))
               }
+              aria-label={`Note back to ${application.applicantName}`}
               placeholder="A note back to them (they will read this)"
               className={INPUT_CLASS}
             />
@@ -268,13 +269,16 @@ export default function TeamManagementIsland({
             </select>
           </label>
         )}
-        <textarea
-          rows={2}
-          value={inviteMessage}
-          onChange={(changeEvent) => setInviteMessage(changeEvent.target.value)}
-          placeholder="Why them? (optional)"
-          className={INPUT_CLASS}
-        />
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Message (optional)</span>
+          <textarea
+            rows={2}
+            value={inviteMessage}
+            onChange={(changeEvent) => setInviteMessage(changeEvent.target.value)}
+            placeholder="Why them? (optional)"
+            className={INPUT_CLASS}
+          />
+        </label>
         <button
           type="submit"
           disabled={inviteMutation.isPending}
@@ -366,27 +370,33 @@ export default function TeamManagementIsland({
               className={INPUT_CLASS}
             />
           </label>
-          <select
-            value={newRoleCommitment}
-            onChange={(changeEvent) => {
-              const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
-              if (parsed.success) setNewRoleCommitment(parsed.data);
-            }}
-            className={INPUT_CLASS}
-          >
-            {ROLE_COMMITMENTS.map((commitment) => (
-              <option key={commitment} value={commitment}>
-                {ROLE_COMMITMENT_LABELS[commitment]}
-              </option>
-            ))}
-          </select>
-          <textarea
-            rows={2}
-            value={newRoleDescription}
-            onChange={(changeEvent) => setNewRoleDescription(changeEvent.target.value)}
-            placeholder="What would they do?"
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Commitment</span>
+            <select
+              value={newRoleCommitment}
+              onChange={(changeEvent) => {
+                const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
+                if (parsed.success) setNewRoleCommitment(parsed.data);
+              }}
+              className={INPUT_CLASS}
+            >
+              {ROLE_COMMITMENTS.map((commitment) => (
+                <option key={commitment} value={commitment}>
+                  {ROLE_COMMITMENT_LABELS[commitment]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Role description (optional)</span>
+            <textarea
+              rows={2}
+              value={newRoleDescription}
+              onChange={(changeEvent) => setNewRoleDescription(changeEvent.target.value)}
+              placeholder="What would they do?"
+              className={INPUT_CLASS}
+            />
+          </label>
           <RoleCompensationComposer
             draft={compensationDraft}
             currency={currency}
@@ -436,6 +446,7 @@ export default function TeamManagementIsland({
             {!member.isFounder && (
               <span className="flex flex-wrap items-center gap-2">
                 <select
+                  aria-label={`Project role for ${member.name}`}
                   value={member.projectRole === "maintainer" ? "maintainer" : "contributor"}
                   onChange={(changeEvent) =>
                     memberMutation.mutate({

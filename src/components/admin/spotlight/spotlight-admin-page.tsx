@@ -186,7 +186,7 @@ export default function SpotlightAdminPage() {
         return (
           <p
             role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
           >
             {listState.message}
           </p>
@@ -272,7 +272,7 @@ export default function SpotlightAdminPage() {
                 ) : searchQuery.isPending ? (
                   <p className="text-sm text-muted-foreground">Searching…</p>
                 ) : searchQuery.isError ? (
-                  <p role="alert" className="text-sm text-red-800">
+                  <p role="alert" className="text-sm text-destructive">
                     {searchQuery.error instanceof ApiRequestError
                       ? searchQuery.error.apiError.message
                       : "Search failed."}

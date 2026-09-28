@@ -70,7 +70,7 @@ export class SidebarPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.root = page.locator("aside");
+    this.root = page.getByRole("complementary", { name: "Sidebar" });
   }
 
   navLink(label: SidebarLabel): Locator {

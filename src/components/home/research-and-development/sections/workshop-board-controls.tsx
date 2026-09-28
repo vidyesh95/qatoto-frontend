@@ -120,6 +120,7 @@ export default function WorkshopBoardControls({
               >
                 <input
                   required
+                  aria-label={`New name for ${column.title}`}
                   value={renameTitle}
                   onChange={(changeEvent) => setRenameTitle(changeEvent.target.value)}
                   className={INPUT_CLASS}
@@ -140,6 +141,7 @@ export default function WorkshopBoardControls({
                   <li key={task.id} className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="min-w-0 flex-1 truncate">{task.title}</span>
                     <select
+                      aria-label={`Move ${task.title} to column`}
                       value={column.id}
                       onChange={(changeEvent) =>
                         taskMutation.mutate({

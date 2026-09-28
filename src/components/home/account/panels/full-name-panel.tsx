@@ -106,7 +106,7 @@ export function FullNamePanel({ initialFullName, onBack }: FullNamePanelProps) {
             This is the name shown on your profile. You can change it anytime.
           </span>
           {saveState.status === "error" ? (
-            <span className="text-xs text-red-600">{saveState.message}</span>
+            <span className="text-xs text-destructive">{saveState.message}</span>
           ) : null}
         </label>
 

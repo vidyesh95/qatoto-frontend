@@ -237,7 +237,7 @@ function RateCardsPanel({
       )}
 
       {cardsList.firstPageErrorMessage !== null && (
-        <p className="rounded-xl bg-red-50 p-3 text-sm text-red-800">
+        <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
           {cardsList.firstPageErrorMessage}
         </p>
       )}
@@ -297,7 +297,7 @@ function RateCardsPanel({
       )}
 
       {cardsList.loadMoreErrorMessage !== null && (
-        <p className="text-xs text-red-800">{cardsList.loadMoreErrorMessage}</p>
+        <p className="text-xs text-destructive">{cardsList.loadMoreErrorMessage}</p>
       )}
     </section>
   );

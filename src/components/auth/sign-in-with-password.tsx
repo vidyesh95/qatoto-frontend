@@ -202,7 +202,9 @@ export default function SignIn() {
               </div>
             </label>
           </div>
-          {errorMessage && <p className="pl-4 text-sm font-medium text-red-600">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="pl-4 text-sm font-medium text-destructive">{errorMessage}</p>
+          )}
           <button
             type="submit"
             className={

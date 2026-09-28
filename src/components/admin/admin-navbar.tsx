@@ -25,6 +25,7 @@ export default function AdminNavbar({ accountSlot }: { accountSlot: ReactNode })
           >
             <Image
               src={"/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+              className="dark:invert"
               alt={"toggle sidebar"}
               width={24}
               height={24}
@@ -47,7 +48,7 @@ export default function AdminNavbar({ accountSlot }: { accountSlot: ReactNode })
           </div>
         </div>
 
-        <div className="flex items-center gap-x-2 text-black">{accountSlot}</div>
+        <div className="flex items-center gap-x-2 text-foreground">{accountSlot}</div>
       </div>
     </nav>
   );

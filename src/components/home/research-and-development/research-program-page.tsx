@@ -170,7 +170,7 @@ export default async function ResearchProgramPage({
 
       {program.status === "rejected" && program.reviewerNote && (
         <div className="px-4 lg:px-6">
-          <div className="space-y-1 rounded-2xl bg-red-50 p-4 text-sm text-red-900">
+          <div className="space-y-1 rounded-2xl bg-destructive/10 p-4 text-sm text-destructive">
             <p className="font-medium">This programme was not published.</p>
             <p>{program.reviewerNote}</p>
           </div>

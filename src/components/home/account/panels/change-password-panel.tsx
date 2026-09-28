@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
 
 /**
@@ -39,6 +39,13 @@ const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as 
 export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
   const { data: session } = useSession();
   const email = session?.user.email ?? "";
+  const currentPasswordInputId = useId();
+  const newPasswordInputId = useId();
+  const newPasswordHintId = useId();
+  const newPasswordErrorId = useId();
+  const resetPasswordInputId = useId();
+  const resetPasswordHintId = useId();
+  const resetPasswordErrorId = useId();
 
   const [changePasswordState, setChangePasswordState] = useState<ChangePasswordState>({
     status: "current-form",
@@ -192,12 +199,17 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
             <span className="font-medium">{email}</span>.
           </p>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">Current password</span>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor={currentPasswordInputId}
+              className="text-sm font-medium text-secondary-foreground"
+            >
+              Current password
+            </label>
             <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
               <input
+                id={currentPasswordInputId}
                 type={isCurrentPasswordVisible ? "text" : "password"}
-                aria-label="Current password"
                 autoComplete="current-password"
                 value={currentPassword}
                 onChange={(inputEvent) => {
@@ -228,14 +240,24 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
                 />
               </button>
             </div>
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">New password</span>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor={newPasswordInputId}
+              className="text-sm font-medium text-secondary-foreground"
+            >
+              New password
+            </label>
             <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
               <input
+                id={newPasswordInputId}
                 type={isNewPasswordVisible ? "text" : "password"}
-                aria-label="New password"
+                aria-describedby={
+                  changePasswordState.status === "current-error"
+                    ? `${newPasswordHintId} ${newPasswordErrorId}`
+                    : newPasswordHintId
+                }
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(inputEvent) => {
@@ -266,11 +288,15 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
                 />
               </button>
             </div>
-            <span className="text-xs text-muted-foreground">Must be at least 8 characters.</span>
+            <span id={newPasswordHintId} className="text-xs text-muted-foreground">
+              Must be at least 8 characters.
+            </span>
             {changePasswordState.status === "current-error" ? (
-              <span className="text-xs text-red-600">{changePasswordState.message}</span>
+              <span id={newPasswordErrorId} className="text-xs text-destructive">
+                {changePasswordState.message}
+              </span>
             ) : null}
-          </label>
+          </div>
 
           <div className="flex items-center justify-between gap-4">
             <label htmlFor="change-pw-remember-me" className="w-full text-sm font-medium">
@@ -380,12 +406,22 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
             ))}
           </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">New password</span>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor={resetPasswordInputId}
+              className="text-sm font-medium text-secondary-foreground"
+            >
+              New password
+            </label>
             <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
               <input
+                id={resetPasswordInputId}
                 type={isNewPasswordVisible ? "text" : "password"}
-                aria-label="New password"
+                aria-describedby={
+                  changePasswordState.status === "otp-error"
+                    ? `${resetPasswordHintId} ${resetPasswordErrorId}`
+                    : resetPasswordHintId
+                }
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(inputEvent) => {
@@ -416,11 +452,15 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
                 />
               </button>
             </div>
-            <span className="text-xs text-muted-foreground">Must be at least 8 characters.</span>
+            <span id={resetPasswordHintId} className="text-xs text-muted-foreground">
+              Must be at least 8 characters.
+            </span>
             {changePasswordState.status === "otp-error" ? (
-              <span className="text-xs text-red-600">{changePasswordState.message}</span>
+              <span id={resetPasswordErrorId} className="text-xs text-destructive">
+                {changePasswordState.message}
+              </span>
             ) : null}
-          </label>
+          </div>
 
           <button
             type="submit"
@@ -463,7 +503,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
               We&apos;ll send a 6-digit code to your account email so you can set a new password.
             </span>
             {changePasswordState.status === "otp-start-error" ? (
-              <span className="text-xs text-red-600">{changePasswordState.message}</span>
+              <span className="text-xs text-destructive">{changePasswordState.message}</span>
             ) : null}
           </div>
 

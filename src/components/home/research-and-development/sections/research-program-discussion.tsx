@@ -102,6 +102,7 @@ export default function ResearchProgramDiscussion({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={200}
+              aria-label="Post title"
               placeholder="A title for your post"
               className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
             />
@@ -113,6 +114,7 @@ export default function ResearchProgramDiscussion({
             onChange={(event) => setBodyText(event.target.value)}
             maxLength={10_000}
             rows={3}
+            aria-label={isTitled ? "Your argument" : "Your idea"}
             placeholder={isTitled ? "What are you arguing?" : "What should we try?"}
             className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
           />

@@ -65,6 +65,7 @@ export default function WorkshopChatComposer({
         rows={2}
         value={bodyText}
         onChange={(changeEvent) => setBodyText(changeEvent.target.value)}
+        aria-label="Message your team"
         placeholder="Message your team"
         className="w-full rounded-xl border border-outline-variant p-2 text-sm"
       />

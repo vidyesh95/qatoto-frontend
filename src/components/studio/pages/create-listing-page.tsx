@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useStoreCategoryAttributesQuery } from "@/hooks/store/categories";
 import { useSourcingQuoteLinesQuery } from "@/hooks/store/sourcing";
 import type { CategoryAttribute } from "@/lib/store/catalog.schemas";
@@ -403,6 +403,7 @@ function RelationRows({
           >
             <span className="flex-1 text-sm">{relation.toProductTitle}</span>
             <select
+              aria-label={`Relation kind for ${relation.toProductTitle}`}
               value={relation.relationKind}
               onChange={(changeEvent) => {
                 const chosen = PRODUCT_RELATION_KINDS.find(
@@ -583,6 +584,7 @@ interface SpecificationDraft {
 // Submits through the /products API: create draft -> upload each image -> publish.
 export default function CreateListingPage({ productId }: { productId?: string }) {
   const router = useRouter();
+  const specificationFieldIdPrefix = useId();
   const isEditMode = Boolean(productId);
 
   const productQuery = useProductQuery(productId);
@@ -2718,8 +2720,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
                     >
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">Name</span>
+                        <label
+                          htmlFor={`${specificationFieldIdPrefix}-${specification.id}-name`}
+                          className="text-xs font-medium text-muted-foreground"
+                        >
+                          Name
+                        </label>
                         <input
+                          id={`${specificationFieldIdPrefix}-${specification.id}-name`}
                           type="text"
                           value={specification.key}
                           maxLength={PRODUCT_SPECIFICATION_KEY_MAX_LENGTH}
@@ -2731,8 +2739,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">Value</span>
+                        <label
+                          htmlFor={`${specificationFieldIdPrefix}-${specification.id}-value`}
+                          className="text-xs font-medium text-muted-foreground"
+                        >
+                          Value
+                        </label>
                         <input
+                          id={`${specificationFieldIdPrefix}-${specification.id}-value`}
                           type="text"
                           value={specification.value}
                           maxLength={PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH}
@@ -2748,12 +2762,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
+                        <label
+                          htmlFor={`${specificationFieldIdPrefix}-${specification.id}-group`}
+                          className="text-xs font-medium text-muted-foreground"
+                        >
                           Group (optional)
-                        </span>
+                        </label>
                         {/* Free text, and it becomes a TAB on the buyer's spec sheet. Blank means
                             ungrouped, which is a real answer rather than a missing one. */}
                         <input
+                          id={`${specificationFieldIdPrefix}-${specification.id}-group`}
                           type="text"
                           value={specification.group}
                           maxLength={PRODUCT_SPECIFICATION_GROUP_MAX_LENGTH}
@@ -3130,6 +3148,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           handleHighlightTextChange(highlightIndex, "title", event.target.value)
                         }
                         placeholder="Heading — e.g. Solid oak, not veneer"
+                        aria-label={`Block ${String(highlightIndex + 1)} heading`}
                         className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                       />
                       <textarea
@@ -3140,6 +3159,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         }
                         rows={3}
                         placeholder="What a buyer should know about this point."
+                        aria-label={`Block ${String(highlightIndex + 1)} text`}
                         className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
                       />
 
@@ -3247,6 +3267,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   </span>
                   <div className="flex items-center gap-2">
                     <select
+                      aria-label={`Document kind for ${pending.file.name}`}
                       value={pending.documentKind}
                       onChange={(changeEvent) => {
                         // Parsed, not asserted: the value comes off a DOM element, which is
@@ -4066,7 +4087,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       {isLastStep && localError !== null && (
         <p
           role="alert"
-          className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500"
+          className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {localError}
         </p>
@@ -4140,7 +4161,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
  */
 function PublishRefusalNotice({ refusal }: { refusal: ProductPublishRefusal }) {
   const containerClassName =
-    "mt-4 space-y-1 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500";
+    "mt-4 space-y-1 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive";
 
   switch (refusal.kind) {
     case "incomplete":
@@ -4238,7 +4259,7 @@ function ListingCompletenessChecklist({
               <span
                 aria-hidden
                 className={`flex size-4 shrink-0 items-center justify-center rounded-full text-xs ${
-                  isSatisfied ? "bg-primary text-background" : "border border-red-500/60"
+                  isSatisfied ? "bg-primary text-background" : "border border-destructive/60"
                 }`}
               >
                 {isSatisfied ? "✓" : ""}
@@ -4437,6 +4458,7 @@ function PricingTierRows({
   readonly onTierChange: (tierIndex: number, field: keyof PricingTierDraft, value: string) => void;
   readonly onRemoveTier: (tierIndex: number) => void;
 }) {
+  const tierFieldIdPrefix = useId();
   if (tiers.length === 0) return null;
 
   return (
@@ -4447,10 +4469,16 @@ function PricingTierRows({
           className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3"
         >
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Unit price</span>
+            <label
+              htmlFor={`${tierFieldIdPrefix}-${tier.id}-unit-price`}
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Unit price
+            </label>
             <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-primary-imprint">
               <span className="mr-2 text-sm text-muted-foreground">$</span>
               <input
+                id={`${tierFieldIdPrefix}-${tier.id}-unit-price`}
                 type="number"
                 min="0"
                 step="0.01"
@@ -4464,8 +4492,14 @@ function PricingTierRows({
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Min. quantity</span>
+            <label
+              htmlFor={`${tierFieldIdPrefix}-${tier.id}-minimum-quantity`}
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Min. quantity
+            </label>
             <input
+              id={`${tierFieldIdPrefix}-${tier.id}-minimum-quantity`}
               type="number"
               min="1"
               value={tier.minimumOrderQuantity}
@@ -4478,8 +4512,14 @@ function PricingTierRows({
           </div>
           {/* A27. Blank is a real answer — it means the listing's own lead time applies. */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Lead time (days)</span>
+            <label
+              htmlFor={`${tierFieldIdPrefix}-${tier.id}-lead-time`}
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Lead time (days)
+            </label>
             <input
+              id={`${tierFieldIdPrefix}-${tier.id}-lead-time`}
               type="number"
               min="0"
               max="3650"
@@ -4599,10 +4639,13 @@ function SourcingQuoteLinePicker({
   const lines: readonly SourcingQuoteLine[] =
     result !== undefined && result.success ? result.data.items : [];
   const selectedLine = lines.find((line) => line.quoteProductLineId === selectedId) ?? null;
+  const sourcingQuoteSelectId = useId();
 
   return (
     <div className="flex flex-col gap-1.5 border-t border-border pt-6">
-      <span className="text-sm font-medium text-foreground">What these goods cost you</span>
+      <label htmlFor={sourcingQuoteSelectId} className="text-sm font-medium text-foreground">
+        What these goods cost you
+      </label>
       <p className="text-xs text-muted-foreground">
         Optional. Link the accepted quote you sourced these goods under, and Studio can show what
         they cost beside what they earned. Nothing is published to buyers.
@@ -4625,6 +4668,7 @@ function SourcingQuoteLinePicker({
       ) : (
         <>
           <select
+            id={sourcingQuoteSelectId}
             value={selectedId ?? ""}
             onChange={(event) => onSelect(event.target.value === "" ? null : event.target.value)}
             className="mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"

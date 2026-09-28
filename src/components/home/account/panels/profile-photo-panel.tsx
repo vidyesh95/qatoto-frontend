@@ -362,7 +362,7 @@ export function ProfilePhotoPanel({
             JPEG, PNG, or WebP up to 5 MB. Replaces any photo from a linked account.
           </span>
           {uploadState.status === "error" ? (
-            <span className="text-xs text-red-600">{uploadState.message}</span>
+            <span className="text-xs text-destructive">{uploadState.message}</span>
           ) : null}
         </div>
 
@@ -379,7 +379,7 @@ export function ProfilePhotoPanel({
             type="button"
             onClick={handleRemove}
             disabled={isBusy}
-            className="cursor-pointer rounded-full border border-red-200 px-4 py-3 text-sm font-medium text-red-600 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-full border border-destructive/40 px-4 py-3 text-sm font-medium text-destructive transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isRemoving ? "Removing…" : "Remove photo"}
           </button>

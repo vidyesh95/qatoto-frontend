@@ -183,12 +183,12 @@ export default function AuditHashInputInspector({
             below hash to the entry hash below.
           </p>
         ) : (
-          <div className="space-y-1 rounded-lg bg-red-50 p-2">
-            <p className="text-xs font-medium text-red-900">
+          <div className="space-y-1 rounded-lg bg-destructive/10 p-2">
+            <p className="text-xs font-medium text-destructive">
               Recomputed in your browser and it does NOT match. Treat this as an operational
               emergency and report it — do not dismiss it.
             </p>
-            <p className="font-mono text-xs break-all text-red-900">
+            <p className="font-mono text-xs break-all text-destructive">
               got {localDigestState.digestHex}
             </p>
           </div>

@@ -94,6 +94,7 @@ export default function StoreProductsPicker({
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search your store products"
+                aria-label="Search your store products"
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>

@@ -231,7 +231,7 @@ export default function StoreCategoryAdminPage() {
         return (
           <p
             role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
           >
             {treeState.message}
           </p>
@@ -721,7 +721,7 @@ function CategoryRow({
                   retireCategory.mutate(category.id);
                   setIsConfirmingRetire(false);
                 }}
-                className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Confirm retire
               </button>
@@ -1160,7 +1160,7 @@ function RequestQueueSection({
         return (
           <p
             role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
           >
             {state.message}
           </p>
@@ -1361,6 +1361,7 @@ function PendingRequestCard({
                   <li key={waitingProduct.id} className="flex flex-wrap items-center gap-2">
                     <span className="min-w-40 flex-1 truncate">{waitingProduct.title}</span>
                     <select
+                      aria-label={`Target category for ${waitingProduct.title}`}
                       value={productTargets[waitingProduct.id] ?? ""}
                       onChange={(changeEvent) =>
                         setProductTargets((previousTargets) => ({

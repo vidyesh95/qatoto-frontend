@@ -131,12 +131,15 @@ export default function DisputeActionsIsland({
             ))}
           </select>
         </label>
-        <input
-          value={voteNote}
-          onChange={(changeEvent) => setVoteNote(changeEvent.target.value)}
-          placeholder="Why (optional)"
-          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-        />
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">Reason for your vote (optional)</span>
+          <input
+            value={voteNote}
+            onChange={(changeEvent) => setVoteNote(changeEvent.target.value)}
+            placeholder="Why (optional)"
+            className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+          />
+        </label>
         <p className="text-xs text-muted-foreground">
           One vote each. A simple majority of the frozen quorum settles the dispute immediately, so
           yours may be the one that ends it.
@@ -195,14 +198,17 @@ export default function DisputeActionsIsland({
             </select>
           </label>
 
-          <textarea
-            required
-            rows={2}
-            value={resolutionNote}
-            onChange={(changeEvent) => setResolutionNote(changeEvent.target.value)}
-            placeholder="What did the team decide, and why?"
-            className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-          />
+          <label className="block space-y-1">
+            <span className="text-xs text-muted-foreground">Resolution note</span>
+            <textarea
+              required
+              rows={2}
+              value={resolutionNote}
+              onChange={(changeEvent) => setResolutionNote(changeEvent.target.value)}
+              placeholder="What did the team decide, and why?"
+              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+            />
+          </label>
 
           {resolution === "re_verified" && (
             <div className="grid gap-2 sm:grid-cols-2">

@@ -142,7 +142,7 @@ export default function VideoEngagementBar({
         </span>
       </div>
       {refusal !== null && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-xs text-destructive">
           {refusal.message}
         </p>
       )}

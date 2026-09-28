@@ -305,7 +305,7 @@ function MetadataSection({
       )}
 
       {localError !== null && (
-        <output role="alert" className="mt-2 block text-xs text-red-700">
+        <output role="alert" className="mt-2 block text-xs text-destructive">
           {localError}
         </output>
       )}
@@ -477,7 +477,7 @@ function PlanSection({
         </p>
       )}
       {savePlan.data?.success === false && savedSlotCount !== null && (
-        <p className="mt-2 text-xs text-red-700">
+        <p className="mt-2 text-xs text-destructive">
           {/* A partial save is stated rather than hidden: there is no transaction across these
               writes, so stopping halfway is a real outcome the author has to be able to see. */}
           It stopped after {savedSlotCount} of {slots.length} pieces. Press save again to finish —

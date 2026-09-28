@@ -768,6 +768,7 @@ function InviteCollaboratorOverlay({
               }
             }}
             placeholder="collaborator@company.com"
+            aria-label="Collaborator email"
             className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary-imprint"
           />
           <button

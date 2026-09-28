@@ -107,7 +107,7 @@ export default function SaveToPlaylistSheet({ videoId, onClose }: SaveToPlaylist
       // states about its own queue: "nothing here" and "we could not ask" are different
       // answers, and a signed-out viewer meeting the first one has nothing to act on.
       return (
-        <p role="alert" className="px-4 py-6 text-sm text-red-700">
+        <p role="alert" className="px-4 py-6 text-sm text-destructive">
           {describeEngagementError(myPlaylistsQuery.error).message}
         </p>
       );
@@ -210,7 +210,7 @@ export default function SaveToPlaylistSheet({ videoId, onClose }: SaveToPlaylist
         <div className="min-h-0 flex-1 overflow-y-auto">{renderPlaylistRows()}</div>
 
         {refusal !== null && (
-          <p role="alert" className="shrink-0 px-4 py-2 text-xs text-red-700">
+          <p role="alert" className="shrink-0 px-4 py-2 text-xs text-destructive">
             {refusal.message}
           </p>
         )}

@@ -219,35 +219,41 @@ export default function ClaimSubmitIsland({
 
       <div className="space-y-2 border-t border-outline-variant/40 pt-3">
         <span className={LABEL_CLASS}>Upload a receipt</span>
-        <select
-          value={receiptKind}
-          onChange={(changeEvent) => {
-            const parsed = PhysicalReceiptKindSchema.safeParse(changeEvent.target.value);
-            if (parsed.success) setReceiptKind(parsed.data);
-          }}
-          className={INPUT_CLASS}
-        >
-          {PHYSICAL_RECEIPT_KINDS.map((kind) => (
-            <option key={kind} value={kind}>
-              {RECEIPT_KIND_LABELS[kind]}
-            </option>
-          ))}
-        </select>
-        <input
-          type="file"
-          accept="image/*,.dwg,.dxf,.step,.stl"
-          onChange={(changeEvent) => {
-            const receiptFile = changeEvent.target.files?.[0];
-            if (!receiptFile) return;
-            uploadMutation.mutate(
-              { receiptFile, receiptKind, idempotencyKey: uploadIdempotencyKey },
-              // A NEW KEY FOR THE NEXT FILE. The one just used belongs to this upload;
-              // reusing it would make a genuinely different receipt look like a retry.
-              { onSuccess: () => setUploadIdempotencyKey(newIdempotencyKey()) },
-            );
-          }}
-          className="text-sm"
-        />
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Receipt kind</span>
+          <select
+            value={receiptKind}
+            onChange={(changeEvent) => {
+              const parsed = PhysicalReceiptKindSchema.safeParse(changeEvent.target.value);
+              if (parsed.success) setReceiptKind(parsed.data);
+            }}
+            className={INPUT_CLASS}
+          >
+            {PHYSICAL_RECEIPT_KINDS.map((kind) => (
+              <option key={kind} value={kind}>
+                {RECEIPT_KIND_LABELS[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Receipt file</span>
+          <input
+            type="file"
+            accept="image/*,.dwg,.dxf,.step,.stl"
+            onChange={(changeEvent) => {
+              const receiptFile = changeEvent.target.files?.[0];
+              if (!receiptFile) return;
+              uploadMutation.mutate(
+                { receiptFile, receiptKind, idempotencyKey: uploadIdempotencyKey },
+                // A NEW KEY FOR THE NEXT FILE. The one just used belongs to this upload;
+                // reusing it would make a genuinely different receipt look like a retry.
+                { onSuccess: () => setUploadIdempotencyKey(newIdempotencyKey()) },
+              );
+            }}
+            className="text-sm"
+          />
+        </label>
         <p className="text-xs text-muted-foreground">
           Size, hashes and the capture time are measured from the file itself — nothing about it is
           taken from this form. A near-duplicate of an image already uploaded is refused.

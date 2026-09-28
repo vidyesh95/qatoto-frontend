@@ -174,20 +174,23 @@ export default function CompensationAgreementIsland({
             </select>
           </label>
 
-          <select
-            value={engagementKind}
-            onChange={(changeEvent) => {
-              const parsed = EngagementKindSchema.safeParse(changeEvent.target.value);
-              if (parsed.success) setEngagementKind(parsed.data);
-            }}
-            className={INPUT_CLASS}
-          >
-            {ENGAGEMENT_KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {ENGAGEMENT_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </select>
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Engagement kind</span>
+            <select
+              value={engagementKind}
+              onChange={(changeEvent) => {
+                const parsed = EngagementKindSchema.safeParse(changeEvent.target.value);
+                if (parsed.success) setEngagementKind(parsed.data);
+              }}
+              className={INPUT_CLASS}
+            >
+              {ENGAGEMENT_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {ENGAGEMENT_KIND_LABELS[kind]}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <fieldset className="flex gap-4 text-sm">
             <label className="flex items-center gap-1.5">
@@ -210,36 +213,47 @@ export default function CompensationAgreementIsland({
             </label>
           </fieldset>
 
-          <input
-            required
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={amountInCents}
-            onChange={(changeEvent) => setAmountInCents(changeEvent.target.value)}
-            placeholder={
-              basis === "monthly"
-                ? "Amount per month, in whole cents"
-                : "Rate per hour, in whole cents"
-            }
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>
+              {basis === "monthly" ? "Amount per month in cents" : "Rate per hour in cents"}
+            </span>
+            <input
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={amountInCents}
+              onChange={(changeEvent) => setAmountInCents(changeEvent.target.value)}
+              placeholder={
+                basis === "monthly"
+                  ? "Amount per month, in whole cents"
+                  : "Rate per hour, in whole cents"
+              }
+              className={INPUT_CLASS}
+            />
+          </label>
 
-          <input
-            required
-            type="date"
-            value={effectiveFrom}
-            onChange={(changeEvent) => setEffectiveFrom(changeEvent.target.value)}
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Effective from</span>
+            <input
+              required
+              type="date"
+              value={effectiveFrom}
+              onChange={(changeEvent) => setEffectiveFrom(changeEvent.target.value)}
+              className={INPUT_CLASS}
+            />
+          </label>
 
-          <textarea
-            required
-            rows={2}
-            value={rationaleNote}
-            onChange={(changeEvent) => setRationaleNote(changeEvent.target.value)}
-            placeholder="Why this figure?"
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Rationale</span>
+            <textarea
+              required
+              rows={2}
+              value={rationaleNote}
+              onChange={(changeEvent) => setRationaleNote(changeEvent.target.value)}
+              placeholder="Why this figure?"
+              className={INPUT_CLASS}
+            />
+          </label>
 
           <p className="text-xs text-muted-foreground">
             One basis or the other, never both. The currency comes from the project. An hourly rate

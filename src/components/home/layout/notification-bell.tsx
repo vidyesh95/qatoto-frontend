@@ -97,10 +97,11 @@ export default function NotificationBell({
         aria-label={unreadCount === null ? "Notifications" : `Notifications, ${unreadCount} unread`}
         aria-expanded={isPanelOpen}
         onClick={() => setIsPanelOpen((isOpen) => !isOpen)}
-        className={"relative cursor-pointer rounded-full border border-primary bg-white p-1.75"}
+        className={"relative cursor-pointer rounded-full border border-primary bg-card p-1.75"}
       >
         <Image
           src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+          className="dark:invert"
           alt={""}
           width={24}
           height={24}

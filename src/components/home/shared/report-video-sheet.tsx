@@ -200,7 +200,7 @@ export default function ReportVideoSheet({ videoId, title, onClose }: ReportVide
             </div>
 
             {refusal !== null && (
-              <p role="alert" className="shrink-0 px-4 pb-2 text-xs text-red-700">
+              <p role="alert" className="shrink-0 px-4 pb-2 text-xs text-destructive">
                 {refusal.message}
               </p>
             )}

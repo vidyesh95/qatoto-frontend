@@ -5,6 +5,7 @@
 import { useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { useWorkshopFileMutation } from "@/hooks/rnd/workshop";
 import { ApiRequestError } from "@/lib/http";
 import {
@@ -63,35 +64,44 @@ export default function WorkshopFileLinker({ projectSlug }: { projectSlug: strin
         );
       }}
     >
-      <input
-        required
-        value={fileName}
-        onChange={(changeEvent) => setFileName(changeEvent.target.value)}
-        placeholder="What is it called?"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
-      <input
-        required
-        type="url"
-        value={externalUrl}
-        onChange={(changeEvent) => setExternalUrl(changeEvent.target.value)}
-        placeholder="https://…"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
-      <select
-        value={fileKind}
-        onChange={(changeEvent) => {
-          const parsed = WorkshopFileKindSchema.safeParse(changeEvent.target.value);
-          if (parsed.success) setFileKind(parsed.data);
-        }}
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      >
-        {WORKSHOP_FILE_KINDS.map((kind) => (
-          <option key={kind} value={kind}>
-            {kind.replaceAll("_", " ")}
-          </option>
-        ))}
-      </select>
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>File name</span>
+        <input
+          required
+          value={fileName}
+          onChange={(changeEvent) => setFileName(changeEvent.target.value)}
+          placeholder="What is it called?"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Link</span>
+        <input
+          required
+          type="url"
+          value={externalUrl}
+          onChange={(changeEvent) => setExternalUrl(changeEvent.target.value)}
+          placeholder="https://…"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Kind of file</span>
+        <select
+          value={fileKind}
+          onChange={(changeEvent) => {
+            const parsed = WorkshopFileKindSchema.safeParse(changeEvent.target.value);
+            if (parsed.success) setFileKind(parsed.data);
+          }}
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        >
+          {WORKSHOP_FILE_KINDS.map((kind) => (
+            <option key={kind} value={kind}>
+              {kind.replaceAll("_", " ")}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="text-xs text-muted-foreground">
         Qatoto stores the link, not the file. The document stays wherever your team already keeps
         it, and its address cannot be changed afterwards — a new target is a new file.

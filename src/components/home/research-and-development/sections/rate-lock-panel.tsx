@@ -234,21 +234,27 @@ export default function RateLockPanel({
               cash means every hour is equity.
             </span>
           </label>
-          <input
-            required
-            type="date"
-            value={effectiveFrom}
-            onChange={(changeEvent) => setEffectiveFrom(changeEvent.target.value)}
-            className={INPUT_CLASS}
-          />
-          <textarea
-            required
-            rows={2}
-            value={rationaleNote}
-            onChange={(changeEvent) => setRationaleNote(changeEvent.target.value)}
-            placeholder="How was this number arrived at?"
-            className={INPUT_CLASS}
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Effective from</span>
+            <input
+              required
+              type="date"
+              value={effectiveFrom}
+              onChange={(changeEvent) => setEffectiveFrom(changeEvent.target.value)}
+              className={INPUT_CLASS}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Rationale</span>
+            <textarea
+              required
+              rows={2}
+              value={rationaleNote}
+              onChange={(changeEvent) => setRationaleNote(changeEvent.target.value)}
+              placeholder="How was this number arrived at?"
+              className={INPUT_CLASS}
+            />
+          </label>
           {/* No currency field: it comes from the project, because a client-chosen one
               would let a $120/h rate be re-read as ¥120/h. */}
           <p className="text-xs text-muted-foreground">

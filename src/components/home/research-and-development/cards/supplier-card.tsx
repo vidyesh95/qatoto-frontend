@@ -17,7 +17,7 @@ const VERIFICATION_STATE_BADGE_CLASS: Record<SupplierVerificationState, string> 
   verified: "bg-primary-imprint/10 text-primary-imprint",
   documents_pending: "bg-amber-100 text-amber-800",
   unverified: "bg-muted text-muted-foreground",
-  suspended: "bg-red-100 text-red-800",
+  suspended: "bg-destructive/10 text-destructive",
 };
 
 // Composed from integers, so the sentence localizes with the client. A null lead time

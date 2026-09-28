@@ -25,6 +25,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
           >
             <Image
               src="/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              className="dark:invert"
               alt="toggle sidebar"
               width={24}
               height={24}
@@ -55,14 +56,14 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
               name="query"
               aria-label="Search"
               placeholder="Search"
-              className="w-64 rounded-l-full border border-primary bg-white py-1.75 pl-4 focus:w-72 focus:pl-10 lg:w-101 lg:focus:w-107"
+              className="w-64 rounded-l-full border border-primary bg-card py-1.75 pl-4 focus:w-72 focus:pl-10 lg:w-101 lg:focus:w-107"
             />
             <Image
               src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""
               width={24}
               height={24}
-              className="absolute top-2 left-2 hidden group-focus-within:block"
+              className="absolute top-2 left-2 hidden group-focus-within:block dark:invert"
             />
             <button
               type="submit"
@@ -71,6 +72,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
             >
               <Image
                 src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                className="dark:invert"
                 alt="Search"
                 width={24}
                 height={24}
@@ -84,6 +86,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
           >
             <Image
               src="/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              className="dark:invert"
               alt="Voice input"
               width={24}
               height={24}
@@ -92,14 +95,15 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-x-2 text-black">
+        <div className="flex items-center gap-x-2 text-foreground">
           <Link
             href="/search"
             aria-label="Search"
-            className="cursor-pointer rounded-full border border-primary bg-white p-1.75 xl:hidden"
+            className="cursor-pointer rounded-full border border-primary bg-card p-1.75 xl:hidden"
           >
             <Image
               src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              className="dark:invert"
               alt="Search"
               width={24}
               height={24}

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { z } from "zod";
 import { authClient, useSession } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/api";
@@ -70,6 +70,9 @@ type EmailCredentialPanelProps = {
 export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
   const { data: session, refetch } = useSession();
   const email = session?.user.email ?? "";
+  const passwordInputId = useId();
+  const passwordHintId = useId();
+  const passwordErrorId = useId();
 
   const [credentialState, setCredentialState] = useState<CredentialState>({ status: "loading" });
   const [unlinkState, setUnlinkState] = useState<UnlinkState>({ status: "idle" });
@@ -263,7 +266,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
               <button
                 type="button"
                 onClick={() => handleUnlinkCredential(credentialState.accountId)}
-                className="flex w-full cursor-pointer items-center justify-center rounded-full bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                className="flex w-full cursor-pointer items-center justify-center rounded-full bg-destructive px-4 py-3 text-sm font-medium text-destructive-foreground transition-opacity hover:opacity-90"
               >
                 Disconnect email &amp; password
               </button>
@@ -279,19 +282,19 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             <button
               type="button"
               disabled
-              className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 opacity-50"
+              className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-destructive/40 px-4 py-3 text-sm font-medium text-destructive opacity-50"
             >
               Disconnecting…
             </button>
           ) : (
             <div className="flex w-full flex-col gap-2">
               {unlinkState.status === "error" ? (
-                <p className="text-center text-sm text-red-600">{unlinkState.message}</p>
+                <p className="text-center text-sm text-destructive">{unlinkState.message}</p>
               ) : null}
               <button
                 type="button"
                 onClick={() => setUnlinkState({ status: "confirming" })}
-                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-destructive/40 px-4 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
               >
                 Disconnect email &amp; password
               </button>
@@ -337,12 +340,22 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             ))}
           </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">Password</span>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor={passwordInputId}
+              className="text-sm font-medium text-secondary-foreground"
+            >
+              Password
+            </label>
             <div className="flex flex-row items-center gap-1 rounded-xl border border-black/10 bg-card px-4 py-3 focus-within:border-primary">
               <input
+                id={passwordInputId}
                 type={isPasswordVisible ? "text" : "password"}
-                aria-label="Password"
+                aria-describedby={
+                  flowState.status === "verify-error"
+                    ? `${passwordHintId} ${passwordErrorId}`
+                    : passwordHintId
+                }
                 autoComplete="new-password"
                 value={password}
                 onChange={(inputEvent) => {
@@ -371,11 +384,15 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
                 />
               </button>
             </div>
-            <span className="text-xs text-muted-foreground">Must be at least 8 characters.</span>
+            <span id={passwordHintId} className="text-xs text-muted-foreground">
+              Must be at least 8 characters.
+            </span>
             {flowState.status === "verify-error" ? (
-              <span className="text-xs text-red-600">{flowState.message}</span>
+              <span id={passwordErrorId} className="text-xs text-destructive">
+                {flowState.message}
+              </span>
             ) : null}
-          </label>
+          </div>
 
           <div className="flex items-center justify-between gap-4">
             <label htmlFor="email-credential-remember-me" className="w-full text-sm font-medium">
@@ -460,7 +477,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
               We&apos;ll send a 6-digit code to your account email so you can add password sign-in.
             </span>
             {flowState.status === "start-error" ? (
-              <span className="text-xs text-red-600">{flowState.message}</span>
+              <span className="text-xs text-destructive">{flowState.message}</span>
             ) : null}
           </div>
 

@@ -45,12 +45,6 @@ and `git log` are the record of what was built and why.
   fixed-height flex shell whose `<main>` is the scroll container. What remains of
   `docs/PROBLEM_MAP_UX.md` is §19.1, the coarse reporter pin. Also open: §19.10 and §19.11's two
   remaining defects.
-- **Two E2E tests fail on `main`, and they are NOT a Civic Pulse problem.** `smoke.spec.ts:8` and
-  `home-shell.spec.ts:19` both resolve the sidebar through `tests/pages/sidebar.po.ts:73`, which is
-  `page.locator("aside")`. `AlphaBanner` is ALSO an `<aside>` (`alpha-banner.tsx:38`), so the
-  locator matches two elements and Playwright's strict mode fails it. Measured at HEAD with every
-  other change stashed: same two failures, so it predates the §19.4 work. The fix is one selector
-  in the page object — which is a test edit, so it waits to be asked for.
 
 **Legal & Compliance:**
 
@@ -338,8 +332,14 @@ record of what was decided, not as open work.**
 
 1. **Refactor-scale**: `no-high-complexity-react-function` ×48, `no-giant-component` ×35,
    `duplicate-jsx-subtree` ×17, `only-export-components` ×39 (e.g. `create-listing-page.tsx`).
-2. **Accessibility — needs a per-form pass**: `no-placeholder-only-field` ×56,
-   `control-has-associated-label` ×27, `html-label-has-single-control` ×6.
+2. ~~**Accessibility — needs a per-form pass**~~ — **SHIPPED 2026-09-28.** `no-placeholder-only-field`
+   ×56, `control-has-associated-label` ×27 and `html-label-has-single-control` ×6 are down to ONE:
+   `create-listing-page.tsx:2175`, a false positive — its `<label htmlFor>` is rendered by the caller
+   of `renderAttributeControl` and the rule cannot see across that function boundary. Stacked form
+   fields got a visible `LABEL_CLASS` label above the field (Design.md "Inputs / Fields"); per-row
+   controls, search boxes and composers got an `aria-label` naming the row; min/max pairs a
+   `fieldset`/`legend`; the password panels' `<label>` that wrapped an input AND its show/hide
+   button became a `div` with a `htmlFor` label. Placeholders stay, as hints only.
 3. **`query-mutation-missing-invalidation` ×33**: read each hook. Some R&D writes answer 202 and
    poll on purpose, so "add an invalidation" is not always right.
 4. **Per-site state/perf reads**: `no-derived-useState` ×22, `rerender-state-only-in-handlers` ×25,
@@ -1361,24 +1361,35 @@ rendered.
 
 ### §21. Phased Migration of Repo-wide Raw Tailwind Palette Colors
 
-Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its codemod only matched `-[#RRGGBB]`, so Tailwind palette keywords (`black`, `white`, `red-*`, `amber-*`, `blue-*`, `gray-*`) were never in scope. They aren't hex, so they survived untouched.
+Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its codemod only matched `-[#RRGGBB]`, so Tailwind palette keywords (`black`, `white`, `red-*`, `amber-*`, `blue-*`, `gray-*`) were never in scope.
 
-#### Inventory across `src/` (from HEAD):
+#### Part 1 — SHIPPED 2026-09-28: red, the destructive token, the navbar
 
-- **Neutral**: `border-black` 107, `text-white` 69, `bg-white` 60, `bg-black` 58, `text-black` 11, `bg-gray-200` 11.
-- **Error**: `text-red-*` ~110, `bg-red-50/100` 43, `border-red-200` 23.
-- **Warning**: `text-amber-*` ~64, `bg-amber-50/100` 41.
-- **Blue**: `blue-600` ~28.
+- **`--destructive` (light) was darkened to `oklch(0.505 0.213 27.518)`, ≈ red-700.** The old value was 3.76:1 on white, so all 206 existing `text-destructive` error messages already failed AA, and mapping `text-red-800` onto it would have added ~100 more. Now 6.42:1 on white and ≥ 4.99:1 on the `/10` wash. `.dark` is unchanged. Recorded in `docs/Design.md` and `docs/DESIGN.json`.
+- **Every error/destructive red is a token now** (65 files): banners → `border-destructive/40 bg-destructive/10 text-destructive` (the 32-site precedent), washes and failure chips → `bg-destructive/10 text-destructive`, inline errors → `text-destructive`, solid buttons → `bg-destructive text-destructive-foreground`.
+- ⚠️ **RED THAT STAYS RED — these are not errors, and `destructive` on them is a semantic lie:**
+  map pins and the opportunity badge (`problem-map-pins.ts:68`, `src/lib/rnd/map-projection.ts:104` — documented there), the trend-down glyphs (`market-insight-card.tsx:11`, `market-insight-detail-page.tsx:20`, `trending-demand-signals.tsx:9`), the telemetry `critical` severity (`telemetry-readouts.tsx:36`) and the decorative window dots (`information/developers.tsx:179`). `rg -n "red-\d" src --glob '!*.svg' --glob '!*.css'` prints exactly these.
+- **Navbar dark readiness**, done as one change as this section asked: `@custom-variant dark (&:where(.dark, .dark *));` in `globals.css`; the home, studio and admin navbar discs and search field `bg-white` → `bg-card` (`--card` is white, so light mode is pixel-identical); the account clusters `text-black` → `text-foreground`; `dark:invert` on every black `*_000000_*.svg` icon in those navbars and the queue panel.
+  ⚠️ **NOTHING WRITES `.dark` TODAY.** This section used to say "the `.dark` class the theme switcher sets" — there is no theme switcher; Appearance was removed 2026-08-18 (`src/lib/browser-preferences.ts:11-14`). The pass is readiness only, verified by adding `.dark` to `<html>` by hand.
+- **One visible light-mode fix rode along:** the queue count badge (`queue-button.tsx:94`) was `bg-primary text-white` — white on the pale mint wash, ≈1.2:1. It is `text-primary-foreground` now (the Container Rule).
 
-#### Migration & Tokenization Strategy:
+#### Part 2 — OPEN: the neutrals (classified 2026-09-28, 533 matches / 153 files at that date)
 
-1. **Neutrals and Errors**: Map onto existing theme tokens (`foreground`, `background`, `card`, `border`, `destructive`).
-2. **Warnings and Blues**: Currently have no tokens in `globals.css` (the design system has no `--warning` / `--info` token pairs). Converting them requires registering formal design tokens first; borrowing `--destructive` or random accents is forbidden as it makes a palette choice into a semantic lie.
-3. **`text-white` and `bg-white` per-site checks**: Each instance requires its own dark-mode audit. Some sit intentionally on permanent-dark bands (such as `--color-band-*` heroes) or modal scrims (`bg-black/40`), where white/black is correct in both themes. Instances sitting on themed surfaces must transition to semantic foreground tokens.
-4. **Navbar dark pass — one change, not piecemeal**: The navbar's icon discs (`notification-bell.tsx`, `navbar.tsx` search field, mic/menu discs, `text-black` cluster) are white with black `*_000000_*.svg` icons. Moving one disc to `bg-card` alone made the bell icon black-on-near-black in dark mode and left it the only dark disc in a row of white ones, so it was reverted. Do it together:
-    - Add shadcn's standard `@custom-variant dark (&:where(.dark, .dark *));` to `globals.css`. Without it, `dark:` utilities follow the OS setting, not the `.dark` class the theme switcher sets.
-    - Move the bell and `navbar.tsx` discs to `bg-card` / `text-foreground`.
-    - Add `dark:invert` to the black 24dp icon `<Image>`s.
+About 147 sites migrate; about 144 are correct as they are. Do not sweep blind.
+
+- **Migrate:**
+    - `border-black/10` ×87 (hairlines on `bg-background`/`bg-card`) → `border-border`. Composited on white it is ≈ `--border`; in dark it is invisible on the card, so this also fixes a real dark bug.
+    - `border-black/5` ×9 (in-content row dividers) → `border-border/60`. Not `--outline-variant` — that is darker, violet and decorative-only.
+    - Sheet grabber `bg-black/15` ×10 → `bg-border`; icon-button `hover:bg-black/{5,10}` ×6 → `hover:bg-muted`.
+    - Floating auth field labels `bg-white px-1 text-xs text-black` ×6 (`sign-up.tsx`, `forgot-password.tsx`, `sign-in-with-password.tsx`) → `bg-background text-foreground` — must match the field's ground.
+    - Scroll-fade masks `from-white via-white` (`feed/filter.tsx:239,305`) → `from-background via-background`.
+    - Other surfaces: `product-detail.tsx:352` sticky bar, `storefront-certifications.tsx:60`, `teardown-viewer-tabs.tsx:49`.
+    - Toggle-switch thumb `peer-checked:bg-white` + `text-white` ×5, copy-pasted across the three auth pages and two account panels → extract ONE component, then `primary-imprint-foreground` (the track is `bg-primary-imprint`, which brightens in dark).
+    - `text-white` on `bg-muted-foreground` badges (`rating-badge.tsx`, `catalog-product-card.tsx:121`, `verified-capabilities-sheet.tsx:96`, `storefront-hero.tsx:118`) → `text-background`; `text-white/80` on `bg-primary-imprint` (`manufacturer-chat-sheet/index.tsx:260`) → `text-primary-imprint-foreground/80`.
+    - Sidebar and mobile bottom-nav `*_000000_*.svg` icons → `dark:invert` (the navbar has it; these do not yet).
+- ⚠️ **Hazard, decide per site:** 3D-viewer and image-card chips are `bg-white/85`–`/90` with `text-foreground` (`viewport-tool-rail.tsx:23`, `viewport-zoom-control.tsx`, `camera-preset-menu.tsx`, `part-callout-pin.tsx:67`, `funding-deal-card.tsx:60`, `project-card.tsx:38`, …). In dark mode the text goes light on a still-white chip. Either pin the text to a literal dark ink or tokenise the whole chip — not half of it.
+- **Keep as is (≈144):** everything on the permanent band gradient (`from-band-ink …`, Design.md: band is dark in both themes), photo scrims and text over images, modal scrims `bg-black/40`, video/crop letterbox `bg-black`, badges over thumbnails and video, the map pins, `print:text-black`, and `text-black` on the CAD callout pin (Design.md: deliberate, 6.55:1).
+- **Still token-less:** amber (≈64 text, 41 bg) and blue (≈28). Register `--warning` / `--info` pairs with `.dark` counterparts and measured contrast first; borrowing `--destructive` or an accent is forbidden.
 
 ---
 

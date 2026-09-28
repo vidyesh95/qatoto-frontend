@@ -87,6 +87,7 @@ export default function PlaylistsPicker({
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search for a playlist"
+                aria-label="Search playlists"
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>

@@ -2,7 +2,7 @@
 // and writes POST /commerce/admin/customs-dwell-estimates plus the retire PATCH.
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
 import {
@@ -126,7 +126,7 @@ export default function CustomsDwellPanel({ canManage }: { canManage: boolean })
       )}
 
       {estimatesList.firstPageErrorMessage !== null && (
-        <p className="rounded-xl bg-red-50 p-3 text-sm text-red-800">
+        <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
           {estimatesList.firstPageErrorMessage}
         </p>
       )}
@@ -158,7 +158,7 @@ export default function CustomsDwellPanel({ canManage }: { canManage: boolean })
       )}
 
       {estimatesList.loadMoreErrorMessage !== null && (
-        <p className="text-xs text-red-800">{estimatesList.loadMoreErrorMessage}</p>
+        <p className="text-xs text-destructive">{estimatesList.loadMoreErrorMessage}</p>
       )}
     </section>
   );
@@ -250,7 +250,7 @@ function DwellRow({
       )}
 
       {retireError !== null && (
-        <div className="mt-2 space-y-1 rounded-lg bg-red-50 p-2 text-xs text-red-800">
+        <div className="mt-2 space-y-1 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
           <p className="font-medium">{retireError.message}</p>
           {renderFieldErrors(retireError.fieldErrors)}
         </div>
@@ -260,6 +260,8 @@ function DwellRow({
 }
 
 function DwellComposer({ onClose }: { onClose: () => void }) {
+  const originScopeSelectId = useId();
+  const commodityScopeSelectId = useId();
   const [destinationCountryCode, setDestinationCountryCode] = useState("");
   const [originChoice, setOriginChoice] = useState<ScopeChoice>("any");
   const [originCountryCode, setOriginCountryCode] = useState("");
@@ -371,8 +373,11 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
         </label>
 
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Origin scope</span>
+          <label htmlFor={originScopeSelectId} className="text-xs text-muted-foreground">
+            Origin scope
+          </label>
           <select
+            id={originScopeSelectId}
             value={originChoice}
             onChange={(event) => setOriginChoice(toScopeChoice(event.target.value))}
             className={FIELD_CLASS}
@@ -387,13 +392,17 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
               onChange={(event) => setOriginCountryCode(event.target.value.toUpperCase())}
               className={FIELD_CLASS}
               placeholder="CN"
+              aria-label="Origin country code"
             />
           )}
         </div>
 
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Commodity scope</span>
+          <label htmlFor={commodityScopeSelectId} className="text-xs text-muted-foreground">
+            Commodity scope
+          </label>
           <select
+            id={commodityScopeSelectId}
             value={commodityChoice}
             onChange={(event) => setCommodityChoice(toScopeChoice(event.target.value))}
             className={FIELD_CLASS}
@@ -407,6 +416,7 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
               onChange={(event) => setCommodityScopeCategoryId(event.target.value)}
               className={FIELD_CLASS}
               placeholder="store category id"
+              aria-label="Store category id"
             />
           )}
         </div>
@@ -449,11 +459,11 @@ function DwellComposer({ onClose }: { onClose: () => void }) {
       </p>
 
       {localError !== null && (
-        <p className="rounded-lg bg-red-50 p-2 text-xs text-red-800">{localError}</p>
+        <p className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">{localError}</p>
       )}
 
       {createResult !== undefined && !createResult.success && (
-        <div className="space-y-1 rounded-lg bg-red-50 p-2 text-xs text-red-800">
+        <div className="space-y-1 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
           <p className="font-medium">{createResult.error.message}</p>
           {renderFieldErrors(createResult.error.fieldErrors)}
         </div>

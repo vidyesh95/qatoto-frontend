@@ -202,7 +202,7 @@
       "destructive": {
         "role": "neutral",
         "displayName": "Destructive",
-        "canonical": "oklch(0.6368 0.2078 25.3313)",
+        "canonical": "oklch(0.505 0.213 27.518)",
         "tonalRamp": [
           "oklch(0.1500 0.1175 25.33)",
           "oklch(0.2600 0.1603 25.33)",

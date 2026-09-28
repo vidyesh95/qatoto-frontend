@@ -49,8 +49,8 @@ export default function RolesNeededStep({ draft, onDraftChange }: NewIdeaStepPro
           })}
         </div>
       </div>
-      <label className="flex flex-col gap-1">
-        <span className={LABEL_CLASS}>Equity to offer, in percent</span>
+      <fieldset className="flex min-w-0 flex-col gap-1">
+        <legend className={`mb-1 ${LABEL_CLASS}`}>Equity to offer, in percent</legend>
         {/* TWO NUMERIC FIELDS, NOT ONE FREE-TEXT RANGE. The old input took "2–4% per
             role", which `offeredEquityBasisPointsMin` / `…Max` cannot be parsed out of —
             they are integer basis points, and no float ever touches equity. */}
@@ -64,6 +64,7 @@ export default function RolesNeededStep({ draft, onDraftChange }: NewIdeaStepPro
             onChange={(changeEvent) =>
               onDraftChange({ offeredEquityPercentMin: changeEvent.target.value })
             }
+            aria-label="Minimum equity percent"
             placeholder="Min"
             className={INPUT_CLASS}
           />
@@ -77,11 +78,12 @@ export default function RolesNeededStep({ draft, onDraftChange }: NewIdeaStepPro
             onChange={(changeEvent) =>
               onDraftChange({ offeredEquityPercentMax: changeEvent.target.value })
             }
+            aria-label="Maximum equity percent"
             placeholder="Max"
             className={INPUT_CLASS}
           />
         </div>
-      </label>
+      </fieldset>
       <label className="flex flex-col gap-1">
         <span className={LABEL_CLASS}>Expected commitment</span>
         <select

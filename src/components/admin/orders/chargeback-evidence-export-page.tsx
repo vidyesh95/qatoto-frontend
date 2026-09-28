@@ -139,7 +139,7 @@ function renderLoadState(state: LoadState, onLoadClick: () => void, isPending: b
     case "error":
       return (
         <div className={`${CARD_CLASS} space-y-2 print:hidden`}>
-          <p className="text-sm text-red-800">{state.message}</p>
+          <p className="text-sm text-destructive">{state.message}</p>
           <button
             type="button"
             onClick={onLoadClick}

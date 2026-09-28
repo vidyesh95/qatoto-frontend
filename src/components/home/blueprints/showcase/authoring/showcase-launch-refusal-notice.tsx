@@ -4,7 +4,8 @@ import Link from "next/link";
 
 import type { ShowcaseLaunchRefusal } from "@/components/home/blueprints/showcase/authoring/showcase-launch-shared";
 
-const NOTICE_CLASS = "rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800";
+const NOTICE_CLASS =
+  "rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive";
 const NOTICE_LINK_CLASS =
   "font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
 

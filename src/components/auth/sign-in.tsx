@@ -139,7 +139,7 @@ export default function SignIn({
           </span>
         </button>
         {passkeySignInState.status === "error" ? (
-          <p className="px-4 text-center text-xs text-red-600">{passkeySignInState.message}</p>
+          <p className="px-4 text-center text-xs text-destructive">{passkeySignInState.message}</p>
         ) : !isWebAuthnSupported ? (
           <p className="px-4 text-center text-xs text-muted-foreground">
             Your browser doesn't support passkeys.

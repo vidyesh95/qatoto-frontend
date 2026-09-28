@@ -175,13 +175,16 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
                     ))}
                   </select>
                 </label>
-                <input
-                  type="text"
-                  value={stageNote}
-                  onChange={(changeEvent) => setStageNote(changeEvent.target.value)}
-                  placeholder="Why is it moving? (optional)"
-                  className={INPUT_CLASS}
-                />
+                <label className="flex flex-col gap-1">
+                  <span className={LABEL_CLASS}>Reason for the move (optional)</span>
+                  <input
+                    type="text"
+                    value={stageNote}
+                    onChange={(changeEvent) => setStageNote(changeEvent.target.value)}
+                    placeholder="Why is it moving? (optional)"
+                    className={INPUT_CLASS}
+                  />
+                </label>
                 {/* Said out loud, because it is why this is not a dropdown that
                     auto-saves: the move is recorded against the person making it. */}
                 <span className="text-xs text-muted-foreground">

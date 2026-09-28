@@ -154,7 +154,7 @@ export default function ForgotPassword() {
       <hgroup className="mt-6 space-y-1 px-4">
         <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
         <p className="text-sm text-muted-foreground">{stepContent[step].description}</p>
-        {errorMessage && <p className="text-sm font-medium text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="text-sm font-medium text-destructive">{errorMessage}</p>}
       </hgroup>
 
       <section className="space-y-4 p-4">

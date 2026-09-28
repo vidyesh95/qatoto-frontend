@@ -15,6 +15,7 @@
 
 import { useState } from "react";
 
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { describeEngagementError } from "@/hooks/feed/mutations";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import {
@@ -115,7 +116,7 @@ function renderQueue(viewState: QueueViewState) {
       return <p className="text-sm text-muted-foreground">Loading reports…</p>;
     case "error":
       return (
-        <output className="block rounded-2xl border border-border bg-muted/40 p-3 text-sm text-red-700">
+        <output className="block rounded-2xl border border-border bg-muted/40 p-3 text-sm text-destructive">
           {viewState.message}
         </output>
       );
@@ -196,14 +197,17 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
 
       {report.status === "open" ? (
         <div className="mt-3 space-y-2">
-          <textarea
-            value={note}
-            onChange={(changeEvent) => setNote(changeEvent.target.value)}
-            rows={2}
-            maxLength={2000}
-            placeholder="Why? (recorded in the audit log)"
-            className="w-full resize-none rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-          />
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Decision note</span>
+            <textarea
+              value={note}
+              onChange={(changeEvent) => setNote(changeEvent.target.value)}
+              rows={2}
+              maxLength={2000}
+              placeholder="Why? (recorded in the audit log)"
+              className="w-full resize-none rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+            />
+          </label>
           <div className="flex flex-row gap-2">
             <button
               type="button"
@@ -251,14 +255,17 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
           */}
           {isHidden && (
             <div className="space-y-2">
-              <textarea
-                value={note}
-                onChange={(changeEvent) => setNote(changeEvent.target.value)}
-                rows={2}
-                maxLength={2000}
-                placeholder="Why is this being restored? (required)"
-                className="w-full resize-none rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-              />
+              <label className="flex flex-col gap-1">
+                <span className={LABEL_CLASS}>Reason for restoring</span>
+                <textarea
+                  value={note}
+                  onChange={(changeEvent) => setNote(changeEvent.target.value)}
+                  rows={2}
+                  maxLength={2000}
+                  placeholder="Why is this being restored? (required)"
+                  className="w-full resize-none rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                />
+              </label>
               <button
                 type="button"
                 // REQUIRED, unlike a decision note: an un-hide with no stated reason is not a
@@ -283,7 +290,7 @@ function VideoReportCard({ report }: { readonly report: VideoReportQueueRow }) {
         ("you cannot decide a report about your own video") that a generic apology would lose.
       */}
       {failure !== null && (
-        <output className="mt-2 block text-xs text-red-700">
+        <output className="mt-2 block text-xs text-destructive">
           {describeEngagementError(failure).message}
         </output>
       )}

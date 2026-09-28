@@ -103,6 +103,7 @@ export default function WorkshopChatMessageIsland({
             <textarea
               required
               rows={2}
+              aria-label="Edit your message"
               value={draftBodyText}
               onChange={(changeEvent) => setDraftBodyText(changeEvent.target.value)}
               className="w-full rounded-xl border border-outline-variant p-2 text-sm"
@@ -150,7 +151,7 @@ export default function WorkshopChatMessageIsland({
                   onClick={() =>
                     chatMessageMutation.mutate({ action: "delete", messageId: chatMessage.id })
                   }
-                  className="cursor-pointer text-xs font-medium text-red-700 underline disabled:opacity-50"
+                  className="cursor-pointer text-xs font-medium text-destructive underline disabled:opacity-50"
                 >
                   {chatMessageMutation.isPending ? "Deleting…" : "Really delete"}
                 </button>

@@ -80,7 +80,7 @@ export default function OrderCancelControl({
             type="button"
             disabled={cancelOrder.isPending}
             onClick={() => cancelOrder.mutate({ orderId, idempotencyKey })}
-            className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-40"
           >
             {cancelOrder.isPending ? "Cancelling…" : "Yes, cancel it"}
           </button>

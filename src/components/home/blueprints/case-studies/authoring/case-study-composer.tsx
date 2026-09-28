@@ -554,7 +554,7 @@ export default function CaseStudyComposer({
       {fieldErrorEntries.length > 0 ? (
         <div
           role="alert"
-          className="mt-8 space-y-1 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="mt-8 space-y-1 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
         >
           <p>This case study can&apos;t be sent yet:</p>
           <ul className="list-inside list-disc text-xs">

@@ -8,6 +8,7 @@ import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { useApplyToProjectMutation } from "@/hooks/rnd/projects";
 import { ApiRequestError } from "@/lib/http";
 import {
@@ -69,34 +70,43 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
         });
       }}
     >
-      <textarea
-        required
-        rows={3}
-        value={shortPitch}
-        onChange={(changeEvent) => setShortPitch(changeEvent.target.value)}
-        placeholder="What would you bring to this?"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
-      <select
-        value={statedCommitment}
-        onChange={(changeEvent) => {
-          const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
-          if (parsed.success) setStatedCommitment(parsed.data);
-        }}
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      >
-        {ROLE_COMMITMENTS.map((commitment) => (
-          <option key={commitment} value={commitment}>
-            {ROLE_COMMITMENT_LABELS[commitment]}
-          </option>
-        ))}
-      </select>
-      <input
-        value={expectedCompensationNote}
-        onChange={(changeEvent) => setExpectedCompensationNote(changeEvent.target.value)}
-        placeholder="What you'd hope for, in your own words (optional)"
-        className="w-full rounded-xl border border-outline-variant p-2 text-sm"
-      />
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Your pitch</span>
+        <textarea
+          required
+          rows={3}
+          value={shortPitch}
+          onChange={(changeEvent) => setShortPitch(changeEvent.target.value)}
+          placeholder="What would you bring to this?"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Commitment</span>
+        <select
+          value={statedCommitment}
+          onChange={(changeEvent) => {
+            const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
+            if (parsed.success) setStatedCommitment(parsed.data);
+          }}
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        >
+          {ROLE_COMMITMENTS.map((commitment) => (
+            <option key={commitment} value={commitment}>
+              {ROLE_COMMITMENT_LABELS[commitment]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Expected compensation (optional)</span>
+        <input
+          value={expectedCompensationNote}
+          onChange={(changeEvent) => setExpectedCompensationNote(changeEvent.target.value)}
+          placeholder="What you'd hope for, in your own words (optional)"
+          className="w-full rounded-xl border border-outline-variant p-2 text-sm"
+        />
+      </label>
       <div className="flex gap-2">
         <button
           type="submit"

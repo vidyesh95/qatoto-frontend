@@ -282,7 +282,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                     did not half-happen. */}
                 <div
                   role="alert"
-                  className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                  className="flex flex-col gap-1 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
                 >
                   <span>{view.error.message}</span>
                   <span className="text-xs opacity-70">Code {view.error.code}</span>
@@ -314,7 +314,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                 type="button"
                 onClick={() => setView({ status: "confirming", typedHandle: "" })}
                 disabled={!isSessionReady}
-                className="cursor-pointer rounded-full border border-red-600 px-4 py-3 text-sm font-medium text-red-600 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-full border border-destructive px-4 py-3 text-sm font-medium text-destructive transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSessionReady ? "Continue" : "Checking your account…"}
               </button>
@@ -353,7 +353,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                     type="button"
                     onClick={handleDeleteConfirmed}
                     disabled={!isTypedHandleMatching || view.status === "submitting"}
-                    className="cursor-pointer rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {view.status === "submitting" ? "Deleting…" : "Delete my account"}
                   </button>

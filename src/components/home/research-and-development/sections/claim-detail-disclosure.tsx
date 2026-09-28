@@ -7,6 +7,7 @@
 import { useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { LABEL_CLASS } from "@/components/ui/field-classes";
 import {
   useEffortClaimQuery,
   useOverrideVerificationStepMutation,
@@ -40,7 +41,7 @@ const STEP_STATUS_BADGE_CLASS: Record<VerificationStepStatus, string> = {
   pending: "bg-muted text-muted-foreground",
   passed: "bg-primary-imprint/10 text-primary-imprint",
   flagged: "bg-amber-100 text-amber-800",
-  failed: "bg-red-100 text-red-800",
+  failed: "bg-destructive/10 text-destructive",
   skipped: "bg-muted text-muted-foreground",
 };
 
@@ -173,30 +174,38 @@ export default function ClaimDetailDisclosure({
                   });
                 }}
               >
-                <select
-                  value={overriddenStatus}
-                  onChange={(changeEvent) => {
-                    // Parsed, not cast: an unrecognized value reaching a `.strict()` body
-                    // schema is a 422 rather than an ignored field.
-                    const parsed = VerificationStepStatusSchema.safeParse(changeEvent.target.value);
-                    if (parsed.success) setOverriddenStatus(parsed.data);
-                  }}
-                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                >
-                  {VERIFICATION_STEP_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {STEP_STATUS_LABELS[status]}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  required
-                  rows={2}
-                  value={overrideReason}
-                  onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
-                  placeholder="Why is the machine wrong here?"
-                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                />
+                <label className="flex flex-col gap-1">
+                  <span className={LABEL_CLASS}>Corrected status</span>
+                  <select
+                    value={overriddenStatus}
+                    onChange={(changeEvent) => {
+                      // Parsed, not cast: an unrecognized value reaching a `.strict()` body
+                      // schema is a 422 rather than an ignored field.
+                      const parsed = VerificationStepStatusSchema.safeParse(
+                        changeEvent.target.value,
+                      );
+                      if (parsed.success) setOverriddenStatus(parsed.data);
+                    }}
+                    className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                  >
+                    {VERIFICATION_STEP_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {STEP_STATUS_LABELS[status]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className={LABEL_CLASS}>Reason for the override</span>
+                  <textarea
+                    required
+                    rows={2}
+                    value={overrideReason}
+                    onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
+                    placeholder="Why is the machine wrong here?"
+                    className="w-full rounded-lg border border-outline-variant p-2 text-sm"
+                  />
+                </label>
                 <p className="text-xs text-muted-foreground">
                   You are correcting a judgement, not a number. The formula recomputes the minutes
                   from the corrected step.
