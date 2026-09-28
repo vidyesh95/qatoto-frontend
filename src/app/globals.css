@@ -233,14 +233,34 @@
     color: var(--foreground);
   }
 
-  /* THE BLACK ICONS INVERT IN DARK MODE HERE, ONCE, NOT PER FILE. Every Material icon under
-     `public/icons` carries its colour in its name (`…_24dp_000000_…`), and many are picked from
-     data (`src/lib/store/labels.ts`), so a `dark:invert` on each `<Image>` would miss those and
-     rot the first time somebody adds an icon. Two exits: a `.theme-light` subtree stays light, so
-     its icons stay black; and `.icon-fixed` marks an icon on a surface that does not change with
-     the theme (the promo carousel's grey image band). Icons in other colours are untouched. */
-  .dark img[src*="_000000_"]:not(.theme-light *, .icon-fixed) {
+  /* ICONS FOLLOW THE THEME HERE, ONCE, NOT PER FILE. Every Material icon under `public/icons`
+     carries its colour in its name (`…_24dp_000000_…`), and many are picked from data
+     (`src/lib/store/labels.ts`), so a class on each `<Image>` would miss those and rot the first
+     time somebody adds one. Each colour maps to the token it stands for:
+     - `000000` is foreground ink, and the single-colour GitHub and tinted Google marks are black
+       too: inverted to light ink.
+     - `FFFFFF` sits on `primary-imprint` buttons and `bg-foreground` checkboxes, both of which turn
+       light in dark mode (their text goes to dark ink): inverted to match.
+     - `00696E` is Primary Imprint: ×1.8 brightness lands on the dark token's #1DBDC5 (#00BDC6).
+     - `6F7979` is Outline Strong: ×1.3 lands on the dark token's #909B9B (#909D9D).
+     The four-colour Google G is left alone; it is legible on either ground.
+     Two exits: a `.theme-light` subtree stays light, so its icons do too; and `.icon-fixed` marks
+     an icon on a surface that does not change with the theme (the promo carousel's grey band, the
+     permanent-dark band gradient). */
+  .dark
+    img:is(
+      [src*="_000000_"],
+      [src*="_FFFFFF_"],
+      [src*="github_logo_light"],
+      [src*="google_logo_tint"]
+    ):not(.theme-light *, .icon-fixed) {
     filter: invert(1);
+  }
+  .dark img[src*="_00696E_"]:not(.theme-light *, .icon-fixed) {
+    filter: brightness(1.8);
+  }
+  .dark img[src*="_6F7979_"]:not(.theme-light *, .icon-fixed) {
+    filter: brightness(1.3);
   }
 }
 

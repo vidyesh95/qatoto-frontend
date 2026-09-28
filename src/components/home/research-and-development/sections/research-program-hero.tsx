@@ -35,6 +35,7 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
     <section className="mx-4 rounded-2xl bg-linear-to-r from-band-ink via-band-deep to-band-imprint p-6 text-white md:p-10 lg:mx-6">
       <Image
         src="/icons/diamond_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+        className="icon-fixed"
         width={24}
         height={24}
         alt=""
