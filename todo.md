@@ -892,9 +892,10 @@ below its peek detent and moves between three of them.
 **2. `research_category.domain` as a closed enum — SHIPPED 2026-09-29** (backend migration 0211,
 `docs/PROBLEM_TAXONOMY.md`'s correction header has the eight values and the nesting rules). Set at
 approval or later at `/admin/categories` → "Domain & nesting", audited as
-`taxonomy_category_classified`. ⚠️ **0211 IS NOT APPLIED to the shared database until Vidyesh says
-so**, and the eight baseline rows stay unassigned there until a moderator classifies them through
-the console — deliberately not an SQL backfill, which would skip the audit trail. Fresh databases
+`taxonomy_category_classified`. ✅ **0211 IS APPLIED** (2026-09-29, the only pending migration; ledger max was 0210). The eight
+baseline rows were classified through `classifyCategory` as the admin (audit seq 270–277, not an
+SQL backfill), and the nesting rules were exercised live — nest, four refusals, un-nest (seq
+278–279). `verifyPlatformAuditChain` checked all 279 entries clean afterwards. Fresh databases
 get their domains from `BASELINE_RESEARCH_CATEGORIES`. The original item, kept for the reasoning:
 Not a FK, not user-creatable — it is the comparability layer that lets one country's
 `cold_storage_loss` roll up beside another's. Categories stay user-creatable; domain assignment is
