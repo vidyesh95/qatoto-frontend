@@ -39,17 +39,17 @@ and `git log` are the record of what was built and why.
 
 **R&D / Civic Pulse:**
 
-- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin and viewport-driven reads have since shipped, and so has the `domain` enum (2026-09-29, §19.2). The four-component feasibility readout is open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
-- **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The 2-year retention purge runs (2026-09-28); the 90-days-after-resolution rule is still unbuilt. See §19.5.
+- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin (§19.1) with place-picker fallback UI and error handling (2026-09-29) and viewport-driven reads have since shipped, and so has the `domain` enum (2026-09-29, §19.2). 3 of 4 feasibility readout pillars shipped 2026-09-29 (§19.3; only regulatory ease remains open). One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+- **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The 2-year retention purge runs (2026-09-28); the 90-days-after-resolution rule is built (2026-09-28, Part 8, migration 0206). See §19.5.
 - **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
   map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
-  fixed-height flex shell whose `<main>` is the scroll container. What remains of
-  `docs/PROBLEM_MAP_UX.md` is §19.1, the coarse reporter pin. Also open: §19.10 and §19.11's two
-  remaining defects.
+  fixed-height flex shell whose `<main>` is the scroll container. §19.1 coarse reporter pin shipped
+  2026-09-20 with place-picker fallback UI and error handling added 2026-09-29. Open: §19.10 and §19.11's
+  two remaining defects.
 
 **Legal & Compliance:**
 
-- **Legal Entity & Terms of Service** — Legal entity details in `src/lib/site.ts` are marked `[TO BE CONFIRMED]`; Terms of Service rewrite needed to cover marketplace commerce, orders, R&D ventures, and teardowns.
+- **Legal Entity & Compliance** — Terms of Service and Privacy Policy rewrite **SHIPPED 2026-09-28**; sign-up consent links and R&D equity disclaimers **SHIPPED 2026-09-29**. Legal entity details in `src/lib/site.ts` are marked `[TO BE CONFIRMED]`; backend `terms_accepted_at` and `terms_version` tracking migration remains open.
 
 ---
 

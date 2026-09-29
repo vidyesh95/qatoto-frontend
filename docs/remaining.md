@@ -49,10 +49,10 @@
 
 #### 6. Legal & Policy Compliance
 
-- **What exists**: Comprehensive Terms of Service and Privacy Policy rewrite (shipped 2026-09-28) covering B2B marketplace commerce, R&D ventures, and engineering blueprints.
+- **What exists**: Comprehensive Terms of Service and Privacy Policy rewrite (shipped 2026-09-28) covering B2B marketplace commerce, R&D ventures, and engineering blueprints. Sign-up consent links for Terms and Privacy Policy shipped 2026-09-29 (`sign-up.tsx`), and "Not legal, tax, or investment advice" notices were added to R&D equity surfaces (slice ledger, skills explainer, pie bake panel; shipped 2026-09-29).
 - **What is missing**:
     - Legal entity details in `src/lib/site.ts` (`LEGAL_ENTITY_NAME`, registered address, jurisdiction) are marked `[TO BE CONFIRMED]`.
-    - Terms acceptance recording: Backend has no `terms_accepted_at` column, and `sign-up.tsx` needs an explicit acceptance checkbox.
+    - Terms acceptance recording: Backend migration and write path for `terms_accepted_at` and `terms_version` audit timestamp columns.
     - Data export service lags recent tables (orders, cart, R&D effort, claims, receipts, equity).
     - ~~Contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto ships goods and handles returns must be corrected to match Terms clause 5.~~ (Fixed)
 
@@ -64,12 +64,14 @@
     - Wire Razorpay Route linked accounts (and Stripe Direct Charges if Stripe is added) to populate `settlement_account_ref` and `application_fee_in_cents`, allowing payments to be safely enabled in production.
 2. **Phase 2: Legal Entity & Compliance Polish**:
     - Fill in company incorporation constants in `site.ts`.
-    - Add `terms_accepted_at` migration and sign-up acceptance checkbox.
+    - Add `terms_accepted_at` backend migration and recording (sign-up consent links shipped 2026-09-29).
     - Update `data-export.service.ts` to cover orders and R&D entries.
     - ~~Align `how-qatoto-works.tsx` copy with marketplace terms.~~ (Completed)
+    - ~~Add "Not legal, tax, or investment advice" notices to R&D equity pages.~~ (Completed 2026-09-29)
 3. **Phase 3: Store & Civic Pulse Minor Gaps**:
     - Implement service-offering coverage read.
     - Fix moderation report dismissal bug for withdrawn answers.
-    - Add coarse reporter map pin to the Civic Pulse problem map.
+    - ~~Add coarse reporter map pin to the Civic Pulse problem map.~~ (Completed 2026-09-20; place-picker fallback UI and error handling shipped 2026-09-29).
+    - Feasibility readout: 3 of 4 pillars shipped 2026-09-29 (Need density, World Bank purchasing power, manufacturing; 4th pillar regulatory ease open).
 4. **Phase 4: Blueprints Public Launch**:
     - Publish real hardware teardowns and remove `noindex` headers.
