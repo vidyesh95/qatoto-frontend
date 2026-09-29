@@ -412,9 +412,9 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
       you do here" has always listed), effort, claims, daily logs, receipts, equity and pay, and every
       line of the panel's new "Buying and selling" and "What you publish" cards. Each new card says so
       and points at the mailbox; the older "What you do here" card does not yet.
-    - **`information/how-qatoto-works.tsx:37,124` contradicts the terms** — "Qatoto Store ships your
-      product worldwide… returns, customer support… the platform runs operations" is the principal claim
-      Terms clause 5 denies.
+    - ~~**`information/how-qatoto-works.tsx:37,124` contradicts the terms**~~ — **FIXED.** Replaced
+      claims that Qatoto ships goods, runs operations, files certifications, and handles returns with
+      accurate marketplace venue copy aligned with Terms clause 5.
     - **The "not legal or tax advice" notice is missing on equity surfaces**, which
       `docs/PROOF_OF_EFFORT_SPEC.md` promises; it is only in the terms and the CSV export.
     - **Community Guidelines are video-era, and the Copyright Policy's licence covers video only.** Terms

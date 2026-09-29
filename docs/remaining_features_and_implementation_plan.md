@@ -187,7 +187,7 @@ _Open Question_: Is SMS verification necessary? Email OTP and WebAuthn Passkeys 
 1. Update company incorporation details in `site.ts`.
 2. Add `terms_accepted_at` and `terms_version` tracking in the backend, and add an acceptance checkbox to `sign-up.tsx`.
 3. Expand `data-export.service.ts` to export orders, cart, and R&D effort logs.
-4. Correct contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto handles shipping and returns.
+4. ~~Correct contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto handles shipping and returns.~~ (Completed)
 5. Add "Not legal, tax or investment advice" notices to R&D equity pages.
 
 ---
@@ -225,7 +225,7 @@ flowchart TD
 - Populate company incorporation details in `src/lib/site.ts`.
 - Add `terms_accepted_at` and `terms_version` tracking to backend user records and `sign-up.tsx`.
 - Update `data-export.service.ts` to cover orders, cart, and R&D entries.
-- Align `how-qatoto-works.tsx` copy with marketplace Terms of Service.
+- ~~Align `how-qatoto-works.tsx` copy with marketplace Terms of Service.~~ (Completed)
 
 ### Phase 3: Store & Civic Pulse Minor Gaps
 

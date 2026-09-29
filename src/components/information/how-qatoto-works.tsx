@@ -33,8 +33,8 @@ const STAGES = [
   {
     n: "05",
     eyebrow: "Ship",
-    title: "Compliance, fulfilment, marketing.",
-    body: "Qatoto Store ships your product worldwide, files compliance and certifications, and runs first-line support. Spin up marketing videos in the same studio you used to coordinate the build.",
+    title: "Marketplace storefront, listing, marketing.",
+    body: "List your product in the Qatoto Store to sell directly to customers worldwide, connect with verified freight forwarders, and track orders on platform. Spin up marketing videos in the same studio you used to coordinate the build.",
     accent: "from-accent to-primary/20",
   },
 ];
@@ -62,8 +62,8 @@ const SURFACES = [
   },
   {
     icon: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    title: "Store + compliance",
-    body: "End-to-end fulfilment, customs, certifications, returns, and support tickets — handled by the Qatoto Store layer.",
+    title: "Store marketplace",
+    body: "Direct storefront listings, order records, factory directories, and forwarder rate cards — connecting independent sellers with buyers and logistics partners.",
   },
   {
     icon: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -121,7 +121,7 @@ const FAQ = [
   },
   {
     q: "What does Qatoto handle after launch?",
-    a: "Shipping worldwide, compliance and certifications, returns, customer support, and marketing video production. You stay in product mode; the platform runs operations.",
+    a: "Marketplace storefront listings, order and dispute records, freight forwarder directories, and marketing video production in the Studio. Independent sellers sell directly, arrange their own shipping, and set their own returns policies.",
   },
   {
     q: "What's the Blueprints section actually for?",

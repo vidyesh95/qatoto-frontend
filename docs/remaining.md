@@ -54,7 +54,7 @@
     - Legal entity details in `src/lib/site.ts` (`LEGAL_ENTITY_NAME`, registered address, jurisdiction) are marked `[TO BE CONFIRMED]`.
     - Terms acceptance recording: Backend has no `terms_accepted_at` column, and `sign-up.tsx` needs an explicit acceptance checkbox.
     - Data export service lags recent tables (orders, cart, R&D effort, claims, receipts, equity).
-    - Contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto ships goods and handles returns must be corrected to match Terms clause 5.
+    - ~~Contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto ships goods and handles returns must be corrected to match Terms clause 5.~~ (Fixed)
 
 ---
 
@@ -66,7 +66,7 @@
     - Fill in company incorporation constants in `site.ts`.
     - Add `terms_accepted_at` migration and sign-up acceptance checkbox.
     - Update `data-export.service.ts` to cover orders and R&D entries.
-    - Align `how-qatoto-works.tsx` copy with marketplace terms.
+    - ~~Align `how-qatoto-works.tsx` copy with marketplace terms.~~ (Completed)
 3. **Phase 3: Store & Civic Pulse Minor Gaps**:
     - Implement service-offering coverage read.
     - Fix moderation report dismissal bug for withdrawn answers.
