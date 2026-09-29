@@ -1,5 +1,7 @@
 # Qatoto: Complete Frontend & Backend Status, Missing Features & Implementation Roadmap
 
+> **Canonical Roadmap**: This document is the single source of truth for platform status, open features, external dependencies, and launch readiness (consolidated from `docs/remaining.md` on 2026-09-29). For low-level engineering task tracking with code anchors, see `todo.md`.
+
 ## Goal Description
 
 Qatoto is designed as an end-to-end B2B platform that turns physical product ideas into manufactured, shipped goods — encompassing R&D ventures, team assembly, proof-of-effort tracking, creator studio, engineering blueprints, and a full B2B commerce marketplace.

@@ -3,11 +3,10 @@
 **Open work only.** Everything that shipped is deleted from this file — the code, the backend docs
 and `git log` are the record of what was built and why.
 
-> **Pruned 2026-09-16, from 4,676 lines.** Over 4,100 lines of retrospectives and build logs on work
-> that had already shipped and verified (the ~90 route backlog, Blueprints 3-surface redesign and authoring
-> pipelines, Store Phase 27 fixes, Keyset pagination precision, Import intelligence, and Site feedback)
-> were removed. Nothing was deleted until its reasoning was confirmed to survive in code comments,
-> backend structure docs, or git history.
+> **Pruned 2026-09-29, from 1,674 lines.** Retrospectives and build logs on work that has shipped and
+> verified (scoped Buy Now checkout, research program hero and contrast sweeps, raw Tailwind palette token migrations,
+> and Civic Pulse phase completions) were condensed. Nothing was deleted until its reasoning was confirmed
+> to survive in code comments, backend structure docs, or git history.
 >
 > **Section anchors are preserved** so cross-document citations remain intact.
 
@@ -213,29 +212,10 @@ other.**
 
 ---
 
-### 2. "Buy Now" Single-Line Checkout — **SHIPPED**
+### 2. "Buy Now" Single-Line Checkout — **SHIPPED 2026-09-20**
 
-The button was never `disabled` — it was rendered as the most prominent of the three CTAs with no
-handler at all, so it looked more clickable than the controls that worked. It lives in
-`src/components/home/store/cards/buy-action-buttons.tsx` (rendered twice by `product-detail.tsx`),
-not in the detail page itself.
-
-**Backend:** `PrepareCheckoutSchema` gained an optional `items`. Absent means the whole cart, so the
-cart page is unchanged. A line is named by the tuple `(productId, variantId?, isSample?)` rather
-than an id — the cart projection exposes no line id, and the cart is UNIQUE on that tuple, so it is
-exact. A selector matching nothing is refused with `CHECKOUT_ITEMS_NOT_IN_CART` (422) rather than
-narrowed.
-
-⚠️ **AND CONFIRM NO LONGER EMPTIES THE WHOLE CART.** It deleted every line `WHERE cartId =
-prepare.cartId`, which was harmless only while every prepare covered every line. Scoped, that same
-statement would have made "buy one chair" silently discard the rest of the buyer's cart.
-`pnpm db:smoke-scoped-checkout` is the guard: it buys one of two sellers' lines and asserts the
-other survives.
-
-**Frontend:** the button adds the line, awaits the write, then navigates — prepare names lines by
-tuple, so arriving first would be refused for naming a line that does not exist yet. The scope
-survives a re-prepare, or picking a freight mode would silently widen the checkout to everything.
-The checkout page says when it is scoped and links to the full cart.
+- **Backend:** `PrepareCheckoutSchema` accepts optional `items` named by the tuple `(productId, variantId?, isSample?)`. Unmatched lines reject with `CHECKOUT_ITEMS_NOT_IN_CART` (422). Order confirm preserves remaining cart lines (`pnpm db:smoke-scoped-checkout`).
+- **Frontend:** `buy-action-buttons.tsx` adds the line, awaits the write, then routes to `/checkout?buyNow=...`. Details in git log and code comments.
 
 ---
 
@@ -1316,352 +1296,25 @@ reach a reader.
 
 ---
 
-### 20. `research-program-hero.tsx` — ALL FOUR PARTS CLOSED 2026-09-20 (three items refiled as 20e)
+### 20. `research-program-hero.tsx` — ALL FOUR PARTS CLOSED 2026-09-20
 
-Filed while migrating this file's siblings to `HairlineDefinitionRow` (§19.11). The original item
-asserted the two violations "CANNOT BE FIXED ALONE". Checking that assertion split the item: it was
-right about the serif and **wrong about the stat tiles**, which depend on nothing outside this file.
+- **20a (Stat tiles — FIXED):** Local `StatTile` is label-first (`dt text-xs text-white/80`, `dd text-sm font-medium tabular-nums`), matching `hairline-definition-row.tsx`.
+- **20b (Font-serif sweep — FIXED 2026-09-20):** Swept 84 serif headings across product chrome; adopted blueprints' two-tier `h1` system (`hero tier` text-2xl lg:text-3xl font-medium tracking-tight; `ordinary tier` text-xl lg:text-2xl; `section h2` text-sm).
+- **20c (Teal gradient contrast — FIXED 2026-09-20):** Standardized on two sanctioned values: `text-white` primary, `text-white/80` secondary.
+- **20d (`program` vs `programme` — FIXED 2026-09-20):** Register rule established: identity (routes, slugs, code, DB schemas) = `program`; copy (user-facing prose about initiatives) = `programme`.
+- **20e (Follow-up items — CLOSED 2026-09-20 / 2026-09-28):** Project Immortal mission row updated in DB & seeds (`0202_*` avoided, row updated 2026-09-28); image-scrim contrast fixed on pipeline, store, and blueprint carousels (2026-09-20). Details in git log and `docs/Design.md`.
 
-#### 20a. ~~Figures at `font-serif text-2xl md:text-3xl`, value above label~~ — **FIXED**
+---
 
-`docs/Design.md` §6's named anti-reference, "the hero metric with a big number and a small label".
-The local `StatTile` is now label-first at two sizes:
+### §21. Phased Migration of Repo-wide Raw Tailwind Palette Colors — **SHIPPED 2026-09-28**
 
-```
-dt  text-xs text-white/80
-dd  mt-1 text-sm font-medium tabular-nums
-```
+All 4 parts shipped:
 
-Four rules answered at once: `font-serif` gone (§3 Serif Boundary), `text-2xl md:text-3xl` gone
-(§3 Two-Size Rule, a third and fourth size), `flex flex-col-reverse` gone — **that is the half that
-actually kills the §6 shape, de-serifing alone would have left it** — and `tabular-nums` added on
-the `assembly-step-list.tsx:26-29` precedent, _"`tabular-nums` is what the serif was really buying."_
-The `dd` is now byte-identical to `shared/hairline-definition-row.tsx:65`, so a fact reads the same
-on this dark ground as on the light-ground sibling rows.
-
-⚠️ **THE LABEL MOVED `white/70` → `white/80`, AND THAT IS MEASURED, NOT COSMETIC.** The `dl` is
-`grid-cols-2 md:grid-cols-4` spanning the full gradient, so the rightmost tile sits on `#00696E`,
-the lightest stop. `white/70` is **4.03:1** there and fails AA for normal text; `white/80` is
-**4.76:1**. It is also why the value is safe at `text-sm`: full white is 6.47:1, so shrinking it out
-of WCAG's large-text bracket (3:1) into normal (4.5:1) crossed no threshold.
-
-#### 20b. ~~The `font-serif` `h1` inside `(home)`~~ — **SWEPT 2026-09-20, all product chrome**
-
-`docs/Design.md` §3: _"A serif heading inside `(home)`, `(studio)` or `(admin)` is a bug."_ 84 class
-strings across 80 files. Product chrome now greps clean except the **7 wordmark hits**
-(`navbar.tsx` ×3, `studio-navbar` ×2, `admin-navbar` ×2) — §3 bans a serif _heading_, §2 sanctions
-the wordmark, and a logotype is neither. `src/components/information/` keeps its 67, unchanged.
-
-⚠️ **THE RECIPE IS BLUEPRINTS', ADOPTED WHOLE, AND IT IS A CITATION NOT A DERIVATION.** Blueprints
-is the only fully-§3-compliant domain and runs a deliberate **two-tier `h1`** system:
-
-```
-hero tier      text-2xl font-medium tracking-tight text-foreground lg:text-3xl
-ordinary tier  text-xl  font-medium                text-foreground lg:text-2xl
-section h2     text-sm  font-medium                text-foreground
-```
-
-It differs from "store minus `font-serif`" on four axes — weight `600→500`, ink
-`#191C1C→text-foreground`, breakpoint `md:→lg:`, plus `tracking-tight`. The store's two serif size
-families were already these two tiers' pixel sizes, so **the sweep resized almost nothing; the 7
-oversized R&D heroes are the exception and the headline change** (`text-3xl md:text-5xl` 30→48px →
-24→30px, a 37.5% reduction). Verified in-browser: the heroes still open their pages.
-
-⚠️ **THE BREAKPOINT MOVED `md:`→`lg:` AND THAT IS A REAL RESPONSIVE CHANGE**, not a like-for-like
-swap: between 768 and 1024px every swept heading renders one step smaller than before. Adopted
-because a recipe that kept `md:` would be "blueprints, mostly" — uncitable. Checked at 820px.
-
-⚠️ **`text-foreground` IS WRONG ON A DARK GROUND, AND THE SWEEP SHIPPED THAT BUG BEFORE CATCHING
-IT.** Eight headings (the 6 gradient heroes, `pipeline-hero`, `research-program-banner`,
-`research-programs-index-page`) carried **no colour class at all** and inherited `text-white` from
-their section. Adding `text-foreground` rendered them near-black on near-black — invisible. They now
-carry the tier **minus the ink token** so inheritance still works. **Any future heading recipe
-applied to a `text-white` ground must drop the colour token.** Caught by a browser screenshot, not
-by `tsc`, `oxlint` or 103 E2E tests — none of which can see a colour.
-
-⚠️ **BANNER HEADINGS ARE A THIRD CATEGORY AND ARE NOT SECTION HEADERS.**
-`research-and-development-page:135` and `research-program-banner:37` are `h2`s heading a full-width
-promotional band; the `text-sm` section recipe would have deleted their voice. They take the hero
-tier's **type** while staying `h2` — the tag is document structure, the recipe is size.
-PROJECT IMMORTAL loses 6px at desktop (`md:text-4xl` 36px → `lg:text-3xl` 30px), which is accepted
-because it now matches the hero it links to, the stated intent at `research-program-banner.tsx:19-21`.
-
-The remaining families each took their own precedent: R&D's `SectionHeader` (23 call sites) adopted
-**its literal twin** `store/sections/section-header.tsx:15`; figures took
-`blueprints/teardowns/sections/assembly-step-list.tsx:30` (_"`tabular-nums` is what the serif was
-really buying"_). The two comments claiming serif matched "the page's opening voice" were rewritten
-in the same pass — they went false the moment the heroes de-serifed.
-
-#### 20c. ~~AA failures on the teal gradient~~ — **FIXED 2026-09-20**
-
-⚠️ **THE FIRST FIX LIST WAS WRONG, AND HOW IT WAS WRONG IS THE REUSABLE PART.** It was computed
-against `#00696E`, the gradient's **100% stop**. Text never reaches it: `max-w-3xl`/`max-w-2xl` and
-short strings stop well short, and **how short depends on viewport**. Measured at each element's
-real rendered ink position, the three failing lines fail at 390/640/820/1024 and **pass only at
-1440** — the one width the §20a screenshot used.
-
-**Fixed:** `research-program-hero` `:45 /70`, `:69 /50`, `:75 /60`; `build-log-hero:18 /70`; and
-`store/sheets/manufacturer-chat-sheet/index.tsx:257 /70`, which is **solid `#00696E`** rather than
-the gradient and so is a constant 4.03:1 at every width.
-⚠️ **`:75` WAS INFERRED, NOT MEASURED** — it is the stats-null branch and `project-immortal` has
-stats, so it cannot be rendered. It is `text-sm` with no `max-w`, so it runs wider than `:45`, which
-fails at `/70`; `/60` is strictly worse.
-
-⚠️ **THE RULE FOR THIS GRADIENT IS TWO VALUES: `text-white` primary, `text-white/80` secondary.**
-It carried /50, /60, /70, /80, /85 across seven files. The `/85 → /80` tidy **lowers contrast**
-(5.79:1 → 5.32:1 at the worst measured position) and was taken anyway: both clear AA by a wide
-margin, and one sanctioned value beats a slightly-better variant nobody can cite.
-**This is a documented recipe in Tailwind utilities, deliberately not a token** — the gradient is
-fixed and unthemed, so custom properties would be a token layer over two static values with no
-consumer. Do not reintroduce a third value.
-
-**The measurement method**, so it can be re-run: composite `white/α` over the gradient colour at
-`(inkRight − sectionLeft) / sectionWidth`; AA normal 4.5:1, large (≥24px) 3:1.
-⚠️ **Tailwind v4 resolves the colour as `oklab(L a b / α)`** — parse α from `/ α)`, never by
-regexing the channels, or every ratio comes out ≈1.4 and the check silently lies.
-Verified: 90 alpha-text elements × 5 widths × 7 routes → 0 failures.
-
-⚠️ **`pipeline-hero.tsx:23` `/90` IS EXCLUDED AND STAYS.** Its ground is an image under a
-`from-black/70 to-black/30` scrim, **not the teal gradient** — a different and worse problem that no
-opacity value fixes, since the photo is unpredictable and the scrim thins to 30% on the right.
-Pulling it into this recipe would import a foreign rule. Still open, below.
-
-⚠️ **Do not darken the gradient to rescue an opacity value.** Reaching AA for `/70` needs ~`#00484A`,
-which flattens the gradient toward black across 7 heroes. The gradient is the designed element; the
-opacity values were the bug.
-
-#### 20d. ~~Mixed `program` / `programme`~~ — **FIXED 2026-09-20; the split is a REGISTER RULE**
-
-⚠️ **THE TWO SPELLINGS ARE NOT A BUG — WRITE THE RULE DOWN OR THE NEXT SWEEP REVERSES IT:**
-
-- **Identity = `program`.** Routes, slugs, filenames, TS identifiers, React Query key literals, Zod
-  fields, 11 DB tables, 9 pgEnum types, 2 live enum labels, `programSlug` (268 uses). 100% of
-  identity in both repos. **Never touched.**
-- **Copy = `programme`.** Indian-English convention for an initiative, and already 64 of 73
-  user-facing strings.
-
-Checked **both** directions: the one apparent counterexample, `site-capabilities.ts:221`, is
-`{ label: "Research programmes", href: "/research-and-development/programs" }` — copy and identity
-correctly split on one line, as at `navbar.tsx:37-38`. The rule is stated in the docblock of
-`src/lib/rnd/labels.ts`, where the `program_published` **key** and its `"…programme"` **value**
-differ on the same line and the key is a live pgEnum label.
-
-Aligned 5 strays: `research-program-hero:42` (`OPEN RESEARCH PROGRAM` → `PROGRAMME`) and `:77`,
-`research-program-products:30`, `labels.ts:228`/`:229` (**values only**). Three were
-self-contradictions inside one component — the hero/banner eyebrow pair, one sentence at
-`hero:76-77` carrying both spellings 12 words apart, and two branches of `products`.
-
-⚠️ **NEVER FIND-AND-REPLACE THIS.** `reprogramming` (7, backend) and `programmer` (~45, backend) are
-different words; a mechanical pass yields `reprogrammeming` and `programmemer`.
-
-⚠️ **Out of scope deliberately:** `careers.tsx:53` ("Hardware Program Lead"), `cms.ts:150`,
-`cms.ts:257`, `vulnerability-disclosure-policy.tsx:28` (bug-bounty sense) — different domains, an
-editorial call rather than a consistency bug.
-
-#### 20e. The three items 20b/c/d left open — TWO CLOSED 2026-09-20, THE THIRD 2026-09-28
-
-##### 20e.1 ~~The Project Immortal mission row~~ — **DONE 2026-09-28**
-
-**APPLIED 2026-09-28** on the shared Aiven database: the guarded UPDATE below changed exactly 1 row,
-440 → 442 chars, now reading "an open research **programme**:". The SQL stays for the revert and for
-any future staging database, which the seed will not reach.
-
-`research_program.mission_statement` for slug `project-immortal` read "an open research
-**program**" under an eyebrow that says PROGRAMME. **The frontend cannot reach it.**
-
-⚠️ **THE SEED IS A PLAIN `INSERT` GUARDED BY A SELECT ON THE SLUG, NOT AN UPSERT**
-(`seed-research-programs.ts:184-187`), so the two halves do not substitute for each other:
-editing the seed changes **nothing** on the running site, and updating the row alone leaves every
-FRESH database seeding `program` back. **Done:** the seed literal, in the backend repo, and
-(2026-09-28) the row.
-
-```sql
--- 1. CONFIRM, read-only. (`DATABASE_POOL_MAX=2` — max_connections is 20 SERVER-WIDE.)
-SELECT slug, char_length(mission_statement) AS len, mission_statement
-  FROM research_program WHERE slug = 'project-immortal';
-
--- 2. APPLY. Guarded, so a second run reports 0 rows and means "already applied".
-UPDATE research_program
-   SET mission_statement =
-       replace(mission_statement, 'an open research program:', 'an open research programme:')
- WHERE slug = 'project-immortal'
-   AND mission_statement LIKE '%an open research program:%';
-
--- 3. REVERT — same shape, literals swapped.
-UPDATE research_program
-   SET mission_statement =
-       replace(mission_statement, 'an open research programme:', 'an open research program:')
- WHERE slug = 'project-immortal'
-   AND mission_statement LIKE '%an open research programme:%';
-```
-
-⚠️ **NEVER a table-wide `replace('program','programme')`** — it would corrupt `"Cellular
-Reprogramming"` and `"reprogrammed"` in `research_program_branch`. The colon disambiguates.
-`replace()` beats a full-literal `SET` because the string is 440 chars with an em dash and an
-apostrophe, and retyping it is the only way to get it wrong.
-
-**Checked clear:** 440→442 chars against `BETWEEN 20 AND 4000`; no trigger on the table; single read
-path `findResearchProgramDetail`; no index, view, cache, sitemap or PII-register entry; neither smoke
-nor constraint script string-matches the wording.
-⚠️ **`updated_at` will NOT move** — Drizzle's `$onUpdate` is app-side with no DB trigger. Cosmetic
-today because nothing reads it for invalidation; recorded so nobody loses an hour to a row that
-looks as stale as the day it was seeded.
-⚠️ **ONE DATABASE, VERIFIED.** `.env` is Aiven; `.env.example`'s localhost is a template;
-`railway.json` provisions no DB; `docker-compose.yml:5` points at that same Aiven instance. Several
-deployments, one database. **A staging instance added later needs its own UPDATE** — the seed skips
-on slug and will not reach it. This is also why a `0202_*` data migration was NOT written: its only
-advantage is convergence across environments, there is one, and a hand-written migration would
-trigger the re-baseline ritual at `docs/AUTH_SETUP.md:379-384` for a one-word fix.
-⚠️ **`reviewer_note` also says "program"** (`seed-research-programs.ts:236`) — staff-only
-(`research-programs.service.ts:325`) and an internal note about seeding, not user-facing prose.
-Deliberately left.
-
-##### 20e.2 ~~`pipeline-hero`'s image-scrim contrast~~ — **FIXED 2026-09-20**
-
-⚠️ **THIS WAS FILED AS UNFIXABLE AND THAT WAS WRONG.** §20c said "an unpredictable photo under a
-scrim that thins to 30% on the right, **which no opacity value fixes**". The first half is true; the
-conclusion was not. It treated the scrim as fixed and the photo as the variable. **The scrim is the
-half we control**, and inverting that dissolves the problem.
-
-Measured by sampling rendered pixels with the text hidden, then again with the scrim hidden:
-`rnd_hero_bg_01.avif` has **blown highlights, rgb(251-255), directly under the text at every width**,
-and the paragraph's ink reaches **91-95%** of the section where the old scrim was only **32-34%**.
-Contrast ran **2.13-3.18:1** against 4.5, and **even pure white failed** (2.29:1) — which is why no
-`text-white/NN` change could ever have worked.
-
-`from-black/70 to-black/30` → **`from-black/80 to-black/60`**. Re-measured: 5.28-11.28:1 at
-390/640/820/1024/1440, zero failures.
-
-⚠️ **THE RULE IS THE CONTRAST TARGET, NOT THE NUMBERS: the scrim must deliver 4.5:1 against the
-brightest pixel beneath each element's ink extent.** `black/54` is what that works out to for THIS
-photograph and THIS text; the pair above is the gradient that delivers it. **Re-derive all three if
-the image, the text colour or the type scale changes** — and note how fast that goes stale: §20b
-moved this `h1` from 30/48px to **exactly 24px**, WCAG's large-text threshold with zero margin, so
-both elements are deliberately held to the 4.5:1 line rather than leaning on the 3:1 carve-out.
-
-**`text-white/90` STAYS** — 5.28:1 at the new floor. Dropping it to full white is a separate
-decision, not one to bundle. ⚠️ **A text-shadow is NOT a substitute**
-(`blueprints-hero-carousel.tsx:164` uses one): WCAG measures text against its immediate background
-and does not credit shadows, so it would have left the numbers failing. Complement, never
-replacement.
-
-~~**Two more scrim surfaces, unmeasured, suspected failing.**~~ — **MEASURED AND FIXED 2026-09-20.**
-The prior was right: `store/rails/hero-carousel.tsx:74` measured **1.63:1** and
-`blueprints-hero-carousel.tsx:160` **1.21:1**, both against 4.5. Both now pass — 48 caption elements
-across 8 widths and two grounds, zero failures.
-
-⚠️ **THE REUSABLE FINDING: THE CAPTION NEVER MOVED, THE GRADIENT DID.** Both captions are
-`absolute bottom-N`, so they occupy a FIXED px band — store 27-83px above the bottom edge,
-blueprints 20-51px — identical at every width from 320 to 1920. The gradients were **percentage
-stops over a host whose height changes** (store: 219→400px). The same 83px is 21% of the way up a
-tall hero and 38% up a short one, which is the whole of why contrast varied by viewport and why
-black/25 appeared at 390px. **So the floor is stated in PIXELS from the bottom edge**, and the
-viewport dependency disappears:
-
-```
-store       bg-linear-to-t from-black/60 via-black/60 via-[96px] to-transparent
-blueprints  bg-linear-to-t from-black/60 via-black/60 via-[64px] to-transparent  (+ pt-12 on the box)
-```
-
-⚠️ **THE TARGET IS IMAGE-INDEPENDENT, AND THAT IS WHAT SEPARATES THESE FROM `pipeline-hero`.** That
-hero has one fixed `/dummy/` image, so its scrim could be derived from that photograph. These render
-**arbitrary admin-uploaded slides**, so the floor is derived against a **blown-white ground** — the
-worst any future upload can be. `black/54` for non-large (under 24px) white text; shipped at
-`black/60`.
-⚠️ **THE BAND IS `0 → caption worst-case top + ~13px`, SO THE PX NUMBERS ARE OUTPUTS, NOT CONSTANTS.**
-Re-derive both if a caption moves, wraps differently, or its type scale changes.
-
-⚠️ **THE BOX, NOT ONLY THE GRADIENT, WAS THE BUG ON BLUEPRINTS.** It was 43px tall with the caption
-sitting 16-53% DOWN it — inside the upper part of its own fade, where alpha is 0.5 × 0.16 = **8%**.
-Raising `from-black/50` alone could never have fixed that. The box grew (`pt-12`) so the floor clears
-the caption's 51px worst case — the two-line wrap at 320px, measured **with** the `pb-5` dot
-reservation, since the carousel is already multi-slide. **The `[text-shadow]` stays and is not what
-makes it pass**: WCAG does not credit shadows, so it is a complement to the floor, never a substitute.
-
-⚠️ **THE STORE'S NO-IMAGE PATH WAS A GUARANTEED FAILURE, NOT A RISK.** `slide.imageUrl === null`
-falls back to `accentSurfaceClass` — `bg-amber-50` / `bg-slate-100` / `bg-emerald-50` / `bg-sky-50` /
-`bg-rose-50` (`lib/store/labels.ts:113-121`) — and white text on a 50-shade tint is white-on-white.
-A real slide in the seeded data hits it. The scrim renders above both the tint and the image, so one
-floor covers both.
-
-**`text-white/80` → `text-white` on the store subtitle**, which drops that band's requirement from
-`black/61` to `black/54`. ⚠️ **THE TWO ARE COUPLED: `black/60` holds only while the subtitle is full
-white** — revert the ink and the floor must become `black/61`. Judged habitual rather than
-deliberate: the file documents its link CHECK and its dots in detail and says nothing about the
-dimming, `text-white/80` appears twice in all of `store/`, and the 30px/14px size gap carries the
-hierarchy on its own (verified in-browser).
-⚠️ **This does NOT follow §20c and an earlier draft claimed it did.** 20c established **two**
-sanctioned values on the teal gradient (`white` + `white/80`), so `white/80` _matched_ it and
-collapsing to one ink diverges. The change stands on less darkening, not on that precedent — and the
-two-value rule on the teal gradient is unaffected.
-
-**Method, so it is reproducible:** take the caption's **ink** rect via
-`range.selectNodeContents(el).getBoundingClientRect()` (not the element box — padding inflates it),
-`visibility:hidden` every text node, `page.screenshot({clip})`, then decode by assigning the PNG as a
-**base64 data URL** to an `Image` and reading `getImageData` off a canvas (`file://` is blocked from
-an http page). Composite the ink over **every** pixel and keep the **worst** ratio, never the mean.
-Run it twice: once on the real slides, once with the `<img>` hidden and the host painted `#fff`.
-⚠️ Parse alpha from `oklab(L a b / α)` — Tailwind v4 resolves colours that way, and regexing the
-channels returns ≈1.2 for everything.
-
-##### 20e.3 ~~The four non-R&D `program` strings~~ — **CLOSED 2026-09-20; one changed**
-
-⚠️ **THE DURABLE RULE IS PROSE vs NAME / TITLE / TERM-OF-ART**, not "same entity". Both pick the
-same string here and they diverge on the next one:
-
-| string                                                  | category                      | spelling                  |
-| ------------------------------------------------------- | ----------------------------- | ------------------------- |
-| `cms.ts:257` "The programme will fund…"                 | **prose about an initiative** | **`programme`** — CHANGED |
-| `careers.tsx:53` "Hardware Program Lead"                | job title                     | `program` — kept          |
-| `cms.ts:150` `role: "Founder Programs"`                 | department label              | `program` — kept          |
-| `vulnerability-disclosure-policy.tsx:28` "this program" | security term of art          | `program` — kept          |
-
-`cms.ts:257` changed because it is **prose**; that it is prose about the R&D surface's own entity is
-what made it conspicuous, not what made it different in kind. The other three are named here as
-**examples of the excluded categories** so the classification is citable rather than re-derived.
-
-**Verified complete:** grepping every `Project Immortal` mention against prose forms of `program`
-returns only this one. The rest are the VDP term of art and three code comments
-(`notifications/schemas.ts:53`, `branch-tree-layout.ts:99`, `research-branch-map.tsx:29`), none
-rendered.
-
-### §21. Phased Migration of Repo-wide Raw Tailwind Palette Colors
-
-Commit `18e9f6d6` migrated hex literals (`bg-[#00696E]` …) to tokens. Its codemod only matched `-[#RRGGBB]`, so Tailwind palette keywords (`black`, `white`, `red-*`, `amber-*`, `blue-*`, `gray-*`) were never in scope.
-
-#### Part 1 — SHIPPED 2026-09-28: red, the destructive token, the navbar
-
-- **`--destructive` (light) was darkened to `oklch(0.505 0.213 27.518)`, ≈ red-700.** The old value was 3.76:1 on white, so all 206 existing `text-destructive` error messages already failed AA, and mapping `text-red-800` onto it would have added ~100 more. Now 6.42:1 on white and ≥ 4.99:1 on the `/10` wash. `.dark` is unchanged. Recorded in `docs/Design.md` and `docs/DESIGN.json`.
-- **Every error/destructive red is a token now** (65 files): banners → `border-destructive/40 bg-destructive/10 text-destructive` (the 32-site precedent), washes and failure chips → `bg-destructive/10 text-destructive`, inline errors → `text-destructive`, solid buttons → `bg-destructive text-destructive-foreground`.
-- ⚠️ **RED THAT STAYS RED — these are not errors, and `destructive` on them is a semantic lie:**
-  map pins and the opportunity badge (`problem-map-pins.ts:68`, `src/lib/rnd/map-projection.ts:104` — documented there), the trend-down glyphs (`market-insight-card.tsx:11`, `market-insight-detail-page.tsx:20`, `trending-demand-signals.tsx:9`), the telemetry `critical` severity (`telemetry-readouts.tsx:36`) and the decorative window dots (`information/developers.tsx:179`). `rg -n "red-\d" src --glob '!*.svg' --glob '!*.css'` prints exactly these.
-- **Navbar dark readiness**, done as one change as this section asked: `@custom-variant dark (&:where(.dark, .dark *));` in `globals.css`; the home, studio and admin navbar discs and search field `bg-white` → `bg-card` (`--card` is white, so light mode is pixel-identical); the account clusters `text-black` → `text-foreground`; `dark:invert` on every black `*_000000_*.svg` icon in those navbars and the queue panel.
-  ⚠️ **NOTHING WRITES `.dark` TODAY.** This section used to say "the `.dark` class the theme switcher sets" — there is no theme switcher; Appearance was removed 2026-08-18 (`src/lib/browser-preferences.ts:11-14`). The pass is readiness only, verified by adding `.dark` to `<html>` by hand.
-- **One visible light-mode fix rode along:** the queue count badge (`queue-button.tsx:94`) was `bg-primary text-white` — white on the pale mint wash, ≈1.2:1. It is `text-primary-foreground` now (the Container Rule).
-
-#### Part 2 — SHIPPED 2026-09-28: the neutrals
-
-- **Hairlines:** `border-black/10` → `border-border`, `border-black/5` → `border-border/60`, `hover:border-black/30` → `hover:border-foreground/30`. Sheet grabbers `bg-black/15` → `bg-muted-foreground/30`; icon-button `hover:bg-black/{5,10}` → `hover:bg-muted`; carousel buttons `ring-black/5` → `ring-border`.
-- **Surfaces:** image-card chips, the store model viewer's controls (its stage is `bg-muted`, so they follow the theme and their icons got `dark:invert`), the camera menu, the product sticky bar, certifications, the viewer tab bar and the claim step card → `bg-card` (plus its `/60`, `/85`, `/90` variants). `--card` is white, so light mode is unchanged. The filter fades → `from-background`. The floating auth field labels → `bg-background text-foreground`: that is a small light-mode fix too, since they were a white patch on the off-white page.
-- **Text on fills:** badges on `bg-muted-foreground` → `text-card`; the own-message timestamp → `text-primary-imprint-foreground/80`; the storefront logo ring and chart dots → `background`.
-- **`ToggleSwitch` (`src/components/ui/toggle-switch.tsx`) replaced five copies.** Its checked thumb is `primary-imprint-foreground` and its X icon `text-card`. Its accessible name is now "Remember me", no longer "Remember me toggle switch".
-- ⚠️ **THE TEARDOWN STAGE IS `theme-light`.** Its backdrop is a fixed light gradient (`teardown-stage.tsx`), so a chip that followed the theme would go light-on-white. `globals.css` now declares the light tokens on `:root, .theme-light`, plus a `.theme-light { color }` rule, so everything inside the stage (chips, pins, legend, status pill) resolves LIGHT under `.dark`. Put `theme-light` on any future subtree that is light in both themes, and keep `dark:` utilities out of it, because they still match inside.
-- **`dark:invert`** on the sidebar and mobile bottom-nav icons, and on the studio navbar account cluster, which Part 1 missed.
-- **Kept on purpose (≈140):** everything on the band gradient, photo scrims and text over images, modal scrims `bg-black/40`, video letterbox `bg-black`, badges over thumbnails, the promo carousel's controls, map pins, `print:text-black`, the CAD callout pin's `text-black`, the macOS window dots on `/developers`. Re-list with `rg --pcre2 -o "(?<![\w-])[\w:-]*-(black|white)(/\d+)?(?![\w-])" src --glob '!*.svg' --glob '!*.css'`.
-
-#### Part 3 — SHIPPED 2026-09-28: black icons invert in dark mode
-
-- **ONE RULE in `globals.css`, not a class per file:** `.dark img[src*="_000000_"]:not(.theme-light *, .icon-fixed) { filter: invert(1) }`. The icons render as plain `<img>` (next/image passes SVGs through), their colour is in their filename, and many are chosen from data (`src/lib/store/labels.ts`), which a per-`<Image>` `dark:invert` would miss. The 25 `dark:invert` classes Parts 1–2 added were removed so there is one mechanism.
-- **Exits:** a `.theme-light` subtree keeps its icons black (the teardown stage); `.icon-fixed` marks an icon on a surface that does not follow the theme — today only the promo carousel's close/arrow icons, on its `bg-gray-200` image band.
-- **Measured with `.dark` forced:** home 38/41 inverted (the 3 are the promo opt-outs), teardown page 46/48 (the 2 are inside the stage), sign-in all 4.
-- **Every icon colour is covered now (2026-09-28), in the same block of rules.** `FFFFFF` inverts (it sits on `primary-imprint` buttons and `bg-foreground` checkboxes, both light in dark mode); `00696E` takes `brightness(1.8)` onto the dark Primary Imprint; `6F7979` takes `brightness(1.3)` onto the dark Outline Strong; the single-colour `github_logo_light` and `google_logo_tint` marks invert. The four-colour Google G is untouched. The two white diamonds on the permanent-dark band (`research-program-banner.tsx`, `research-program-hero.tsx`) are `icon-fixed`.
-- ⚠️ **A NEW ICON COLOUR NEEDS A RULE.** An icon file in a colour none of those selectors name will not follow the theme. Either export it in one of the four colours or add its mapping to `globals.css` beside the others.
-
-#### Part 4 — SHIPPED 2026-09-28: amber → `--warning`, store blue → Primary Imprint
-
-- **`--warning`, `--warning-container`, `--warning-container-foreground`** (M3 set, `.dark` counterparts, contrast in `docs/Design.md`). A caution banner or status chip (needs attention, not ready to save, pending, flagged, disputed, behind schedule, waived, unconfirmed) is `bg-warning-container text-warning-container-foreground`, with `border-warning/40` when bordered. Caution text straight on the page is `text-warning`. 64 files.
-- **Blue was never "info", so there is no `--info`.** Every `blue-600` was the store's interaction accent: card hover borders, the selected variant, image or price row, and links such as "See all" and "Visit store". Per Design.md's One Hue Rule, interaction is teal, so it is `primary-imprint` now. `text-blue-900` on `bg-secondary` → `text-secondary-foreground`; the business-tool tiles `bg-blue-100` → `bg-secondary`. This is a VISIBLE change across the store.
-- ⚠️ **AMBER THAT STAYS AMBER — not caution, so `--warning` on them is a semantic lie:** the branch-map legend (`research-branch-map.constants.ts`, `emerging` and `missing` are two DIFFERENT ambers, told apart by shade and a dash) and the detail-panel note that matches it; the map pin and opportunity-band palette; the telemetry `marginal` severity (beside the red `critical`); the workshop `medium` priority dot; the `image` file-type letter; the `one_time` compensation-kind badge; the decorative category-tile and accent palettes (`category-tiles-section.tsx`, `src/lib/store/labels.ts`, also sky and yellow); the `/developers` window dots.
+- **Part 1 (Red & Destructive):** `--destructive` darkened to `oklch(0.505 0.213 27.518)` (red-700, 6.42:1 on white). Navbar dark readiness completed.
+- **Part 2 (Neutrals):** Hairlines mapped to `--border`, surfaces to `--card`, text on fills to `--text-card` / `--background`.
+- **Part 3 (Dark Icon Inversion):** Unified rule in `globals.css` (`.dark img[src*="_000000_"]`).
+- **Part 4 (Status & Interaction Colors):** Amber mapped to `--warning`, store blue to `primary-imprint`.
+  Permanent record in git log and `docs/Design.md`.
 
 ---
 
