@@ -19,7 +19,11 @@ import {
   type OpenRole,
   type ResearchCategory,
 } from "@/lib/rnd/catalog.schemas";
-import { PaginationMetaSchema, type CategoryPinIconKey } from "@/lib/rnd/shared.schemas";
+import {
+  PaginationMetaSchema,
+  type CategoryPinIconKey,
+  type ResearchCategoryDomain,
+} from "@/lib/rnd/shared.schemas";
 
 /**
  * Every open role across every project — the landing rail, `/talent`'s companion rail
@@ -115,6 +119,9 @@ export function decideResearchCategory(
     | {
         readonly decision: "approve";
         readonly pinIconKey?: CategoryPinIconKey;
+        // Omitted, never sent as null, when the moderator leaves it for later — the backend
+        // then skips the column.
+        readonly domain?: ResearchCategoryDomain;
         readonly note?: string;
       }
     | { readonly decision: "reject"; readonly note: string },
@@ -122,6 +129,36 @@ export function decideResearchCategory(
 ): Promise<ActionResponse<ResearchCategory>> {
   return sendJson(
     `/discovery/admin/categories/${encodeURIComponent(categoryId)}/decide`,
+    "POST",
+    input,
+    ResearchCategorySchema,
+    options,
+  );
+}
+
+/**
+ * Sets an APPROVED category's domain and parent. Requires `moderate_taxonomy`.
+ *
+ * A REPLACE OF BOTH FIELDS, so both are always sent and `null` clears one. The caller must
+ * therefore start from the row it just read — sending a stale `parentCategoryId` would silently
+ * un-nest a category another moderator nested a moment ago.
+ *
+ * The nesting rules are the backend's and are not pre-checked here beyond narrowing the picker:
+ * one level deep, an approved top-level parent, a matching domain. A refusal is a `422` naming
+ * the reason and a pending or rejected category is a `409`; both are findings, not retries.
+ * Saving an unchanged row answers `200` and writes no audit entry.
+ */
+export function classifyResearchCategory(
+  categoryId: string,
+  input: {
+    readonly domain: ResearchCategoryDomain | null;
+    readonly parentCategoryId: string | null;
+    readonly note?: string;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchCategory>> {
+  return sendJson(
+    `/discovery/admin/categories/${encodeURIComponent(categoryId)}/classification`,
     "POST",
     input,
     ResearchCategorySchema,

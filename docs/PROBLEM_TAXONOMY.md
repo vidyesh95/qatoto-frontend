@@ -31,7 +31,18 @@
 >   `other` label and it is the DEFAULT. That is pin ART, not a category, and the two should not be
 >   conflated.
 >
-> Nothing here is built. `todo.md` §19 carries the migration.
+> **✅ SHIPPED 2026-09-29 (backend migration 0211): `research_category.domain` and
+> `parentCategoryId`.** The enum is `research_category_domain`, eight values — the five below
+> plus three the seeded categories needed a home for: `infrastructure`, `water_sanitation`,
+> `energy_utilities`, `agriculture_rural`, `transportation_mobility`, `health_care`,
+> `housing_shelter`, `industry_manufacturing`. Both are NULL until a `moderate_taxonomy` holder
+> sets them — optionally at approval, or later through
+> `POST /discovery/admin/categories/:id/classification`, which is audited as
+> `taxonomy_category_classified`. Nesting is ONE level deep (an approved top-level parent, a
+> child with no children of its own) and a nested category must share its parent's domain.
+> The console is `/admin/categories` → "Domain & nesting". Still unbuilt: §4's
+> `taxonomyVersion`, `deprecated` status and `mergedIntoCategoryId`, and every consumer of the
+> domain (the country matrix and the feasibility readout, `todo.md` §19.3).
 
 ## 1. Purpose & Principles
 

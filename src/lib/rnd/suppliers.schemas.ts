@@ -5,8 +5,8 @@ import { ProjectStageSchema } from "@/lib/rnd/shared.schemas";
 // and the member-only `/research-projects/:slug/launch-readiness`.
 // Mirrors `suppliers.service.ts` and `launch-readiness.service.ts`.
 //
-// THREE OF THESE ENUMS DISAGREE WITH THE PRE-EXISTING FRONTEND TYPES in
-// `src/types/research-and-development/discovery.ts`, whose header claims the
+// THREE OF THESE ENUMS DISAGREED WITH THE PRE-EXISTING FRONTEND TYPES in
+// `src/types/research-and-development/discovery.ts` (since deleted as dead), whose header claimed the
 // go-to-market shapes were "authored in §11 wire format from the start" with nothing
 // to migrate. They were not:
 //

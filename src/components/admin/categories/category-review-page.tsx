@@ -1,14 +1,16 @@
-// TRANSPORT: client-query — the two pending queues, both verdicts and the decision log all
-// call hooks in `@/hooks/rnd/{projects,research-programs,platform-audit}`. The first
-// backend-wired surface in the (admin) console; every other page here is still mock.
+// TRANSPORT: client-query — the two pending queues, both verdicts, the domain & nesting list and
+// the decision log all call hooks in `@/hooks/rnd/{projects,research-programs,platform-audit}`.
+// The first backend-wired surface in the (admin) console; every other page here is still mock.
 "use client";
 
 import { useState } from "react";
 
+import CategoryClassificationRow from "@/components/admin/categories/category-classification-row";
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import {
   useDecideResearchCategoryMutation,
   usePendingResearchCategoriesQuery,
+  useResearchCategoriesQuery,
 } from "@/hooks/rnd/projects";
 import { usePlatformAuditTrailQuery } from "@/hooks/rnd/platform-audit";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
@@ -18,11 +20,19 @@ import {
 } from "@/hooks/rnd/research-programs";
 import { ApiRequestError } from "@/lib/http";
 import { formatIsoInstant } from "@/lib/rnd/format";
-import { TAXONOMY_DECISION_EVENT_KINDS } from "@/lib/rnd/platform-audit.schemas";
+import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
+import { RESEARCH_CATEGORY_DOMAIN_LABELS } from "@/lib/rnd/labels";
+import {
+  TAXONOMY_CLASSIFICATION_EVENT_KIND,
+  TAXONOMY_DECISION_EVENT_KINDS,
+} from "@/lib/rnd/platform-audit.schemas";
 import {
   CATEGORY_PIN_ICON_KEYS,
   CategoryPinIconKeySchema,
+  RESEARCH_CATEGORY_DOMAINS,
+  ResearchCategoryDomainSchema,
   type CategoryPinIconKey,
+  type ResearchCategoryDomain,
 } from "@/lib/rnd/shared.schemas";
 
 const AUDIT_PAGE_LIMIT = 50;
@@ -39,8 +49,18 @@ type PendingCategoryRow = {
  *  REQUIRES a note, an approval does not, and `pinIconKey` exists only on the approve arm of
  *  the project taxonomy. */
 type CategoryVerdict =
-  | { decision: "approve"; pinIconKey?: CategoryPinIconKey; note?: string }
+  | {
+      decision: "approve";
+      pinIconKey?: CategoryPinIconKey;
+      domain?: ResearchCategoryDomain;
+      note?: string;
+    }
   | { decision: "reject"; note: string };
+
+const TAXONOMY_LOG_EVENT_KINDS: readonly string[] = [
+  ...TAXONOMY_DECISION_EVENT_KINDS,
+  TAXONOMY_CLASSIFICATION_EVENT_KIND,
+];
 
 // One list can be loading while the other is ready, so the state is per-queue rather than
 // per-page. An exhaustive switch keeps a new variant from rendering as nothing.
@@ -93,6 +113,7 @@ function toQueueViewState(query: {
 export default function CategoryReviewPage() {
   const staffContextQuery = useOwnStaffContextQuery();
   const projectCategoriesQuery = usePendingResearchCategoriesQuery();
+  const approvedProjectCategoriesQuery = useResearchCategoriesQuery();
   const paperCategoriesQuery = usePendingPaperCategoriesQuery();
   const auditQuery = usePlatformAuditTrailQuery({ limit: AUDIT_PAGE_LIMIT });
 
@@ -136,7 +157,7 @@ export default function CategoryReviewPage() {
   // because the backend's `?eventKind=` takes a single value and two requests would be a
   // second probe for nothing. The heading says what the bound is.
   const taxonomyDecisions = (auditQuery.data?.rows ?? []).filter((entry) =>
-    (TAXONOMY_DECISION_EVENT_KINDS as readonly string[]).includes(entry.eventKind),
+    TAXONOMY_LOG_EVENT_KINDS.includes(entry.eventKind),
   );
 
   return (
@@ -177,6 +198,11 @@ export default function CategoryReviewPage() {
         }}
       />
 
+      <CategoryClassificationSection
+        query={approvedProjectCategoriesQuery}
+        canClassify={canDecideCategories}
+      />
+
       <CategoryQueueSection
         title="Research paper taxonomy"
         description="Used by research paper uploads on a programme."
@@ -185,8 +211,8 @@ export default function CategoryReviewPage() {
         isDeciding={paperDecision.isPending}
         supportsPinIcon={false}
         onDecide={(categoryId, verdict) => {
-          // `pinIconKey` is not on this taxonomy's schema, and its body is `.strict()` — so
-          // it is dropped here rather than sent and 422'd.
+          // `pinIconKey` and `domain` are not on this taxonomy's schema, and its body is
+          // `.strict()` — so they are dropped here rather than sent and 422'd.
           paperDecision.mutate({
             categoryId,
             input:
@@ -204,8 +230,8 @@ export default function CategoryReviewPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Recent decisions</h2>
           <p className="text-xs text-muted-foreground">
-            Taxonomy verdicts among the latest {AUDIT_PAGE_LIMIT} platform actions. Not the whole
-            log.
+            Taxonomy verdicts and classifications among the latest {AUDIT_PAGE_LIMIT} platform
+            actions. Not the whole log.
           </p>
           {taxonomyDecisions.length === 0 ? (
             <p className="text-sm text-muted-foreground">No taxonomy decisions in this window.</p>
@@ -316,6 +342,7 @@ function PendingCategoryCard({
 }) {
   const [note, setNote] = useState("");
   const [pinIconKey, setPinIconKey] = useState<"" | CategoryPinIconKey>("");
+  const [domain, setDomain] = useState<"" | ResearchCategoryDomain>("");
 
   const trimmedNote = note.trim();
   // The backend's own asymmetry, mirrored rather than tightened: `note` is `min(1)` on the
@@ -372,6 +399,31 @@ function PendingCategoryCard({
             </label>
           )}
 
+          {supportsPinIcon && (
+            <label className="block space-y-1 text-xs">
+              <span className="font-medium">Domain (optional)</span>
+              <select
+                value={domain}
+                onChange={(changeEvent) => {
+                  const parsedDomain = ResearchCategoryDomainSchema.safeParse(
+                    changeEvent.target.value,
+                  );
+                  setDomain(parsedDomain.success ? parsedDomain.data : "");
+                }}
+                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+              >
+                {/* Unset is an ABSENT key. The category still pins and clusters; it stays out
+                    of the country matrix until a domain is set below. */}
+                <option value="">Decide later</option>
+                {RESEARCH_CATEGORY_DOMAINS.map((domainOption) => (
+                  <option key={domainOption} value={domainOption}>
+                    {RESEARCH_CATEGORY_DOMAIN_LABELS[domainOption]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -380,6 +432,7 @@ function PendingCategoryCard({
                 onDecide(row.categoryId, {
                   decision: "approve",
                   ...(pinIconKey === "" ? {} : { pinIconKey }),
+                  ...(domain === "" ? {} : { domain }),
                   ...(trimmedNote === "" ? {} : { note: trimmedNote }),
                 })
               }
@@ -402,5 +455,121 @@ function PendingCategoryCard({
         </>
       )}
     </li>
+  );
+}
+
+type ClassificationListState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "empty" }
+  | { status: "ready"; categories: readonly ResearchCategory[] };
+
+/**
+ * Domain & nesting for the APPROVED project taxonomy.
+ *
+ * Separate from the pending queue because assignment is incremental: the baseline categories
+ * predate the domain column, and a moderator may nest or re-file a category long after approving
+ * it. Unassigned categories sort first, because they are the ones missing from the country
+ * matrix; within each group the server's label order is kept.
+ */
+function CategoryClassificationSection({
+  query,
+  canClassify,
+}: {
+  query: {
+    isPending: boolean;
+    isError: boolean;
+    error: unknown;
+    data: ResearchCategory[] | undefined;
+  };
+  canClassify: boolean;
+}) {
+  const listState: ClassificationListState = query.isPending
+    ? { status: "loading" }
+    : query.isError || query.data === undefined
+      ? {
+          status: "error",
+          message:
+            query.error instanceof ApiRequestError
+              ? query.error.apiError.message
+              : "Couldn't load the approved categories.",
+        }
+      : query.data.length === 0
+        ? { status: "empty" }
+        : { status: "ready", categories: query.data };
+
+  function renderList() {
+    switch (listState.status) {
+      case "loading":
+        return <p className="text-sm text-muted-foreground">Loading…</p>;
+      case "error":
+        return (
+          <p
+            role="alert"
+            className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          >
+            {listState.message}
+          </p>
+        );
+      case "empty":
+        return <p className="text-sm text-muted-foreground">No approved categories yet.</p>;
+      case "ready": {
+        const { categories } = listState;
+        const unassignedCount = categories.filter((category) => category.domain === null).length;
+        const parentIds = new Set(
+          categories.flatMap((category) =>
+            category.parentCategoryId === null ? [] : [category.parentCategoryId],
+          ),
+        );
+        const topLevelCategories = categories.filter(
+          (category) => category.parentCategoryId === null,
+        );
+        const orderedCategories = [
+          ...categories.filter((category) => category.domain === null),
+          ...categories.filter((category) => category.domain !== null),
+        ];
+        return (
+          <>
+            {unassignedCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {unassignedCount} of {categories.length} have no domain yet, so they are not in the
+                country matrix.
+              </p>
+            )}
+            <ul className="space-y-3">
+              {orderedCategories.map((category) => (
+                <CategoryClassificationRow
+                  // Keyed on the saved values, so a successful save refetches and remounts the
+                  // row from the server's answer instead of mirroring it into state.
+                  key={`${category.id}:${category.domain ?? ""}:${category.parentCategoryId ?? ""}`}
+                  category={category}
+                  topLevelCategories={topLevelCategories}
+                  hasNestedChildren={parentIds.has(category.id)}
+                  canClassify={canClassify}
+                />
+              ))}
+            </ul>
+          </>
+        );
+      }
+      default: {
+        const exhaustiveCheck: never = listState;
+        return exhaustiveCheck;
+      }
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <h2 className="text-lg font-medium">Domain &amp; nesting</h2>
+        <p className="max-w-2xl text-xs text-muted-foreground">
+          The domain is what lets one country&apos;s problems be compared with another&apos;s. A
+          category with no domain still appears on the map; it only stays out of the country matrix.
+          Nesting is optional and one level deep.
+        </p>
+      </div>
+      {renderList()}
+    </section>
   );
 }

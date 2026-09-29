@@ -3,6 +3,7 @@ import {
   CategoryPinIconKeySchema,
   OpenRoleCompensationStrandSchema,
   ProjectStageSchema,
+  ResearchCategoryDomainSchema,
   RoleCommitmentSchema,
 } from "@/lib/rnd/shared.schemas";
 
@@ -59,6 +60,12 @@ export const ResearchCategorySchema = z.object({
   displayLabel: z.string(),
   pinIconKey: CategoryPinIconKeySchema,
   status: z.enum(RESEARCH_CATEGORY_STATUSES),
+  // Moderator-assigned; `null` means "not in the country matrix yet", which is ordinary.
+  // `.default(null)` so a frontend deployed ahead of the backend still parses a row that
+  // predates the field, on the `matchRadiusMeters` precedent.
+  domain: ResearchCategoryDomainSchema.nullable().default(null),
+  // Optional one-level nesting; `null` for a top-level category.
+  parentCategoryId: z.string().nullable().default(null),
 });
 export type ResearchCategory = z.infer<typeof ResearchCategorySchema>;
 

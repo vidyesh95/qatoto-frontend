@@ -62,3 +62,7 @@ export const TAXONOMY_DECISION_EVENT_KINDS = [
   "taxonomy_category_rejected",
 ] as const;
 export type TaxonomyDecisionEventKind = (typeof TAXONOMY_DECISION_EVENT_KINDS)[number];
+
+/** Setting an approved project category's domain or parent. Not a verdict — it happens after
+ *  approval and may repeat — so it is its own kind rather than a third decision. */
+export const TAXONOMY_CLASSIFICATION_EVENT_KIND = "taxonomy_category_classified";

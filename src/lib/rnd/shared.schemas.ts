@@ -77,6 +77,26 @@ export const CATEGORY_PIN_ICON_KEYS = [
 export const CategoryPinIconKeySchema = z.enum(CATEGORY_PIN_ICON_KEYS);
 export type CategoryPinIconKey = z.infer<typeof CategoryPinIconKeySchema>;
 
+/**
+ * The cross-country comparability layer over the user-creatable category list — the
+ * `research_category_domain` pgEnum, byte-for-byte. CLOSED and moderator-assigned; a category
+ * with no domain (`null`) still pins and clusters, it just stays out of the country matrix.
+ * `docs/PROBLEM_TAXONOMY.md`'s correction header is the authority for why it is an enum and
+ * not a hierarchy.
+ */
+export const RESEARCH_CATEGORY_DOMAINS = [
+  "infrastructure",
+  "water_sanitation",
+  "energy_utilities",
+  "agriculture_rural",
+  "transportation_mobility",
+  "health_care",
+  "housing_shelter",
+  "industry_manufacturing",
+] as const;
+export const ResearchCategoryDomainSchema = z.enum(RESEARCH_CATEGORY_DOMAINS);
+export type ResearchCategoryDomain = z.infer<typeof ResearchCategoryDomainSchema>;
+
 export const DISCOVERY_REGION_KINDS = ["global", "macro_region", "country"] as const;
 export const DiscoveryRegionKindSchema = z.enum(DISCOVERY_REGION_KINDS);
 

@@ -39,7 +39,7 @@ and `git log` are the record of what was built and why.
 
 **R&D / Civic Pulse:**
 
-- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin and viewport-driven reads have since shipped, and so has the `domain` enum (2026-09-29, §19.2). The four-component feasibility readout is open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
 - **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The 2-year retention purge runs (2026-09-28); the 90-days-after-resolution rule is still unbuilt. See §19.5.
 - **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
   map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
@@ -889,7 +889,13 @@ corners are taken: the panel owns top-left, the legend bottom-left (measured 48p
 it wraps rightward), the ODbL attribution the bottom edge, and under `md` the sheet covers everything
 below its peek detent and moves between three of them.
 
-**2. `research_category.domain` as a closed enum.**
+**2. `research_category.domain` as a closed enum — SHIPPED 2026-09-29** (backend migration 0211,
+`docs/PROBLEM_TAXONOMY.md`'s correction header has the eight values and the nesting rules). Set at
+approval or later at `/admin/categories` → "Domain & nesting", audited as
+`taxonomy_category_classified`. ⚠️ **0211 IS NOT APPLIED to the shared database until Vidyesh says
+so**, and the eight baseline rows stay unassigned there until a moderator classifies them through
+the console — deliberately not an SQL backfill, which would skip the audit trail. Fresh databases
+get their domains from `BASELINE_RESEARCH_CATEGORIES`. The original item, kept for the reasoning:
 Not a FK, not user-creatable — it is the comparability layer that lets one country's
 `cold_storage_loss` roll up beside another's. Categories stay user-creatable; domain assignment is
 moderated separately, so an unassigned category still pins and clusters and simply does not enter
@@ -898,6 +904,22 @@ slugs as the durable identity with database-generated UUIDs. See `docs/PROBLEM_T
 
 **3. The four-component feasibility readout.** Four bounded sub-scores, each with its own source
 and `asOf`, never summed and with no verdict enum. See `docs/FEASIBILITY_MODEL.md`.
+
+Decided 2026-09-29, not yet planned in detail — this is the next part:
+
+- **Keyed country × domain**, now that §19.2 gives categories a domain. Every pillar is NULLABLE,
+  and a pillar with no source renders NOTHING — never 0, which would read as a finding.
+- **Need density** — from `problem_cluster` / `demand_signal_snapshot`. Data exists.
+- **Purchasing power** — a new ingest job for World Bank `NY.GDP.PCAP.PP.CD` (keyless public API).
+  Nothing like it exists in the backend today.
+- **Manufacturing** — Comtrade exports plus supplier and factory-site counts. The spec's tariff
+  term is DROPPED (no tariff data, and `R_AND_D_STRUCTURE.md` §7 rules tariffs out) and the
+  formula version says so.
+- **Regulatory** — B-READY has no API and covers ~50 economies; loaded later through an admin CSV
+  import. Until then the pillar is null and renders nothing.
+- ⚠️ `feasibility-score-panel.tsx` is the IMPORT-SUBSTITUTION score (commodity × region, five
+  components summed by a DB CHECK). It is a different thing and must not be reused or renamed
+  for this.
 
 **4. Viewport-driven cluster reads — SHIPPED 2026-09-20.** `moveend` drives
 `useProblemClustersQuery`, `problem-map-canvas` is `TRANSPORT: client-query`, and the count readout
@@ -992,10 +1014,26 @@ found" would make `problem_submission_photo.id` an existence oracle. Do not "imp
 **6. Tile tiers 2 and 3, and the abuse controls.** MapTiler hot-failover needs an account and a
 public key with a metered quota; PMTiles-on-R2 is ~$1.50/month for a ~110 GB planet file. Neither is
 worth it before the traffic exists — today three consecutive tile errors hand the surface back to
-the static canvas. Altcha PoW and the honeypot from `CIVIC_PULSE_PROBLEM_MAPPING.md` §4 are also
-unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-minutes limiter.
+the static canvas.
 
-**7. Delete `src/types/research-and-development/discovery.ts`.** Dead legacy `ProblemReport` with
+**Decided 2026-09-29: stay on free tiers, so neither tier is built now, and no MapTiler.** Storage is
+Backblaze B2, not R2, so if a self-hosted tier is ever wanted:
+
+- It needs a **separate PUBLIC B2 bucket** — the existing one (`src/lib/object-storage.ts`) is
+  private and serves only 300-second presigned URLs.
+- A full ~~110 GB planet exceeds B2's 10 GB free storage (~~$0.60/month). A low-zoom world
+  `pmtiles extract` can fit under 10 GB and stay free; measure it with `--maxzoom` before deciding.
+- Glyphs and sprites must move too: `public/map-styles/qatoto-dark.json` loads glyphs from
+  `tiles.openfreemap.org`, so a failover style that still points there fails with the primary.
+- The existing `error` handler in `civic-pulse-vector-map.tsx` counts EVERY MapLibre error,
+  including style and glyph errors, not only tiles.
+- ⚠️ **Found while surveying, not fixed:** `sheets/place-picker.tsx` has no `error` listener and
+  its `void createMap(...)` has no `.catch`, so a failed import or tile outage in the report sheet
+  leaves a blank map with no fallback. Altcha PoW and the honeypot from `CIVIC_PULSE_PROBLEM_MAPPING.md` §4 are also
+  unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-minutes limiter.
+
+**7. ~~Delete `src/types/research-and-development/discovery.ts`~~ — DONE 2026-09-29**, with its
+`export *` line in the barrel. Dead legacy `ProblemReport` with
 `mapPosition`, `reportCount` and `opportunityScore` — every one of which is gone from the wire. It
 is imported by nothing.
 

@@ -9,10 +9,11 @@ import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import {
   createResearchCategory,
+  classifyResearchCategory,
   decideResearchCategory,
   listResearchCategories,
 } from "@/lib/rnd/catalog.api";
-import type { CategoryPinIconKey } from "@/lib/rnd/shared.schemas";
+import type { CategoryPinIconKey, ResearchCategoryDomain } from "@/lib/rnd/shared.schemas";
 import {
   createOpenRole,
   createProjectApplication,
@@ -111,9 +112,39 @@ export function useDecideResearchCategoryMutation() {
     mutationFn: async (variables: {
       categoryId: string;
       input:
-        | { decision: "approve"; pinIconKey?: CategoryPinIconKey; note?: string }
+        | {
+            decision: "approve";
+            pinIconKey?: CategoryPinIconKey;
+            domain?: ResearchCategoryDomain;
+            note?: string;
+          }
         | { decision: "reject"; note: string };
     }) => unwrap(await decideResearchCategory(variables.categoryId, variables.input)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.researchCategoriesRoot() });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
+    },
+  });
+}
+
+/**
+ * Set an approved category's domain and parent. `moderate_taxonomy`.
+ *
+ * Invalidates the category lists (every picker reads the `approved` one) and the audit trail,
+ * which gains an entry unless the save changed nothing. Not optimistic: the backend owns the
+ * nesting rules and may refuse with a `422`.
+ */
+export function useClassifyResearchCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      categoryId: string;
+      input: {
+        domain: ResearchCategoryDomain | null;
+        parentCategoryId: string | null;
+        note?: string;
+      };
+    }) => unwrap(await classifyResearchCategory(variables.categoryId, variables.input)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.researchCategoriesRoot() });
       void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });

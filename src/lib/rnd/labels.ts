@@ -31,6 +31,7 @@ import type {
 import type {
   CompensationEarnedAsPolicy,
   ProjectStage,
+  ResearchCategoryDomain,
   RoleCommitment,
 } from "@/lib/rnd/shared.schemas";
 import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
@@ -201,6 +202,18 @@ export const RESEARCH_CATEGORY_STATUS_LABELS: Record<ResearchCategory["status"],
   // Folded into another category by a moderator. The name still resolves, so it is shown
   // rather than hidden — but choosing it would file against a row nobody maintains.
   merged: "Merged into another",
+};
+
+/** A `Record`, so a ninth domain is a compile error here until it has a name. */
+export const RESEARCH_CATEGORY_DOMAIN_LABELS: Record<ResearchCategoryDomain, string> = {
+  infrastructure: "Infrastructure",
+  water_sanitation: "Water & sanitation",
+  energy_utilities: "Energy & utilities",
+  agriculture_rural: "Agriculture & rural",
+  transportation_mobility: "Transportation & mobility",
+  health_care: "Health care",
+  housing_shelter: "Housing & shelter",
+  industry_manufacturing: "Industry & manufacturing",
 };
 
 export const RESEARCH_POST_TRACK_LABELS: Record<ResearchPostTrack, string> = {
