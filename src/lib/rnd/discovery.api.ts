@@ -21,6 +21,7 @@ import {
   ClusterResolutionSchema,
   type ClusterResolution,
   DemandSignalSchema,
+  FeasibilityReadoutSchema,
   MyProblemReportSchema,
   ProblemClusterDetailSchema,
   ProblemReportPhotoSchema,
@@ -33,6 +34,7 @@ import {
   TalentProfileSchema,
   type DemandSignal,
   type DiscoveryRegion,
+  type FeasibilityReadout,
   type DiscoverySkill,
   type MarketInsight,
   type MarketInsightStatKind,
@@ -212,6 +214,23 @@ export function listDemandSignals(
     `/discovery/demand-signals${buildQueryString({ ...filter })}`,
     DemandSignalSchema,
     PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
+ * One country's feasibility readout, or `data: null` when the country is unknown or has never
+ * been scored — a 200 either way, so "nothing to show" never reads as a broken request.
+ * `countryCode` must already be two UPPERCASE letters; the backend 422s anything else rather
+ * than folding the case.
+ */
+export function getFeasibilityReadout(
+  countryCode: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<FeasibilityReadout | null>> {
+  return getJson(
+    `/discovery/feasibility-readouts${buildQueryString({ countryCode })}`,
+    FeasibilityReadoutSchema.nullable(),
     options,
   );
 }

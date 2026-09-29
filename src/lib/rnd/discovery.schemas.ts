@@ -4,6 +4,7 @@ import {
   DiscoveryCategoryRefSchema,
   DiscoveryRegionRefSchema,
   PaginationMetaSchema,
+  ResearchCategoryDomainSchema,
   RoleCommitmentSchema,
   TrendDirectionSchema,
 } from "@/lib/rnd/shared.schemas";
@@ -235,6 +236,64 @@ export const DemandSignalSchema = z.object({
   asOf: z.string(),
 });
 export type DemandSignal = z.infer<typeof DemandSignalSchema>;
+
+// --- The feasibility readout -------------------------------------------------
+
+/**
+ * `GET /discovery/feasibility-readouts?countryCode=` — one country's readout: THREE PILLARS,
+ * each its own object with its own budget, source and date, and NO TOTAL anywhere on the wire
+ * (docs/FEASIBILITY_MODEL.md's correction header). Need density is Qatoto's own reports,
+ * purchasing power the World Bank, manufacturing UN Comtrade plus the supplier directory; adding
+ * them would be the cross-evidence join `R_AND_D_STRUCTURE.md` §7 forbids.
+ *
+ * A pillar is `null` when there is no data for it — never 0 — and renders nothing.
+ * Purchasing power is per COUNTRY, so it arrives once rather than on each domain row.
+ * Regulatory ease is not on the wire yet: nothing measures it.
+ */
+export const NeedDensityReadoutSchema = z.object({
+  points: z.number(),
+  budget: z.number(),
+  distinctReporterCount: z.number(),
+  activeClusterCount: z.number(),
+  sourceName: z.string(),
+  asOf: z.string(),
+});
+
+export const PurchasingPowerReadoutSchema = z.object({
+  points: z.number(),
+  budget: z.number(),
+  valueInWholeInternationalDollars: z.number(),
+  dataYear: z.number(),
+  sourceName: z.string(),
+  sourceRetrievedAt: z.string(),
+});
+
+export const ManufacturingReadoutSchema = z.object({
+  points: z.number(),
+  budget: z.number(),
+  exportValueInCents: z.number(),
+  currency: z.string(),
+  tradeDataYear: z.number(),
+  domesticProducerCount: z.number(),
+  sourceName: z.string(),
+  sourceRetrievedAt: z.string(),
+});
+
+export const FeasibilityDomainReadoutSchema = z.object({
+  domain: ResearchCategoryDomainSchema,
+  needDensity: NeedDensityReadoutSchema.nullable(),
+  manufacturing: ManufacturingReadoutSchema.nullable(),
+});
+export type FeasibilityDomainReadout = z.infer<typeof FeasibilityDomainReadoutSchema>;
+
+export const FeasibilityReadoutSchema = z.object({
+  country: DiscoveryRegionRefSchema,
+  asOf: z.string(),
+  modelVersion: z.number(),
+  purchasingPower: PurchasingPowerReadoutSchema.nullable(),
+  domains: z.array(FeasibilityDomainReadoutSchema),
+});
+export type FeasibilityReadout = z.infer<typeof FeasibilityReadoutSchema>;
 
 // --- Regions and skills (facet vocabularies, neither paginated) --------------
 

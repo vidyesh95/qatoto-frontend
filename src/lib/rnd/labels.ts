@@ -216,6 +216,16 @@ export const RESEARCH_CATEGORY_DOMAIN_LABELS: Record<ResearchCategoryDomain, str
   industry_manufacturing: "Industry & manufacturing",
 };
 
+/**
+ * The feasibility readout's pillars. Three, not four: regulatory ease has no data source yet and
+ * is stated as unmeasured once, in copy, rather than labelled as a column that is always empty.
+ */
+export const FEASIBILITY_PILLAR_LABELS = {
+  needDensity: "Need density",
+  purchasingPower: "Purchasing power",
+  manufacturing: "Manufacturing",
+} as const;
+
 export const RESEARCH_POST_TRACK_LABELS: Record<ResearchPostTrack, string> = {
   informal_paper: "Informal paper",
   idea: "Idea",

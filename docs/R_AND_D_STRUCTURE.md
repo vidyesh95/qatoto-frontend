@@ -822,6 +822,22 @@ no join on the wire. The only shared key is the research category, which is what
 coincidence rather than a combined score, and once that eight categories covering 5,668
 commodities is the coarsest possible link.
 
+### The feasibility readout (country × domain), added 2026-09-29
+
+When a country is picked, the overview also renders `sections/feasibility-readout.tsx` from
+`GET /discovery/feasibility-readouts`. It shows three pillars: need density (Qatoto reports),
+purchasing power (World Bank, stated once for the country) and manufacturing (Comtrade plus
+suppliers). They are keyed on the research category's moderator-assigned `domain`.
+
+It obeys the rule above in its strongest form:
+
+- There is no total anywhere: not in the table, not on the wire, not in the database.
+- Each pillar carries its own source and date.
+- An absent pillar is an empty cell, never a zero.
+
+It is NOT `feasibility-score-panel.tsx`, which is the import-substitution score and does sum its
+five components. See `docs/FEASIBILITY_MODEL.md`.
+
 ### The opportunity scatter
 
 A new chart primitive (`src/components/charts/scatter-frame.tsx`, `scatter-series.tsx`,

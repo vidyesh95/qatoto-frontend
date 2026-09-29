@@ -906,7 +906,45 @@ slugs as the durable identity with database-generated UUIDs. See `docs/PROBLEM_T
 **3. The four-component feasibility readout.** Four bounded sub-scores, each with its own source
 and `asOf`, never summed and with no verdict enum. See `docs/FEASIBILITY_MODEL.md`.
 
-Decided 2026-09-29, not yet planned in detail — this is the next part:
+**BUILT 2026-09-29 (Part 2 of Civic Pulse F): three of the four pillars.** Backend migration 0212
+adds `country_economic_indicator` (World Bank, weekly `sync-world-bank-indicators`) and
+`feasibility_readout_snapshot` (nightly `recompute-feasibility-readouts`, 04:10 UTC). There is
+no total column and no sum CHECK, and every pillar is NULL as a group or set as a group.
+`GET /discovery/feasibility-readouts?countryCode=` serves one country's latest snapshot, with
+purchasing power sent once because it is country-level. The UI is
+`sections/feasibility-readout.tsx` on Market Research → Overview, shown only when a country is
+picked. The ladders and the three stated departures from the spec are in
+`docs/FEASIBILITY_MODEL.md`'s correction header. Manual runs: `pnpm db:sync-world-bank`,
+`pnpm db:recompute-feasibility`.
+
+✅ **Live on the shared database (2026-09-29):**
+
+- 0212 applied (the only pending migration).
+- 90 World Bank observations: 18 countries × 5 years, every country with a 2025 value.
+- A 144-cell snapshot: every country gets purchasing power. India also has manufacturing in 7
+  domains and need density in 1.
+- One India cluster is uncounted: its category ("electricity") is still `pending`, so it has no
+  domain. That is by design; approve and classify it and the next run counts it.
+- Verified end to end: the route (IN, KE, ZZ → null, lowercase → 422), the frontend schema, and the
+  page headless (India shows the table; Kenya shows purchasing power only; no country shows nothing).
+
+⚠️ **The World Bank API took 86 s cold** for the 18-country query (1 s warm), so the first run timed
+out at 60 s. The default is now 180 s. The failed first run had already written 7 India rows with
+no purchasing power, because the manual recompute ran after the failed sync. Since a snapshot never
+overwrites its own `asOf`, those rows were deleted and recomputed. **Run the sync before the
+recompute**; the crons already order it that way (Monday 01:40 vs nightly 04:10).
+
+Still open:
+
+- **Regulatory ease** — the B-READY admin CSV import, then its column group. Not a column yet,
+  because nothing could write it.
+- **Comtrade beyond India** — the weekly plan is `["IN"]`, so manufacturing is India-only and
+  every other country shows purchasing power alone. That is honest, not a bug.
+- **The readout on cluster pages** — needs `domain` on the nested `DiscoveryCategoryRef`.
+- **Factory sites** (`commerce_organization_site`) carry no domain, so they are not counted as
+  producers. Only suppliers on a published substitute mapping are.
+
+The decisions it was built from:
 
 - **Keyed country × domain**, now that §19.2 gives categories a domain. Every pillar is NULLABLE,
   and a pillar with no source renders NOTHING — never 0, which would read as a finding.

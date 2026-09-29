@@ -1,11 +1,13 @@
 // TRANSPORT: server-fetch — server component. Reads GET /discovery/market-insights,
 // GET /discovery/demand-signals, GET /localization-assessments,
-// GET /localization-assessment-grid, GET /import-commodities, GET /import-commodity-kinds and
-// GET /import-reporters via @/lib/rnd/*.api, with the session cookie forwarded by
-// callerRequestOptions(). All seven are public. No React Query here.
+// GET /localization-assessment-grid, GET /import-commodities, GET /import-commodity-kinds,
+// GET /import-reporters and, when a country is picked, GET /discovery/feasibility-readouts via
+// @/lib/rnd/*.api, with the session cookie forwarded by callerRequestOptions(). All eight are
+// public. No React Query here.
 
 import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import CommodityDirectory from "@/components/home/research-and-development/sections/commodity-directory";
+import FeasibilityReadoutSection from "@/components/home/research-and-development/sections/feasibility-readout";
 import LocalizationLeaderboard from "@/components/home/research-and-development/sections/localization-leaderboard";
 import MarketResearchOverview from "@/components/home/research-and-development/sections/market-research-overview";
 import MarketResearchTabs, {
@@ -20,7 +22,11 @@ import RuledOutPanel from "@/components/home/research-and-development/sections/r
 import SignalAgreementBand from "@/components/home/research-and-development/sections/signal-agreement-band";
 import TrendingDemandSignals from "@/components/home/research-and-development/sections/trending-demand-signals";
 import { readEnumParam, readPatternParam, type RawSearchParams } from "@/lib/filter-href";
-import { listDemandSignals, listMarketInsights } from "@/lib/rnd/discovery.api";
+import {
+  getFeasibilityReadout,
+  listDemandSignals,
+  listMarketInsights,
+} from "@/lib/rnd/discovery.api";
 import type { DemandSignal, MarketInsight } from "@/lib/rnd/discovery.schemas";
 import {
   listImportCommodities,
@@ -102,6 +108,7 @@ export default async function MarketResearchPage({
     assessmentGridResult,
     commoditiesResult,
     kindsResult,
+    feasibilityReadoutResult,
   ] = await Promise.all([
     listImportReporters(requestOptions),
     listMarketInsights({ limit: INSIGHTS_PAGE_LIMIT }, requestOptions),
@@ -135,6 +142,11 @@ export default async function MarketResearchPage({
       requestOptions,
     ),
     listImportCommodityKinds(requestOptions),
+    // Per-country only: the readout has no "all countries" form, so with no country picked
+    // there is nothing to ask for and nothing renders.
+    reporterCountryCode === undefined
+      ? Promise.resolve(null)
+      : getFeasibilityReadout(reporterCountryCode, requestOptions),
   ]);
 
   // Secondary reads: losing one costs a section or a chip row, not the page.
@@ -147,6 +159,12 @@ export default async function MarketResearchPage({
     : [];
   const demandSignals = demandSignalsResult.success ? demandSignalsResult.data.rows : [];
   const commodities = commoditiesResult.success ? commoditiesResult.data.rows : [];
+  // A failed or absent readout renders nothing, like every other secondary read here — and a
+  // frontend deployed ahead of the backend gets a 404 and shows no section rather than an error.
+  const feasibilityReadout =
+    feasibilityReadoutResult !== null && feasibilityReadoutResult.success
+      ? feasibilityReadoutResult.data
+      : null;
 
   // The agreement band's join key. Built from the catalogue page the surface already has —
   // the assessment rows carry an `hsCode` but not a category, and inventing a second read to
@@ -234,6 +252,12 @@ export default async function MarketResearchPage({
             totalCommodityCount={catalogueTotal}
             searchParams={resolvedSearchParams}
           />
+
+          {feasibilityReadout !== null && (
+            <div className="px-4 lg:px-6">
+              <FeasibilityReadoutSection readout={feasibilityReadout} />
+            </div>
+          )}
 
           <div className="px-4 lg:px-6">
             {pickerAssessments.length === 0 ? (

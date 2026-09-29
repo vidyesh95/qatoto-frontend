@@ -1,8 +1,8 @@
 # Civic Pulse: Startup Feasibility & Market Opportunity Model
 
 > **Specification**: `docs/FEASIBILITY_MODEL.md`  
-> **Model Version**: `v1.0.0`  
-> **Schema Authority**: `CountryProblemInsightSchema` in `src/lib/rnd/discovery.schemas.ts`  
+> **Model Version**: `1` (`FEASIBILITY_READOUT_MODEL_VERSION` in the backend scorer)  
+> **Schema Authority**: `FeasibilityReadoutSchema` in `src/lib/rnd/discovery.schemas.ts`  
 > **Parent Document**: [docs/CIVIC_PULSE_PROBLEM_MAPPING.md](./CIVIC_PULSE_PROBLEM_MAPPING.md)
 
 ---
@@ -37,6 +37,39 @@
 > ```
 >
 > §5.2's `modelVersion` / `computedAt` / `dataSnapshotDates` survive and apply per component.
+>
+> ### ✅ Built 2026-09-29: three pillars, model version 1
+>
+> Backend: `feasibility-readout-score.ts` (pure, integer ladders), `recompute-feasibility-readouts`
+> (nightly), `sync-world-bank-indicators` (weekly), migration 0212. Frontend:
+> `sections/feasibility-readout.tsx` on Market Research → Overview when a country is picked.
+>
+> | Pillar           | Budget | Source                                                           | Ladder (model 1)                                                                     |
+> | ---------------- | ------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+> | Need density     | 30     | Qatoto problem reports (active clusters, category has a domain)  | distinct reporters ≥1/5/25/100 → 5/10/15/20, plus active clusters ≥1/3/10 → 3/6/10   |
+> | Purchasing power | 25     | World Bank `NY.GDP.PCAP.PP.CD`, latest published year            | ≥$2k/5k/10k/20k/45k → 5/10/15/20/25                                                  |
+> | Manufacturing    | 25     | UN Comtrade annual exports + suppliers on a published substitute | exports ≥$1/10m/100m/1bn/10bn/100bn → 1/3/6/9/12/15, plus producers ≥1/5/20 → 4/7/10 |
+> | Regulatory ease  | 20     | **not built** — B-READY needs an admin CSV import first          | —                                                                                    |
+>
+> **Three stated departures from §3:**
+>
+> - Need density drops the float formula and its `C_total` denominator, which lowered one
+>   country's score whenever another country reported more.
+> - Purchasing power drops `× log10(affected population)`, because no such figure exists.
+> - Manufacturing drops the tariff and logistics terms (§7 rules tariffs out; neither dataset is
+>   ingested).
+>
+> A sum INSIDE one pillar is allowed, since both halves share a source. A sum ACROSS pillars
+> exists nowhere: there is no total column, no CHECK that adds, and no total on the wire.
+>
+> **A pillar is null when no source covers the cell, never 0:**
+>
+> - Need density is null with no active cluster in that country and domain.
+> - Manufacturing is null when Comtrade has no lines for that country and domain.
+> - Purchasing power is null when the World Bank publishes no value.
+>
+> §5.1's confidence bands were NOT built. "Statistically verified market demand" is a claim
+> nothing here can back, and the raw reporter and place counts are shown instead.
 
 ## 1. Executive Summary
 
