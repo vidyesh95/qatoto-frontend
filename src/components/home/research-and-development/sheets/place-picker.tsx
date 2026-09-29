@@ -31,6 +31,12 @@ const INITIAL_PICKER_ZOOM = 1.2;
 const LOCATED_PICKER_ZOOM = 14;
 
 /**
+ * How many tile errors in a row mean the host is down rather than one tile being slow.
+ * Mirrors `civic-pulse-vector-map.tsx`.
+ */
+const CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP = 3;
+
+/**
  * What the locate button is doing.
  *
  * A discriminated union rather than `isLocating` + `hasFailed` (CLAUDE.md Pattern 1): "asking the
@@ -75,8 +81,9 @@ type PlacePickerProps = {
 export default function PlacePicker({ pin, onPinChange }: PlacePickerProps) {
   const mapCanvasMode = useResolvedMapCanvasMode();
   const [geolocationState, setGeolocationState] = useState<GeolocationState>({ kind: "idle" });
+  const [isMapUnavailable, setIsMapUnavailable] = useState(false);
 
-  const canShowMap = mapCanvasMode === "vector";
+  const canShowMap = mapCanvasMode === "vector" && !isMapUnavailable;
 
   function handleLocateClick() {
     if (typeof navigator === "undefined" || navigator.geolocation === undefined) {
@@ -124,7 +131,18 @@ export default function PlacePicker({ pin, onPinChange }: PlacePickerProps) {
       </div>
 
       {canShowMap ? (
-        <PickerMap pin={pin} onPinChange={onPinChange} />
+        <PickerMap
+          pin={pin}
+          onPinChange={onPinChange}
+          onUnavailable={() => setIsMapUnavailable(true)}
+        />
+      ) : isMapUnavailable ? (
+        <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-outline-variant/60 bg-muted/20 p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            Map preview is temporarily unavailable. The location you typed above will still be saved
+            with your report.
+          </p>
+        </div>
       ) : (
         // No empty map box and no apology. A report with no pin is a valid report, and the field
         // above already asked the question this would have answered.
@@ -152,6 +170,10 @@ export default function PlacePicker({ pin, onPinChange }: PlacePickerProps) {
   );
 }
 
+type PickerMapProps = PlacePickerProps & {
+  readonly onUnavailable: () => void;
+};
+
 /**
  * The tappable map.
  *
@@ -164,23 +186,26 @@ export default function PlacePicker({ pin, onPinChange }: PlacePickerProps) {
  * `min-h-0 flex-1 overflow-y-auto` box, so a map container with no intrinsic height collapses to
  * nothing and renders a blank strip with working controls.
  */
-function PickerMap({ pin, onPinChange }: PlacePickerProps) {
+function PickerMap({ pin, onPinChange, onUnavailable }: PickerMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<MapLibreMap | null>(null);
   const markerRef = useRef<MapLibreMarker | null>(null);
   /** Latest `onPinChange`, so the map is created once and never re-created for a new closure. */
   const onPinChangeRef = useRef(onPinChange);
+  const onUnavailableRef = useRef(onUnavailable);
   /** The pin the map opened with, read once — a later change must not re-create the map. */
   const initialPinRef = useRef(pin);
 
   useEffect(() => {
     onPinChangeRef.current = onPinChange;
-  }, [onPinChange]);
+    onUnavailableRef.current = onUnavailable;
+  }, [onPinChange, onUnavailable]);
 
   useEffect(() => {
     const mapContainer = mapContainerRef.current;
     if (mapContainer === null) return () => {};
     let isEffectStillMounted = true;
+    let consecutiveTileErrorCount = 0;
 
     async function createMap(container: HTMLDivElement) {
       const [maplibreModule] = await Promise.all([
@@ -220,10 +245,28 @@ function PickerMap({ pin, onPinChange }: PlacePickerProps) {
         onPinChangeRef.current(toApproximatePin(clickEvent.lngLat.lat, clickEvent.lngLat.lng));
       });
 
+      // Track consecutive tile errors and bail out to fallback UI if provider is unreachable
+      map.on("error", () => {
+        if (!isEffectStillMounted) return;
+        consecutiveTileErrorCount += 1;
+        if (consecutiveTileErrorCount >= CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP) {
+          onUnavailableRef.current();
+        }
+      });
+
+      map.on("data", (dataEvent) => {
+        if (dataEvent.dataType === "source" && "tile" in dataEvent && dataEvent.tile) {
+          consecutiveTileErrorCount = 0;
+        }
+      });
+
       return;
     }
 
-    void createMap(mapContainer);
+    void createMap(mapContainer).catch(() => {
+      if (!isEffectStillMounted) return;
+      onUnavailableRef.current();
+    });
 
     return () => {
       isEffectStillMounted = false;
@@ -269,7 +312,9 @@ function PickerMap({ pin, onPinChange }: PlacePickerProps) {
       readyMap.easeTo({ center: [degrees.longitude, degrees.latitude], duration: 300 });
     }
 
-    void syncMarker(map);
+    void syncMarker(map).catch(() => {
+      // Ignore marker sync error if unmounted or map failed
+    });
     return () => {
       isEffectStillMounted = false;
     };

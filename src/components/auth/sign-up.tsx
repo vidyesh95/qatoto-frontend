@@ -235,6 +235,23 @@ export default function SignUp() {
                 />
                 <span>Get OTP</span>
               </button>
+              <p className="px-2 text-center text-xs text-muted-foreground">
+                By continuing, you agree to Qatoto&apos;s{" "}
+                <Link
+                  href="/terms-and-conditions"
+                  className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+                >
+                  Terms and Conditions
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy-policy"
+                  className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </form>
           </>
         )}
@@ -371,6 +388,23 @@ export default function SignUp() {
               />
               <span>Sign up</span>
             </button>
+            <p className="px-2 text-center text-xs text-muted-foreground">
+              By creating an account, you agree to our{" "}
+              <Link
+                href="/terms-and-conditions"
+                className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+              >
+                Terms and Conditions
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy-policy"
+                className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </form>
         )}
         <div className="flex items-center gap-4 px-4 text-muted-foreground">

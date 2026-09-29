@@ -250,6 +250,11 @@ export default function SliceLedgerTab({
     <div className="space-y-6 px-4 lg:px-6">
       <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">The cap table</h3>
+        <p className="text-xs text-muted-foreground">
+          Not legal, tax, or investment advice. Cap table slices and basis points are mathematical
+          contribution records calculated from accepted agreements, not securities, equity grants,
+          or formal tax instruments.
+        </p>
         {renderEquity()}
       </section>
 

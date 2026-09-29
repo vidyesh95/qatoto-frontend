@@ -124,6 +124,11 @@ export default function PieBakePanel({
         recompute stops running, and there is no way to undo it — recovery would be a manual
         operation outside this app.
       </p>
+      <p className="text-xs text-muted-foreground">
+        Not legal, tax, or investment advice. Freezing the dynamic pie outputs calculated equity
+        records to inform corporate resolutions by the board and its legal counsel. Qatoto does not
+        issue shares, grant options, or execute legal securities distributions.
+      </p>
 
       {openProposalCount > 0 && (
         <p className="rounded-2xl bg-warning-container p-3 text-sm text-warning-container-foreground">

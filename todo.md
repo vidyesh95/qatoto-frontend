@@ -406,8 +406,7 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
    its recipients (Vercel, AWS, Aiven, Cloudinary, Backblaze, Brevo, Google Gemini, Google/GitHub sign-in,
    Nominatim, the payment provider), the new data categories, the automated assessment of effort claims
    and the third-party content pages load. Both carry a "Last updated" date. Left open by that rewrite:
-    - **No terms acceptance is recorded anywhere.** `sign-up.tsx` links neither document and the backend
-      has no `terms_accepted_at` or terms version. Needs a backend column plus a sign-up line.
+    - **Terms acceptance tracking in backend remains open.** `sign-up.tsx` now links both documents (fixed 2026-09-29); the backend has no `terms_accepted_at` or terms version yet.
     - **The data export lags the inventory.** `data-export.service.ts` omits orders and cart (which "What
       you do here" has always listed), effort, claims, daily logs, receipts, equity and pay, and every
       line of the panel's new "Buying and selling" and "What you publish" cards. Each new card says so
@@ -415,8 +414,8 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
     - ~~**`information/how-qatoto-works.tsx:37,124` contradicts the terms**~~ — **FIXED.** Replaced
       claims that Qatoto ships goods, runs operations, files certifications, and handles returns with
       accurate marketplace venue copy aligned with Terms clause 5.
-    - **The "not legal or tax advice" notice is missing on equity surfaces**, which
-      `docs/PROOF_OF_EFFORT_SPEC.md` promises; it is only in the terms and the CSV export.
+    - ~~**The "not legal or tax advice" notice is missing on equity surfaces**~~ — **FIXED 2026-09-29.**
+      Added standing notices across `slice-ledger-tab.tsx`, `equity-for-skills-explainer.tsx`, and `pie-bake-panel.tsx`.
     - **Community Guidelines are video-era, and the Copyright Policy's licence covers video only.** Terms
       clause 3 is now the general grant; align both with it.
     - **When the frontend moves from Vercel to Cloudflare**, the privacy policy's Sharing section names
@@ -1066,9 +1065,9 @@ Backblaze B2, not R2, so if a self-hosted tier is ever wanted:
   `tiles.openfreemap.org`, so a failover style that still points there fails with the primary.
 - The existing `error` handler in `civic-pulse-vector-map.tsx` counts EVERY MapLibre error,
   including style and glyph errors, not only tiles.
-- ⚠️ **Found while surveying, not fixed:** `sheets/place-picker.tsx` has no `error` listener and
-  its `void createMap(...)` has no `.catch`, so a failed import or tile outage in the report sheet
-  leaves a blank map with no fallback. Altcha PoW and the honeypot from `CIVIC_PULSE_PROBLEM_MAPPING.md` §4 are also
+- ~~⚠️ **Found while surveying, not fixed:** `sheets/place-picker.tsx` has no `error` listener and
+  its `void createMap(...)` has no `.catch`~~ — **FIXED 2026-09-29.** Added `CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP = 3`,
+  `.catch` on `createMap`, error event handling, and a fallback UI card when tiles or map initialization fails. Altcha PoW and the honeypot from `CIVIC_PULSE_PROBLEM_MAPPING.md` §4 are also
   unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-minutes limiter.
 
 **7. ~~Delete `src/types/research-and-development/discovery.ts`~~ — DONE 2026-09-29**, with its

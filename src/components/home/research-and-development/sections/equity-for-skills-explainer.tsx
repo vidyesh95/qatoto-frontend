@@ -76,6 +76,11 @@ export default function EquityForSkillsExplainer() {
         </Link>{" "}
         shows every slice, every verification run and every dispute behind its cap table.
       </p>
+      <p className="text-xs text-muted-foreground">
+        Not legal, tax, or investment advice. Advertised role equity ranges represent potential
+        dynamic contribution earning models under private agreements, not guaranteed securities or
+        legal employment contracts.
+      </p>
     </section>
   );
 }
