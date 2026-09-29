@@ -18,7 +18,7 @@ and `git log` are the record of what was built and why.
 **Blocked on a purchase / external vendor:**
 
 - **§11 (SMS provider)** — Phone number verification in Account Settings requires contracting an SMS gateway (e.g. Twilio/Msg91).
-- **Brand SVG Assets** — WhatsApp, X, and LinkedIn brand marks in `public/icons` for the share sheet.
+- ~~**Brand SVG Assets**~~ — **DONE.** WhatsApp, X, and LinkedIn brand marks in `public/icons` wired into `share-sheet.tsx`.
 
 **Commercial & Payment Rail (Top priority open build):**
 
@@ -94,11 +94,11 @@ passkeys. A verified phone would be a trust signal, and Qatoto runs no KYC and h
 one. Decide whether this is a "not building it" before contracting any vendor — the cheapest SMS
 provider is the one never signed up for.
 
-### Share targets have no brand marks
+### ~~Share targets have no brand marks~~ — **SHIPPED**
 
-`public/icons` has `mail` but no X, WhatsApp, or LinkedIn marks. The fallbacks in
-`src/components/home/watch/share-sheet.tsx` (lines 44, 53, 62) render generic `share` glyphs.
-Adding real SVG assets into `public/icons` and updating `share-sheet.tsx` will complete the polish.
+Official brand SVGs for WhatsApp, X (Twitter), and LinkedIn deployed in `public/icons` (`whatsapp_24dp_000000_…`,
+`x_24dp_000000_…`, `linkedin_24dp_000000_…`) and wired directly into `src/components/home/watch/share-sheet.tsx`.
+The `_000000_` naming pattern automatically handles dark mode inversion via `globals.css`.
 
 ---
 

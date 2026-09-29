@@ -19,7 +19,7 @@ This document outlines **what is complete, what is truly remaining in code, what
 | **Escrow & FX**          | Multi-milestone escrow state machines, strict ledger accounting rules.                                                                                                                                               | Licensed escrow provider (Escrow.com/Shieldpay) and live FX feed (Open Exchange Rates/Wise) remain deterministic fakes until milestone escrow and multi-currency orders launch.                                                                                                                                               |
 | **Auth & Security**      | Email OTP login (Brevo), password auth, WebAuthn Passkeys, session management, RBAC / staff capabilities.                                                                                                            | **Phone SMS verification is dead.** The Settings phone verification UI was made read-only because the backend has no SMS gateway (Twilio/Msg91). Better Auth `phoneNumber()` requires an SMS provider and DB migration.                                                                                                       |
 | **Blueprints Hub**       | 32 engineering teardowns, 3D exploded view WebGL engine, case studies, maker launches, admin review queue, and in-platform sworn rights claims (`POST /blueprints/teardowns/:slug/claims` + `/admin/rights-claims`). | **Invented Content & De-indexed.** All 32 blueprints are seeded fixtures; all 7 routes have `noindex` and are excluded from `sitemap.ts`. Real hardware content is required before un-indexing.                                                                                                                               |
-| **Video & Watch**        | YouTube video feed, chapters, comments, creator-supplied transcripts (.srt / .vtt / text), trending tags, and search query analytics ("Everyone is searching for:").                                                 | Creator paywalls (`isPremium`) are hardcoded to `false`. Brand SVG icons (WhatsApp, X, LinkedIn) missing from `public/icons/`. In-player caption authoring is a **deliberate non-goal** (managed by YouTube).                                                                                                                 |
+| **Video & Watch**        | YouTube video feed, chapters, comments, creator-supplied transcripts (.srt / .vtt / text), trending tags, search query analytics ("Everyone is searching for:"), and brand SVG icons for WhatsApp, X, and LinkedIn.  | Creator paywalls (`isPremium`) are hardcoded to `false`. In-player caption authoring is a **deliberate non-goal** (managed by YouTube).                                                                                                                                                                                       |
 | **Creator / Studio**     | Sales, earnings overview, pitch management, product listing wizard, video upload, and freight rate card authoring.                                                                                                   | `/studio/learn` is a placeholder screen. Incoterms default on listings is open. Multi-axis variants (Color × Size) are deferred (only single-level variants exist).                                                                                                                                                           |
 | **Legal & Policy**       | Comprehensive Terms of Service and Privacy Policy rewrite (shipped 2026-09-28) covering B2B commerce, R&D equity, and blueprints.                                                                                    | Company legal entity placeholders in `site.ts` are `[TO BE CONFIRMED]`. Terms acceptance tracking (`terms_accepted_at`) is missing. Data export service needs expansion.                                                                                                                                                      |
 
@@ -142,13 +142,12 @@ _Open Question_: Is SMS verification necessary? Email OTP and WebAuthn Passkeys 
 - **Transcripts shipped 2026-09-28**: Creator-supplied files (.srt / .vtt / pasted text) are uploaded via `PUT /videos/:videoId/transcript`, parsed server-side, and displayed in the watch page's Transcript tab.
 - **Trending tags shipped 2026-09-28**: Aggregated from hourly `trending_video_snapshot` entries for tags shared by at least two creators.
 - **Search query analytics shipped 2026-09-28**: `search_query_log` captures sanitized, weekly-salted queries to power "Everyone is searching for:" on the watch page.
-- Social share icons: WhatsApp, X (Twitter), and LinkedIn render generic share icons because their brand SVGs are missing from `public/icons/`.
+- **Brand SVG icons shipped 2026-09-29**: Official brand SVGs for WhatsApp, X (Twitter), and LinkedIn are deployed in `public/icons/` and wired into `share-sheet.tsx`, with automatic dark mode inversion.
 
 #### What Needs to Be Done:
 
-1. Add brand SVG icons for WhatsApp, X (Twitter), and LinkedIn into `public/icons/`.
-2. Admin UI for lifting search-term suppressions (currently API-only).
-3. If paywalled videos are desired: Introduce an entitlement model in the backend with recurring payment processing (`isPremium`).
+1. Admin UI for lifting search-term suppressions (currently API-only).
+2. If paywalled videos are desired: Introduce an entitlement model in the backend with recurring payment processing (`isPremium`).
 
 #### Decided: Not Building It (Deliberate Non-Goal):
 
@@ -244,7 +243,6 @@ flowchart TD
 ### Phase 5: External Vendor Integration (If Decided)
 
 - Contract SMS gateway and configure Better Auth `phoneNumber()` plugin.
-- Add brand SVGs for WhatsApp, LinkedIn, and X to `public/icons/`.
 
 ---
 

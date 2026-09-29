@@ -33,15 +33,14 @@ type ShareTarget = {
  * the long note in `video-card-menu.tsx` for the conditions under which it becomes real, and
  * it is a menu row when it does, not a share target.
  *
- * NO BRAND MARKS FOR THREE OF THE FOUR. `public/icons` has `mail` but no X, WhatsApp or
- * LinkedIn glyph, so those fall back to the generic `share` icon and are told apart by their
- * labels. Inventing the assets — or hand-writing trademarked logo paths from memory — would be
- * worse than a plain glyph. Dropping real marks in is the obvious polish.
+ * BRAND MARKS FOR ALL FOUR SHARE TARGETS. `public/icons` provides brand SVG marks
+ * for WhatsApp, X, LinkedIn, and Email, adhering to the repo's icon naming convention
+ * (`…_24dp_000000_…`) which inverts automatically in dark mode via globals.css.
  */
 const SHARE_TARGETS: ShareTarget[] = [
   {
     channel: "whatsapp",
-    icon: "share",
+    icon: "whatsapp",
     label: "WhatsApp",
     // wa.me takes ONE `text` field, so the title and the link are joined into it rather than
     // passed separately. Without a title it is the bare link, never the string "undefined".
@@ -50,7 +49,7 @@ const SHARE_TARGETS: ShareTarget[] = [
   },
   {
     channel: "x",
-    icon: "share",
+    icon: "x",
     label: "X",
     buildIntentUrl: (shareUrl, videoTitle) =>
       `https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}${
@@ -59,7 +58,7 @@ const SHARE_TARGETS: ShareTarget[] = [
   },
   {
     channel: "linkedin",
-    icon: "share",
+    icon: "linkedin",
     label: "LinkedIn",
     // LinkedIn takes the URL alone and reads the title off the page's own OG tags; passing a
     // `title` parameter has been ignored for years and pretending otherwise would be cargo.

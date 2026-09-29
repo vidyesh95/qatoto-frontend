@@ -41,9 +41,9 @@
     - Creator-supplied transcripts (.srt / .vtt / pasted text) parsed server-side and rendered in the watch page's Transcript tab (shipped 2026-09-28).
     - Trending tags aggregated from hourly snapshots (shipped 2026-09-28).
     - Search query logging with weekly-salted hashing for "Everyone is searching for:" (shipped 2026-09-28).
+    - Brand SVG assets for WhatsApp, X (Twitter), and LinkedIn in `public/icons/` wired into the share sheet (shipped 2026-09-29).
 - **What is missing**:
     - Creator paywalls (`isPremium`) are hardcoded to `false` (no backend entitlement or paywall model).
-    - Brand SVG assets: WhatsApp, X (Twitter), and LinkedIn marks in `public/icons/` for the share sheet.
 - **Decided: Not building it**:
     - In-player caption authoring is an explicit non-goal; captions inside the video player are managed natively by YouTube.
 
