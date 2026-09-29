@@ -1,49 +1,75 @@
-### Simple Summary of Missing & Incomplete Systems
+### Summary of Remaining Work, External Blockers & Architectural Decisions
 
-#### 1. Payment Gateway (Critical Gap)
+#### 1. Payment Gateway & Marketplace Split (Top Production Blocker)
 
-• What exists: Cart checkout, order generation, and internal double-entry ledger bookkeeping.
-• What is missing: There is no live payment gateway.
-• The backend uses a simulated FakeCommercePaymentProviderAdapter that is refuse-closed in production.
-• Stripe is listed as an enum with no implementation code.
-• Razorpay (UPI, NetBanking, RuPay) is not yet integrated.
-• The frontend order page does not yet have Stripe Elements or Razorpay modal embeds.
+- **What is shipped**:
+    - Full cart checkout, order generation, and double-entry ledger bookkeeping.
+    - "Buy Now" express checkout for single listings.
+    - **Razorpay is fully integrated**: 536-line direct `fetch` adapter (`RazorpayCommercePaymentProviderAdapter`), dual HMAC signature verification (webhook body and checkout handler), persistent webhook inbox (`commerce_payment_webhook_event`), and frontend modal in `OrderPaymentPanel`.
+- **What is missing / blocking production**:
+    - **⛔ Marketplace Payout Split**: Neither Razorpay nor Stripe may run in production without a marketplace split mechanism (Razorpay Route in India, Stripe Direct Charges globally). Without Route/Connect, captured buyer money settles into Qatoto's own account, violating Qatoto's strict policy against taking custody of user funds or operating as a merchant of record. `settlement_account_ref` and `application_fee_in_cents` columns currently have no writer on the Razorpay path.
+    - **Stripe Adapter**: Stripe is listed as an enum label with no implementation code. If global card/bank processing is needed, an adapter using direct `fetch` and webhook handlers must be built.
 
 #### 2. Shipping & Freight Rating
 
-• What exists: UI to select transport mode (air or sea) and declare multiple shipping legs.
-• What is missing: The database freight rate cards are empty, so shipping cost estimates compute as $0. There
-is no connection to a carrier API (like FedEx, DHL, or Shiprocket) to generate shipping labels or receive
-tracking webhooks.
+- **What is shipped**:
+    - Transport mode selection (air, sea, rail, road) with multimodal journey composition.
+    - Provider freight rate card database schema and rating service (`max(actual, volumetric)` weight basis).
+    - Studio freight rate card composer at `/studio/logistics/rate-cards` with TSV paste for logistics operators.
+- **What is missing**:
+    - Forwarder onboarding: An organization must hold a `verified` `freight_forwarder` or `logistics_operator` link before publishing rate cards (currently returns 403).
+    - Service-offering coverage read: Link service offering locations to buyer delivery destinations.
+- **Decided: Not building it**:
+    - Connecting third-party carrier APIs (FedEx, DHL, Shiprocket) is an explicit non-goal. Shipping is arranged between buyer and forwarder; `shippingInCents` is literal `$0` by design.
 
 #### 3. Phone Verification (SMS)
 
-• What exists: Email login with OTP (via Brevo).
-• What is missing: Phone verification in Account Settings is disabled/read-only because the backend has no SMS
-provider (e.g., Twilio or Msg91) configured.
+- **What exists**: Email OTP login (via Brevo) and WebAuthn Passkeys.
+- **What is missing**: Phone verification in Account Settings is disabled/read-only because the backend has no SMS gateway (e.g. Twilio or Msg91) configured, and Better Auth's `phoneNumber()` plugin is not active.
+- **Open decision**: Determine whether phone verification is actually required. Authentication is already secured by email OTP and passkeys, and Qatoto runs no KYC and holds no funds.
 
 #### 4. Blueprints Hub (Launch Blocked on Content & Indexing)
 
-• What exists: Full UI and backend CRUD for 3D exploded engineering teardowns, case studies, and launches.
-• What is missing: All 32 current records are seeded test fixtures. Because real hardware content is not yet
-submitted, the vertical is de-indexed (robots: { index: false, follow: false } and excluded from sitemap.ts).
+- **What exists**: Full UI, backend CRUD, 3D exploded view WebGL engine, and in-platform sworn rights claims (`POST /blueprints/teardowns/:slug/claims` reviewed at `/admin/rights-claims`).
+- **What is missing**: All 32 current records are seeded test fixtures (`blueprint-seed-corpus.ts`).
+- **Launch step**: Once real hardware teardowns and manufacturing case studies are submitted, remove `robots: { index: false, follow: false }` across all 7 blueprint pages and restore `/blueprints` entries in `src/app/sitemap.ts`.
 
-#### 5. Video Transcripts, Paywalls & Subtitles
+#### 5. Video Transcripts, Search Analytics & Paywalls
 
-• What exists: YouTube embeds, chapters, comments, and creator-supplied transcripts (.srt / .vtt / pasted
-text, shown in the watch page's Transcript tab; shipped 2026-09-28, no AI).
-• What is missing: Creator paywalls are a mock placeholder. Caption editing inside the player is a stub
-because videos are hosted on YouTube. Automated speech-to-text is not planned: it would need YouTube's audio.
+- **What exists**:
+    - YouTube embeds, chapters, and comments.
+    - Creator-supplied transcripts (.srt / .vtt / pasted text) parsed server-side and rendered in the watch page's Transcript tab (shipped 2026-09-28).
+    - Trending tags aggregated from hourly snapshots (shipped 2026-09-28).
+    - Search query logging with weekly-salted hashing for "Everyone is searching for:" (shipped 2026-09-28).
+- **What is missing**:
+    - Creator paywalls (`isPremium`) are hardcoded to `false` (no backend entitlement or paywall model).
+    - Brand SVG assets: WhatsApp, X (Twitter), and LinkedIn marks in `public/icons/` for the share sheet.
+- **Decided: Not building it**:
+    - In-player caption authoring is an explicit non-goal; captions inside the video player are managed natively by YouTube.
 
-#### 6. Legal & Policy Placeholders
+#### 6. Legal & Policy Compliance
 
-• Legal entity details (company name, registered address, jurisdiction) in site.ts are marked [TO BE CONFIRMED].
-──────
+- **What exists**: Comprehensive Terms of Service and Privacy Policy rewrite (shipped 2026-09-28) covering B2B marketplace commerce, R&D ventures, and engineering blueprints.
+- **What is missing**:
+    - Legal entity details in `src/lib/site.ts` (`LEGAL_ENTITY_NAME`, registered address, jurisdiction) are marked `[TO BE CONFIRMED]`.
+    - Terms acceptance recording: Backend has no `terms_accepted_at` column, and `sign-up.tsx` needs an explicit acceptance checkbox.
+    - Data export service lags recent tables (orders, cart, R&D effort, claims, receipts, equity).
+    - Contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto ships goods and handles returns must be corrected to match Terms clause 5.
 
-### Next Steps
+---
 
-When you're ready to proceed, we can start with Phase 1: Payment Gateway Integration:
+### Recommended Next Steps
 
-1. Installing the payment SDKs (stripe / razorpay) and building the backend provider adapter.
-2. Setting up the webhook receiver to listen for payment confirmations.
-3. Embedding the payment form directly into the frontend checkout / order payment panel.
+1. **Phase 1: Marketplace Split & Payment Settlement**:
+    - Wire Razorpay Route linked accounts (and Stripe Direct Charges if Stripe is added) to populate `settlement_account_ref` and `application_fee_in_cents`, allowing payments to be safely enabled in production.
+2. **Phase 2: Legal Entity & Compliance Polish**:
+    - Fill in company incorporation constants in `site.ts`.
+    - Add `terms_accepted_at` migration and sign-up acceptance checkbox.
+    - Update `data-export.service.ts` to cover orders and R&D entries.
+    - Align `how-qatoto-works.tsx` copy with marketplace terms.
+3. **Phase 3: Store & Civic Pulse Minor Gaps**:
+    - Implement service-offering coverage read.
+    - Fix moderation report dismissal bug for withdrawn answers.
+    - Add coarse reporter map pin to the Civic Pulse problem map.
+4. **Phase 4: Blueprints Public Launch**:
+    - Publish real hardware teardowns and remove `noindex` headers.
