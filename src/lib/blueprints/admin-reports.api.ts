@@ -53,7 +53,9 @@ export function listBlueprintReportQueue(
  * have; a moderator is working a queue that hands them an id. It would also be unspellable on the
  * case-study arm, whose `public_slug` is NULL until a moderator mints one.
  *
- * Passing `reportId` automatically moves the answered report from `open` to `actioned`.
+ * Passing `reportId` automatically moves the answered report from `open` to `actioned`, and passing
+ * `rightsClaimId` does the same for a rights claim (teardown arm only). Never both: the server
+ * refuses a decision that names a report and a claim.
  */
 export function setBlueprintModerationState(
   input: {
@@ -63,6 +65,7 @@ export function setBlueprintModerationState(
     readonly reasonNote: string;
     readonly idempotencyKey: string;
     readonly reportId?: string;
+    readonly rightsClaimId?: string;
   },
   options?: RequestOptions,
 ): Promise<ActionResponse<BlueprintModerationResult>> {
@@ -87,6 +90,7 @@ export function setBlueprintModerationState(
     verb: input.verb,
     reasonNote: input.reasonNote,
     ...(input.reportId ? { reportId: input.reportId } : {}),
+    ...(input.rightsClaimId ? { rightsClaimId: input.rightsClaimId } : {}),
   };
 
   return sendJson(

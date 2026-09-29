@@ -523,20 +523,31 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   behind a confirm, Send back only with a note, and a 409 with "Refresh the queue". ⚠️ Its rows use
   `case-study-moderation.schemas.ts`, the ONE schema that carries a withheld company's real name, and
   nothing under `src/components/home` or `src/components/studio` may import it.
-- **THE RIGHTS-CLAIM ROUTE PREPARES A NOTICE; IT DOES NOT FILE ONE.**
+- **THE RIGHTS-CLAIM ROUTE FILES TO A MODERATOR, NOT TO A STATUTE.**
   `/blueprints/teardowns/[slug]/report` collects the claim kind, the target, the claimant and three
-  sworn statements, then hands over a finished notice addressed to `SUPPORT_CONTACT_EMAIL` as a
-  `mailto:` plus copy-to-clipboard. ⚠️ **IT DELIBERATELY DOES NOT REPEAT THE WIZARD'S MOCK-WRITE
-  SHAPE.** A publisher rehearsing a submission loses their own draft; a rights holder who believes
-  they gave legal notice and did not may miss a deadline or think the platform is on notice when it
-  is not. So there is **no submit, no 202 and no receipt**, and that absence is the feature — no
-  state on the route claims Qatoto holds anything. A side effect worth keeping: the claimant's name
-  and email never reach a Qatoto server.
-  ⚠️ **NO COPY MAY IMPLY A STATUTORY FILING.** Qatoto has designated no DMCA agent; `todo.md`'s
-  video-copyright section lists the five things a safe-harbour process lacks and the three sworn
-  clauses close exactly one. The route and `/copyright-policy` both say this reaches a person.
-  ⚠️ **FILING CHANGES NOTHING ON THE SURFACE**, and must not be made to. Moving the row to `flagged`
-  is the backend's job; faking it would show the claimant a state change that reverts on reload.
+  sworn statements and sends them to `POST /blueprints/teardowns/:slug/claims`
+  (`rights-claim.api.ts`, required `Idempotency-Key`, rotated on any edit and after a 201, never on
+  a refusal). The backend stores it in `blueprint_rights_claim` and answers **201** with a receipt
+  (`rights-claim-receipt.tsx`). The claimant must be signed in. Their name and email reach staff
+  only, never the publisher, and are purged six years after the claim is answered; the privacy
+  policy and the data panel both say so.
+  ⚠️ **THE `mailto:` NOTICE IS NOW THE FALLBACK, AND IT MUST STAY.** `readEmailedNoticeFallbackReason`
+  (`rights-claim-refusal.ts`) hands the claimant the prepared notice (`prepared-notice-panel.tsx`) on
+  exactly three refusals: `unreachable` (network or 5xx), `rateLimited` and `signInRequired` — a
+  legal notice must not depend on the API being up, and a rights holder with no account must still
+  reach a person. Never on 403 / 404 / 409 / 422 or an unreadable reply, where Qatoto already has
+  or has refused the claim.
+  ⚠️ **NO COPY MAY IMPLY A STATUTORY FILING.** Qatoto has designated no DMCA agent, has no
+  counter-notice path and no repeat-infringer policy; the three sworn clauses close one of the five
+  things a safe-harbour process needs. The route, the receipt and `/copyright-policy` all say this
+  reaches a person.
+  ⚠️ **FILING CHANGES NOTHING ON THE SURFACE**, and must not be made to. A moderator answers the
+  claim at `/admin/rights-claims` by flagging or quarantining the TEARDOWN (the existing
+  `moderation-state` verb with `rightsClaimId`) or by dismissing it. Every answer acts on the whole
+  teardown, even when the claim names one file, because no verb acts on a single file.
+  ⚠️ **IMPORT BOUNDARY:** `rights-claim-moderation.schemas.ts` is the ONE schema that carries a
+  claimant's identity. `rg "rights-claim-moderation" src/components/home src/components/studio`
+  must print nothing.
   **A QUARANTINED TEARDOWN STILL ACCEPTS A CLAIM** — a second rights holder may have a different
   objection, and refusing them would be this surface deciding one claim settles a row.
   **`RightsClaimTargetSchema` is a DISCRIMINATED UNION** over `whole_teardown` / `document` /

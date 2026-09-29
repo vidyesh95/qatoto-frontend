@@ -1,33 +1,59 @@
 // TRANSPORT: props-only — renders a notice built by `@/lib/blueprints/rights-claim-notice`.
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import type { RightsClaimNotice } from "@/lib/blueprints/rights-claim-notice";
+import type { EmailedNoticeFallbackReason } from "@/lib/blueprints/rights-claim-refusal";
 
 /**
- * THE PREPARED NOTICE, and the screen that makes this route honest.
+ * Why the claim did not arrive, said first, because it decides which of the two ways forward the
+ * claimant takes: send it again, or send it by email.
+ */
+function describeFallbackReason(fallbackReason: EmailedNoticeFallbackReason): string {
+  switch (fallbackReason) {
+    case "unreachable":
+      return "We could not reach Qatoto to send your claim, so it has not been received.";
+    case "rateLimited":
+      return "You have sent several claims in a short time, so this one was not accepted yet.";
+    case "signInRequired":
+      return "Sending a claim through the site needs a Qatoto account, and you are not signed in.";
+    default: {
+      const exhaustiveCheck: never = fallbackReason;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/**
+ * THE EMAILED NOTICE — the fallback when a claim could not be sent through the site.
  *
- * ⚠️ THERE IS NO RECEIPT HERE BECAUSE NOTHING WAS RECEIVED. Every other write surface in this repo
- * ends on a confirmation; this one ends on a DOCUMENT the claimant now has to send. That asymmetry
- * is the entire design: a rights holder who is told "we have received your claim" and has not been
- * heard by anyone may miss a deadline, or believe the platform is on notice when it is not. A
- * publisher losing a draft is an inconvenience; this is somebody's legal position.
+ * ⚠️ THERE IS NO RECEIPT HERE BECAUSE NOTHING WAS RECEIVED. The receipt lives in
+ * `rights-claim-receipt.tsx` and only a 201 reaches it. This screen ends on a DOCUMENT the claimant
+ * can send themselves, and says plainly that Qatoto does not have it: a rights holder who believes
+ * the platform is on notice when it is not may miss a deadline.
  *
  * ⚠️ THE NOTICE IS SHOWN IN FULL AND IS SELECTABLE. Not summarised, not behind a disclosure, not in
  * a fixed-height box that scrolls two lines at a time. What the claimant is about to send is the
  * thing they must be able to read and check, and a mail client may mangle a long `mailto:` — the
  * visible text plus the copy button is the path that always works.
  *
- * ⚠️ NEITHER CONTROL IS A SUBMIT. The mail button hands the notice to the visitor's own client and
- * the copy button puts it on their clipboard. Both leave Qatoto with nothing, which is why neither
- * is styled as the committed action a submit would be.
+ * ⚠️ ONLY "Send it again" IS A SUBMIT, and it resends the SAME attempt: the idempotency key is
+ * unchanged, so if the first request did arrive the server answers with that receipt rather than
+ * storing a second claim. The mail button hands the notice to the visitor's own client and the copy
+ * button puts it on their clipboard; both leave Qatoto with nothing.
  */
 export default function PreparedNoticePanel({
   notice,
+  fallbackReason,
+  onRetrySubmit,
   onReviseNotice,
 }: {
   readonly notice: RightsClaimNotice;
+  readonly fallbackReason: EmailedNoticeFallbackReason;
+  /** Sends the same claim again with the same idempotency key — safe if the first did arrive. */
+  readonly onRetrySubmit: () => void;
   readonly onReviseNotice: () => void;
 }) {
   /**
@@ -53,14 +79,32 @@ export default function PreparedNoticePanel({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-medium text-foreground lg:text-2xl">Your notice is ready</h1>
+      <h1 className="text-xl font-medium text-foreground lg:text-2xl">
+        Your claim has not been sent
+      </h1>
 
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
-        <h2 className="text-sm font-medium text-foreground">Nothing has been sent yet</h2>
+        <h2 className="text-sm font-medium text-foreground">
+          {describeFallbackReason(fallbackReason)}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Qatoto has not received this and does not have a copy. Nothing you typed left your
-          browser. Sending it is the next step, and it is yours to take: use the button below or
-          copy the text into your own email.
+          Qatoto does not have a copy of this. You can{" "}
+          {fallbackReason === "signInRequired" ? (
+            <>
+              <Link
+                href="/sign-in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary-imprint underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+              >
+                sign in in a new tab
+              </Link>{" "}
+              and send it again from here, or
+            </>
+          ) : (
+            "try sending it again in a few minutes, or"
+          )}{" "}
+          send the notice below by email instead.
         </p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Send it to <span className="font-medium text-foreground">{notice.recipientEmail}</span>.
@@ -100,6 +144,13 @@ export default function PreparedNoticePanel({
           className="rounded-full border border-primary-imprint/40 px-5 py-2.5 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
         >
           Copy the notice
+        </button>
+        <button
+          type="button"
+          onClick={onRetrySubmit}
+          className="rounded-full border border-primary-imprint/40 px-5 py-2.5 text-sm font-medium text-primary-imprint transition-colors hover:bg-primary-imprint/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+        >
+          Send it again
         </button>
         <button
           type="button"

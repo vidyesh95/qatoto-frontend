@@ -80,9 +80,12 @@ export default function CopyrightPolicy() {
             </ul>
             <p className="mt-2">
               For a teardown, the <span className="font-medium">Report an IP concern</span> control
-              on the teardown itself writes all of that for you and hands you the finished notice to
-              send. For a video, use the report control on the video. Either way the notice reaches
-              a person at the address above.
+              on the teardown itself asks for all of that and sends your claim to a Qatoto
+              moderator. You need to be signed in to send it, and your name and email are seen by
+              Qatoto staff only, never by the person who published the teardown. If you have no
+              account, or the site cannot take your claim, the same control hands you the finished
+              notice to email to the address above instead. For a video, use the report control on
+              the video. Either way the notice reaches a person.
             </p>
             <p className="mt-2">
               Qatoto has not designated an agent for statutory copyright notices, so this is how to

@@ -75,6 +75,7 @@ export function useBlueprintModerationMutation(_status?: BlueprintReportStatus):
     readonly reasonNote: string;
     readonly idempotencyKey: string;
     readonly reportId?: string;
+    readonly rightsClaimId?: string;
   }
 > {
   const queryClient = useQueryClient();

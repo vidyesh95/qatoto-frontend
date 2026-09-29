@@ -148,14 +148,10 @@ export default function TeardownProvenanceBlock({
 
       <p className="mt-3 text-sm">
         {/*
-          ⚠️ THIS USED TO POINT AT `/copyright-policy` AND THE REASONING WAS HALF RIGHT. It said a
-          claim form would be a control whose write has no backing table — true, and still true —
-          and concluded that a policy page was therefore the honest destination. It was not: that
-          page tells a reader to "submit a takedown notice" and names no address, no form and no
-          link, so the honest-looking destination could not do the one thing it was there for.
-          The route it reaches now resolves that without inventing a write. It PREPARES a notice
-          and the claimant sends it from their own mail client, so there is no unbacked write, no
-          fabricated receipt, and nothing that claims Qatoto has received anything.
+          ⚠️ THIS USED TO POINT AT `/copyright-policy`, which told a reader to "submit a takedown
+          notice" and named no address, no form and no link. The route it reaches now sends a
+          sworn claim to `blueprint_rights_claim` for a moderator, and hands over an emailed notice
+          instead when the site cannot take it. Neither is a statutory filing.
         */}
         <Link
           href={reportHref}

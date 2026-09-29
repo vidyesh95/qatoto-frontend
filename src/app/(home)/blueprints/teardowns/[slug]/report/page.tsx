@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   // making legal claims has nothing for a crawler and every reason not to be a search result.
   robots: { index: false, follow: false },
   title: "Report an IP concern · Teardowns",
-  description: "Prepare an intellectual property notice about a teardown published on Qatoto.",
+  description: "Send an intellectual property claim about a teardown published on Qatoto.",
 };
 
 export default async function TeardownRightsClaimRoute({
@@ -85,8 +85,8 @@ export default async function TeardownRightsClaimRoute({
         >
           Report this
         </Link>{" "}
-        at the foot of the teardown instead. It reaches a moderator rather than preparing a legal
-        notice.
+        at the foot of the teardown instead. It is a one-line flag for a moderator, with no sworn
+        statements.
       </p>
     </div>
   );

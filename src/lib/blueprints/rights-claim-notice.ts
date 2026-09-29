@@ -13,9 +13,12 @@
 // COMPLETE ON ITS OWN: a support inbox that has never seen this form can read one email and know
 // what is claimed, over what, by whom, and on what standing.
 //
-// WHEN THE TABLE EXISTS this file does not go away. A prepared notice is still the fallback for the
-// same reason privacy-request.ts survived two of its rights getting endpoints: a legal notice must
-// not depend on a job queue being up.
+// THE TABLE EXISTS NOW, AND THIS FILE IS THE FALLBACK. A claim is sent to
+// `POST /blueprints/teardowns/:slug/claims`; this notice is built from the same draft when that
+// cannot happen (no connection, a server error, a rate limit, or a claimant with no account), and
+// as the copy a claimant keeps for their records after a successful send. Same reason
+// privacy-request.ts survived two of its rights getting endpoints: a legal notice must not depend on
+// the API being up.
 
 import {
   RIGHTS_CLAIM_KIND_LABELS,

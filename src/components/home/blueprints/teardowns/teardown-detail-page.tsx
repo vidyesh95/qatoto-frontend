@@ -325,12 +325,9 @@ export default async function TeardownDetailPage({
             prose it belongs to. `ms-auto` pushes it to the end of the flex row on a wide viewport
             and lets it wrap under the title on a narrow one, rather than floating it.
 
-            It now reaches the CLAIM ROUTE rather than the policy page. It pointed at
-            `/copyright-policy` while no claim surface existed — and that page turned out to tell a
-            claimant to "submit a takedown notice" while naming no address, so the honest-looking
-            destination was useless for its one purpose. The route it goes to now stores nothing
-            either; it WRITES THE NOTICE and the claimant sends it, which is why there is no
-            unbacked write behind this link.
+            It reaches the CLAIM ROUTE rather than the policy page, which told a claimant to
+            "submit a takedown notice" while naming no address. That route sends a sworn claim to a
+            moderator's queue, with an emailed notice as its fallback.
           */}
           <Link
             href={`${teardownHref}/report`}

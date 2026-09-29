@@ -111,12 +111,25 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         // `moderation_state = 'pending_review'`.
         //
         // `copyright`, because the sharpest verb on this queue exists for exactly one reason: a
-        // quarantine withholds a publisher's files under an unresolved rights claim, and
-        // `rights_claim` is the only report reason that can reach it.
+        // quarantine withholds a publisher's files under an unresolved rights claim. A reader's
+        // `rights_claim` report is one way that reaches a moderator; a sworn claim, in the queue
+        // below, is the other.
         href: "/admin/blueprint-reports",
         label: "Blueprint reports",
         activeIcon: "/icons/copyright_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/copyright_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
+      {
+        // A SIXTH `moderate_content` QUEUE: sworn IP claims against published teardowns, filed
+        // through `/blueprints/teardowns/[slug]/report`. Beside Blueprint reports and not inside it,
+        // because this is the one console that shows a claimant's name and email.
+        //
+        // `gavel`, committed in both fills with the same path — Material Symbols draws it as a
+        // line icon with no filled variant.
+        href: "/admin/rights-claims",
+        label: "Rights claims",
+        activeIcon: "/icons/gavel_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/gavel_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
     ],
     hasDivider: true,

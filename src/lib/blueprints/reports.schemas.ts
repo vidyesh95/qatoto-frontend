@@ -1,8 +1,8 @@
 // CONTRACT: reader reports on a published blueprint.
 //
 // ⚠️ **THIS IS NOT THE RIGHTS-CLAIM FLOW AND THE TWO MUST NOT BE MERGED.**
-// `/blueprints/teardowns/[slug]/report` builds a legal notice and a `mailto:` — three sworn
-// clauses, a named right, a claimant with standing, and a specific file chosen from
+// `/blueprints/teardowns/[slug]/report` sends a sworn claim to its own table and queue — three
+// sworn clauses, a named right, a claimant with standing, and a specific file chosen from
 // `claim-targets`. This is a reader saying "this looks wrong". Merging them would mean a form that
 // swears legal statements on behalf of somebody reporting spam.
 

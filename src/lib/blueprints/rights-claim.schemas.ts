@@ -1,18 +1,17 @@
-// TRANSPORT: props-only — pure contract, no network of its own.
+// TRANSPORT: props-only — pure contract, no network of its own; `rights-claim.api.ts` sends it.
 //
 // THE OBJECTION SIDE of the teardown surface. Parts 1 and 2 built a surface that invites strangers
 // to publish surveys of other companies' products; this is how the company objects.
 //
-// ⚠️ NOTHING HERE IS SENT TO QATOTO. There is no `blueprint_rights_claim` table and no route, and
-// this part deliberately does NOT repeat the authoring wizard's mock-write shape. A publisher
-// rehearsing a submission loses their own draft; a rights holder who believes they have given legal
-// notice and has not may miss a deadline, or think the platform is on notice when it is not. So the
-// route PREPARES a notice and the claimant sends it themselves — see
-// `@/lib/blueprints/rights-claim-notice`. The schema below validates what goes into that document.
+// ⚠️ A CLAIM IS SENT TO QATOTO NOW, AND IT IS STILL NOT A STATUTORY FILING. `RightsClaimDraftSchema`
+// is the body of `POST /blueprints/teardowns/:slug/claims`, which stores it in
+// `blueprint_rights_claim` for a moderator to read. Qatoto has designated no DMCA agent, so no copy
+// may call this "filing a notice" in the legal sense. When the API cannot be reached, the same
+// draft becomes the emailed notice in `@/lib/blueprints/rights-claim-notice` instead.
 //
-// A consequence worth naming: the claimant's name, organisation and email never reach a Qatoto
-// server. This is the most privacy-preserving version of this form that could exist, and it is a
-// side effect of not having a table rather than a design achievement.
+// ⚠️ THE CLAIMANT'S NAME AND EMAIL NOW REACH A QATOTO SERVER, and they reach staff only: the admin
+// queue is the one read that returns them, and the teardown's publisher never sees them. The
+// privacy policy states this and the six-year retention after a claim is resolved.
 //
 // ⚠️ `z.strictObject`, NOT a stripping `z.object`, for the reason `authoring.schemas.ts` gives at length: a stripped
 // field on a write path once destroyed sellers' declared lead times silently
@@ -32,7 +31,7 @@ import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-input
  * the product it depicts; a trademark claim is about a name or a look. What Qatoto would have to do
  * differs in each case, and a notice that does not say which one it is cannot be triaged.
  *
- * snake_case, byte-matching the `blueprint_rights_claim` pgEnum this will become.
+ * snake_case, byte-matching the backend's `blueprint_rights_claim_kind` pgEnum.
  */
 export const RIGHTS_CLAIM_KINDS = ["patent", "trade_secret", "copyright_cad", "trademark"] as const;
 export const RightsClaimKindSchema = z.enum(RIGHTS_CLAIM_KINDS);
@@ -188,7 +187,7 @@ export const RightsClaimDraftSchema = z
         context.addIssue({
           code: "custom",
           path: ["acceptedSwornClauseIds"],
-          message: `All three statements have to be sworn before this notice can be prepared. Still unchecked: ${missingClauses
+          message: `All three statements have to be sworn before this claim can be sent. Still unchecked: ${missingClauses
             .map((clause) => clause.label)
             .join("; ")}.`,
         });
@@ -197,3 +196,17 @@ export const RightsClaimDraftSchema = z
     { when: buildWellTypedInputsPredicate(SwornClauseRefinementInputsSchema) },
   );
 export type RightsClaimDraft = z.infer<typeof RightsClaimDraftSchema>;
+
+/**
+ * The 201 from `POST /blueprints/teardowns/:slug/claims`.
+ *
+ * ⚠️ A RECEIPT, NOT A VERDICT. The row exists and a moderator has not read it; nothing about the
+ * teardown has changed. `status` is a literal because a freshly filed claim cannot be anything else,
+ * and a reply saying otherwise is one this page should refuse to render as a receipt.
+ */
+export const RightsClaimReceiptSchema = z.object({
+  claimId: z.string().min(1),
+  status: z.literal("open"),
+  receivedAt: z.iso.datetime(),
+});
+export type RightsClaimReceipt = z.infer<typeof RightsClaimReceiptSchema>;

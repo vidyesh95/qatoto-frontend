@@ -3,7 +3,7 @@
 // TRANSPORT: client-query — `POST /blueprints/<arm>/:slug/reports`.
 //
 // ⚠️ **THIS IS NOT THE RIGHTS-CLAIM FORM AND THE TWO MUST NOT BE MERGED.**
-// `/blueprints/teardowns/[slug]/report` builds a legal notice and a `mailto:`: three sworn clauses,
+// `/blueprints/teardowns/[slug]/report` sends a sworn claim to its own queue: three sworn clauses,
 // a named right, a claimant with standing, and one specific file chosen from `claim-targets`. It is
 // also quarantine-tolerant BY DESIGN, because a second rights holder may have an entirely different
 // objection from the first. This sheet is a reader saying "this looks wrong". Merging them would

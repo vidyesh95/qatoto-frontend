@@ -114,7 +114,7 @@ This document outlines **exactly what is done, what is incomplete, what external
 - To prevent indexing fake teardowns, the entire section is **de-indexed**:
     - `robots: { index: false, follow: false }` is set across 7 blueprint routes.
     - `/blueprints` is omitted from `src/app/sitemap.ts`.
-- IP / DMCA rights claims currently generate a pre-formatted email via `mailto:support@qatoto.com` rather than saving to a database table.
+- IP rights claims are stored in `blueprint_rights_claim` and reviewed at `/admin/rights-claims`; the pre-formatted `mailto:support@qatoto.com` notice remains as a fallback. This is not a DMCA process: no agent, counter-notice path or repeat-infringer policy exists.
 
 #### What Needs to Be Done:
 
@@ -122,9 +122,7 @@ This document outlines **exactly what is done, what is incomplete, what external
 2. **The Launch Step (SEO Restoration)**:
     - Remove `robots: { index: false, follow: false }` across all 7 blueprint pages.
     - Restore blueprint dynamic URL generation in `src/app/sitemap.ts`.
-3. **In-Platform Rights Claim Intake**:
-    - Create the `blueprint_rights_claim` table in backend.
-    - Add `POST /blueprints/teardowns/:slug/claims` to accept formal IP infringement reports directly into the admin review queue.
+3. ~~**In-Platform Rights Claim Intake**~~ — **DONE.** See `todo.md` §6 for what remains.
 
 ---
 

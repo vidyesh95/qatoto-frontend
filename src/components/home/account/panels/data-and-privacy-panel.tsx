@@ -227,6 +227,7 @@ const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Problems you reported on the map, with a pin rounded to about 110 metres",
       "Photos you attached to a problem report, which are public and deleted after two years, or 90 days after the problem is marked fixed",
       "Your cofounder directory profile",
+      "Rights claims you sent about a teardown, with your name, organisation, email and standing, which moderators see and the publisher does not, kept for six years after the claim is answered",
     ],
     absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,
   },

@@ -83,4 +83,8 @@ export const blueprintKeys = {
    * already holds under a single key.
    */
   reportQueue: (status: string) => ["blueprints", "admin", "content-reports", status] as const,
+  /** Every tab of the moderator's rights-claim queue — a dismissal moves a row between two of them. */
+  rightsClaimQueueRoot: () => ["blueprints", "admin", "rights-claims"] as const,
+  /** One tab of the rights-claim queue. Status in the key, cursor not, for `reportQueue`'s reason. */
+  rightsClaimQueue: (status: string) => ["blueprints", "admin", "rights-claims", status] as const,
 };

@@ -30,7 +30,7 @@ and `git log` are the record of what was built and why.
 **Content & Launch Blockers:**
 
 - **Blueprints Public Launch Step** — Currently de-indexed (`noindex` on 7 routes, excluded from `sitemap.ts`) because the 32 builds are seeded test fixtures. Real hardware teardowns must be published before removing `noindex` and restoring the sitemap.
-- **In-Platform Rights Claims** — Currently uses a pre-formatted `mailto:` link. Needs an in-platform `blueprint_rights_claim` table and submission route.
+- ~~**In-Platform Rights Claims**~~ — **DONE.** `POST /blueprints/teardowns/:slug/claims` stores a sworn claim in `blueprint_rights_claim` (backend migrations 0209–0210) and moderators answer it at `/admin/rights-claims`. The `mailto:` notice stays as the fallback. What is still missing is listed under §6.
 
 **Platform & Media Capabilities:**
 
@@ -383,9 +383,11 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
 2. **SEO Launch Step**:
     - Remove `robots: { index: false, follow: false }` across all 7 blueprint pages.
     - Restore `/blueprints` entries in `src/app/sitemap.ts`.
-3. **In-Platform Rights Claims Table**:
-    - Currently, `/blueprints/teardowns/[slug]/report` formats a `mailto:` email notice to `support@qatoto.com`.
-    - Add a `blueprint_rights_claim` table in backend with `POST /blueprints/teardowns/:slug/claims` to route IP notices directly into the staff moderation console.
+3. ~~**In-Platform Rights Claims Table**~~ — **DONE.** The report route sends a signed-in, sworn claim to `POST /blueprints/teardowns/:slug/claims`; `/admin/rights-claims` answers it by flag, quarantine (on the whole teardown) or dismissal; claimant details are purged six years after the claim is answered. The emailed notice is the fallback on a network/5xx failure, a rate limit or no session. Still NOT built, and each is its own decision:
+    - A "my claims" list for claimants (today the receipt is the only record they get from the site).
+    - Per-file withholding. A claim on one part is answered by acting on the whole teardown, because no moderation verb acts on a single file.
+    - A counter-notice path for the publisher, a repeat-infringer policy and a designated DMCA agent. Until all three exist, no copy may call a claim a statutory filing.
+    - Emailing the claimant when a moderator answers.
 
 ---
 

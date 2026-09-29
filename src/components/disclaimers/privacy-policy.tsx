@@ -91,8 +91,12 @@ export default function PrivacyPolicy() {
             account, whichever comes first. If you publish a teardown, a product launch or a case
             study, we hold it and the statements you make with it — and if you withhold a company's
             name from a case study, our moderators still see it, though readers never do. If you
-            list yourself in the cofounder directory, we hold that profile. The same inventory, in
-            the same words, is in your account under Settings → Your data &amp; privacy.
+            send an intellectual property claim about a teardown, we hold your name, organisation,
+            email, your standing and what you claim: our moderators see them, the teardown&rsquo;s
+            publisher never does, and they are kept while the claim is open and for six years after
+            it is answered, then deleted, even if you erase your account sooner. If you list
+            yourself in the cofounder directory, we hold that profile. The same inventory, in the
+            same words, is in your account under Settings → Your data &amp; privacy.
           </dd>
         </div>
         <div>
@@ -268,7 +272,10 @@ export default function PrivacyPolicy() {
             you to confirm who you are first, so that we do not act on someone else's say-so about
             your account. Some records — the ones we are required to keep, and the shared records of
             work done on a project with other people — survive the deletion of an account, but they
-            are kept without your name attached to them.
+            are kept without your name attached to them. The one exception is an intellectual
+            property claim you sent about a teardown: it is a legal notice, so it keeps your name
+            and email until six years after it is answered, as described under Information
+            Collection.
           </dd>
         </div>
         <div>

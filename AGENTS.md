@@ -147,6 +147,12 @@ Four rules specific to this surface — `CLAUDE.md` carries the long form:
   row and never behind a disclosure. ⚠️ Three provenance KINDS, three CHIPS, and the mismatch is
   deliberate — `licensed_open_source` and `authorized_by_manufacturer` share one chip because a
   licence and a private authorisation are different permissions but the same shorthand.
+- **The rights-claim route files to a moderator, not to a statute.** `/blueprints/teardowns/[slug]/report`
+  sends a sworn claim to `POST /blueprints/teardowns/:slug/claims` (signed-in, idempotency key) and
+  a moderator answers it at `/admin/rights-claims`. The emailed `mailto:` notice is the fallback on
+  a network/5xx failure, a rate limit or no session, and must stay. No copy may imply a DMCA
+  filing. Only `rights-claim-moderation.schemas.ts` carries a claimant's identity, and nothing
+  under `src/components/home` or `src/components/studio` may import it.
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live. The table is `blueprint_hero_slide` and the five audit
   pgEnum labels are `blueprint_hero_slide_*` — both were renamed when the anime vertical was
