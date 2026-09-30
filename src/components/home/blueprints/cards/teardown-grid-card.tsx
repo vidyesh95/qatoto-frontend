@@ -83,8 +83,6 @@ export default function TeardownGridCard({
   shouldLoadImageEagerly?: boolean;
 }) {
   const documentCount = teardown.documents.length;
-  const hasNoMedia =
-    teardown.assembly === null && teardown.walkthroughVideo === null && documentCount === 0;
 
   const billOfMaterialsLabel =
     teardown.billOfMaterialsCostRange === null
@@ -122,26 +120,11 @@ export default function TeardownGridCard({
           className="object-cover transition-transform duration-300 group-hover/card:scale-105"
         />
 
-        {/* The badges answer "is there anything to look at", which is a different question from
-            "what would it take to build". They stay on the image; the decision set is below it.
-            All three render nothing when there is nothing — a "0 files" badge would be an answer
-            to a question nobody asked. */}
-        {hasNoMedia ? null : (
-          <div className="absolute right-2 bottom-2 flex items-center gap-1">
-            {teardown.assembly === null ? null : <span className={MEDIA_BADGE_CLASS}>3D</span>}
-            {teardown.walkthroughVideo === null ? null : (
-              <span className={MEDIA_BADGE_CLASS}>
-                <PlayGlyph />
-                Video
-              </span>
-            )}
-            {documentCount === 0 ? null : (
-              <span className={MEDIA_BADGE_CLASS}>
-                {documentCount} {documentCount === 1 ? "file" : "files"}
-              </span>
-            )}
-          </div>
-        )}
+        <TeardownMediaBadges
+          assembly={teardown.assembly}
+          walkthroughVideo={teardown.walkthroughVideo}
+          documentCount={documentCount}
+        />
       </div>
 
       <h3 className="mt-2 line-clamp-2 text-sm leading-5 font-medium text-foreground">
@@ -212,4 +195,34 @@ function buildFileKindLabels(teardown: TeardownBlueprint): string | null {
   return remainingCount === 0
     ? namedLabels.join(" · ")
     : `${namedLabels.join(" · ")} +${remainingCount}`;
+}
+
+function TeardownMediaBadges({
+  assembly,
+  walkthroughVideo,
+  documentCount,
+}: {
+  readonly assembly: TeardownBlueprint["assembly"];
+  readonly walkthroughVideo: TeardownBlueprint["walkthroughVideo"];
+  readonly documentCount: number;
+}) {
+  const hasNoMedia = assembly === null && walkthroughVideo === null && documentCount === 0;
+  if (hasNoMedia) return null;
+
+  return (
+    <div className="absolute right-2 bottom-2 flex items-center gap-1">
+      {assembly === null ? null : <span className={MEDIA_BADGE_CLASS}>3D</span>}
+      {walkthroughVideo === null ? null : (
+        <span className={MEDIA_BADGE_CLASS}>
+          <PlayGlyph />
+          Video
+        </span>
+      )}
+      {documentCount === 0 ? null : (
+        <span className={MEDIA_BADGE_CLASS}>
+          {documentCount} {documentCount === 1 ? "file" : "files"}
+        </span>
+      )}
+    </div>
+  );
 }

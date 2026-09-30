@@ -368,14 +368,16 @@ export async function getCategorySitemapEntries(): Promise<SitemapEntry[]> {
     );
     if (!result.success) return;
 
-    for (const category of result.data.items) {
-      if (visitedCategoryIds.has(category.id)) continue;
-      visitedCategoryIds.add(category.id);
+    await Promise.all(
+      result.data.items.map(async (category) => {
+        if (visitedCategoryIds.has(category.id)) return;
+        visitedCategoryIds.add(category.id);
 
-      const pathSlugs = [...ancestorSlugs, category.slug];
-      entries.push({ path: `/store/categories/${pathSlugs.join("/")}` });
-      await walkCategoryLevel(category.id, pathSlugs);
-    }
+        const pathSlugs = [...ancestorSlugs, category.slug];
+        entries.push({ path: `/store/categories/${pathSlugs.join("/")}` });
+        await walkCategoryLevel(category.id, pathSlugs);
+      }),
+    );
   }
 
   await walkCategoryLevel(undefined, []);

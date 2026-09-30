@@ -149,19 +149,27 @@ async function saveProductDocuments(
   newDocuments: readonly PendingProductDocument[],
   onProgress?: (progress: SaveProgress) => void,
 ): Promise<void> {
-  for (const documentId of removedDocumentIds) {
-    unwrap(await deleteProductDocument(productId, documentId));
-  }
+  await Promise.all(
+    removedDocumentIds.map(async (documentId) => {
+      unwrap(await deleteProductDocument(productId, documentId));
+    }),
+  );
 
-  for (let documentIndex = 0; documentIndex < newDocuments.length; documentIndex++) {
-    const pending = newDocuments[documentIndex];
-    onProgress?.({
-      phase: "documents",
-      current: documentIndex + 1,
-      total: newDocuments.length,
-    });
-    unwrap(await uploadProductDocument(productId, pending.file, pending.documentKind));
-  }
+  let completedDocumentCount = 0;
+  await Promise.all(
+    newDocuments.map(async (pending) => {
+      const result = unwrap(
+        await uploadProductDocument(productId, pending.file, pending.documentKind),
+      );
+      completedDocumentCount += 1;
+      onProgress?.({
+        phase: "documents",
+        current: completedDocumentCount,
+        total: newDocuments.length,
+      });
+      return result;
+    }),
+  );
 }
 
 async function saveProductHighlights(
@@ -176,17 +184,27 @@ async function saveProductHighlights(
   const savedByPosition = saved.highlights.toSorted(
     (first, second) => first.position - second.position,
   );
-  let uploadedCount = 0;
-  for (const [highlightIndex, imageFile] of imageFileByIndex) {
-    const savedHighlight = savedByPosition[highlightIndex];
-    // A block whose row is missing means the plan and the response disagree about length, which
-    // the server decides. Skipping is right: inventing an id would upload against someone else's
-    // block, and the service would refuse it anyway.
-    if (savedHighlight === undefined) continue;
-    uploadedCount += 1;
-    onProgress?.({ phase: "highlights", current: uploadedCount, total: imageFileByIndex.size });
-    unwrap(await uploadProductHighlightImage(productId, savedHighlight.id, imageFile));
-  }
+  let uploadedHighlightCount = 0;
+  const highlightEntries = Array.from(imageFileByIndex.entries());
+  await Promise.all(
+    highlightEntries.map(async ([highlightIndex, imageFile]) => {
+      const savedHighlight = savedByPosition[highlightIndex];
+      // A block whose row is missing means the plan and the response disagree about length, which
+      // the server decides. Skipping is right: inventing an id would upload against someone else's
+      // block, and the service would refuse it anyway.
+      if (savedHighlight === undefined) return;
+      const result = unwrap(
+        await uploadProductHighlightImage(productId, savedHighlight.id, imageFile),
+      );
+      uploadedHighlightCount += 1;
+      onProgress?.({
+        phase: "highlights",
+        current: uploadedHighlightCount,
+        total: imageFileByIndex.size,
+      });
+      return result;
+    }),
+  );
 }
 
 /**
@@ -244,9 +262,22 @@ export function useCreateListingMutation() {
       onProgress?.({ phase: "creating" });
       const created = unwrap(await createProduct(input));
 
-      for (let imageIndex = 0; imageIndex < imageFiles.length; imageIndex++) {
-        onProgress?.({ phase: "uploading", current: imageIndex + 1, total: imageFiles.length });
-        unwrap(await uploadProductImage(created.id, imageFiles[imageIndex]));
+      let uploadedImageCount = 0;
+      const uploadedImages = await Promise.all(
+        imageFiles.map(async (imageFile, index) => {
+          const result = unwrap(await uploadProductImage(created.id, imageFile));
+          uploadedImageCount += 1;
+          onProgress?.({
+            phase: "uploading",
+            current: uploadedImageCount,
+            total: imageFiles.length,
+          });
+          return { index, id: result.id };
+        }),
+      );
+      if (imageFiles.length > 1) {
+        const sortedIds = uploadedImages.sort((a, b) => a.index - b.index).map((img) => img.id);
+        unwrap(await reorderProductImages(created.id, sortedIds));
       }
 
       // AFTER the gallery, BEFORE publish: the publish gate re-derives completeness from the row,
@@ -361,20 +392,30 @@ export function useUpdateListingMutation() {
       onProgress?.({ phase: "creating" });
       unwrap(await updateProduct(productId, patch));
 
-      for (const imageId of removedImageIds) {
-        unwrap(await deleteProductImage(productId, imageId));
-      }
+      await Promise.all(
+        removedImageIds.map(async (imageId) => {
+          unwrap(await deleteProductImage(productId, imageId));
+        }),
+      );
 
       // The uploaded ids are CAPTURED rather than discarded, because the reorder below needs an
       // exact cover of the gallery and a freshly uploaded image has no id until this answers.
-      const uploadedImageIds: string[] = [];
-      for (let imageIndex = 0; imageIndex < newImageFiles.length; imageIndex++) {
-        onProgress?.({ phase: "uploading", current: imageIndex + 1, total: newImageFiles.length });
-        const uploadedImage = unwrap(
-          await uploadProductImage(productId, newImageFiles[imageIndex]),
-        );
-        uploadedImageIds.push(uploadedImage.id);
-      }
+      let uploadedNewImageCount = 0;
+      const uploadedImageEntries = await Promise.all(
+        newImageFiles.map(async (imageFile, index) => {
+          const uploadedImage = unwrap(await uploadProductImage(productId, imageFile));
+          uploadedNewImageCount += 1;
+          onProgress?.({
+            phase: "uploading",
+            current: uploadedNewImageCount,
+            total: newImageFiles.length,
+          });
+          return { index, id: uploadedImage.id };
+        }),
+      );
+      const uploadedImageIds = uploadedImageEntries
+        .sort((a, b) => a.index - b.index)
+        .map((entry) => entry.id);
 
       /**
        * A THIRD PHASE, AFTER THE DELETES AND THE UPLOADS, and it can only run here.
@@ -391,7 +432,10 @@ export function useUpdateListingMutation() {
        * Uploads go LAST because that is where the server just put them, so an untouched gallery
        * plus a new photo needs no reordering at all.
        */
-      if (keptImageIdsInOrder.length > 0) {
+      if (
+        keptImageIdsInOrder.length > 0 ||
+        (newImageFiles.length > 1 && uploadedImageIds.length > 1)
+      ) {
         unwrap(
           await reorderProductImages(productId, [...keptImageIdsInOrder, ...uploadedImageIds]),
         );

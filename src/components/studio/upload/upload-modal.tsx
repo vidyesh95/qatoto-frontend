@@ -288,19 +288,20 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     // above — so without this pass the wizard collected files and silently discarded them, which
     // is the bug this whole change exists to fix.
     //
-    // SEQUENTIAL, so a failure names the file it happened on rather than "some documents". The
-    // uploaded ones stay uploaded: each is its own request, and re-running the save re-sends only
-    // what is still pending, because a successful upload is cleared from `pendingDocumentFiles`.
+    // Concurrently uploaded with Promise.all: each file is its own request and clears from
+    // `pendingDocumentFiles` on completion, so a partial retry only re-sends uncompleted files.
     try {
-      for (const pendingFile of pendingDocumentFiles) {
-        await attachDocumentMutation.mutateAsync({
-          videoId: savedVideoId,
-          documentFile: pendingFile,
-        });
-        setPendingDocumentFiles((remaining) =>
-          remaining.filter((file) => file.name !== pendingFile.name),
-        );
-      }
+      await Promise.all(
+        pendingDocumentFiles.map(async (pendingFile) => {
+          await attachDocumentMutation.mutateAsync({
+            videoId: savedVideoId,
+            documentFile: pendingFile,
+          });
+          setPendingDocumentFiles((remaining) =>
+            remaining.filter((file) => file.name !== pendingFile.name),
+          );
+        }),
+      );
     } catch (error) {
       setSaveErrorMessage(`Video saved, but a document was not: ${describeSaveError(error)}`);
       return { kind: "saved_with_problem", videoId: savedVideoId };

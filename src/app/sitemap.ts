@@ -183,10 +183,10 @@ const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const dynamicEntries: SitemapEntry[] = [];
-  for (const readSitemapEntries of SITEMAP_SOURCES) {
-    dynamicEntries.push(...(await readSitemapEntries()));
-  }
+  const sitemapEntryBatches = await Promise.all(
+    SITEMAP_SOURCES.map((readSitemapEntries) => readSitemapEntries()),
+  );
+  const dynamicEntries = sitemapEntryBatches.flat();
 
   // THE SENTINEL MUST NEVER BE PUBLISHED. `withSentinelValues` substitutes `"__none__"` when a read
   // comes back empty, because `cacheComponents` throws `EmptyGenerateStaticParamsError` on an empty
