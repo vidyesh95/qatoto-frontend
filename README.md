@@ -28,7 +28,7 @@ The home landing page lives at `src/app/(home)/page.tsx`.
 
 Detailed architecture rules, trust boundaries, and conventions are documented in:
 
-- `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`: Core invariants, naming, Rust-inspired UI states, and wire casing rules.
+- `AGENTS.md`: Core invariants, architecture, naming, Rust-inspired UI states, and wire casing rules.
 - `docs/`: Vertical architecture guides for Store, R&D, Admin, Feed, and Blueprints.
 
 ## Commands
