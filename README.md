@@ -17,12 +17,14 @@
 - [Overview: The Builder Platform](#overview-the-builder-platform)
 - [Anchored in Everyday Public Problems](#anchored-in-everyday-public-problems)
 - [For Builders Across Every Discipline](#for-builders-across-every-discipline)
-    - [Software Engineers & Digital Builders](#1-software-engineers--digital-builders)
-    - [Researchers, Biologists & Chemical Engineers](#2-researchers-biologists--chemical-engineers)
-    - [Hardware Makers & Industrial Designers](#3-hardware-makers--industrial-designers)
-    - [Visionaries & Problem Solvers](#4-visionaries--domain-problem-solvers)
-    - [Backers, Angels & Community Supporters](#5-backers-angels--community-supporters)
-    - [Manufacturers, Suppliers & ODMs](#6-manufacturers-suppliers--odms)
+    - [Founders & Hardware Entrepreneurs](#1-founders--hardware-entrepreneurs)
+    - [Engineers, Designers & Technical Specialists](#2-engineers-designers--technical-specialists)
+    - [Software Engineers & Digital Builders](#3-software-engineers--digital-builders)
+    - [Researchers, Biologists & Chemical Engineers](#4-researchers-biologists--chemical-engineers)
+    - [Visionaries & Domain Problem Solvers](#5-visionaries--domain-problem-solvers)
+    - [Backers, Angels & Investors](#6-backers-angels--investors)
+    - [Makers, Creators & Sellers](#7-makers-creators--sellers)
+    - [Contract Manufacturers, Suppliers & ODMs](#8-contract-manufacturers-suppliers--odms-original-design-manufacturers)
 - [How the Platform Works (The 5-Stage Pipeline)](#how-the-platform-works-the-5-stage-pipeline)
 - [Key Features](#key-features)
 - [How to Start a New Project](#how-to-start-a-new-project)
@@ -43,7 +45,11 @@
 
 ## Overview: The Builder Platform
 
-Great innovations start with real human pain points, but translating a breakthrough idea into a finished product that actually solves a public problem has historically been fractured:
+Bringing a physical hardware product to market has traditionally required deep venture capital connections, fragmented tooling (spread across spreadsheets, Discord, GitHub, and Jira), opaque equity promises, and complex offshore manufacturing knowledge.
+
+**Qatoto** replaces this broken workflow with an integrated, end-to-end execution system. Founders with an idea can match with skilled engineers and researchers, lock in deterministic dynamic equity before work starts, log daily progress that is automatically audited against real code and CAD artifacts, and transition seamlessly into manufacturing, global storefront distribution, and fulfillment.
+
+Today, this bottleneck is equally severe for modern, multi-disciplinary ventures:
 
 - **Researchers and scientists** (biologists, chemists, materials experts) frequently make discoveries that stay trapped in academic journals because they lack software engineers, operational talent, or commercial pipelines to turn them into deployed tools.
 - **Software engineers** want to build high-impact technologies that solve urgent real-world problems, but often lack verified domain problem mapping or transparent equity structures.
@@ -79,50 +85,47 @@ Visionaries analyze these real-world pain points, inspect statistical density cl
 
 ## For Builders Across Every Discipline
 
-Qatoto is purpose-built for diverse problem solvers:
+Qatoto unites diverse problem solvers on a single shared ledger, pairing the distinct needs of each discipline with platform-enforced value:
 
-### 1. Software Engineers & Digital Builders
+### 1. Founders & Hardware Entrepreneurs
 
-- **What You Build**: Distributed platforms, civic tech systems, AI algorithms, data ingestion pipelines, embedded firmware, IoT device drivers, web applications, and developer tooling.
-- **Deep Integration with Your Tooling**:
-    - The **Proof of Effort** engine authenticates with **GitHub, Linear, and Jira**.
-    - **Abstract Syntax Tree (AST) Diff Analysis**: Evaluates substantive code modifications, architectural refactors, and logic enhancements while ignoring useless whitespace or copy-pasted dependencies.
-    - **Commit Signature & Temporal Anomaly Checks**: Validates cryptographic commit authorship and flags unnatural timestamp bursts.
-    - **Deterministic Dynamic Equity**: Every verified pull request, closed issue, and hours spent directly earns mathematically guaranteed equity slices via the Slicing Pie ledger.
+- **Need**: You have a physical product concept and the drive to build, but lack seed capital, co-founders, or manufacturing expertise.
+- **Value**: Validate consumer demand via civic problem mapping, find verified engineering talent, secure milestone-based funding, and receive automated build tracking without needing prior supply chain knowledge.
 
-### 2. Researchers, Biologists & Chemical Engineers
+### 2. Engineers, Designers & Technical Specialists
 
-- **What You Build**: Novel electrochemical water filters, biochemical assays, agricultural biostimulants, biodegradable polymers, clean energy catalysts, diagnostic testing kits, and long-horizon life sciences.
-- **Dedicated Scientific Infrastructure**:
-    - **Open Research Programmes (`/research-and-development/programs`)**: Participate in deep-tech, long-horizon initiatives (e.g. clean water, longevity, energy transformation).
-    - **Scientific Branch Maps**: Visual branch trees (`branch-tree-layout.ts`) that organize research into `active`, `emerging`, `contested`, and `missing` gaps—preventing duplicated effort and highlighting unaddressed scientific questions.
-    - **Paper & Hypothesis Publication**: Publish `informal_paper` and `idea` tracks directly to the community with transparent peer feedback and moderator review.
-    - **Multi-Modal Contribution Types**: Contribute non-code research assets—including `data`, `material`, `equipment`, and `expertise`—alongside code.
-    - **Forensic Physical Receipts**: Validate wet-lab synthesis, material tests, and laboratory assays through tamper-checked forensic photo and documentation uploads.
+- **Need**: You want to contribute your engineering, CAD, or mechanical design skills to high-impact physical builds without getting exploited by empty founder equity promises.
+- **Value**: Join vetted teams, negotiate pre-locked Fair Market Rates, earn mathematically guaranteed equity via the Slicing Pie dynamic equity protocol, and build a public portfolio of cryptographically verified effort.
 
-### 3. Hardware Makers & Industrial Designers
+### 3. Software Engineers & Digital Builders
 
-- **What You Build**: Enclosures, sensor pods, medical devices, robotic modules, consumer appliances, and custom PCB assemblies.
-- **Platform Support**:
-    - **Blueprints Hub (`/blueprints`)**: Interactive 3D exploded view engine (Three.js / React Three Fiber) for sharing teardowns, open hardware schematics, and design decisions.
-    - **BOM & Component Costing**: Integer-precision Bill of Materials tracking, connecting directly with verified ODMs and component distributors.
-    - **Manufacturing Case Studies**: Reusable lessons across tooling, quality control, supply chains, and unit economics.
+- **Need**: You want to build software, AI models, and firmware that solve urgent, real-world problems facing everyday people, but face opaque sweat-equity negotiations and disconnected project management.
+- **Value**: Plug your existing workflow directly into Qatoto via **GitHub, Linear, and Jira**. Have your work objectively evaluated via **Abstract Syntax Tree (AST)** diff complexity analysis and temporal checks, earning mathematically verified dynamic equity slices.
 
-### 4. Visionaries & Domain Problem Solvers
+### 4. Researchers, Biologists & Chemical Engineers
 
-- **What You Build**: Cross-disciplinary ventures that solve grassroots civic problems and elevate public well-being.
-- **Platform Support**:
-    - Translate localized community needs from the Civic Pulse map into actionable product roadmaps.
-    - Recruit and lead balanced teams that unite software engineers, laboratory researchers, and operational specialists.
-    - Manage milestone fundraising, dynamic cap tables, and product launches without administrative gridlock.
+- **Need**: Scientific breakthroughs (in clean water, biotechnology, green chemistry, and diagnostics) often stay locked in academic papers because researchers lack software engineers, operational co-founders, or commercialization pathways.
+- **Value**: Form open **Research Programmes** (`/research-and-development/programs`), organize hypotheses into interactive scientific branch trees (`branch-tree-layout.ts`), publish `informal_paper` tracks, submit lab datasets, and verify wet-bench experiments using forensic physical receipts to take science from the lab to deployed products.
 
-### 5. Backers, Angels & Community Supporters
+### 5. Visionaries & Domain Problem Solvers
 
-- **Value**: Hardware and deep-tech initiatives often fail due to opacity. Qatoto replaces quarterly pitch decks with continuous, verifiable visibility: inspect daily commit diffs, lab logs, video walk-throughs, and SHA-256 hash-chained governance ledgers before and after committing capital.
+- **Need**: You observe pressing challenges in everyday civic life (contaminated water, grid failures, food spoilage) and want to build a real solution, but struggle to coordinate multi-disciplinary teams across software, wet-lab science, and hardware.
+- **Value**: Identify high-density problem clusters via **Civic Pulse**, assemble cross-disciplinary teams, validate regional purchasing power and feasibility, and lead end-to-end execution on a single transparent ledger.
 
-### 6. Manufacturers, Suppliers & ODMs
+### 6. Backers, Angels & Investors
 
-- **Value**: Receive unambiguous technical specifications, structured BOMs, and verified CAD models from build-ready teams, enabling rapid production quotes and minimized supply chain re-work.
+- **Need**: Hardware and deep-tech startups frequently fail due to opacity, missed milestones, or premature scaling.
+- **Value**: Gain radical visibility through the Daily Update Protocol. Inspect ground-truth engineering diffs, video logs, and hash-chained governance ledgers rather than relying on curated quarterly pitch decks.
+
+### 7. Makers, Creators & Sellers
+
+- **Need**: Distributing hardware prototypes, gathering community feedback, and converting early builds into retail sales.
+- **Value**: Publish teardowns and showcases in the **Blueprints Hub**, manage video updates in **Qatoto Studio** (mirroring YouTube Studio), and sell products with single and B2B volume pricing in the **Qatoto Store**.
+
+### 8. Contract Manufacturers, Suppliers & ODMs (Original Design Manufacturers)
+
+- **Need**: Vetting customer designs and receiving clean, unambiguous technical specifications to provide accurate production quotes.
+- **Value**: Access structured Bills of Materials (BOM), CAD files, and clear component specifications directly from teams ready for manufacturing runs.
 
 ---
 
