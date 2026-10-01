@@ -9,7 +9,7 @@
 // an endorsement or a same-site navigation. Two copies of either would drift, and the half
 // that drifted would be the half a court read.
 
-import { formatMoneyFromCents } from "@/lib/rnd/format";
+import { describeLinkDestination } from "@/lib/rnd/format";
 import { PITCH_STATUS_LABELS, type PitchStatus } from "@/lib/rnd/pitches.schemas";
 
 /**
@@ -47,21 +47,6 @@ export function ExternalLinkOut({
       <span className="text-xs text-muted-foreground">{describeLinkDestination(href)} ↗</span>
     </a>
   );
-}
-
-/**
- * The host, for the label beside a link.
- *
- * Falls back to the raw string rather than throwing: the server only ever stores a parsed,
- * normalized URL, so an unparseable one here means something upstream changed — and showing
- * it plainly is more honest than rendering nothing where a destination belongs.
- */
-export function describeLinkDestination(rawUrl: string): string {
-  try {
-    return new URL(rawUrl).host;
-  } catch {
-    return rawUrl;
-  }
 }
 
 /**
@@ -147,23 +132,4 @@ export function OutcomeAttestationNote({
       Both parties report this. Self-reported — Qatoto did not verify or handle it.
     </span>
   );
-}
-
-/**
- * Money, from the decimal string the wire carries.
- *
- * DELEGATES TO `formatMoneyFromCents` rather than doing the arithmetic here. That helper
- * already handles the two things that matter and were about to be got wrong locally: it
- * parses with `BigInt(…)` calls instead of `100n` literals, because tsconfig targets ES2017
- * where a bigint literal is a compile error, and it falls back to an exact unlocalized label
- * past `Number.MAX_SAFE_INTEGER` instead of rounding a funding figure.
- */
-export function formatOutcomeAmount(amountInCents: string, currencyCode: string): string {
-  try {
-    return formatMoneyFromCents(BigInt(amountInCents), currencyCode);
-  } catch {
-    // An unparseable amount means the wire contract changed; show it raw rather than
-    // rendering a zero, which would be a different number rather than a visible fault.
-    return `${currencyCode} ${amountInCents}`;
-  }
 }

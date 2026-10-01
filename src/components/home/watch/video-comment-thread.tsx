@@ -20,7 +20,7 @@
 //      distinguishes "turned off" from "nobody has commented", and only the caller knows it.
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import LoadMoreControl from "@/components/home/shared/load-more-control";
 import RelativeTime from "@/components/home/shared/relative-time";
@@ -140,7 +140,7 @@ function CommentComposer({
   // Minted ONCE PER ATTEMPT — `newIdempotencyKey` is passed UNCALLED so React runs it a single
   // time. Regenerating it inside a retry would defeat the whole mechanism, which is why it is
   // not derived from the draft text either.
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
   const createComment = useCreateVideoCommentMutation(videoId);
 
   const trimmedBody = draftBody.trim();
@@ -149,18 +149,21 @@ function CommentComposer({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!isSubmittable || createComment.isPending) return;
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = newIdempotencyKey();
+    }
     createComment.mutate(
       {
         body: trimmedBody,
         ...(parentCommentId === undefined ? {} : { parentCommentId }),
-        idempotencyKey,
+        idempotencyKey: idempotencyKeyRef.current,
       },
       {
         onSuccess: () => {
           setDraftBody("");
           // A NEW attempt deserves a NEW key: the next comment is a different thing, and
           // reusing this one would come back 409 (same key, different body).
-          setIdempotencyKey(newIdempotencyKey());
+          idempotencyKeyRef.current = newIdempotencyKey();
           onPosted?.();
         },
       },
@@ -203,6 +206,128 @@ function CommentComposer({
   );
 }
 
+function CommentItemTombstone({ videoId, comment }: { videoId: string; comment: VideoComment }) {
+  return (
+    <li className="py-3">
+      <p className="text-xs text-outline-strong italic">[deleted]</p>
+      {comment.replyCount > 0 && (
+        <ReplyThread videoId={videoId} parentCommentId={comment.commentId} />
+      )}
+    </li>
+  );
+}
+
+interface CommentItemActionBarProps {
+  isLiked: boolean;
+  likeCount: number;
+  onLikeClick: () => void;
+  isViewerSignedIn: boolean;
+  isEditing: boolean;
+  isReplyComposerOpen: boolean;
+  isDeleting: boolean;
+  onToggleReply: () => void;
+  onStartEdit: () => void;
+  onDelete: () => void;
+}
+
+function CommentItemActionBar({
+  isLiked,
+  likeCount,
+  onLikeClick,
+  isViewerSignedIn,
+  isEditing,
+  isReplyComposerOpen,
+  isDeleting,
+  onToggleReply,
+  onStartEdit,
+  onDelete,
+}: CommentItemActionBarProps) {
+  return (
+    <div className="mt-2 flex flex-row flex-wrap items-center gap-5">
+      <button
+        type="button"
+        onClick={onLikeClick}
+        aria-pressed={isLiked}
+        aria-label="Like comment"
+        className="flex cursor-pointer flex-row items-center gap-1.5 text-xs text-foreground hover:text-outline-strong"
+      >
+        <Image
+          src={`/icons/favorite_24dp_000000_FILL${isLiked ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
+          width={14}
+          height={14}
+          alt=""
+        />
+        {formatCompactCountLabel(likeCount)}
+      </button>
+
+      {isViewerSignedIn && (
+        <button
+          type="button"
+          onClick={onToggleReply}
+          aria-expanded={isReplyComposerOpen}
+          className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
+        >
+          Reply
+        </button>
+      )}
+
+      {isViewerSignedIn && !isEditing && (
+        <button
+          type="button"
+          onClick={onStartEdit}
+          className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
+        >
+          Edit
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={isDeleting}
+        className="cursor-pointer text-xs text-outline-strong hover:text-foreground disabled:opacity-50"
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
+interface CommentItemRepliesProps {
+  videoId: string;
+  commentId: string;
+  replyCount: number;
+  areRepliesExpanded: boolean;
+  onToggleReplies: () => void;
+}
+
+function CommentItemReplies({
+  videoId,
+  commentId,
+  replyCount,
+  areRepliesExpanded,
+  onToggleReplies,
+}: CommentItemRepliesProps) {
+  if (replyCount <= 0 && !areRepliesExpanded) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onToggleReplies}
+        aria-expanded={areRepliesExpanded}
+        className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-outline-strong hover:text-foreground"
+      >
+        <span className="h-px w-6 bg-muted" />
+        {areRepliesExpanded
+          ? "Collapse"
+          : `Show ${formatCompactCountLabel(replyCount)} ${replyCount === 1 ? "reply" : "replies"}`}
+      </button>
+
+      {areRepliesExpanded && <ReplyThread videoId={videoId} parentCommentId={commentId} />}
+    </>
+  );
+}
+
 function CommentItem({
   videoId,
   comment,
@@ -212,31 +337,19 @@ function CommentItem({
   readonly comment: VideoComment;
   readonly isViewerSignedIn: boolean;
 }) {
-  const [isLiked, setIsLiked] = useState(comment.viewerState.hasLiked);
-  const [likeCount, setLikeCount] = useState(comment.likeCount);
+  const [isLiked, setIsLiked] = useState(() => comment.viewerState.hasLiked);
+  const [likeCount, setLikeCount] = useState(() => comment.likeCount);
   const [areRepliesExpanded, setAreRepliesExpanded] = useState(false);
   const [isReplyComposerOpen, setIsReplyComposerOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const likeComment = useVideoCommentLikeMutation();
   const deleteComment = useDeleteVideoCommentMutation(videoId);
 
-  // A tombstone. The row is kept so its replies keep an anchor; rendering it as a normal card
-  // with an empty name would look like a bug. Its REPLIES are still reachable — that is the
-  // whole reason the backend tombstones instead of deleting.
   if (comment.isDeleted || comment.body === null) {
-    return (
-      <li className="py-3">
-        <p className="text-xs text-outline-strong italic">[deleted]</p>
-        {comment.replyCount > 0 && (
-          <ReplyThread videoId={videoId} parentCommentId={comment.commentId} />
-        )}
-      </li>
-    );
+    return <CommentItemTombstone videoId={videoId} comment={comment} />;
   }
 
   const handleLikeClick = () => {
-    // OPTIMISTIC, and safe to be: the toggle has a per-user unique key server-side, so a
-    // double-tap is idempotent by construction rather than a second like.
     const nextIsLiked = !isLiked;
     setIsLiked(nextIsLiked);
     setLikeCount((previousCount) => previousCount + (nextIsLiked ? 1 : -1));
@@ -265,7 +378,6 @@ function CommentItem({
         className="size-8 shrink-0 rounded-full object-cover"
       />
       <div className="min-w-0 flex-1">
-        {/* `author` is null for a closed account even on a live comment. */}
         <span className="text-xs font-medium text-foreground">
           {comment.author?.name ?? "Former member"}
         </span>
@@ -287,62 +399,18 @@ function CommentItem({
           </>
         )}
 
-        <div className="mt-2 flex flex-row flex-wrap items-center gap-5">
-          <button
-            type="button"
-            onClick={handleLikeClick}
-            aria-pressed={isLiked}
-            aria-label="Like comment"
-            className="flex cursor-pointer flex-row items-center gap-1.5 text-xs text-foreground hover:text-outline-strong"
-          >
-            <Image
-              src={`/icons/favorite_24dp_000000_FILL${isLiked ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
-              width={14}
-              height={14}
-              alt=""
-            />
-            {formatCompactCountLabel(likeCount)}
-          </button>
-
-          {/*
-            ONE LEVEL OF THREADING ONLY — replying to a reply is a 409. So this control lives on
-            top-level comments and never inside `ReplyThread`.
-          */}
-          {isViewerSignedIn && (
-            <button
-              type="button"
-              onClick={() => setIsReplyComposerOpen((isOpen) => !isOpen)}
-              aria-expanded={isReplyComposerOpen}
-              className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
-            >
-              Reply
-            </button>
-          )}
-
-          {/*
-            Edit and Delete are shown to everyone: the BACKEND authorises them, answering 403 to
-            anyone who is neither the author nor (for delete) the video's creator. A client-side
-            ownership check would need the viewer's own id on the wire and would still be
-            advisory — the refusal below is the real gate.
-          */}
-          {isViewerSignedIn && !isEditing && (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="cursor-pointer text-xs text-outline-strong hover:text-foreground"
-            >
-              Edit
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => deleteComment.mutate(comment.commentId)}
-            disabled={deleteComment.isPending}
-            className="cursor-pointer text-xs text-outline-strong hover:text-foreground disabled:opacity-50"
-          >
-            Delete
-          </button>
-        </div>
+        <CommentItemActionBar
+          isLiked={isLiked}
+          likeCount={likeCount}
+          onLikeClick={handleLikeClick}
+          isViewerSignedIn={isViewerSignedIn}
+          isEditing={isEditing}
+          isReplyComposerOpen={isReplyComposerOpen}
+          isDeleting={deleteComment.isPending}
+          onToggleReply={() => setIsReplyComposerOpen((isOpen) => !isOpen)}
+          onStartEdit={() => setIsEditing(true)}
+          onDelete={() => deleteComment.mutate(comment.commentId)}
+        />
 
         {deleteComment.error !== null && (
           <p role="alert" className="mt-1 text-xs text-destructive">
@@ -357,32 +425,18 @@ function CommentItem({
             placeholder="Add a reply…"
             onPosted={() => {
               setIsReplyComposerOpen(false);
-              // Open the thread so the reply that was just written is visible. Leaving it
-              // collapsed reads as "nothing happened".
               setAreRepliesExpanded(true);
             }}
           />
         )}
 
-        {(comment.replyCount > 0 || areRepliesExpanded) && (
-          <button
-            type="button"
-            onClick={() => setAreRepliesExpanded((isExpanded) => !isExpanded)}
-            aria-expanded={areRepliesExpanded}
-            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-outline-strong hover:text-foreground"
-          >
-            <span className="h-px w-6 bg-muted" />
-            {areRepliesExpanded
-              ? "Collapse"
-              : `Show ${formatCompactCountLabel(comment.replyCount)} ${
-                  comment.replyCount === 1 ? "reply" : "replies"
-                }`}
-          </button>
-        )}
-
-        {areRepliesExpanded && (
-          <ReplyThread videoId={videoId} parentCommentId={comment.commentId} />
-        )}
+        <CommentItemReplies
+          videoId={videoId}
+          commentId={comment.commentId}
+          replyCount={comment.replyCount}
+          areRepliesExpanded={areRepliesExpanded}
+          onToggleReplies={() => setAreRepliesExpanded((isExpanded) => !isExpanded)}
+        />
       </div>
     </li>
   );
@@ -454,8 +508,8 @@ function ReplyThread({
  * not offering it.
  */
 function ReplyItem({ videoId, reply }: { readonly videoId: string; readonly reply: VideoComment }) {
-  const [isLiked, setIsLiked] = useState(reply.viewerState.hasLiked);
-  const [likeCount, setLikeCount] = useState(reply.likeCount);
+  const [isLiked, setIsLiked] = useState(() => reply.viewerState.hasLiked);
+  const [likeCount, setLikeCount] = useState(() => reply.likeCount);
   const likeComment = useVideoCommentLikeMutation();
   const deleteComment = useDeleteVideoCommentMutation(videoId);
 

@@ -4,32 +4,9 @@ import Link from "next/link";
 
 import {
   LAUNCH_READINESS_ITEM_KEYS,
-  type LaunchReadinessItemKey,
+  READINESS_ITEM_NOTES,
+  READINESS_ITEM_TITLES,
 } from "@/lib/rnd/suppliers.schemas";
-
-/**
- * Exported so the per-project panel (`project-launch-readiness.tsx`) states each gate
- * exactly as this cross-project explainer does. Two copies would drift, and a gate
- * described one way here and another way inside a project is the same gate reading as
- * two different rules.
- */
-export const READINESS_ITEM_TITLES: Record<LaunchReadinessItemKey, string> = {
-  stage_is_go_to_market: "The project reached the go-to-market stage",
-  verified_effort_recorded: "Verified effort is on record",
-  equity_allocated: "Equity has been allocated",
-  cap_table_baked: "The cap table is baked",
-  supplier_engaged: "At least one supplier is engaged",
-  store_listing_exists: "A store listing exists",
-};
-
-export const READINESS_ITEM_NOTES: Record<LaunchReadinessItemKey, string> = {
-  stage_is_go_to_market: "Set by the founder, and recorded as a stage transition.",
-  verified_effort_recorded: "Minutes the verification pipeline confirmed — not hours claimed.",
-  equity_allocated: "Basis points the slice ledger has actually assigned.",
-  cap_table_baked: "Run once, ever, and frozen after.",
-  supplier_engaged: "The project's own record of who it approached.",
-  store_listing_exists: "A live listing created in the studio.",
-};
 
 /**
  * The six gates a project passes before it lists — as an EXPLAINER, with no states and no

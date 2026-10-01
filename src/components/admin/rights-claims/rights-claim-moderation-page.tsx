@@ -14,6 +14,8 @@
 
 import { useState } from "react";
 
+import { AdminPageHeader } from "@/components/admin/shared/admin-page-header";
+import { ModerationStatusTabFilter } from "@/components/admin/shared/moderation-status-tab-filter";
 import RightsClaimCard from "@/components/admin/rights-claims/rights-claim-card";
 import { useRightsClaimQueue } from "@/hooks/blueprints/rights-claim-moderation";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
@@ -54,36 +56,20 @@ export default function RightsClaimModerationPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <header className="max-w-3xl space-y-1">
-        <h1 className="text-2xl font-semibold">Rights claims</h1>
-        <p className="text-sm text-muted-foreground">
-          Intellectual property claims against published teardowns, oldest first. Each claimant
-          swore three statements and gave a name and an email; only staff see those, never the
-          publisher.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Filing a claim changed nothing about its teardown. Qatoto has no designated agent for
-          statutory notices, so these are requests to a moderator, not formal filings. Claimant
-          details are deleted six years after a claim is answered.
-        </p>
-      </header>
+      <AdminPageHeader
+        title="Rights claims"
+        description="Intellectual property claims against published teardowns, oldest first. Each claimant swore three statements and gave a name and an email; only staff see those, never the publisher."
+        secondaryDescription="Filing a claim changed nothing about its teardown. Qatoto has no designated agent for statutory notices, so these are requests to a moderator, not formal filings. Claimant details are deleted six years after a claim is answered."
+      />
 
       {consoleState.status === "permitted" ? (
-        <div className="flex flex-wrap gap-2">
-          {RIGHTS_CLAIM_STATUSES.map((candidate) => (
-            <button
-              key={candidate}
-              type="button"
-              onClick={() => {
-                setStatus(candidate);
-              }}
-              aria-pressed={status === candidate}
-              className={`${QUIET_BUTTON_CLASS} ${status === candidate ? "bg-primary" : ""}`}
-            >
-              {STATUS_LABELS[candidate]}
-            </button>
-          ))}
-        </div>
+        <ModerationStatusTabFilter
+          statuses={RIGHTS_CLAIM_STATUSES}
+          statusLabels={STATUS_LABELS}
+          currentStatus={status}
+          onStatusChange={setStatus}
+          quietButtonClass={QUIET_BUTTON_CLASS}
+        />
       ) : null}
 
       {renderConsole(consoleState, status)}

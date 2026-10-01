@@ -3,11 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { signIn } from "@/lib/auth-client";
-import ToggleSwitch from "@/components/ui/toggle-switch";
-
-const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
+import {
+  AuthEmailInput,
+  AuthOtpStep,
+  AuthPasswordStep,
+  AuthSocialButtons,
+  AuthStepIndicator,
+  AuthWizardHeader,
+} from "./auth-step-components";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -25,6 +30,8 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const stepContent: Record<1 | 2 | 3, { title: string; description: string }> = {
     1: {
@@ -50,19 +57,31 @@ export default function SignUp() {
   // Step 1 (§5e): /signup/start sends the OTP. Creates NO account.
   const handleEmailSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!email) return;
+    if (!email || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     setErrorMessage("");
-    const response = await fetch(`${API_URL}/signup/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email }),
-    });
-    if (!response.ok) {
-      setErrorMessage("Could not send the code. Try again.");
-      return;
+    try {
+      const response = await fetch(`${API_URL}/signup/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      if (!response.ok) {
+        setErrorMessage("Could not send the code. Try again.");
+        return;
+      }
+      setStep(2);
+    } catch (submitError) {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      setErrorMessage(
+        submitError instanceof Error ? submitError.message : "Could not send the code. Try again.",
+      );
     }
-    setStep(2);
   };
 
   // OTP is verified server-side on the final step (§6): step 2 just advances the UI.
@@ -77,27 +96,39 @@ export default function SignUp() {
   // one atomic call — the ONLY place the account is created, and it opens the session.
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!password) return;
+    if (!password || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     setErrorMessage("");
 
-    const response = await fetch(`${API_URL}/signup/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, otp: otp.join(""), password }),
-    });
-    if (!response.ok) {
-      // Bad/expired OTP → 401; nothing was created. Send the user back to re-enter it.
-      setErrorMessage(
-        response.status === 409
-          ? "Email already registered. Please sign in."
-          : "Invalid or expired code.",
-      );
-      if (response.status !== 409) setStep(2);
-      return;
-    }
+    try {
+      const response = await fetch(`${API_URL}/signup/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, otp: otp.join(""), password }),
+      });
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      if (!response.ok) {
+        // Bad/expired OTP → 401; nothing was created. Send the user back to re-enter it.
+        setErrorMessage(
+          response.status === 409
+            ? "Email already registered. Please sign in."
+            : "Invalid or expired code.",
+        );
+        if (response.status !== 409) setStep(2);
+        return;
+      }
 
-    router.push("/");
+      router.push("/");
+    } catch (submitError) {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+      setErrorMessage(
+        submitError instanceof Error ? submitError.message : "Network error. Please try again.",
+      );
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -143,44 +174,9 @@ export default function SignUp() {
 
   return (
     <main className="flex min-h-screen w-screen flex-col">
-      <header className="space-y-10 bg-background pt-2 pb-4">
-        {step === 1 ? (
-          <Link href={"/sign-in"} className="mx-1 flex h-12 w-12 items-center justify-center">
-            <Image
-              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Navigate back"
-              width={24}
-              height={24}
-            />
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Go back"
-            className="mx-1 flex h-12 w-12 cursor-pointer items-center justify-center"
-          >
-            <Image
-              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Navigate back"
-              width={24}
-              height={24}
-            />
-          </button>
-        )}
-        <h1 className="mx-4 text-3xl text-foreground">Sign up</h1>
-      </header>
+      <AuthWizardHeader title="Sign up" step={step} onBack={handleBack} />
 
-      <div className="flex gap-2 px-4 pt-4">
-        {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              s <= step ? "bg-primary-imprint" : "bg-muted"
-            }`}
-          />
-        ))}
-      </div>
+      <AuthStepIndicator currentStep={step} />
       {/* Step Titles & Descriptions */}
       <hgroup className="mt-6 space-y-1 px-4">
         <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
@@ -191,205 +187,23 @@ export default function SignUp() {
       <section className="space-y-4 p-4">
         {/* Step 1: Email Entry */}
         {step === 1 && (
-          <>
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <div className="relative">
-                <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
-                  <label
-                    htmlFor="email"
-                    className="absolute -top-2 left-3 bg-background px-1 text-xs text-foreground"
-                  >
-                    Email
-                  </label>
-                  <div className="mr-3 flex items-center justify-center">
-                    <Image
-                      src={"/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                      alt={"Email"}
-                      width={24}
-                      height={24}
-                    />
-                  </div>
-                  <input
-                    type="email"
-                    id="email"
-                    aria-label="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="host@domain.com"
-                    className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className={
-                  "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
-                }
-              >
-                <Image
-                  src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
-                  alt={"Get OTP"}
-                  width={18}
-                  height={18}
-                />
-                <span>Get OTP</span>
-              </button>
-              <p className="px-2 text-center text-xs text-muted-foreground">
-                By continuing, you agree to Qatoto&apos;s{" "}
-                <Link
-                  href="/terms-and-conditions"
-                  className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
-                >
-                  Terms and Conditions
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="/privacy-policy"
-                  className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
-                >
-                  Privacy Policy
-                </Link>
-                .
-              </p>
-            </form>
-          </>
-        )}
-
-        {/* Step 2: OTP Verification */}
-        {step === 2 && (
-          <>
-            <form onSubmit={handleOtpSubmit} className="space-y-4">
-              <div className="flex justify-center gap-3">
-                {OTP_FIELD_IDS.map((fieldId, index) => (
-                  <input
-                    key={fieldId}
-                    type="text"
-                    inputMode="numeric"
-                    id={`otp-${index}`}
-                    aria-label={`Verification code digit ${index + 1}`}
-                    maxLength={1}
-                    value={otp[index]}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="h-14 w-12 rounded border border-outline-strong bg-transparent text-center text-xl font-semibold transition-colors outline-none focus:border-2 focus:border-primary-imprint"
-                    required
-                  />
-                ))}
-              </div>
-              <button
-                type="submit"
-                className={
-                  "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
-                }
-              >
-                <Image
-                  src={"/icons/check_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
-                  alt={"Verify"}
-                  width={18}
-                  height={18}
-                />
-                <span>Verify</span>
-              </button>
-            </form>
-            <p className="text-center text-sm font-medium text-muted-foreground">
-              Didn&apos;t receive the code?{" "}
-              <button
-                type="button"
-                onClick={() =>
-                  fetch(`${API_URL}/signup/start`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ email }),
-                  })
-                }
-                className="cursor-pointer font-medium text-primary-imprint"
-              >
-                Resend
-              </button>
-            </p>
-          </>
-        )}
-
-        {/* Step 3: Password Setup */}
-        {step === 3 && (
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div className="relative">
-              <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
-                <label
-                  htmlFor="password"
-                  className="absolute -top-2 left-3 bg-background px-1 text-xs text-foreground"
-                >
-                  Password
-                </label>
-                <div className="mr-3 flex items-center justify-center">
-                  <Image
-                    src={"/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                    alt={"Password"}
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  aria-label="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="secretPassword123$"
-                  className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
-                  required
-                />
-                <button
-                  type="button"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="ml-3 flex cursor-pointer items-center justify-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <Image
-                    src={
-                      showPassword
-                        ? "/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                        : "/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                    }
-                    alt={showPassword ? "Hide Password" : "Show Password"}
-                    width={24}
-                    height={24}
-                  />
-                </button>
-              </div>
-              <p className="mt-1 w-full pl-4 text-xs text-muted-foreground">
-                Must be at least 8 characters
-              </p>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label htmlFor="remember-me" className="w-full text-sm font-medium">
-                Remember me
-              </label>
-              <ToggleSwitch
-                id="remember-me"
-                accessibleName="Remember me"
-                isChecked={rememberMe}
-                onCheckedChange={setRememberMe}
-              />
-            </div>
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <AuthEmailInput value={email} onChange={(e) => setEmail(e.target.value)} />
             <button
               type="submit"
-              className={
-                "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
-              }
+              disabled={isSubmitting}
+              className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Image
-                src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
-                alt={"Sign up"}
+                src="/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"
+                alt="Get OTP"
                 width={18}
                 height={18}
               />
-              <span>Sign up</span>
+              <span>Get OTP</span>
             </button>
             <p className="px-2 text-center text-xs text-muted-foreground">
-              By creating an account, you agree to our{" "}
+              By continuing, you agree to Qatoto&apos;s{" "}
               <Link
                 href="/terms-and-conditions"
                 className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
@@ -407,46 +221,47 @@ export default function SignUp() {
             </p>
           </form>
         )}
-        <div className="flex items-center gap-4 px-4 text-muted-foreground">
-          <hr className="flex-1" />
-          <span className="text-xs">or continue with</span>
-          <hr className="flex-1" />
-        </div>
-        <div className="flex items-center justify-center gap-4">
-          <button
-            type={"button"}
-            onClick={handleGoogleSignIn}
-            aria-label="Continue with Google"
-            className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
-            }
-          >
-            <Image
-              src={"/icons/google_logo_light.svg"}
-              alt={"Continue with Google"}
-              width={18}
-              height={18}
-            />
-          </button>
-          <button
-            type={"button"}
-            onClick={handleGitHubSignIn}
-            aria-label="Continue with GitHub"
-            className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
-            }
-          >
-            <Image
-              src={"/icons/github_logo_light.svg"}
-              alt={"Continue with GitHub"}
-              width={18}
-              height={18}
-            />
-          </button>
-        </div>
+
+        {/* Step 2: OTP Verification */}
+        {step === 2 && (
+          <AuthOtpStep
+            otp={otp}
+            onOtpChange={handleOtpChange}
+            onOtpKeyDown={handleOtpKeyDown}
+            onSubmit={handleOtpSubmit}
+            onResend={() => {
+              void fetch(`${API_URL}/signup/start`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ email }),
+              });
+            }}
+          />
+        )}
+
+        {/* Step 3: Password Setup */}
+        {step === 3 && (
+          <AuthPasswordStep
+            password={password}
+            onPasswordChange={setPassword}
+            showPassword={showPassword}
+            onToggleShowPassword={() => setShowPassword(!showPassword)}
+            rememberMe={rememberMe}
+            onRememberMeChange={setRememberMe}
+            isSubmitting={isSubmitting}
+            onSubmit={handlePasswordSubmit}
+          />
+        )}
+
+        <AuthSocialButtons
+          onGoogleSignIn={handleGoogleSignIn}
+          onGitHubSignIn={handleGitHubSignIn}
+        />
+
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Already have an account?</span>
-          <Link href={"sign-in"} className="cursor-pointer text-primary-imprint">
+          <Link href="sign-in" className="cursor-pointer text-primary-imprint">
             Sign in
           </Link>
         </p>

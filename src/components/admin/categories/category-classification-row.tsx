@@ -22,6 +22,127 @@ type ClassificationSaveState =
   | { status: "refused"; error: ApiRequestError }
   | { status: "failed" };
 
+function getParentCategoryOptions(
+  topLevelCategories: readonly ResearchCategory[],
+  category: ResearchCategory,
+  selectedDomain: ResearchCategoryDomain | null,
+): readonly ResearchCategory[] {
+  return topLevelCategories.filter(
+    (candidate) =>
+      candidate.id === category.parentCategoryId ||
+      (candidate.id !== category.id &&
+        (candidate.domain === null ||
+          selectedDomain === null ||
+          candidate.domain === selectedDomain)),
+  );
+}
+
+function ClassificationSaveStatusView({ state }: { state: ClassificationSaveState }) {
+  switch (state.status) {
+    case "idle":
+      return null;
+    case "saving":
+      return <span className="text-xs text-muted-foreground">Saving…</span>;
+    case "refused":
+      return <MutationErrorNotice error={state.error.apiError} />;
+    case "failed":
+      return (
+        <p role="alert" className="text-xs text-destructive">
+          Couldn&apos;t reach the server. Nothing was saved.
+        </p>
+      );
+    default: {
+      const exhaustiveCheck: never = state;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+function ClassificationEditorFields({
+  selectedDomain,
+  onDomainChange,
+  selectedParentId,
+  onParentChange,
+  parentOptions,
+  isPending,
+  hasNestedChildren,
+}: {
+  selectedDomain: ResearchCategoryDomain | null;
+  onDomainChange: (domain: ResearchCategoryDomain | null) => void;
+  selectedParentId: string | null;
+  onParentChange: (parentId: string | null) => void;
+  parentOptions: readonly ResearchCategory[];
+  isPending: boolean;
+  hasNestedChildren: boolean;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Domain</span>
+        <select
+          value={selectedDomain ?? ""}
+          disabled={isPending}
+          onChange={(changeEvent) => {
+            // Parsed, not asserted. "Unassigned" carries "", which fails the enum and
+            // correctly becomes null.
+            const parsedDomain = ResearchCategoryDomainSchema.safeParse(changeEvent.target.value);
+            onDomainChange(parsedDomain.success ? parsedDomain.data : null);
+          }}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        >
+          <option value="">Unassigned</option>
+          {RESEARCH_CATEGORY_DOMAINS.map((domain) => (
+            <option key={domain} value={domain}>
+              {RESEARCH_CATEGORY_DOMAIN_LABELS[domain]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Nested under</span>
+        <select
+          value={selectedParentId ?? ""}
+          // A category with children cannot itself be nested; the tree is one level deep.
+          disabled={isPending || hasNestedChildren}
+          onChange={(changeEvent) =>
+            onParentChange(changeEvent.target.value === "" ? null : changeEvent.target.value)
+          }
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        >
+          <option value="">Top level</option>
+          {parentOptions.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {candidate.displayLabel}
+            </option>
+          ))}
+        </select>
+        {hasNestedChildren && (
+          <span className="block text-muted-foreground">
+            Other categories are nested under this one, so it stays top level.
+          </span>
+        )}
+      </label>
+    </div>
+  );
+}
+
+function ClassificationSummaryView({
+  category,
+  parentLabelById,
+}: {
+  category: ResearchCategory;
+  parentLabelById: Map<string, string>;
+}) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      {category.domain === null ? "No domain" : RESEARCH_CATEGORY_DOMAIN_LABELS[category.domain]}
+      {category.parentCategoryId !== null &&
+        ` · nested under ${parentLabelById.get(category.parentCategoryId) ?? category.parentCategoryId}`}
+    </p>
+  );
+}
+
 /**
  * One row of the "Domain & nesting" list.
  *
@@ -49,23 +170,16 @@ export default function CategoryClassificationRow({
 }) {
   const classifyMutation = useClassifyResearchCategoryMutation();
   const [selectedDomain, setSelectedDomain] = useState<ResearchCategoryDomain | null>(
-    category.domain,
+    () => category.domain,
   );
   const [selectedParentId, setSelectedParentId] = useState<string | null>(
-    category.parentCategoryId,
+    () => category.parentCategoryId,
   );
 
   const hasChanges =
     selectedDomain !== category.domain || selectedParentId !== category.parentCategoryId;
 
-  const parentOptions = topLevelCategories.filter(
-    (candidate) =>
-      candidate.id === category.parentCategoryId ||
-      (candidate.id !== category.id &&
-        (candidate.domain === null ||
-          selectedDomain === null ||
-          candidate.domain === selectedDomain)),
-  );
+  const parentOptions = getParentCategoryOptions(topLevelCategories, category, selectedDomain);
   const parentLabelById = new Map(
     topLevelCategories.map((candidate) => [candidate.id, candidate.displayLabel]),
   );
@@ -78,27 +192,6 @@ export default function CategoryClassificationRow({
         ? { status: "failed" }
         : { status: "idle" };
 
-  function renderSaveState() {
-    switch (saveState.status) {
-      case "idle":
-        return null;
-      case "saving":
-        return <span className="text-xs text-muted-foreground">Saving…</span>;
-      case "refused":
-        return <MutationErrorNotice error={saveState.error.apiError} />;
-      case "failed":
-        return (
-          <p role="alert" className="text-xs text-destructive">
-            Couldn&apos;t reach the server. Nothing was saved.
-          </p>
-        );
-      default: {
-        const exhaustiveCheck: never = saveState;
-        return exhaustiveCheck;
-      }
-    }
-  }
-
   return (
     <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
       <div className="space-y-0.5">
@@ -108,58 +201,15 @@ export default function CategoryClassificationRow({
 
       {canClassify ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block space-y-1 text-xs">
-              <span className="font-medium">Domain</span>
-              <select
-                value={selectedDomain ?? ""}
-                disabled={classifyMutation.isPending}
-                onChange={(changeEvent) => {
-                  // Parsed, not asserted. "Unassigned" carries "", which fails the enum and
-                  // correctly becomes null.
-                  const parsedDomain = ResearchCategoryDomainSchema.safeParse(
-                    changeEvent.target.value,
-                  );
-                  setSelectedDomain(parsedDomain.success ? parsedDomain.data : null);
-                }}
-                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-              >
-                <option value="">Unassigned</option>
-                {RESEARCH_CATEGORY_DOMAINS.map((domain) => (
-                  <option key={domain} value={domain}>
-                    {RESEARCH_CATEGORY_DOMAIN_LABELS[domain]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-1 text-xs">
-              <span className="font-medium">Nested under</span>
-              <select
-                value={selectedParentId ?? ""}
-                // A category with children cannot itself be nested; the tree is one level deep.
-                disabled={classifyMutation.isPending || hasNestedChildren}
-                onChange={(changeEvent) =>
-                  setSelectedParentId(
-                    changeEvent.target.value === "" ? null : changeEvent.target.value,
-                  )
-                }
-                className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-              >
-                <option value="">Top level</option>
-                {parentOptions.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.displayLabel}
-                  </option>
-                ))}
-              </select>
-              {hasNestedChildren && (
-                <span className="block text-muted-foreground">
-                  Other categories are nested under this one, so it stays top level.
-                </span>
-              )}
-            </label>
-          </div>
+          <ClassificationEditorFields
+            selectedDomain={selectedDomain}
+            onDomainChange={setSelectedDomain}
+            selectedParentId={selectedParentId}
+            onParentChange={setSelectedParentId}
+            parentOptions={parentOptions}
+            isPending={classifyMutation.isPending}
+            hasNestedChildren={hasNestedChildren}
+          />
 
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -175,17 +225,11 @@ export default function CategoryClassificationRow({
             >
               Save
             </button>
-            {renderSaveState()}
+            <ClassificationSaveStatusView state={saveState} />
           </div>
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          {category.domain === null
-            ? "No domain"
-            : RESEARCH_CATEGORY_DOMAIN_LABELS[category.domain]}
-          {category.parentCategoryId !== null &&
-            ` · nested under ${parentLabelById.get(category.parentCategoryId) ?? category.parentCategoryId}`}
-        </p>
+        <ClassificationSummaryView category={category} parentLabelById={parentLabelById} />
       )}
     </li>
   );

@@ -53,9 +53,17 @@ export function useSubmitShowcaseMutation() {
  * says why an image was refused beside the field. Nothing to invalidate: an upload changes no list.
  */
 export function useUploadShowcaseWriteUpImageMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
       uploadShowcaseWriteUpImage(variables.imageFile, variables.draftId),
+    onSuccess: (_data, variables) => {
+      if (variables.draftId) {
+        void queryClient.invalidateQueries({
+          queryKey: blueprintKeys.draft(variables.draftId),
+        });
+      }
+    },
   });
 }
 
@@ -66,8 +74,16 @@ export function useUploadShowcaseWriteUpImageMutation() {
  * retried upload stores a second copy nothing references, which the server reaps after a day.
  */
 export function useUploadShowcaseHeadingImageMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
       uploadShowcaseHeadingImage(variables.imageFile, variables.draftId),
+    onSuccess: (_data, variables) => {
+      if (variables.draftId) {
+        void queryClient.invalidateQueries({
+          queryKey: blueprintKeys.draft(variables.draftId),
+        });
+      }
+    },
   });
 }

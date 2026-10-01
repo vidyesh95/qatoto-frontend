@@ -45,6 +45,7 @@ export type TrendDirection = z.infer<typeof TrendDirectionSchema>;
 
 export const COMPENSATION_KINDS = ["salary", "one_time", "equity"] as const;
 export const CompensationKindSchema = z.enum(COMPENSATION_KINDS);
+export type CompensationKind = z.infer<typeof CompensationKindSchema>;
 
 /**
  * The first two values are RETIRED — readable on historical rows, never writable.

@@ -7,6 +7,11 @@ import { useState } from "react";
 
 import { AdminImagePicker } from "@/components/admin/shared/admin-image-picker";
 import {
+  SlideActionButtons,
+  SlideOrderControls,
+} from "@/components/admin/shared/slide-row-controls";
+import { toOrdinalLabel } from "@/lib/format-ordinal";
+import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
@@ -66,15 +71,6 @@ function toSlideListViewState(
     };
   }
   return query.data.length === 0 ? { status: "empty" } : { status: "ready", slides: query.data };
-}
-
-/** "1st", "2nd", "3rd", "4th"… from a 0-based position. */
-function toOrdinalLabel(zeroBasedPosition: number): string {
-  const displayPosition = zeroBasedPosition + 1;
-  const lastTwoDigits = displayPosition % 100;
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return `${String(displayPosition)}th`;
-  const suffix = { 1: "st", 2: "nd", 3: "rd" }[displayPosition % 10] ?? "th";
-  return `${String(displayPosition)}${suffix}`;
 }
 
 /**
@@ -430,11 +426,6 @@ function SlideRow({
     updateSlide.mutate({ slideId: slide.id, patch });
   }
   const [isEditing, setIsEditing] = useState(false);
-  const [draftAltText, setDraftAltText] = useState(slide.altText);
-  const [draftDestinationKind, setDraftDestinationKind] = useState<PromotionalDestinationKind>(
-    slide.destinationKind,
-  );
-  const [draftDestinationValue, setDraftDestinationValue] = useState(slide.destinationValue);
   // Two-step inline confirm. `window.confirm` is not available — oxlint sets no-alert: error.
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   /**
@@ -486,108 +477,31 @@ function SlideRow({
 
         {/* Ordering. Arrows nudge one step; the select jumps straight to a position, so
             moving the 6th slide to 1st is one action rather than five clicks. */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={isReordering || index === 0}
-            onClick={() => onMove(slide.id, index - 1)}
-            aria-label="Move up one place"
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            disabled={isReordering || index === slideCount - 1}
-            onClick={() => onMove(slide.id, index + 1)}
-            aria-label="Move down one place"
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ▼
-          </button>
-          <label className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
-            Show as
-            <select
-              value={index}
-              disabled={isReordering}
-              onChange={(event) => onMove(slide.id, Number(event.target.value))}
-              className="cursor-pointer rounded-lg border border-outline-variant/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {Array.from({ length: slideCount }, (_unused, position) => (
-                <option key={position} value={position}>
-                  {toOrdinalLabel(position)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <SlideOrderControls
+          index={index}
+          slideCount={slideCount}
+          isReordering={isReordering}
+          onMove={(targetPosition) => onMove(slide.id, targetPosition)}
+        />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={isMutating}
-          onClick={() => handleUpdate({ isActive: !slide.isActive })}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {slide.isActive ? "Hide from home page" : "Show on home page"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
-        >
-          {isEditing ? "Cancel edit" : "Edit"}
-        </button>
-
-        {/* Its own control, separate from Edit — so it is never ambiguous whether a save is
-            about to touch the image. */}
-        <button
-          type="button"
-          disabled={isMutating}
-          onClick={() => {
-            setIsReplacingImage((wasReplacing) => !wasReplacing);
-            setReplacementImageFile(null);
-          }}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {replaceImage.isPending
-            ? "Replacing…"
-            : isReplacingImage
-              ? "Cancel replace"
-              : "Replace image"}
-        </button>
-
-        {isConfirmingDelete ? (
-          <span className="flex items-center gap-2 text-xs">
-            Really delete?
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={onDelete}
-              className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Yes, delete
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsConfirmingDelete(false)}
-              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
-            >
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            className="cursor-pointer rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive"
-          >
-            Delete
-          </button>
-        )}
-      </div>
+      <SlideActionButtons
+        activeToggleLabel={slide.isActive ? "Hide from home page" : "Show on home page"}
+        onToggleActive={() => handleUpdate({ isActive: !slide.isActive })}
+        isEditing={isEditing}
+        onToggleEditing={() => setIsEditing((wasEditing) => !wasEditing)}
+        isReplacingImage={isReplacingImage}
+        onToggleReplacingImage={() => {
+          setIsReplacingImage((wasReplacing) => !wasReplacing);
+          setReplacementImageFile(null);
+        }}
+        isReplaceImagePending={replaceImage.isPending}
+        isConfirmingDelete={isConfirmingDelete}
+        onToggleConfirmingDelete={setIsConfirmingDelete}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+        isMutating={isMutating}
+      />
 
       {isReplacingImage && (
         <div className="space-y-3 border-t border-outline-variant/40 pt-3">
@@ -655,66 +569,97 @@ function SlideRow({
       )}
 
       {isEditing && (
-        <form
-          className="space-y-3 border-t border-outline-variant/40 pt-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleUpdate({
-              altText: draftAltText,
-              // Kind and value always travel together — the backend 422s a kind with no
-              // value, because "/store" is a fine path and a broken URL.
-              destinationKind: draftDestinationKind,
-              destinationValue: draftDestinationValue,
-            });
+        <PromoSlideEditForm
+          key={slide.id}
+          slide={slide}
+          isMutating={isMutating}
+          onSave={(patch) => {
+            handleUpdate(patch);
             setIsEditing(false);
           }}
-        >
-          <input
-            type="text"
-            required
-            maxLength={200}
-            value={draftAltText}
-            onChange={(event) => setDraftAltText(event.target.value)}
-            aria-label="Description"
-            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
-          />
-          <div className="flex flex-wrap gap-4 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name={`edit-destination-kind-${slide.id}`}
-                checked={draftDestinationKind === "internal_path"}
-                onChange={() => setDraftDestinationKind("internal_path")}
-              />
-              A page on Qatoto
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name={`edit-destination-kind-${slide.id}`}
-                checked={draftDestinationKind === "external_url"}
-                onChange={() => setDraftDestinationKind("external_url")}
-              />
-              An external website
-            </label>
-          </div>
-          <input
-            type="text"
-            required
-            value={draftDestinationValue}
-            onChange={(event) => setDraftDestinationValue(event.target.value)}
-            aria-label="Destination"
-            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={isMutating}
-            className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Save changes
-          </button>
-        </form>
+        />
       )}
     </li>
+  );
+}
+
+function PromoSlideEditForm({
+  slide,
+  isMutating,
+  onSave,
+}: {
+  slide: AdminPromotionalSlide;
+  isMutating: boolean;
+  onSave: (patch: {
+    altText: string;
+    destinationKind: PromotionalDestinationKind;
+    destinationValue: string;
+  }) => void;
+}) {
+  const [draftAltText, setDraftAltText] = useState(() => slide.altText);
+  const [draftDestinationKind, setDraftDestinationKind] = useState<PromotionalDestinationKind>(
+    () => slide.destinationKind,
+  );
+  const [draftDestinationValue, setDraftDestinationValue] = useState(() => slide.destinationValue);
+
+  return (
+    <form
+      className="space-y-3 border-t border-outline-variant/40 pt-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave({
+          altText: draftAltText,
+          // Kind and value always travel together — the backend 422s a kind with no
+          // value, because "/store" is a fine path and a broken URL.
+          destinationKind: draftDestinationKind,
+          destinationValue: draftDestinationValue,
+        });
+      }}
+    >
+      <input
+        type="text"
+        required
+        maxLength={200}
+        value={draftAltText}
+        onChange={(event) => setDraftAltText(event.target.value)}
+        aria-label="Description"
+        className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
+      />
+      <div className="flex flex-wrap gap-4 text-sm">
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name={`edit-destination-kind-${slide.id}`}
+            checked={draftDestinationKind === "internal_path"}
+            onChange={() => setDraftDestinationKind("internal_path")}
+          />
+          A page on Qatoto
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name={`edit-destination-kind-${slide.id}`}
+            checked={draftDestinationKind === "external_url"}
+            onChange={() => setDraftDestinationKind("external_url")}
+          />
+          An external website
+        </label>
+      </div>
+      <input
+        type="text"
+        required
+        value={draftDestinationValue}
+        onChange={(event) => setDraftDestinationValue(event.target.value)}
+        aria-label="Destination"
+        className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
+      />
+      <button
+        type="submit"
+        disabled={isMutating}
+        className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Save changes
+      </button>
+    </form>
   );
 }

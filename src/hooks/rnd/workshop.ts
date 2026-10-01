@@ -235,9 +235,13 @@ export function useWorkshopChatMessageMutation(projectSlug: string) {
  * thing it changes is the caller's own unread count, which the next natural read picks up.
  */
 export function useMarkWorkshopChatReadMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (throughMessageId: string) =>
       unwrap(await markWorkshopChatRead(projectSlug, { throughMessageId })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.workshop(projectSlug) });
+    },
   });
 }
 

@@ -135,22 +135,193 @@ export default function StudioPitchesPage() {
   );
 }
 
+function PitchVideoThumbnail({ video }: { readonly video: Pitch["pitchVideo"] }) {
+  if (video === null) {
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        No video on this pitch. Funders watch before they read — a pitch without one is much weaker.
+      </p>
+    );
+  }
+
+  const durationLabel = formatDurationLabel(video.durationSeconds);
+  return (
+    <span className="relative flex aspect-video w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+      {video.thumbnailUrl === null ? (
+        <Image
+          src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={24}
+          height={24}
+        />
+      ) : (
+        <Image
+          src={video.thumbnailUrl}
+          alt=""
+          width={128}
+          height={72}
+          className="size-full object-cover"
+        />
+      )}
+      {durationLabel !== null && (
+        <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-xs font-medium text-white">
+          {durationLabel}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function PitchLinksSection({
+  externalFundingUrl,
+  externalContactUrl,
+}: {
+  readonly externalFundingUrl: string | null;
+  readonly externalContactUrl: string | null;
+}) {
+  if (externalFundingUrl === null && externalContactUrl === null) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        No links yet. Add a funding link or a contact link before submitting — Qatoto hosts no
+        funding of its own, so one of those two is how anyone reaches you.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-1">
+      {externalFundingUrl !== null && (
+        <ExternalLinkOut href={externalFundingUrl} label="Funding page" />
+      )}
+      {externalContactUrl !== null && <ExternalLinkOut href={externalContactUrl} label="Contact" />}
+    </div>
+  );
+}
+
+function PitchCardActions({
+  pitch,
+  isBusy,
+  isSubmitPending,
+  isDeletePending,
+  isClosePending,
+  onSubmit,
+  onDelete,
+  onClose,
+}: {
+  readonly pitch: Pitch;
+  readonly isBusy: boolean;
+  readonly isSubmitPending: boolean;
+  readonly isDeletePending: boolean;
+  readonly isClosePending: boolean;
+  readonly onSubmit: () => void;
+  readonly onDelete: () => void;
+  readonly onClose: () => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      {pitch.status === "published" && (
+        <Link
+          href={`/research-and-development/pitches/${pitch.slug}`}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-foreground"
+        >
+          View public page
+        </Link>
+      )}
+
+      {(pitch.status === "draft" || pitch.status === "rejected") && (
+        <>
+          <Link
+            href={`/studio/pitches/edit?pitchId=${encodeURIComponent(pitch.id)}`}
+            className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-foreground"
+          >
+            Edit
+          </Link>
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={onSubmit}
+            className="cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40"
+          >
+            {isSubmitPending ? "Submitting…" : "Submit for review"}
+          </button>
+        </>
+      )}
+
+      {pitch.status === "draft" && (
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={onDelete}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-40"
+        >
+          {isDeletePending ? "Deleting…" : "Delete draft"}
+        </button>
+      )}
+
+      {pitch.status === "published" && (
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={onClose}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-40"
+        >
+          {isClosePending ? "Closing…" : "Close pitch"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function PitchStatusNotice({
+  status,
+  rejectionReason,
+}: {
+  readonly status: Pitch["status"];
+  readonly rejectionReason: string | null;
+}) {
+  if (status === "rejected" && rejectionReason !== null) {
+    return (
+      <div className="mt-3 rounded-xl bg-destructive/10 p-3">
+        <p className="text-xs font-medium text-destructive">Not published</p>
+        <p className="mt-1 text-sm text-foreground">{rejectionReason}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Edit the pitch and submit it again once you have addressed this.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <p className="mt-3 text-xs text-muted-foreground">
+        Waiting for review. A moderator checks for spam, scams and illegal content — not whether the
+        venture is a good one. You will be notified either way.
+      </p>
+    );
+  }
+
+  if (status === "closed") {
+    return (
+      <p className="mt-3 text-xs text-muted-foreground">
+        Closed. The page still resolves and says you are no longer raising, so old links do not
+        break.
+      </p>
+    );
+  }
+
+  return null;
+}
+
 function PitchCard({ pitch }: { readonly pitch: Pitch }) {
   const submitMutation = useSubmitPitchMutation();
   const closeMutation = useClosePitchMutation();
   const deleteMutation = useDeletePitchMutation();
 
-  // ONE ERROR SURFACE ACROSS THREE MUTATIONS. Three separate banners would let two failures
-  // render at once and leave the reader guessing which control they belong to.
   const firstError = [submitMutation.error, closeMutation.error, deleteMutation.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
   );
 
   const isBusy = submitMutation.isPending || closeMutation.isPending || deleteMutation.isPending;
-
-  // Only a pitch with a public page has funding to report against — `GET /pitches/:slug`
-  // serves `published` and `closed` and 404s for a draft, so the query stays disabled until
-  // there is something for it to find.
   const hasPublicPage = pitch.status === "published" || pitch.status === "closed";
   const detailQuery = usePitchQuery(pitch.slug, hasPublicPage);
 
@@ -165,143 +336,29 @@ function PitchCard({ pitch }: { readonly pitch: Pitch }) {
       </div>
 
       <div className="mt-2 flex gap-3">
-        {pitch.pitchVideo !== null && (
-          <span className="relative flex aspect-video w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
-            {pitch.pitchVideo.thumbnailUrl === null ? (
-              <Image
-                src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-            ) : (
-              <Image
-                src={pitch.pitchVideo.thumbnailUrl}
-                alt=""
-                width={128}
-                height={72}
-                className="size-full object-cover"
-              />
-            )}
-            {formatDurationLabel(pitch.pitchVideo.durationSeconds) !== null && (
-              <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-xs font-medium text-white">
-                {formatDurationLabel(pitch.pitchVideo.durationSeconds)}
-              </span>
-            )}
-          </span>
-        )}
+        {pitch.pitchVideo !== null && <PitchVideoThumbnail video={pitch.pitchVideo} />}
         <p className="text-sm text-muted-foreground">{pitch.summary}</p>
       </div>
 
-      {/* PROMPTED, NOT BLOCKED. Submitting without a video is allowed; saying nothing would
-          mean most pitches ship without one simply because nothing suggested it. */}
-      {pitch.pitchVideo === null && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          No video on this pitch. Funders watch before they read — a pitch without one is much
-          weaker.
-        </p>
-      )}
+      {pitch.pitchVideo === null && <PitchVideoThumbnail video={null} />}
 
-      {/* THE REJECTION REASON IS SHOWN IN FULL. It is the moderator's own sentence and the
-          only thing that makes a rejection actionable rather than a wall. */}
-      {pitch.status === "rejected" && pitch.rejectionReason !== null && (
-        <div className="mt-3 rounded-xl bg-destructive/10 p-3">
-          <p className="text-xs font-medium text-destructive">Not published</p>
-          <p className="mt-1 text-sm text-foreground">{pitch.rejectionReason}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Edit the pitch and submit it again once you have addressed this.
-          </p>
-        </div>
-      )}
+      <PitchStatusNotice status={pitch.status} rejectionReason={pitch.rejectionReason} />
 
-      <div className="mt-3 flex flex-col gap-1">
-        {pitch.externalFundingUrl !== null && (
-          <ExternalLinkOut href={pitch.externalFundingUrl} label="Funding page" />
-        )}
-        {pitch.externalContactUrl !== null && (
-          <ExternalLinkOut href={pitch.externalContactUrl} label="Contact" />
-        )}
-        {pitch.externalFundingUrl === null && pitch.externalContactUrl === null && (
-          <p className="text-xs text-muted-foreground">
-            No links yet. Add a funding link or a contact link before submitting — Qatoto hosts no
-            funding of its own, so one of those two is how anyone reaches you.
-          </p>
-        )}
-      </div>
+      <PitchLinksSection
+        externalFundingUrl={pitch.externalFundingUrl}
+        externalContactUrl={pitch.externalContactUrl}
+      />
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {pitch.status === "published" && (
-          <Link
-            href={`/research-and-development/pitches/${pitch.slug}`}
-            className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-foreground"
-          >
-            View public page
-          </Link>
-        )}
-
-        {(pitch.status === "draft" || pitch.status === "rejected") && (
-          <>
-            <Link
-              href={`/studio/pitches/edit?pitchId=${encodeURIComponent(pitch.id)}`}
-              className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-foreground"
-            >
-              Edit
-            </Link>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => {
-                submitMutation.mutate(pitch.id);
-              }}
-              className="cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40"
-            >
-              {submitMutation.isPending ? "Submitting…" : "Submit for review"}
-            </button>
-          </>
-        )}
-
-        {pitch.status === "draft" && (
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => {
-              deleteMutation.mutate(pitch.id);
-            }}
-            className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-40"
-          >
-            {deleteMutation.isPending ? "Deleting…" : "Delete draft"}
-          </button>
-        )}
-
-        {pitch.status === "published" && (
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => {
-              closeMutation.mutate(pitch.id);
-            }}
-            className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-40"
-          >
-            {closeMutation.isPending ? "Closing…" : "Close pitch"}
-          </button>
-        )}
-      </div>
-
-      {/* Said plainly rather than left to the badge: a submitted pitch has no verdict yet,
-          and copy that implies one is the same error as rendering a 202 as a result. */}
-      {pitch.status === "pending" && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Waiting for review. A moderator checks for spam, scams and illegal content — not whether
-          the venture is a good one. You will be notified either way.
-        </p>
-      )}
-
-      {pitch.status === "closed" && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Closed. The page still resolves and says you are no longer raising, so old links do not
-          break.
-        </p>
-      )}
+      <PitchCardActions
+        pitch={pitch}
+        isBusy={isBusy}
+        isSubmitPending={submitMutation.isPending}
+        isDeletePending={deleteMutation.isPending}
+        isClosePending={closeMutation.isPending}
+        onSubmit={() => submitMutation.mutate(pitch.id)}
+        onDelete={() => deleteMutation.mutate(pitch.id)}
+        onClose={() => closeMutation.mutate(pitch.id)}
+      />
 
       {hasPublicPage && detailQuery.data !== undefined && (
         <PitchOutcomesPanel pitchId={pitch.id} outcomes={detailQuery.data.outcomes} />

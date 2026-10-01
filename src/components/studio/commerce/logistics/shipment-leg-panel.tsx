@@ -36,7 +36,7 @@
 // once the leg is past `booked`, because re-pointing a leg in transit strands whoever is carrying
 // it.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -248,9 +248,9 @@ function LegCommandForm({
   readonly commandName: ShipmentLegCommandName;
   readonly onDone: () => void;
 }) {
-  // MINTED ONCE PER ATTEMPT, in state, so a re-render does not mint a second one. It rotates only
+  // MINTED ONCE PER ATTEMPT, in ref, so a re-render does not mint a second one. It rotates only
   // after a success — a retry of a failed command must reuse the key it already spent.
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string | null>(null);
   const [carrierReference, setCarrierReference] = useState("");
   const [trackingReference, setTrackingReference] = useState("");
   const [problemDescription, setProblemDescription] = useState("");
@@ -269,17 +269,25 @@ function LegCommandForm({
     (isCancel && !isCancelConfirmed);
 
   function handleSubmit() {
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
     const command = buildLegCommand(commandName, leg.version, {
       carrierReference,
       trackingReference,
       problemDescription,
     });
     executeCommand.mutate(
-      { shipmentId, legId: leg.id, command, idempotencyKey },
+      {
+        shipmentId,
+        legId: leg.id,
+        command,
+        idempotencyKey: idempotencyKeyRef.current,
+      },
       {
         onSuccess: (mutationResult) => {
           if (!mutationResult.success) return;
-          setIdempotencyKey(crypto.randomUUID());
+          idempotencyKeyRef.current = crypto.randomUUID();
           onDone();
         },
       },
@@ -476,7 +484,7 @@ function LegAssignmentControl({
   readonly orderId: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string | null>(null);
   const fulfillmentQuery = useOrderFulfillmentQuery(orderId);
   const assignLeg = useAssignShipmentLegMutation();
 
@@ -501,18 +509,21 @@ function LegAssignmentControl({
       : [];
 
   function submitAssignment(logisticsEngagementId: string | null) {
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
     assignLeg.mutate(
       {
         shipmentId,
         orderId,
         legId: leg.id,
         input: { expectedVersion: leg.version, logisticsEngagementId },
-        idempotencyKey,
+        idempotencyKey: idempotencyKeyRef.current,
       },
       {
         onSuccess: (result) => {
           if (!result.success) return;
-          setIdempotencyKey(crypto.randomUUID());
+          idempotencyKeyRef.current = crypto.randomUUID();
           setIsOpen(false);
         },
       },
@@ -610,7 +621,7 @@ function AddLegForm({
   const nextFreeSequence = takenSequences.length === 0 ? 0 : Math.max(...takenSequences) + 1;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string | null>(null);
   const [sequenceText, setSequenceText] = useState(String(nextFreeSequence));
   const [mode, setMode] = useState<ShipmentLegInput["mode"]>("sea");
   const [originCountryCode, setOriginCountryCode] = useState("");
@@ -628,6 +639,9 @@ function AddLegForm({
     destinationCountryCode.trim().length !== 2;
 
   function handleSubmit() {
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
     addLegs.mutate(
       {
         shipmentId,
@@ -644,12 +658,12 @@ function AddLegForm({
             },
           ],
         },
-        idempotencyKey,
+        idempotencyKey: idempotencyKeyRef.current,
       },
       {
         onSuccess: (addResult) => {
           if (!addResult.success) return;
-          setIdempotencyKey(crypto.randomUUID());
+          idempotencyKeyRef.current = crypto.randomUUID();
           setIsOpen(false);
           setOriginCountryCode("");
           setDestinationCountryCode("");

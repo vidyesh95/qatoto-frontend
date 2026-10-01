@@ -13,11 +13,9 @@ import { type RefObject, useRef, useState, useSyncExternalStore } from "react";
 import type { MapViewportReport } from "@/components/home/research-and-development/sections/civic-pulse-vector-map";
 import ProblemMapBottomSheet from "@/components/home/research-and-development/sections/problem-map-bottom-sheet";
 import ProblemMapCanvas from "@/components/home/research-and-development/sections/problem-map-canvas";
-import ProblemMapPanel, {
-  type ProblemMapFilterOption,
-  toProblemMapListState,
-} from "@/components/home/research-and-development/sections/problem-map-panel";
+import ProblemMapPanel from "@/components/home/research-and-development/sections/problem-map-panel";
 import { useProblemClustersQuery } from "@/hooks/rnd/discovery";
+import { toProblemMapListState, type ProblemMapFilterOption } from "@/lib/rnd/problem-map-state";
 import {
   DEFAULT_MAP_VIEW_MODE,
   formatCatchmentRadiusLabel,

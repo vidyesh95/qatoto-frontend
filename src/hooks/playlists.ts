@@ -69,21 +69,29 @@ function usePlaylistAdoption() {
 }
 
 export function useCreatePlaylistMutation() {
+  const queryClient = useQueryClient();
   const adoptPlaylist = usePlaylistAdoption();
   return useMutation({
     mutationFn: async (input: CreatePlaylistInput) => unwrap(await createPlaylist(input)),
-    onSuccess: adoptPlaylist,
+    onSuccess: (playlist) => {
+      adoptPlaylist(playlist);
+      void queryClient.invalidateQueries({ queryKey: playlistKeys.listRoot() });
+    },
   });
 }
 
 export function useUpdatePlaylistMutation() {
+  const queryClient = useQueryClient();
   const adoptPlaylist = usePlaylistAdoption();
   return useMutation({
     mutationFn: async (variables: {
       readonly playlistId: string;
       readonly input: UpdatePlaylistInput;
     }) => unwrap(await updatePlaylist(variables.playlistId, variables.input)),
-    onSuccess: adoptPlaylist,
+    onSuccess: (playlist) => {
+      adoptPlaylist(playlist);
+      void queryClient.invalidateQueries({ queryKey: playlistKeys.listRoot() });
+    },
   });
 }
 
@@ -111,6 +119,7 @@ export function useDeletePlaylistMutation() {
  * not. One round trip is cheap enough to wait for.
  */
 export function useTogglePlaylistVideoMutation() {
+  const queryClient = useQueryClient();
   const adoptPlaylist = usePlaylistAdoption();
   return useMutation({
     mutationFn: async (variables: {
@@ -123,18 +132,25 @@ export function useTogglePlaylistVideoMutation() {
           ? addVideoToPlaylist(variables.playlistId, variables.videoId)
           : removeVideoFromPlaylist(variables.playlistId, variables.videoId)),
       ),
-    onSuccess: adoptPlaylist,
+    onSuccess: (playlist) => {
+      adoptPlaylist(playlist);
+      void queryClient.invalidateQueries({ queryKey: playlistKeys.listRoot() });
+    },
   });
 }
 
 /** The only route that sets playlist ORDER — position comes from the array index. */
 export function useReplacePlaylistVideosMutation() {
+  const queryClient = useQueryClient();
   const adoptPlaylist = usePlaylistAdoption();
   return useMutation({
     mutationFn: async (variables: {
       readonly playlistId: string;
       readonly videoIds: readonly string[];
     }) => unwrap(await replacePlaylistVideos(variables.playlistId, variables.videoIds)),
-    onSuccess: adoptPlaylist,
+    onSuccess: (playlist) => {
+      adoptPlaylist(playlist);
+      void queryClient.invalidateQueries({ queryKey: playlistKeys.listRoot() });
+    },
   });
 }

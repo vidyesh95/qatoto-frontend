@@ -73,23 +73,30 @@ function describeHeadingImageCheckFailure(failure: ImageFileCheckFailure): strin
  */
 export function useHeadingImagePick() {
   const [pickState, setPickState] = useState<HeadingImagePickState>({ status: "empty" });
+  const [acceptedImage, setAcceptedImage] = useState<{
+    file: File;
+    widthPx: number;
+    heightPx: number;
+  } | null>(null);
   const latestAttemptNumberRef = useRef(0);
-  const previewUrlRef = useRef<string | null>(null);
 
-  function releasePreviewUrl(): void {
-    if (previewUrlRef.current !== null) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-  }
-
-  // Frees the last preview when the form goes away entirely.
-  useEffect(
-    () => () => {
-      if (previewUrlRef.current !== null) URL.revokeObjectURL(previewUrlRef.current);
-    },
-    [],
-  );
+  // Manage the preview URL lifecycle for accepted heading images.
+  useEffect(() => {
+    if (acceptedImage === null) return undefined;
+    const objectUrl = URL.createObjectURL(acceptedImage.file);
+    queueMicrotask(() => {
+      setPickState({
+        status: "ready",
+        file: acceptedImage.file,
+        previewUrl: objectUrl,
+        widthPx: acceptedImage.widthPx,
+        heightPx: acceptedImage.heightPx,
+      });
+    });
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [acceptedImage]);
 
   /**
    * Runs the local checks and, when they pass, returns the accepted file.
@@ -102,7 +109,7 @@ export function useHeadingImagePick() {
   async function pickFile(file: File): Promise<File | null> {
     latestAttemptNumberRef.current += 1;
     const attemptNumber = latestAttemptNumberRef.current;
-    releasePreviewUrl();
+    setAcceptedImage(null);
     setPickState({ status: "checking", fileName: file.name });
 
     const checkResult = await checkImageFile(file, {
@@ -127,15 +134,13 @@ export function useHeadingImagePick() {
       return null;
     }
 
-    const previewUrl = URL.createObjectURL(file);
-    previewUrlRef.current = previewUrl;
-    setPickState({ status: "ready", file, previewUrl, widthPx, heightPx });
+    setAcceptedImage({ file, widthPx, heightPx });
     return file;
   }
 
   function clearPick(): void {
     latestAttemptNumberRef.current += 1;
-    releasePreviewUrl();
+    setAcceptedImage(null);
     setPickState({ status: "empty" });
   }
 

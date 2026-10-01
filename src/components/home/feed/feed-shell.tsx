@@ -13,11 +13,8 @@
 import Filter from "@/components/home/feed/filter";
 import CategoryTilesSection from "@/components/home/feed/category-tiles-section";
 import ExploreSection from "@/components/home/feed/explore-section";
-import {
-  describeFeedError,
-  FeedErrorPanel,
-  FeedSignInRequiredPanel,
-} from "@/components/home/feed/feed-status-panel";
+import { FeedErrorPanel, FeedSignInRequiredPanel } from "@/components/home/feed/feed-status-panel";
+import { describeFeedError } from "@/lib/feed/format";
 import FilteredFeed from "@/components/home/feed/filtered-feed";
 import RecommendedSection from "@/components/home/feed/recommended-section";
 import SpotlightSection from "@/components/home/feed/spotlight-section";

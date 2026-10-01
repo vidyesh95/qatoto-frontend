@@ -47,84 +47,329 @@ function readResearchPostSort(rawSort: string | undefined): ResearchPostSort {
 }
 const CONTRIBUTORS_PAGE_LIMIT = 24;
 
-/**
- * A research program, top to bottom: what it is, the crowd's research map, what it can ship, the
- * two paper tracks, who is building it, and the open discussion.
- *
- * THE DETAIL READ COMES FIRST AND ALONE, because everything else needs the program to exist and
- * because its 404 is the one that decides the page. A `pending` or `rejected` program is 404 to
- * everyone but its creator and staff, so `notFound()` here leaks nothing about which slugs have
- * been submitted.
- *
- * THE REST FAN OUT CONCURRENTLY. Six reads, one round trip's worth of wall clock. Each is lifted
- * independently: a failed branch read must not blank the discussion, so every section renders
- * either its data or its own empty state, and the page as a whole survives one endpoint being
- * unhappy.
- *
- * READS ARE PUBLIC BUT THE SESSION STILL TRAVELS. A published program is readable signed out, and
- * `callerRequestOptions()` is what fills in `isClaimedByViewer`, `isReactedByViewer` and
- * `isUploadedByViewer` — per-viewer facts that come back false for an anonymous caller. Forwarding
- * the cookie is therefore not about authorization here; it is about the page being about you.
- *
- * WHAT IS NOT FABRICATED. `stats` is `null` when the nightly job has never run, and the hero says
- * so rather than showing zeroes. Every count on the page is a number the backend returned.
- */
-export default async function ResearchProgramPage({
-  programSlug,
-  roleFilter,
-  ideasSortParam,
-  papersSortParam,
-}: {
-  programSlug: string;
-  /** From `?role=`, already narrowed by the route. Filters the roster IN SQL. */
-  roleFilter?: string | undefined;
-  /** From `?ideasSort=` / `?papersSort=` — one order per discussion section, validated below. */
-  ideasSortParam?: string | undefined;
-  papersSortParam?: string | undefined;
-}) {
-  const [requestOptions, isSignedIn] = await Promise.all([
-    callerRequestOptions(),
-    hasCallerSession(),
-  ]);
-  const programResult = await getResearchProgram(programSlug, requestOptions);
+type ProgramBranchesResult = Awaited<ReturnType<typeof listProgramBranches>>;
+type ProgramPapersResult = Awaited<ReturnType<typeof listProgramPapers>>;
+type ProgramOpportunitiesResult = Awaited<ReturnType<typeof listProgramOpportunities>>;
+type ProgramContributorsResult = Awaited<ReturnType<typeof listProgramContributors>>;
+type ProgramPostsResult = Awaited<ReturnType<typeof listProgramPosts>>;
+type BranchItem = Extract<ProgramBranchesResult, { success: true }>["data"][number];
+type ProgramItem = Extract<
+  Awaited<ReturnType<typeof getResearchProgram>>,
+  { success: true }
+>["data"];
 
-  if (!programResult.success) {
-    if (programResult.error.code === "404") notFound();
+function resolveActiveRole(roleFilter?: string): ResearchParticipantRole | null {
+  if (roleFilter === undefined) return null;
+  const parsedRole = ResearchParticipantRoleSchema.safeParse(roleFilter);
+  return parsedRole.success ? parsedRole.data : null;
+}
+
+function buildDiscussionSortChips(
+  currentSearchParams: RawSearchParams,
+  sortKey: "ideasSort" | "papersSort",
+  selectedSort: ResearchPostSort,
+) {
+  return RESEARCH_POST_SORTS.map((sort) => ({
+    label: RESEARCH_POST_SORT_LABELS[sort],
+    href: buildFilterHref(currentSearchParams, {
+      [sortKey]: sort === "newest" ? undefined : sort,
+    }),
+    isSelected: sort === selectedSort,
+  }));
+}
+
+function ResearchProgramStatusBanners({
+  status,
+  reviewerNote,
+}: {
+  status: string;
+  reviewerNote: string | null;
+}) {
+  if (status === "pending") {
     return (
-      <div className="px-4 pt-6 lg:px-6">
-        <RndErrorPanel message="Couldn't load this research programme." />
+      <div className="px-4 lg:px-6">
+        <p className="rounded-2xl bg-warning-container p-4 text-sm text-warning-container-foreground">
+          This programme is awaiting review. It is not listed publicly and cannot take contributions
+          yet — including from you.
+        </p>
       </div>
     );
   }
 
-  const program = programResult.data;
+  if (status === "rejected" && reviewerNote) {
+    return (
+      <div className="px-4 lg:px-6">
+        <div className="space-y-1 rounded-2xl bg-destructive/10 p-4 text-sm text-destructive">
+          <p className="font-medium">This programme was not published.</p>
+          <p>{reviewerNote}</p>
+        </div>
+      </div>
+    );
+  }
 
-  // A `?role=` that is not a real role is dropped rather than 422'd: the backend's query schema is
-  // `.strict()`, so passing it through would fail the whole roster read for a typo in a URL.
-  const parsedRole =
-    roleFilter === undefined ? null : ResearchParticipantRoleSchema.safeParse(roleFilter);
-  const activeRole: ResearchParticipantRole | null =
-    parsedRole !== null && parsedRole.success ? parsedRole.data : null;
+  return null;
+}
 
-  // ONE ORDER PER SECTION, in its own URL key, because the two discussions are read independently:
-  // trending the ideas says nothing about how a reader wants the informal papers. An unknown value
-  // falls back to `newest` rather than reaching the backend's `.strict()` schema as a 422.
+function ResearchProgramBranchMapSection({
+  programSlug,
+  branchesResult,
+  canClaimBranch,
+}: {
+  programSlug: string;
+  branchesResult: ProgramBranchesResult;
+  canClaimBranch: boolean;
+}) {
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Research branch map" />
+      {branchesResult.success ? (
+        <ResearchBranchMap
+          programSlug={programSlug}
+          branches={branchesResult.data}
+          canClaimBranch={canClaimBranch}
+        />
+      ) : (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the research branches." />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ResearchProgramProductsSection({
+  opportunitiesResult,
+}: {
+  opportunitiesResult: ProgramOpportunitiesResult;
+}) {
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Products this research can unlock" />
+      {opportunitiesResult.success ? (
+        <ResearchProgramProducts opportunities={opportunitiesResult.data} />
+      ) : (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the product opportunities." />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ResearchProgramPapersSection({
+  programSlug,
+  papersResult,
+  branches,
+  canUploadPaper,
+  canDownload,
+}: {
+  programSlug: string;
+  papersResult: ProgramPapersResult;
+  branches: BranchItem[];
+  canUploadPaper: boolean;
+  canDownload: boolean;
+}) {
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Formal research papers" />
+      {papersResult.success ? (
+        <ResearchProgramPapers
+          programSlug={programSlug}
+          papers={papersResult.data.rows}
+          branches={branches}
+          canUploadPaper={canUploadPaper}
+          canDownload={canDownload}
+        />
+      ) : (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the paper library." />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ResearchProgramContributorsSection({
+  programSlug,
+  contributorsResult,
+  activeRole,
+  canJoin,
+  isViewerParticipant,
+}: {
+  programSlug: string;
+  contributorsResult: ProgramContributorsResult;
+  activeRole: ResearchParticipantRole | null;
+  canJoin: boolean;
+  isViewerParticipant: boolean;
+}) {
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Contributors & compensation" />
+      {contributorsResult.success ? (
+        <ResearchProgramContributors
+          programSlug={programSlug}
+          contributors={contributorsResult.data.rows}
+          activeRole={activeRole}
+          canJoin={canJoin}
+          isViewerParticipant={isViewerParticipant}
+        />
+      ) : (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the contributor roster." />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ResearchProgramDiscussionSection({
+  title,
+  programSlug,
+  track,
+  sort,
+  sortChips,
+  postsResult,
+  branches,
+  canPost,
+  canModerate,
+  errorMessage,
+}: {
+  title: string;
+  programSlug: string;
+  track: "idea" | "informal_paper";
+  sort: ResearchPostSort;
+  sortChips: { label: string; href: string; isSelected: boolean }[];
+  postsResult: ProgramPostsResult;
+  branches: BranchItem[];
+  canPost: boolean;
+  canModerate: boolean;
+  errorMessage: string;
+}) {
+  return (
+    <section className="space-y-4">
+      <SectionHeader title={title} />
+      {postsResult.success ? (
+        <ResearchProgramDiscussion
+          programSlug={programSlug}
+          track={track}
+          sort={sort}
+          sortChips={sortChips}
+          initialPage={postsResult.data}
+          branches={branches}
+          canPost={canPost}
+          canModerate={canModerate}
+        />
+      ) : (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message={errorMessage} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ProgramOwnerToolsSection({
+  programSlug,
+  program,
+  canModerate,
+  branches,
+  opportunities,
+}: {
+  programSlug: string;
+  program: ProgramItem;
+  canModerate: boolean;
+  branches: BranchItem[];
+  opportunities: Extract<ProgramOpportunitiesResult, { success: true }>["data"];
+}) {
+  if (!program.isViewerCreator && !canModerate) return null;
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Programme settings" />
+      <ProgramOwnerTools
+        programSlug={programSlug}
+        program={program}
+        branches={branches}
+        opportunities={opportunities}
+      />
+    </section>
+  );
+}
+
+function ProgramModerationQueueSection({
+  programSlug,
+  canModerate,
+  queuedPapers,
+}: {
+  programSlug: string;
+  canModerate: boolean;
+  queuedPapers: Extract<ProgramPapersResult, { success: true }>["data"]["rows"];
+}) {
+  if (!canModerate) return null;
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Moderation queue" />
+      <PaperModerationQueue programSlug={programSlug} queuedPapers={queuedPapers} />
+    </section>
+  );
+}
+
+function ProgramContributorToolsSection({
+  programSlug,
+  branches,
+  isViewerParticipant,
+  canContribute,
+}: {
+  programSlug: string;
+  branches: BranchItem[];
+  isViewerParticipant: boolean;
+  canContribute: boolean;
+}) {
+  if (!canContribute) return null;
+  return (
+    <section className="space-y-4">
+      <SectionHeader title="Record your contribution" />
+      <ProgramContributorTools
+        programSlug={programSlug}
+        branches={branches}
+        isViewerParticipant={isViewerParticipant}
+        canCreateBranch={canContribute}
+      />
+    </section>
+  );
+}
+
+function resolveProgramViewerState(
+  roleFilter: string | undefined,
+  ideasSortParam: string | undefined,
+  papersSortParam: string | undefined,
+) {
+  const activeRole = resolveActiveRole(roleFilter);
   const ideasSort = readResearchPostSort(ideasSortParam);
   const papersSort = readResearchPostSort(papersSortParam);
+
   const currentSearchParams: RawSearchParams = {
     role: activeRole ?? undefined,
     ideasSort: ideasSort === "newest" ? undefined : ideasSort,
     papersSort: papersSort === "newest" ? undefined : papersSort,
   };
-  const buildSortChips = (sortKey: "ideasSort" | "papersSort", selectedSort: ResearchPostSort) =>
-    RESEARCH_POST_SORTS.map((sort) => ({
-      label: RESEARCH_POST_SORT_LABELS[sort],
-      // The default is written OUT of the URL, the showcase and problem-map precedent.
-      href: buildFilterHref(currentSearchParams, {
-        [sortKey]: sort === "newest" ? undefined : sort,
-      }),
-      isSelected: sort === selectedSort,
-    }));
+
+  const ideasSortChips = buildDiscussionSortChips(currentSearchParams, "ideasSort", ideasSort);
+  const papersSortChips = buildDiscussionSortChips(currentSearchParams, "papersSort", papersSort);
+
+  return { activeRole, ideasSort, papersSort, ideasSortChips, papersSortChips };
+}
+
+async function loadProgramOverviewData(
+  programSlug: string,
+  requestOptions: Awaited<ReturnType<typeof callerRequestOptions>>,
+  isSignedIn: boolean,
+  activeRole: ResearchParticipantRole | null,
+  ideasSort: ResearchPostSort,
+  papersSort: ResearchPostSort,
+) {
+  const moderationQueuePromise = isSignedIn
+    ? listProgramModerationQueue(programSlug, { limit: 50 }, requestOptions)
+    : Promise.resolve({ success: false as const, error: { code: "401", message: "" } });
 
   const [
     statsResult,
@@ -158,197 +403,156 @@ export default async function ResearchProgramPage({
       requestOptions,
     ),
     listProgramOpportunities(programSlug, requestOptions),
-    /**
-     * THE STAFF PROBE, and it is a direct one.
-     *
-     * This route requires `moderate_content` and answers 403 to everyone else, so its SUCCESS is
-     * the fact "this viewer is a moderator" — there is nothing to infer. An earlier version of
-     * this page guessed from whether somebody else's queued paper was visible, which was both
-     * indirect and wrong: a moderator on a program with an empty queue would never have been
-     * offered the moderation surface at all.
-     *
-     * Signed out it is skipped entirely rather than fired to collect a 401.
-     */
-    isSignedIn
-      ? listProgramModerationQueue(programSlug, { limit: 50 }, requestOptions)
-      : Promise.resolve({ success: false as const, error: { code: "401", message: "" } }),
+    moderationQueuePromise,
   ]);
 
-  const isPublished = program.status === "published";
-  // A signed-out reader must not be offered a control that cannot work. The backend refuses
-  // regardless — this only decides what the page puts on screen.
-  const canContribute = isPublished && isSignedIn;
-
   const canModerate = moderationQueueResult.success;
-  // Queued papers are visible only to their uploader and to staff, so for a moderator this is the
-  // real review queue rather than a guess at one.
   const queuedPapers =
     canModerate && papersResult.success
       ? papersResult.data.rows.filter((paper) => paper.moderationStatus === "queued")
       : [];
-
   const branches = branchesResult.success ? branchesResult.data : [];
+  const stats = statsResult.success ? statsResult.data : null;
+  const opportunities = opportunitiesResult.success ? opportunitiesResult.data : [];
+
+  return {
+    canModerate,
+    queuedPapers,
+    branches,
+    stats,
+    opportunities,
+    branchesResult,
+    papersResult,
+    ideasResult,
+    informalPostsResult,
+    contributorsResult,
+    opportunitiesResult,
+  };
+}
+
+/**
+ * A research program, top to bottom: what it is, the crowd's research map, what it can ship, the
+ * two paper tracks, who is building it, and the open discussion.
+ */
+export default async function ResearchProgramPage({
+  programSlug,
+  roleFilter,
+  ideasSortParam,
+  papersSortParam,
+}: {
+  programSlug: string;
+  /** From `?role=`, already narrowed by the route. Filters the roster IN SQL. */
+  roleFilter?: string | undefined;
+  /** From `?ideasSort=` / `?papersSort=` — one order per discussion section, validated below. */
+  ideasSortParam?: string | undefined;
+  papersSortParam?: string | undefined;
+}) {
+  const [requestOptions, isSignedIn] = await Promise.all([
+    callerRequestOptions(),
+    hasCallerSession(),
+  ]);
+  const programResult = await getResearchProgram(programSlug, requestOptions);
+
+  if (!programResult.success) {
+    if (programResult.error.code === "404") notFound();
+    return (
+      <div className="px-4 pt-6 lg:px-6">
+        <RndErrorPanel message="Couldn't load this research programme." />
+      </div>
+    );
+  }
+
+  const program = programResult.data;
+  const { activeRole, ideasSort, papersSort, ideasSortChips, papersSortChips } =
+    resolveProgramViewerState(roleFilter, ideasSortParam, papersSortParam);
+
+  const data = await loadProgramOverviewData(
+    programSlug,
+    requestOptions,
+    isSignedIn,
+    activeRole,
+    ideasSort,
+    papersSort,
+  );
+
+  const canContribute = program.status === "published" && isSignedIn;
 
   return (
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
-      <ResearchProgramHero
+      <ResearchProgramHero program={program} stats={data.stats} />
+
+      <ResearchProgramStatusBanners status={program.status} reviewerNote={program.reviewerNote} />
+
+      <ProgramOwnerToolsSection
+        programSlug={programSlug}
         program={program}
-        stats={statsResult.success ? statsResult.data : null}
+        canModerate={data.canModerate}
+        branches={data.branches}
+        opportunities={data.opportunities}
       />
 
-      {program.status === "pending" && (
-        <div className="px-4 lg:px-6">
-          {/*
-            Only its creator and staff can see this at all, so it says what is actually happening
-            rather than softening it — the program is invisible on the index and closed to
-            contributions until a moderator publishes it.
-          */}
-          <p className="rounded-2xl bg-warning-container p-4 text-sm text-warning-container-foreground">
-            This programme is awaiting review. It is not listed publicly and cannot take
-            contributions yet — including from you.
-          </p>
-        </div>
-      )}
+      <ResearchProgramBranchMapSection
+        programSlug={programSlug}
+        branchesResult={data.branchesResult}
+        canClaimBranch={canContribute}
+      />
 
-      {program.status === "rejected" && program.reviewerNote && (
-        <div className="px-4 lg:px-6">
-          <div className="space-y-1 rounded-2xl bg-destructive/10 p-4 text-sm text-destructive">
-            <p className="font-medium">This programme was not published.</p>
-            <p>{program.reviewerNote}</p>
-          </div>
-        </div>
-      )}
+      <ResearchProgramProductsSection opportunitiesResult={data.opportunitiesResult} />
 
-      {(program.isViewerCreator || canModerate) && (
-        <section className="space-y-4">
-          <SectionHeader title="Programme settings" />
-          <ProgramOwnerTools
-            programSlug={programSlug}
-            program={program}
-            branches={branches}
-            opportunities={opportunitiesResult.success ? opportunitiesResult.data : []}
-          />
-        </section>
-      )}
+      <ResearchProgramPapersSection
+        programSlug={programSlug}
+        papersResult={data.papersResult}
+        branches={data.branches}
+        canUploadPaper={canContribute}
+        canDownload={isSignedIn}
+      />
 
-      <section className="space-y-4">
-        <SectionHeader title="Research branch map" />
-        {branchesResult.success ? (
-          <ResearchBranchMap
-            programSlug={programSlug}
-            branches={branchesResult.data}
-            canClaimBranch={canContribute}
-          />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the research branches." />
-          </div>
-        )}
-      </section>
+      <ProgramModerationQueueSection
+        programSlug={programSlug}
+        canModerate={data.canModerate}
+        queuedPapers={data.queuedPapers}
+      />
 
-      <section className="space-y-4">
-        <SectionHeader title="Products this research can unlock" />
-        {opportunitiesResult.success ? (
-          <ResearchProgramProducts opportunities={opportunitiesResult.data} />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the product opportunities." />
-          </div>
-        )}
-      </section>
+      <ResearchProgramDiscussionSection
+        title="Informal papers"
+        programSlug={programSlug}
+        track="informal_paper"
+        sort={papersSort}
+        sortChips={papersSortChips}
+        postsResult={data.informalPostsResult}
+        branches={data.branches}
+        canPost={canContribute}
+        canModerate={data.canModerate}
+        errorMessage="Couldn't load the informal papers."
+      />
 
-      <section className="space-y-4">
-        <SectionHeader title="Formal research papers" />
-        {papersResult.success ? (
-          <ResearchProgramPapers
-            programSlug={programSlug}
-            papers={papersResult.data.rows}
-            branches={branches}
-            canUploadPaper={canContribute}
-            canDownload={isSignedIn}
-          />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the paper library." />
-          </div>
-        )}
-      </section>
+      <ResearchProgramContributorsSection
+        programSlug={programSlug}
+        contributorsResult={data.contributorsResult}
+        activeRole={activeRole}
+        canJoin={canContribute}
+        isViewerParticipant={program.isViewerParticipant}
+      />
 
-      {canModerate && (
-        <section className="space-y-4">
-          <SectionHeader title="Moderation queue" />
-          <PaperModerationQueue programSlug={programSlug} queuedPapers={queuedPapers} />
-        </section>
-      )}
+      <ProgramContributorToolsSection
+        programSlug={programSlug}
+        branches={data.branches}
+        isViewerParticipant={program.isViewerParticipant}
+        canContribute={canContribute}
+      />
 
-      <section className="space-y-4">
-        <SectionHeader title="Informal papers" />
-        {informalPostsResult.success ? (
-          <ResearchProgramDiscussion
-            programSlug={programSlug}
-            track="informal_paper"
-            sort={papersSort}
-            sortChips={buildSortChips("papersSort", papersSort)}
-            initialPage={informalPostsResult.data}
-            branches={branches}
-            canPost={canContribute}
-            canModerate={canModerate}
-          />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the informal papers." />
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <SectionHeader title="Contributors & compensation" />
-        {contributorsResult.success ? (
-          <ResearchProgramContributors
-            programSlug={programSlug}
-            contributors={contributorsResult.data.rows}
-            activeRole={activeRole}
-            canJoin={canContribute}
-            isViewerParticipant={program.isViewerParticipant}
-          />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the contributor roster." />
-          </div>
-        )}
-      </section>
-
-      {canContribute && (
-        <section className="space-y-4">
-          <SectionHeader title="Record your contribution" />
-          <ProgramContributorTools
-            programSlug={programSlug}
-            branches={branches}
-            isViewerParticipant={program.isViewerParticipant}
-            canCreateBranch={canContribute}
-          />
-        </section>
-      )}
-
-      <section className="space-y-4">
-        <SectionHeader title="Netizen discussion" />
-        {ideasResult.success ? (
-          <ResearchProgramDiscussion
-            programSlug={programSlug}
-            track="idea"
-            sort={ideasSort}
-            sortChips={buildSortChips("ideasSort", ideasSort)}
-            initialPage={ideasResult.data}
-            branches={branches}
-            canPost={canContribute}
-            canModerate={canModerate}
-          />
-        ) : (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the discussion." />
-          </div>
-        )}
-      </section>
+      <ResearchProgramDiscussionSection
+        title="Netizen discussion"
+        programSlug={programSlug}
+        track="idea"
+        sort={ideasSort}
+        sortChips={ideasSortChips}
+        postsResult={data.ideasResult}
+        branches={data.branches}
+        canPost={canContribute}
+        canModerate={data.canModerate}
+        errorMessage="Couldn't load the discussion."
+      />
     </div>
   );
 }

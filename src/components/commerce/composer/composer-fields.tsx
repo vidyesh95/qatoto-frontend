@@ -190,6 +190,7 @@ export function ChipMultiSelectField<TValue extends string>({
   options: readonly { readonly value: TValue; readonly label: string }[];
   onSelectedValuesChange: (nextValues: readonly TValue[]) => void;
 }) {
+  const selectedValuesSet = new Set(selectedValues);
   return (
     <div>
       <span className={FIELD_LABEL_CLASS}>{label}</span>
@@ -198,7 +199,7 @@ export function ChipMultiSelectField<TValue extends string>({
       )}
       <div className="mt-1 flex flex-wrap gap-2">
         {options.map((option) => {
-          const isSelected = selectedValues.includes(option.value);
+          const isSelected = selectedValuesSet.has(option.value);
           return (
             <button
               key={option.value}

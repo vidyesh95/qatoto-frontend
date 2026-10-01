@@ -9,8 +9,6 @@
 
 import Link from "next/link";
 
-import type { ApiError } from "@/lib/http";
-
 export default function FeedStatusPanel({
   message,
   action,
@@ -57,35 +55,4 @@ export function FeedSignInRequiredPanel({ message }: { message: string }) {
  */
 export function FeedErrorPanel({ message }: { message: string }) {
   return <FeedStatusPanel message={message} />;
-}
-
-/**
- * Turns a transport failure into copy that says something USEFUL.
- *
- * EVERY ONE OF THESE USED TO READ "Couldn't load the feed. Please try again." — a backend that
- * was not running, a contract this page could not parse, a rate limit and a 500 all produced the
- * identical sentence, with nothing logged anywhere. Diagnosing an empty homepage meant reading
- * source, because the screen could not tell you which of four unrelated things had happened.
- *
- * The distinction matters most for `NETWORK`, which in development almost always means the one
- * thing the reader can fix in five seconds: the API is not up.
- */
-export function describeFeedError(error: ApiError): string {
-  if (error.code === "NETWORK") {
-    return "Can't reach the server. Is the backend running?";
-  }
-  if (error.code === "PARSE") {
-    // The Zod issue paths are already on the dev server's console via `toParseError`; naming the
-    // shape of the problem here is what sends the reader there.
-    return "The server sent something this page can't read. Check the dev server log for the field.";
-  }
-  if (error.code === "429") {
-    return "Too many requests — wait a moment and reload.";
-  }
-  if (error.code.startsWith("5")) {
-    return "The server had a problem. Please try again.";
-  }
-  // Anything else keeps the backend's own message: a 403 or a 422 here says something specific
-  // and true, and replacing it with an apology throws that away.
-  return error.message;
 }

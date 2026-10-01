@@ -38,6 +38,180 @@ import {
 
 const RATING_VALUES = [5, 4, 3, 2, 1] as const;
 
+interface ReviewSummaryScoreHeaderProps {
+  summary: StoreReviewListPage["summary"];
+}
+
+function ReviewSummaryScoreHeader({ summary }: ReviewSummaryScoreHeaderProps) {
+  return (
+    <>
+      <div className="flex flex-wrap items-start gap-6 pb-3">
+        <div>
+          <p className="text-3xl leading-9 font-medium text-foreground">
+            {summary.averageRating === null ? "—" : summary.averageRating.toFixed(1)}
+          </p>
+          <p className="text-xs leading-4 text-outline-strong">
+            {formatCountLabel(summary.reviewCount)}{" "}
+            {summary.reviewCount === 1 ? "review" : "reviews"}
+          </p>
+        </div>
+
+        <ul className="min-w-40 flex-1 space-y-1">
+          {RATING_VALUES.map((ratingValue) => {
+            const count = summary.ratingHistogram[`rating${ratingValue}`];
+            const sharePercentage =
+              summary.reviewCount === 0 ? 0 : (count / summary.reviewCount) * 100;
+            return (
+              <li key={ratingValue} className="flex items-center gap-2">
+                <span className="w-3 text-xs text-outline-strong">{ratingValue}</span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <span
+                    className="block h-full rounded-full bg-primary-imprint"
+                    style={{ width: `${sharePercentage}%` }}
+                  />
+                </span>
+                <span className="w-8 text-right text-xs text-outline-strong">{count}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <ul className="flex flex-wrap gap-4 pb-3">
+        {(
+          [
+            ["Service", summary.scoreAverages.service],
+            ["Shipping", summary.scoreAverages.shipping],
+            ["Quality", summary.scoreAverages.quality],
+          ] as const
+        ).map(([label, score]) => (
+          <li key={label} className="text-xs leading-4 text-outline-strong">
+            {label}:{" "}
+            <span className="font-medium text-foreground">
+              {score.average === null ? "Not rated yet" : score.average.toFixed(1)}
+            </span>
+            {score.count > 0 && <span> ({score.count})</span>}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+interface ReviewFiltersBarProps {
+  sort: ReviewSort;
+  rating: number | null;
+  hasMediaOnly: boolean;
+  reviewsWithMediaCount: number;
+  onSortChange: (sort: ReviewSort) => void;
+  onRatingChange: (rating: number | null) => void;
+  onToggleMediaOnly: () => void;
+}
+
+function ReviewFiltersBar({
+  sort,
+  rating,
+  hasMediaOnly,
+  reviewsWithMediaCount,
+  onSortChange,
+  onRatingChange,
+  onToggleMediaOnly,
+}: ReviewFiltersBarProps) {
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 pb-3">
+        {REVIEW_SORTS.map((sortOption) => (
+          <button
+            key={sortOption}
+            type="button"
+            aria-pressed={sort === sortOption}
+            onClick={() => onSortChange(sortOption)}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              sort === sortOption
+                ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                : "border-outline-variant text-outline-strong"
+            }`}
+          >
+            {REVIEW_SORT_LABELS[sortOption]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 pb-3">
+        {RATING_VALUES.map((ratingValue) => (
+          <button
+            key={ratingValue}
+            type="button"
+            aria-pressed={rating === ratingValue}
+            onClick={() => onRatingChange(rating === ratingValue ? null : ratingValue)}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              rating === ratingValue
+                ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                : "border-outline-variant text-outline-strong"
+            }`}
+          >
+            {ratingValue} star
+          </button>
+        ))}
+        {reviewsWithMediaCount > 0 && (
+          <button
+            type="button"
+            aria-pressed={hasMediaOnly}
+            onClick={onToggleMediaOnly}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              hasMediaOnly
+                ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
+                : "border-outline-variant text-outline-strong"
+            }`}
+          >
+            With photos ({reviewsWithMediaCount})
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
+interface ReviewListContentProps {
+  items: readonly StoreReview[];
+  hasActiveFilter: boolean;
+  productSlug: string;
+  hasMore: boolean;
+  totalReviewCount: number;
+}
+
+function ReviewListContent({
+  items,
+  hasActiveFilter,
+  productSlug,
+  hasMore,
+  totalReviewCount,
+}: ReviewListContentProps) {
+  return (
+    <>
+      {items.length === 0 ? (
+        <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
+          {hasActiveFilter ? "No reviews match those filters." : "No reviews on this page."}
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {items.map((review) => (
+            <li key={review.id}>
+              <ReviewCard review={review} productSlug={productSlug} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hasMore && (
+        <p className="pt-3 text-xs leading-4 text-outline-strong">
+          Showing the first {items.length} of {formatCountLabel(totalReviewCount)} reviews.
+        </p>
+      )}
+    </>
+  );
+}
+
 export default function RatingsAndReviews({
   productSlug,
   initialPage,
@@ -77,9 +251,6 @@ export default function RatingsAndReviews({
   }
 
   const { summary, items } = result.data;
-
-  // No reviews AT ALL is different from no reviews matching a filter, and only the first is a
-  // statement about the product.
   const hasAnyReviews = summary.reviewCount > 0;
   const hasActiveFilter = rating !== null || hasMediaOnly;
 
@@ -94,132 +265,25 @@ export default function RatingsAndReviews({
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap items-start gap-6 pb-3">
-            <div>
-              <p className="text-3xl leading-9 font-medium text-foreground">
-                {summary.averageRating === null ? "—" : summary.averageRating.toFixed(1)}
-              </p>
-              <p className="text-xs leading-4 text-outline-strong">
-                {formatCountLabel(summary.reviewCount)}{" "}
-                {summary.reviewCount === 1 ? "review" : "reviews"}
-              </p>
-            </div>
+          <ReviewSummaryScoreHeader summary={summary} />
 
-            <ul className="min-w-40 flex-1 space-y-1">
-              {RATING_VALUES.map((ratingValue) => {
-                const count = summary.ratingHistogram[`rating${ratingValue}`];
-                const sharePercentage =
-                  summary.reviewCount === 0 ? 0 : (count / summary.reviewCount) * 100;
-                return (
-                  <li key={ratingValue} className="flex items-center gap-2">
-                    <span className="w-3 text-xs text-outline-strong">{ratingValue}</span>
-                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                      <span
-                        className="block h-full rounded-full bg-primary-imprint"
-                        style={{ width: `${sharePercentage}%` }}
-                      />
-                    </span>
-                    <span className="w-8 text-right text-xs text-outline-strong">{count}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+          <ReviewFiltersBar
+            sort={sort}
+            rating={rating}
+            hasMediaOnly={hasMediaOnly}
+            reviewsWithMediaCount={summary.reviewsWithMediaCount}
+            onSortChange={setSort}
+            onRatingChange={setRating}
+            onToggleMediaOnly={() => setHasMediaOnly(!hasMediaOnly)}
+          />
 
-          {/* Sub-scores, each with its own sample size. A null average is "not enough ratings on
-              this dimension yet", never a zero. */}
-          <ul className="flex flex-wrap gap-4 pb-3">
-            {(
-              [
-                ["Service", summary.scoreAverages.service],
-                ["Shipping", summary.scoreAverages.shipping],
-                ["Quality", summary.scoreAverages.quality],
-              ] as const
-            ).map(([label, score]) => (
-              <li key={label} className="text-xs leading-4 text-outline-strong">
-                {label}:{" "}
-                <span className="font-medium text-foreground">
-                  {score.average === null ? "Not rated yet" : score.average.toFixed(1)}
-                </span>
-                {score.count > 0 && <span> ({score.count})</span>}
-              </li>
-            ))}
-          </ul>
-
-          {/* Every chip below drives a QUERY PARAMETER. */}
-          <div className="flex flex-wrap gap-2 pb-3">
-            {REVIEW_SORTS.map((sortOption) => (
-              <button
-                key={sortOption}
-                type="button"
-                aria-pressed={sort === sortOption}
-                onClick={() => setSort(sortOption)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  sort === sortOption
-                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
-                    : "border-outline-variant text-outline-strong"
-                }`}
-              >
-                {REVIEW_SORT_LABELS[sortOption]}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2 pb-3">
-            {RATING_VALUES.map((ratingValue) => (
-              <button
-                key={ratingValue}
-                type="button"
-                aria-pressed={rating === ratingValue}
-                onClick={() => setRating(rating === ratingValue ? null : ratingValue)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  rating === ratingValue
-                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
-                    : "border-outline-variant text-outline-strong"
-                }`}
-              >
-                {ratingValue} star
-              </button>
-            ))}
-            {summary.reviewsWithMediaCount > 0 && (
-              <button
-                type="button"
-                aria-pressed={hasMediaOnly}
-                onClick={() => setHasMediaOnly(!hasMediaOnly)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  hasMediaOnly
-                    ? "border-primary-imprint bg-primary-imprint/10 font-medium text-primary-imprint"
-                    : "border-outline-variant text-outline-strong"
-                }`}
-              >
-                With photos ({summary.reviewsWithMediaCount})
-              </button>
-            )}
-          </div>
-
-          {items.length === 0 ? (
-            <p className="rounded-lg bg-muted px-3 py-4 text-sm leading-5 text-outline-strong">
-              {hasActiveFilter ? "No reviews match those filters." : "No reviews on this page."}
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {items.map((review) => (
-                <li key={review.id}>
-                  <ReviewCard review={review} productSlug={productSlug} />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* MORE PAGES EXIST AND THIS SECTION DOES NOT PAGE THEM. Said rather than hidden: a
-              buyer who has read twelve reviews needs to know the thirteenth exists. The cursor
-              belongs to the reviews route, and following it here would grow the product page into
-              an unbounded list. */}
-          {result.data.page.hasMore && (
-            <p className="pt-3 text-xs leading-4 text-outline-strong">
-              Showing the first {items.length} of {formatCountLabel(summary.reviewCount)} reviews.
-            </p>
-          )}
+          <ReviewListContent
+            items={items}
+            hasActiveFilter={hasActiveFilter}
+            productSlug={productSlug}
+            hasMore={result.data.page.hasMore}
+            totalReviewCount={summary.reviewCount}
+          />
         </>
       )}
     </section>

@@ -47,10 +47,11 @@ function ReviewRow({ label, value }: { readonly label: string; readonly value: s
  * did not mean. Every field the wizard collects appears here, including the ones they left empty.
  */
 export default function ReviewAttestationStep({ draft, onDraftChange }: TeardownWizardStepProps) {
+  const surveyMethodsSet = new Set(draft.surveyMethods);
   const surveyMethodLabel =
     draft.surveyMethods.length === 0
       ? null
-      : TEARDOWN_SURVEY_METHODS.filter((method) => draft.surveyMethods.includes(method))
+      : TEARDOWN_SURVEY_METHODS.filter((method) => surveyMethodsSet.has(method))
           .map((method) => TEARDOWN_SURVEY_METHOD_LABELS[method])
           .join(" · ");
 

@@ -1107,6 +1107,15 @@ export const BLUEPRINT_MODERATION_STATE_LABELS: Record<BlueprintModerationState,
 };
 
 /**
+ * Whether the payload — files, model, composition, bill of materials — may render at all.
+ *
+ * It is the same decision across the teardown surfaces and avoids repeating `state !== "quarantined"`.
+ */
+export function canRenderTeardownPayload(moderationState: BlueprintModerationState): boolean {
+  return moderationState !== "quarantined";
+}
+
+/**
  * Every state a row in an author's own studio list can show: the moderation states, plus `unknown`.
  *
  * ⚠️ `unknown` IS NOT A STATE A SUBMISSION CAN BE IN. It is what this app shows when the server sends

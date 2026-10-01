@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { emailOtp } from "@/lib/auth-client";
 import ToggleSwitch from "@/components/ui/toggle-switch";
+import { AuthEmailInput, AuthStepIndicator, AuthWizardHeader } from "./auth-step-components";
 
 const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
 
@@ -113,44 +114,9 @@ export default function ForgotPassword() {
 
   return (
     <main className="flex min-h-screen w-screen flex-col">
-      <header className="space-y-10 bg-background pt-2 pb-4">
-        {step === 1 ? (
-          <Link href={"/sign-in"} className="mx-1 flex h-12 w-12 items-center justify-center">
-            <Image
-              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Navigate back"
-              width={24}
-              height={24}
-            />
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Go back"
-            className="mx-1 flex h-12 w-12 cursor-pointer items-center justify-center"
-          >
-            <Image
-              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Navigate back"
-              width={24}
-              height={24}
-            />
-          </button>
-        )}
-        <h1 className="mx-4 text-3xl text-foreground">Forgot password</h1>
-      </header>
+      <AuthWizardHeader title="Forgot password" step={step} onBack={handleBack} />
 
-      <div className="flex gap-2 px-4 pt-4">
-        {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              s <= step ? "bg-primary-imprint" : "bg-muted"
-            }`}
-          />
-        ))}
-      </div>
+      <AuthStepIndicator currentStep={step} />
 
       <hgroup className="mt-6 space-y-1 px-4">
         <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
@@ -162,34 +128,7 @@ export default function ForgotPassword() {
         {/* Step 1: Email Entry */}
         {step === 1 && (
           <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="relative">
-              <div className="relative flex h-14 items-center rounded border border-outline-strong px-3">
-                <label
-                  htmlFor="email"
-                  className="absolute -top-2 left-3 bg-background px-1 text-xs text-foreground"
-                >
-                  Email
-                </label>
-                <div className="mr-3 flex items-center justify-center">
-                  <Image
-                    src={"/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                    alt={"Email"}
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  aria-label="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="host@domain.com"
-                  className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
-                  required
-                />
-              </div>
-            </div>
+            <AuthEmailInput value={email} onChange={(e) => setEmail(e.target.value)} />
             <button
               type="submit"
               className="border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"

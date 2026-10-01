@@ -51,6 +51,281 @@ interface BlueprintCommentRowProps {
   readonly onUpdateComment?: (commentId: string, body: string) => Promise<void>;
 }
 
+interface CommentLikeButtonProps {
+  comment: BlueprintComment;
+  isSignedIn: boolean;
+  onToggleLike?: (commentId: string, isSet: boolean) => Promise<void>;
+}
+
+function CommentLikeButton({ comment, isSignedIn, onToggleLike }: CommentLikeButtonProps) {
+  if (onToggleLike && isSignedIn) {
+    return (
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await onToggleLike(comment.commentId, !comment.viewerState.hasLiked);
+          } catch {
+            // Handled by mutation error
+          }
+        }}
+        className={`inline-flex cursor-pointer items-center gap-1 tabular-nums transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
+          comment.viewerState.hasLiked ? "font-medium text-destructive" : "text-outline-strong"
+        }`}
+        aria-label={comment.viewerState.hasLiked ? "Unlike comment" : "Like comment"}
+      >
+        <Image
+          src={
+            comment.viewerState.hasLiked
+              ? "/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+              : "/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          }
+          alt=""
+          width={12}
+          height={12}
+          className={`size-3 shrink-0 ${comment.viewerState.hasLiked ? "brightness-50 -hue-rotate-60 sepia" : "opacity-55"}`}
+        />
+        <span aria-hidden="true">{formatCompactCountLabel(comment.likeCount)}</span>
+        <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
+      </button>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Image
+        src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        width={12}
+        height={12}
+        className="size-3 shrink-0 opacity-55"
+      />
+      <span aria-hidden="true">{formatCompactCountLabel(comment.likeCount)}</span>
+      <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
+    </span>
+  );
+}
+
+interface CommentDeleteControlProps {
+  commentId: string;
+  isConfirming: boolean;
+  isPending: boolean;
+  onStartConfirm: () => void;
+  onCancelConfirm: () => void;
+  onDeleteComment?: (commentId: string) => Promise<void>;
+  setIsPending: (pending: boolean) => void;
+}
+
+function CommentDeleteControl({
+  commentId,
+  isConfirming,
+  isPending,
+  onStartConfirm,
+  onCancelConfirm,
+  onDeleteComment,
+  setIsPending,
+}: CommentDeleteControlProps) {
+  if (!onDeleteComment) return null;
+
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      {isConfirming ? (
+        <span className="inline-flex items-center gap-1.5 text-xs">
+          <span className="font-medium text-destructive">Delete?</span>
+          <button
+            type="button"
+            onClick={() => {
+              setIsPending(true);
+              return onDeleteComment(commentId).finally(() => {
+                setIsPending(false);
+                onCancelConfirm();
+              });
+            }}
+            disabled={isPending}
+            className="cursor-pointer font-medium text-destructive hover:underline disabled:opacity-50"
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            onClick={onCancelConfirm}
+            disabled={isPending}
+            className="cursor-pointer text-muted-foreground hover:underline disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={onStartConfirm}
+          className="cursor-pointer text-xs text-muted-foreground hover:text-destructive hover:underline"
+        >
+          Delete
+        </button>
+      )}
+    </>
+  );
+}
+
+interface CommentReplyComposerProps {
+  comment: BlueprintComment;
+  isReplying: boolean;
+  isSignedIn: boolean;
+  isActionPending: boolean;
+  onReply?: (parentCommentId: string, body: string) => Promise<void>;
+  onCancel: () => void;
+  setIsActionPending: (pending: boolean) => void;
+}
+
+function CommentReplyComposer({
+  comment,
+  isReplying,
+  isSignedIn,
+  isActionPending,
+  onReply,
+  onCancel,
+  setIsActionPending,
+}: CommentReplyComposerProps) {
+  if (!isReplying || !onReply) return null;
+
+  const authorHandle = comment.author?.handle ?? comment.author?.displayName ?? "";
+
+  return (
+    <div className="mt-3">
+      <BlueprintCommentComposer
+        isSignedIn={isSignedIn}
+        isPending={isActionPending}
+        placeholder={`Reply to @${authorHandle}…`}
+        submitLabel="Post reply"
+        onCancel={onCancel}
+        onSubmit={(replyBody) => {
+          setIsActionPending(true);
+          return onReply(comment.commentId, replyBody)
+            .then(
+              () => {
+                onCancel();
+                return null;
+              },
+              (error: unknown) => ({ error }),
+            )
+            .finally(() => setIsActionPending(false));
+        }}
+      />
+    </div>
+  );
+}
+
+interface CommentReplyButtonProps {
+  isReply: boolean;
+  canComment: boolean;
+  onReply?: (parentCommentId: string, body: string) => Promise<void>;
+  isSignedIn: boolean;
+  isReplying: boolean;
+  onToggleReplying: () => void;
+}
+
+function CommentReplyButton({
+  isReply,
+  canComment,
+  onReply,
+  isSignedIn,
+  isReplying,
+  onToggleReplying,
+}: CommentReplyButtonProps) {
+  if (isReply || !canComment || !onReply || !isSignedIn) return null;
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      <button
+        type="button"
+        onClick={onToggleReplying}
+        className="cursor-pointer text-xs font-medium text-primary-imprint hover:underline"
+      >
+        {isReplying ? "Cancel" : "Reply"}
+      </button>
+    </>
+  );
+}
+
+function CommentEditButton({
+  onUpdateComment,
+  isEditing,
+  onToggleEditing,
+}: {
+  onUpdateComment?: (commentId: string, body: string) => Promise<void>;
+  isEditing: boolean;
+  onToggleEditing: () => void;
+}) {
+  if (!onUpdateComment) return null;
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      <button
+        type="button"
+        onClick={onToggleEditing}
+        className="cursor-pointer text-xs text-muted-foreground hover:text-foreground hover:underline"
+      >
+        {isEditing ? "Cancel" : "Edit"}
+      </button>
+    </>
+  );
+}
+
+interface CommentInlineEditorProps {
+  comment: BlueprintComment;
+  isEditing: boolean;
+  isSignedIn: boolean;
+  isActionPending: boolean;
+  onUpdateComment?: (commentId: string, body: string) => Promise<void>;
+  onCancel: () => void;
+  setIsActionPending: (pending: boolean) => void;
+}
+
+function CommentInlineEditor({
+  comment,
+  isEditing,
+  isSignedIn,
+  isActionPending,
+  onUpdateComment,
+  onCancel,
+  setIsActionPending,
+}: CommentInlineEditorProps) {
+  if (isEditing && onUpdateComment && comment.body !== null) {
+    return (
+      <div className="mt-2">
+        <BlueprintCommentComposer
+          isSignedIn={isSignedIn}
+          isPending={isActionPending}
+          placeholder="Edit comment"
+          initialBody={comment.body}
+          submitLabel="Save changes"
+          onCancel={onCancel}
+          onSubmit={(newBody) => {
+            setIsActionPending(true);
+            return onUpdateComment(comment.commentId, newBody)
+              .then(
+                () => {
+                  onCancel();
+                  return null;
+                },
+                (error: unknown) => ({ error }),
+              )
+              .finally(() => setIsActionPending(false));
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <p className="mt-1 text-sm leading-6 text-foreground">
+      <LinkedPlainText text={comment.body ?? ""} />
+    </p>
+  );
+}
+
 function BlueprintCommentRow({
   comment,
   isReply = false,
@@ -74,6 +349,9 @@ function BlueprintCommentRow({
     );
   }
 
+  const authorHandle =
+    comment.author.handle === null ? comment.author.displayName : `@${comment.author.handle}`;
+
   return (
     <div className="flex gap-2.5">
       <BlueprintAvatar
@@ -84,181 +362,63 @@ function BlueprintCommentRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-outline-strong">
-          <span className="font-medium text-primary-imprint">
-            {comment.author.handle === null
-              ? comment.author.displayName
-              : `@${comment.author.handle}`}
-          </span>
+          <span className="font-medium text-primary-imprint">{authorHandle}</span>
           <span title={formatIsoInstantLabel(comment.createdAt)}>
             <RelativeTime isoInstant={comment.createdAt} />
           </span>
           <span aria-hidden="true">·</span>
 
-          {onToggleLike && isSignedIn ? (
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await onToggleLike(comment.commentId, !comment.viewerState.hasLiked);
-                } catch {
-                  // Handled by mutation error
-                }
-              }}
-              className={`inline-flex cursor-pointer items-center gap-1 tabular-nums transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint ${
-                comment.viewerState.hasLiked
-                  ? "font-medium text-destructive"
-                  : "text-outline-strong"
-              }`}
-              aria-label={comment.viewerState.hasLiked ? "Unlike comment" : "Like comment"}
-            >
-              <Image
-                src={
-                  comment.viewerState.hasLiked
-                    ? "/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                    : "/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                }
-                alt=""
-                width={12}
-                height={12}
-                className={`size-3 shrink-0 ${comment.viewerState.hasLiked ? "brightness-50 -hue-rotate-60 sepia" : "opacity-55"}`}
-              />
-              <span aria-hidden="true">{formatCompactCountLabel(comment.likeCount)}</span>
-              <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
-            </button>
-          ) : (
-            <span className="inline-flex items-center gap-1 tabular-nums">
-              <Image
-                src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={12}
-                height={12}
-                className="size-3 shrink-0 opacity-55"
-              />
-              <span aria-hidden="true">{formatCompactCountLabel(comment.likeCount)}</span>
-              <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
-            </span>
-          )}
+          <CommentLikeButton
+            comment={comment}
+            isSignedIn={isSignedIn}
+            onToggleLike={onToggleLike}
+          />
 
-          {!isReply && canComment && onReply && isSignedIn ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <button
-                type="button"
-                onClick={() => setIsReplying((previous) => !previous)}
-                className="cursor-pointer text-xs font-medium text-primary-imprint hover:underline"
-              >
-                {isReplying ? "Cancel" : "Reply"}
-              </button>
-            </>
-          ) : null}
+          <CommentReplyButton
+            isReply={isReply}
+            canComment={canComment}
+            onReply={onReply}
+            isSignedIn={isSignedIn}
+            isReplying={isReplying}
+            onToggleReplying={() => setIsReplying((previous) => !previous)}
+          />
 
-          {onUpdateComment ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <button
-                type="button"
-                onClick={() => setIsEditing((previous) => !previous)}
-                className="cursor-pointer text-xs text-muted-foreground hover:text-foreground hover:underline"
-              >
-                {isEditing ? "Cancel" : "Edit"}
-              </button>
-            </>
-          ) : null}
+          <CommentEditButton
+            onUpdateComment={onUpdateComment}
+            isEditing={isEditing}
+            onToggleEditing={() => setIsEditing((previous) => !previous)}
+          />
 
-          {onDeleteComment ? (
-            <>
-              <span aria-hidden="true">·</span>
-              {isConfirmingDelete ? (
-                <span className="inline-flex items-center gap-1.5 text-xs">
-                  <span className="font-medium text-destructive">Delete?</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsActionPending(true);
-                      return onDeleteComment(comment.commentId).finally(() => {
-                        setIsActionPending(false);
-                        setIsConfirmingDelete(false);
-                      });
-                    }}
-                    disabled={isActionPending}
-                    className="cursor-pointer font-medium text-destructive hover:underline disabled:opacity-50"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmingDelete(false)}
-                    disabled={isActionPending}
-                    className="cursor-pointer text-muted-foreground hover:underline disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmingDelete(true)}
-                  className="cursor-pointer text-xs text-muted-foreground hover:text-destructive hover:underline"
-                >
-                  Delete
-                </button>
-              )}
-            </>
-          ) : null}
+          <CommentDeleteControl
+            commentId={comment.commentId}
+            isConfirming={isConfirmingDelete}
+            isPending={isActionPending}
+            onStartConfirm={() => setIsConfirmingDelete(true)}
+            onCancelConfirm={() => setIsConfirmingDelete(false)}
+            onDeleteComment={onDeleteComment}
+            setIsPending={setIsActionPending}
+          />
         </div>
 
-        {isEditing && onUpdateComment ? (
-          <div className="mt-2">
-            <BlueprintCommentComposer
-              isSignedIn={isSignedIn}
-              isPending={isActionPending}
-              placeholder="Edit comment"
-              initialBody={comment.body}
-              submitLabel="Save changes"
-              onCancel={() => setIsEditing(false)}
-              onSubmit={(newBody) => {
-                setIsActionPending(true);
-                return onUpdateComment(comment.commentId, newBody)
-                  .then(
-                    () => {
-                      setIsEditing(false);
-                      return null;
-                    },
-                    (error: unknown) => ({ error }),
-                  )
-                  .finally(() => setIsActionPending(false));
-              }}
-            />
-          </div>
-        ) : (
-          <p className="mt-1 text-sm leading-6 text-foreground">
-            <LinkedPlainText text={comment.body} />
-          </p>
-        )}
+        <CommentInlineEditor
+          comment={comment}
+          isEditing={isEditing}
+          isSignedIn={isSignedIn}
+          isActionPending={isActionPending}
+          onUpdateComment={onUpdateComment}
+          onCancel={() => setIsEditing(false)}
+          setIsActionPending={setIsActionPending}
+        />
 
-        {isReplying && onReply ? (
-          <div className="mt-3">
-            <BlueprintCommentComposer
-              isSignedIn={isSignedIn}
-              isPending={isActionPending}
-              placeholder={`Reply to @${comment.author.handle ?? comment.author.displayName}…`}
-              submitLabel="Post reply"
-              onCancel={() => setIsReplying(false)}
-              onSubmit={(replyBody) => {
-                setIsActionPending(true);
-                return onReply(comment.commentId, replyBody)
-                  .then(
-                    () => {
-                      setIsReplying(false);
-                      return null;
-                    },
-                    (error: unknown) => ({ error }),
-                  )
-                  .finally(() => setIsActionPending(false));
-              }}
-            />
-          </div>
-        ) : null}
+        <CommentReplyComposer
+          comment={comment}
+          isReplying={isReplying}
+          isSignedIn={isSignedIn}
+          isActionPending={isActionPending}
+          onReply={onReply}
+          onCancel={() => setIsReplying(false)}
+          setIsActionPending={setIsActionPending}
+        />
       </div>
     </div>
   );

@@ -39,6 +39,7 @@ import {
   TEARDOWN_VIEWER_TAB_LABELS,
   type TeardownViewerTab,
 } from "@/lib/blueprints/viewer-tabs";
+import { downloadModelBytes } from "@/lib/blueprints/model-asset-loader";
 import { formatCountLabel } from "@/lib/store/format";
 
 /** Type-level only; erased at build time, so it pulls nothing into this chunk. */
@@ -111,16 +112,6 @@ function isWebGl2Available(): boolean {
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-/** `null` on any failure, including an abort — the caller knows whether it is still mounted. */
-async function fetchModelBytes(url: string, signal: AbortSignal): Promise<ArrayBuffer | null> {
-  try {
-    const response = await fetch(url, { signal });
-    return response.ok ? await response.arrayBuffer() : null;
-  } catch {
-    return null;
-  }
 }
 
 function StageStatusPill({ label }: { readonly label: string }) {
@@ -212,7 +203,7 @@ export default function TeardownExplorer({
 
       // The model bytes download while the engine chunk does; neither waits for the other.
       const fetchedBytesPromise = Promise.all(
-        filesToFetch.map((file) => fetchModelBytes(file.url, abortController.signal)),
+        filesToFetch.map((file) => downloadModelBytes(file.url, abortController.signal)),
       );
 
       let engine: TeardownEngineModule;

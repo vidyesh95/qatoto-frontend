@@ -5,35 +5,16 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useSession } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/api";
+import { HandlePanelForm, type AvailabilityState, type SaveState } from "./handle-panel-form";
 
-/**
- * Editor for the account's public @handle. Mirrors the backend contract in
- * qatoto-backend (handle.service.ts / handle.controller.ts): a Tier-1 debounced
- * availability probe for fast feedback, then a Tier-2 authoritative PATCH that
- * runs the rate-limit + 14-day-reservation transaction.
- *
- * NOT a trust boundary (CLAUDE.md §1.1). Every check here — normalize, regex,
- * availability — is UX only; the Express backend re-validates, re-checks
- * availability under a row lock, and is the sole authority that persists the
- * handle. A green checkmark can go stale before submit, so the PATCH may still
- * come back TAKEN — that is a normal error path, not an impossible state.
- */
-
-/** Canonical handle: trimmed, no leading "@", lowercase. Mirrors the server. */
 function normalizeHandle(rawHandle: string): string {
   return rawHandle.trim().replace(/^@/, "").toLowerCase();
 }
 
-/** Client mirror of the server regex — instant feedback, never authoritative. */
 const HANDLE_REGEX = /^[a-z0-9._-]{3,30}$/;
 const HANDLE_LENGTH_MESSAGE = "Handle must be 3–30 characters.";
 const HANDLE_CHARSET_MESSAGE =
   "Handle may use only lowercase letters, numbers, dots, underscores and hyphens.";
-
-// --- Boundary parsing (CLAUDE.md Pattern 2): every payload is `unknown` until a
-// Zod schema vouches for it. `z.object`'s default key stripping keeps us forward-compatible with backend
-// additions. Date fields arrive as ISO strings (the ApiResponse envelope
-// serializes Date → string); we parse them to Date only when formatting.
 
 const HandleMetadataEnvelopeSchema = z.object({
   data: z.object({
@@ -67,23 +48,11 @@ const ErrorEnvelopeSchema = z.object({
   errors: z.record(z.string(), z.array(z.string())).optional(),
 });
 
-/** Pull the handle-specific message out of the backend's error envelope. */
 function readHandleError(payload: unknown): string {
   const fallback = "Couldn't update your handle. Please try again.";
   const parsed = ErrorEnvelopeSchema.safeParse(payload);
   if (!parsed.success) return fallback;
   return parsed.data.errors?.handle?.[0] ?? parsed.data.message ?? fallback;
-}
-
-const HANDLE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
-/** Human date like "Jul 9, 2026" for reservation / cooldown copy. */
-function formatHandleDate(isoString: string): string {
-  return HANDLE_DATE_FORMATTER.format(new Date(isoString));
 }
 
 function deriveImmediateAvailability(
@@ -104,7 +73,6 @@ function deriveImmediateAvailability(
   return "needs_probe";
 }
 
-/** Panel bootstrap: current handle + rate-limit + revert metadata. */
 type MetadataState =
   | { status: "loading" }
   | {
@@ -119,20 +87,6 @@ type MetadataState =
       revertableExpiresAt: string | null;
     }
   | { status: "error"; message: string };
-
-/** Tier-1 live availability of the currently-typed handle. */
-type AvailabilityState =
-  | { status: "idle" }
-  | { status: "checking" }
-  | { status: "invalid"; reason: string }
-  | { status: "available" }
-  | { status: "taken"; suggestions: string[] }
-  | { status: "revertable"; expiresAt: string }
-  | { status: "current" }
-  | { status: "error"; message: string };
-
-/** Tier-2 submit lifecycle. */
-type SaveState = { status: "idle" } | { status: "saving" } | { status: "error"; message: string };
 
 type HandlePanelProps = {
   /** Return to the settings action list. */
@@ -165,7 +119,6 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
         : { status: "checking" }
       : immediateAvailability;
 
-  // Bootstrap: load the current handle + rate-limit metadata, prefill the field.
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -196,10 +149,6 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
     return () => abortController.abort();
   }, []);
 
-  // Tier-1: debounced availability probe. The client regex gates obviously-bad
-  // input so we never spam the backend; the request fires only after a 400ms
-  // pause and is cancelled if the user keeps typing. Idle / current / invalid
-  // are derived above — this effect only talks to the network.
   useEffect(() => {
     if (immediateAvailability !== "needs_probe") return undefined;
 
@@ -262,8 +211,6 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
             });
             return;
           default: {
-            // A `throw` here sat inside the `try`, which React Compiler cannot lower; the catch
-            // below turned it into an error state anyway, so set that state directly.
             const exhaustiveCheck: never = availability;
             setProbedAvailability({
               handle: normalizedHandle,
@@ -318,7 +265,6 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
         setSaveState({ status: "error", message: readHandleError(errorPayload) });
         return;
       }
-      // Backend persisted it; pull a fresh session so the new handle shows everywhere.
       await refetch();
       onBack();
     } catch {
@@ -330,8 +276,6 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
     setHandle(suggestion);
     if (saveState.status === "error") setSaveState({ status: "idle" });
   }
-
-  const revertableHandle = metadataState.status === "ready" ? metadataState.revertableHandle : null;
 
   return (
     <div>
@@ -357,143 +301,22 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
       ) : metadataState.status === "error" ? (
         <p className="p-4 text-sm text-destructive">{metadataState.message}</p>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4">
-          {isChangeLocked ? (
-            <div className="flex flex-col gap-1 rounded-xl bg-destructive/10 px-4 py-3 text-xs text-destructive">
-              <p className="font-medium">
-                You&apos;ve used all {metadataState.maxChanges} handle changes for now.
-              </p>
-              <p>
-                {metadataState.cooldownResetAt
-                  ? `You can change it again on ${formatHandleDate(metadataState.cooldownResetAt)}.`
-                  : "Try again later."}
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-              <p className="font-medium text-secondary-foreground">
-                {metadataState.changesRemaining} of {metadataState.maxChanges} handle changes
-                remaining.
-              </p>
-              <p>
-                You can change your handle up to {metadataState.maxChanges} times every{" "}
-                {metadataState.windowDays} days. The {metadataState.windowDays}-day countdown starts
-                at your first change, and reverting to a past handle counts as a change.
-              </p>
-            </div>
-          )}
-
-          {revertableHandle && normalizedHandle !== revertableHandle ? (
-            <button
-              type="button"
-              onClick={() => handleSuggestionPick(revertableHandle)}
-              className="cursor-pointer self-start rounded-full border border-border px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
-            >
-              Revert to @{revertableHandle}
-            </button>
-          ) : null}
-
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">Handle</span>
-            <div className="flex flex-row items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 focus-within:border-primary">
-              <span className="text-base text-muted-foreground">@</span>
-              <input
-                type="text"
-                aria-label="Handle"
-                value={handle}
-                onChange={(inputEvent) => {
-                  setHandle(normalizeHandle(inputEvent.target.value));
-                  if (saveState.status === "error") setSaveState({ status: "idle" });
-                }}
-                placeholder="yourhandle"
-                maxLength={30}
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                disabled={isChangeLocked}
-                className="flex-1 bg-transparent text-base text-secondary-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Your unique @handle. 3–30 characters: lowercase letters, numbers, dots, underscores
-              and hyphens.
-            </span>
-            <HandleAvailabilityRow
-              state={availabilityState}
-              normalizedHandle={normalizedHandle}
-              onPickSuggestion={handleSuggestionPick}
-            />
-            {saveState.status === "error" ? (
-              <span className="text-xs text-destructive">{saveState.message}</span>
-            ) : null}
-          </label>
-
-          <button
-            type="submit"
-            disabled={isSaveDisabled}
-            className="cursor-pointer rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {saveButtonLabel}
-          </button>
-        </form>
+        <HandlePanelForm
+          metadata={metadataState}
+          handle={handle}
+          normalizedHandle={normalizedHandle}
+          onHandleChange={(val) => {
+            setHandle(val);
+            if (saveState.status === "error") setSaveState({ status: "idle" });
+          }}
+          availabilityState={availabilityState}
+          saveState={saveState}
+          isSaveDisabled={isSaveDisabled}
+          saveButtonLabel={saveButtonLabel}
+          onSubmit={handleSubmit}
+          onPickSuggestion={handleSuggestionPick}
+        />
       )}
     </div>
   );
-}
-
-/** Inline status under the input — exhaustive over every availability state. */
-function HandleAvailabilityRow({
-  state,
-  normalizedHandle,
-  onPickSuggestion,
-}: {
-  state: AvailabilityState;
-  normalizedHandle: string;
-  onPickSuggestion: (suggestion: string) => void;
-}) {
-  switch (state.status) {
-    case "idle":
-      return null;
-    case "checking":
-      return <span className="text-xs text-muted-foreground">Checking availability…</span>;
-    case "invalid":
-      return <span className="text-xs text-destructive">{state.reason}</span>;
-    case "available":
-      return <span className="text-xs text-green-600">@{normalizedHandle} is available ✓</span>;
-    case "current":
-      return <span className="text-xs text-muted-foreground">This is your current handle.</span>;
-    case "revertable":
-      return (
-        <span className="text-xs text-primary-imprint">
-          This is your reserved handle — revert before {formatHandleDate(state.expiresAt)} to
-          reclaim it.
-        </span>
-      );
-    case "taken":
-      return (
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-destructive">@{normalizedHandle} is unavailable</span>
-          {state.suggestions.length > 0 ? (
-            <div className="flex flex-row flex-wrap gap-2">
-              {state.suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => onPickSuggestion(suggestion)}
-                  className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-muted"
-                >
-                  @{suggestion}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      );
-    case "error":
-      return <span className="text-xs text-destructive">{state.message}</span>;
-    default: {
-      const exhaustiveCheck: never = state;
-      return exhaustiveCheck;
-    }
-  }
 }

@@ -39,7 +39,7 @@
 // refuses. The notice says which of those the buyer is looking at and offers the one step they can
 // take about it.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -118,7 +118,7 @@ export default function CheckoutPage({
    * making a genuinely new reservation and needs a new key; a buyer retrying a timed-out prepare
    * needs the same one, which is what a rotation on failure would destroy.
    */
-  const [prepareIdempotencyKey, setPrepareIdempotencyKey] = useState(newIdempotencyKey);
+  const prepareIdempotencyKeyRef = useRef<string | null>(null);
 
   /**
    * A45. The freight mode the buyer has asked for, or `null` for "not chosen".
@@ -127,7 +127,7 @@ export default function CheckoutPage({
    * `mode_not_selected` and lists the modes it covers, which is exactly the choice rendered below.
    * Pre-selecting the cheapest would commit a buyer to five weeks at sea to save a little.
    */
-  const [requestedFreightMode, setRequestedFreightMode] = useState<FreightMode | null>(null);
+  const requestedFreightModeRef = useRef<FreightMode | null>(null);
 
   /**
    * Re-reserve with a mode the buyer just picked.
@@ -138,9 +138,9 @@ export default function CheckoutPage({
    * second reservation.
    */
   const handleSelectFreightMode = (mode: FreightMode) => {
-    setRequestedFreightMode(mode);
+    requestedFreightModeRef.current = mode;
     const rePrepareKey = newIdempotencyKey();
-    setPrepareIdempotencyKey(rePrepareKey);
+    prepareIdempotencyKeyRef.current = rePrepareKey;
     prepareCheckout.mutate(
       {
         idempotencyKey: rePrepareKey,
@@ -152,7 +152,7 @@ export default function CheckoutPage({
       {
         onSuccess: (result) => {
           if (!result.success) return;
-          setPrepareIdempotencyKey(newIdempotencyKey());
+          prepareIdempotencyKeyRef.current = newIdempotencyKey();
           setStep({
             status: "reserved",
             prepare: result.data,
@@ -164,16 +164,21 @@ export default function CheckoutPage({
   };
 
   const handlePrepareClick = () => {
+    if (prepareIdempotencyKeyRef.current === null) {
+      prepareIdempotencyKeyRef.current = newIdempotencyKey();
+    }
     prepareCheckout.mutate(
       {
-        idempotencyKey: prepareIdempotencyKey,
-        ...(requestedFreightMode === null ? {} : { requestedFreightMode }),
+        idempotencyKey: prepareIdempotencyKeyRef.current,
+        ...(requestedFreightModeRef.current === null
+          ? {}
+          : { requestedFreightMode: requestedFreightModeRef.current }),
         ...(buyNowItems === undefined ? {} : { items: buyNowItems }),
       },
       {
         onSuccess: (result) => {
           if (!result.success) return;
-          setPrepareIdempotencyKey(newIdempotencyKey());
+          prepareIdempotencyKeyRef.current = newIdempotencyKey();
           // THE KEY IS MINTED HERE, ONCE, as the attempt begins — and it lives in state so every
           // retry of this confirm carries the same one. Minting it inside the confirm handler would
           // give each press a new key, which is exactly the duplicate-order bug idempotency exists
@@ -225,20 +230,20 @@ export default function CheckoutPage({
         )}
       </header>
 
-      {renderStep({
-        step,
-        cartQuery,
-        prepareCheckout,
-        confirmCheckout,
-        onPrepareClick: handlePrepareClick,
-        onConfirmClick: handleConfirmClick,
-        onSelectFreightMode: handleSelectFreightMode,
-      })}
+      <RenderStep
+        step={step}
+        cartQuery={cartQuery}
+        prepareCheckout={prepareCheckout}
+        confirmCheckout={confirmCheckout}
+        onPrepareClick={handlePrepareClick}
+        onConfirmClick={handleConfirmClick}
+        onSelectFreightMode={handleSelectFreightMode}
+      />
     </div>
   );
 }
 
-function renderStep({
+function RenderStep({
   step,
   cartQuery,
   prepareCheckout,

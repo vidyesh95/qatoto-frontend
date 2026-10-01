@@ -45,20 +45,3 @@ export default function LaunchStatements({
     </div>
   );
 }
-
-/**
- * Why Post is unavailable because of the statements, in words, or `null` once both are ticked. A
- * disabled button must say why, beside itself.
- */
-export function describeLaunchStatementGap(
-  acceptedStatementIds: readonly ShowcaseLaunchStatementId[],
-): string | null {
-  const untickedStatementIds = SHOWCASE_LAUNCH_STATEMENT_IDS.filter(
-    (statementId) => !acceptedStatementIds.includes(statementId),
-  );
-  if (untickedStatementIds.length === 0) return null;
-
-  return `Tick ${untickedStatementIds.length === 1 ? "the last statement" : "both statements"} below: ${untickedStatementIds
-    .map((statementId) => SHOWCASE_LAUNCH_STATEMENTS[statementId].label)
-    .join("; ")}.`;
-}

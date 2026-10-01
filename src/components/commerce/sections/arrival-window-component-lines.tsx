@@ -25,7 +25,7 @@ import {
   type ManufacturingComponent,
 } from "@/lib/store/arrival-window.schemas";
 import { CHARGEABLE_WEIGHT_BASIS_LABELS, type FreightMode } from "@/lib/store/freight.schemas";
-import { formatCentsLabel } from "@/lib/store/format";
+import { formatCentsLabel, formatIsoInstantAsDateLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
 
 export function ComponentRow({
@@ -56,7 +56,7 @@ export function ManufacturingLine({ component }: { readonly component: Manufactu
             ? `${component.daysMin}–${component.daysMax} days`
             : `up to ${component.daysMax} days`}
           <span className="block text-xs text-muted-foreground">
-            Ready by {formatIsoDayLabel(component.endsAt)}
+            Ready by {formatIsoInstantAsDateLabel(component.endsAt)}
           </span>
         </>
       );
@@ -103,7 +103,7 @@ export function FreightLine({
                 because two forwarders' divisors legitimately disagree on one journey. */}
             {formatCentsLabel(component.priceInCents, component.currency)}
             {component.validUntil !== null &&
-              ` · rate valid until ${formatIsoDayLabel(component.validUntil)}`}
+              ` · rate valid until ${formatIsoInstantAsDateLabel(component.validUntil)}`}
           </span>
           <ul className="mt-0.5 flex flex-col gap-0.5">
             {component.legSelections.map((legSelection) => (
@@ -170,7 +170,7 @@ export function CustomsLine({ component }: { readonly component: CustomsComponen
             {/* A weaker scope is a weaker claim, and says so rather than reading as precise. */}
             {component.source} · {CUSTOMS_DWELL_SCOPE_LABELS[component.scope]}
             {component.validUntil !== null &&
-              ` · valid until ${formatIsoDayLabel(component.validUntil)}`}
+              ` · valid until ${formatIsoInstantAsDateLabel(component.validUntil)}`}
           </span>
         </>
       );
@@ -194,10 +194,4 @@ export function CustomsLine({ component }: { readonly component: CustomsComponen
       return exhaustiveCheck;
     }
   }
-}
-
-export function formatIsoDayLabel(isoInstant: string): string {
-  const parsed = new Date(isoInstant);
-  if (Number.isNaN(parsed.getTime())) return isoInstant;
-  return parsed.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }

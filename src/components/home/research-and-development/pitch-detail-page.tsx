@@ -5,12 +5,12 @@ import { notFound } from "next/navigation";
 
 import {
   ExternalLinkOut,
-  formatOutcomeAmount,
   OutcomeAttestationNote,
   PitchDisclaimer,
 } from "@/components/pitches/pitch-shared";
 import VideoPlayer from "@/components/home/watch/video-player";
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
+import { formatOutcomeAmount } from "@/lib/rnd/format";
 import { getPitch } from "@/lib/rnd/pitches.api";
 import { callerRequestOptions } from "@/lib/server-http";
 

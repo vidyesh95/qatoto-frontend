@@ -25,7 +25,7 @@
 
 import { useState } from "react";
 
-import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import ModalSheet from "@/components/home/shared/modal-sheet";
 import {

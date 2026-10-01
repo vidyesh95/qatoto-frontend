@@ -6,15 +6,8 @@ import {
   formatMonthlySalaryRange,
   formatOneTimeAmountRange,
 } from "@/lib/rnd/format";
-import type { OpenRoleCompensationStrand } from "@/lib/rnd/shared.schemas";
-
-type CompensationKind = "salary" | "one_time" | "equity";
-
-export const COMPENSATION_KIND_LABELS: Record<CompensationKind, string> = {
-  salary: "Salary",
-  one_time: "One-time",
-  equity: "Equity",
-};
+import { COMPENSATION_KIND_LABELS } from "@/lib/rnd/labels";
+import type { CompensationKind, OpenRoleCompensationStrand } from "@/lib/rnd/shared.schemas";
 
 // Canonical per-kind chip colors — matches the research-program contributor chips so a
 // compensation kind reads the same everywhere in the app.
@@ -130,11 +123,4 @@ export function TalentCompensationAskBadges({ asks }: { asks: TalentCompensation
       ))}
     </>
   );
-}
-
-/** "Salary + Equity" — a one-line summary of which kinds an offer blends. */
-export function summarizeCompensationKinds(
-  strands: readonly { readonly kind: CompensationKind }[],
-): string {
-  return strands.map((strand) => COMPENSATION_KIND_LABELS[strand.kind]).join(" + ");
 }

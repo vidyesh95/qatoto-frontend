@@ -27,7 +27,7 @@
 // AND IT IS STILL NOT WIRED TO `dispute.service.ts`. That file has a `DisputeView` with a tempting
 // shape and belongs to the R&D proof-of-effort dispute domain — a different table about equity.
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -187,7 +187,7 @@ function TimelineRow({ entry }: { entry: DisputeTimelineEntry }) {
  */
 function DisputeNoteComposer({ disputeId }: { disputeId: string }) {
   const [note, setNote] = useState("");
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
   const addNote = useAddDisputeNote();
 
   const trimmedNote = note.trim();
@@ -209,18 +209,25 @@ function DisputeNoteComposer({ disputeId }: { disputeId: string }) {
       <button
         type="button"
         disabled={!isSubmittable}
-        onClick={() =>
+        onClick={() => {
+          if (idempotencyKeyRef.current === null) {
+            idempotencyKeyRef.current = newIdempotencyKey();
+          }
           addNote.mutate(
-            { disputeId, note: trimmedNote, idempotencyKey },
+            {
+              disputeId,
+              note: trimmedNote,
+              idempotencyKey: idempotencyKeyRef.current,
+            },
             {
               onSuccess: (result) => {
                 if (!result.success) return;
                 setNote("");
-                setIdempotencyKey(newIdempotencyKey());
+                idempotencyKeyRef.current = newIdempotencyKey();
               },
             },
-          )
-        }
+          );
+        }}
         className="mt-2 cursor-pointer rounded-full bg-primary-imprint px-5 py-2.5 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
       >
         {addNote.isPending ? "Adding…" : "Add note"}

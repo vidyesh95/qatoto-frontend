@@ -39,7 +39,7 @@ interface ClaimTargetOption {
  * as one against a survey that published everything, because the objection is to the survey
  * existing. An empty picker would refuse the claimant with no explanation.
  */
-export function buildClaimTargetOptions(claimTargets: TeardownClaimTargets): ClaimTargetOption[] {
+function buildClaimTargetOptions(claimTargets: TeardownClaimTargets): ClaimTargetOption[] {
   return [
     {
       optionKey: "whole_teardown",
@@ -70,33 +70,6 @@ export function buildClaimTargetOptions(claimTargets: TeardownClaimTargets): Cla
       target: { kind: "part" as const, partId: part.id },
     })),
   ];
-}
-
-/** The label for a chosen target, for the notice body. Resolved here because this owns the options. */
-export function resolveClaimTargetLabel(
-  claimTargets: TeardownClaimTargets,
-  target: RightsClaimTarget,
-): string | null {
-  switch (target.kind) {
-    case "whole_teardown":
-      return null;
-    case "document":
-      return (
-        claimTargets.documents.find((document) => document.id === target.documentId)?.title ?? null
-      );
-    case "manufacturing_file":
-      return (
-        claimTargets.manufacturingFiles.find(
-          (manufacturingFile) => manufacturingFile.id === target.manufacturingFileId,
-        )?.title ?? null
-      );
-    case "part":
-      return claimTargets.parts.find((part) => part.id === target.partId)?.label ?? null;
-    default: {
-      const exhaustiveCheck: never = target;
-      return exhaustiveCheck;
-    }
-  }
 }
 
 export default function ClaimTargetPicker({

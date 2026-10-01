@@ -5,12 +5,10 @@
 // after trimming, so `/search` with no `?query=` must render a prompt and issue NO request —
 // calling anyway would turn "the reader has not typed anything" into a 422 error panel.
 
-import FeedStatusPanel, {
-  describeFeedError,
-  FeedErrorPanel,
-} from "@/components/home/feed/feed-status-panel";
+import FeedStatusPanel, { FeedErrorPanel } from "@/components/home/feed/feed-status-panel";
 import SearchResultsList from "@/components/home/search/search-results-list";
 import { searchVideos } from "@/lib/feed/api";
+import { describeFeedError } from "@/lib/feed/format";
 import type { SearchVideoPage } from "@/lib/feed/schemas";
 import { readSingleParam, type RawSearchParams } from "@/lib/filter-href";
 import { callerRequestOptions } from "@/lib/server-http";

@@ -4,10 +4,8 @@
 import { useState } from "react";
 
 import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
-import WeightBandEditor, {
-  collectBands,
-  type WeightBandDraft,
-} from "@/components/commerce/freight/weight-band-editor";
+import WeightBandEditor from "@/components/commerce/freight/weight-band-editor";
+import { collectBands, type WeightBandDraft } from "@/lib/store/freight-band-draft";
 import ProviderRateCardComposer from "@/components/studio/commerce/logistics/rate-card-composer";
 import {
   useProviderFreightRateBreaksMutation,
@@ -19,6 +17,7 @@ import {
   FREIGHT_RATE_CARD_STATE_LABELS,
   hasZeroWeightFloorBand,
   type AdminFreightRateCard,
+  type FreightRateBreakInput,
 } from "@/lib/store/admin-freight.schemas";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
@@ -146,6 +145,132 @@ function toBandDrafts(card: AdminFreightRateCard): WeightBandDraft[] {
   }));
 }
 
+interface RateCardSummaryHeaderProps {
+  card: AdminFreightRateCard;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+}
+
+function RateCardSummaryHeader({ card, isExpanded, onToggleExpand }: RateCardSummaryHeaderProps) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <p className="text-sm font-medium text-foreground">
+          {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
+          {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          starts {formatIsoInstantLabel(card.validFrom)}
+          {card.validUntil !== null && ` · until ${formatIsoInstantLabel(card.validUntil)}`} ·{" "}
+          {card.breaks.length} band(s)
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {FREIGHT_RATE_CARD_STATE_LABELS[card.state]}
+        </span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {card.bandsEditable ? "Staged · bands editable" : "Bands frozen"}
+        </span>
+        <button type="button" onClick={onToggleExpand} className="cursor-pointer text-xs underline">
+          {isExpanded ? "Hide" : "Open"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface BreaksErrorData {
+  message: string;
+  fieldErrors?: Record<string, string[]> | Readonly<Record<string, string[]>> | undefined;
+  code?: string;
+}
+
+function RateCardBreaksFeedback({ error }: { error: BreaksErrorData | null }) {
+  if (error === null) return null;
+  return (
+    <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+      <p className="font-medium">{error.message}</p>
+      {renderFieldErrors(error.fieldErrors)}
+      {error.code === "409" && (
+        <p className="mt-1">
+          This card is in force now. Retrying will not help — publish a new card instead.
+        </p>
+      )}
+    </div>
+  );
+}
+
+interface RateCardWithdrawSectionProps {
+  cardState: AdminFreightRateCard["state"];
+  reason: string;
+  onReasonChange: (nextReason: string) => void;
+  onWithdraw: () => void;
+  isPending: boolean;
+  error: BreaksErrorData | null;
+}
+
+function RateCardWithdrawSection({
+  cardState,
+  reason,
+  onReasonChange,
+  onWithdraw,
+  isPending,
+  error,
+}: RateCardWithdrawSectionProps) {
+  if (cardState !== "active") return null;
+  const isSubmitDisabled = isPending || reason.trim().length === 0;
+
+  return (
+    <>
+      <div className="rounded-xl border border-border p-3">
+        <p className="text-xs font-medium text-foreground">Withdraw this lane</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          It stops pricing immediately. Buyers see the lane as uncovered again.
+        </p>
+        <input
+          value={reason}
+          onChange={(event) => onReasonChange(event.target.value)}
+          placeholder="Why it is being withdrawn"
+          aria-label="Reason for withdrawing this lane"
+          className={`${FIELD_CLASS} mt-2`}
+        />
+        <button
+          type="button"
+          onClick={onWithdraw}
+          disabled={isSubmitDisabled}
+          className={`${QUIET_BUTTON_CLASS} mt-2`}
+        >
+          {isPending ? "Withdrawing…" : "Withdraw"}
+        </button>
+      </div>
+      {error !== null && (
+        <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <p className="font-medium">{error.message}</p>
+          {renderFieldErrors(error.fieldErrors)}
+        </div>
+      )}
+    </>
+  );
+}
+
+function validateLadderBands(
+  bandDrafts: WeightBandDraft[],
+): { ok: true; bands: FreightRateBreakInput[] } | { ok: false; error: string } {
+  const collected = collectBands(bandDrafts);
+  if (!collected.ok) {
+    return { ok: false, error: collected.error };
+  }
+  if (!collected.bands.some((band) => band.minBillableWeightGrams === 0)) {
+    return {
+      ok: false,
+      error:
+        "Keep a band starting at 0 kg. Without one this lane stops publishing any option at all.",
+    };
+  }
+  return { ok: true, bands: collected.bands };
+}
+
 function MyRateCardRow({ card }: { card: AdminFreightRateCard }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [bandDrafts, setBandDrafts] = useState<WeightBandDraft[]>(() => toBandDrafts(card));
@@ -159,21 +284,9 @@ function MyRateCardRow({ card }: { card: AdminFreightRateCard }) {
 
   function handleReplaceBands(): void {
     setLocalError(null);
-
-    const collected = collectBands(bandDrafts);
-    if (!collected.ok) {
-      setLocalError(collected.error);
-      return;
-    }
-    /*
-     * ⚠️ REPLACE IS THE ONLY WRITE THAT CAN DELETE THE FLOOR BAND off a card that had one, which
-     * blanks the lane as thoroughly as never authoring it. The server refuses such a set; refusing
-     * it here too means the author is told before the round trip.
-     */
-    if (!collected.bands.some((band) => band.minBillableWeightGrams === 0)) {
-      setLocalError(
-        "Keep a band starting at 0 kg. Without one this lane stops publishing any option at all.",
-      );
+    const validation = validateLadderBands(bandDrafts);
+    if (!validation.ok) {
+      setLocalError(validation.error);
       return;
     }
 
@@ -181,7 +294,7 @@ function MyRateCardRow({ card }: { card: AdminFreightRateCard }) {
       {
         action: "replace",
         rateCardId: card.id,
-        breaks: collected.bands,
+        breaks: validation.bands,
         idempotencyKey: bandsKey.getIdempotencyKey(),
       },
       {
@@ -215,41 +328,11 @@ function MyRateCardRow({ card }: { card: AdminFreightRateCard }) {
 
   return (
     <li className={CARD_CLASS}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
-            {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            starts {formatIsoInstantLabel(card.validFrom)}
-            {card.validUntil !== null &&
-              ` · until ${formatIsoInstantLabel(card.validUntil)}`} ·{" "}
-            {card.breaks.length} band(s)
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {FREIGHT_RATE_CARD_STATE_LABELS[card.state]}
-          </span>
-          {/*
-           * READ, NEVER DERIVED. `bandsEditable` is the same predicate the 409 comes from, computed
-           * server-side against one instant; deriving `state === "active" && validFrom > now` here
-           * would put the deciding rule in two codebases and disagree across ordinary clock skew —
-           * enabling a control the very next request refuses.
-           */}
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {card.bandsEditable ? "Staged · bands editable" : "Bands frozen"}
-          </span>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="cursor-pointer text-xs underline"
-          >
-            {isExpanded ? "Hide" : "Open"}
-          </button>
-        </div>
-      </div>
+      <RateCardSummaryHeader
+        card={card}
+        isExpanded={isExpanded}
+        onToggleExpand={() => setIsExpanded(!isExpanded)}
+      />
 
       {isExpanded && (
         <div className="mt-3 space-y-3">
@@ -283,48 +366,16 @@ function MyRateCardRow({ card }: { card: AdminFreightRateCard }) {
             </p>
           )}
 
-          {breaksError !== null && (
-            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              <p className="font-medium">{breaksError.message}</p>
-              {renderFieldErrors(breaksError.fieldErrors)}
-              {breaksError.code === "409" && (
-                <p className="mt-1">
-                  This card is in force now. Retrying will not help — publish a new card instead.
-                </p>
-              )}
-            </div>
-          )}
+          <RateCardBreaksFeedback error={breaksError} />
 
-          {card.state === "active" && (
-            <div className="rounded-xl border border-border p-3">
-              <p className="text-xs font-medium text-foreground">Withdraw this lane</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                It stops pricing immediately. Buyers see the lane as uncovered again.
-              </p>
-              <input
-                value={withdrawReason}
-                onChange={(event) => setWithdrawReason(event.target.value)}
-                placeholder="Why it is being withdrawn"
-                aria-label="Reason for withdrawing this lane"
-                className={`${FIELD_CLASS} mt-2`}
-              />
-              <button
-                type="button"
-                onClick={handleWithdraw}
-                disabled={updateMutation.isPending || withdrawReason.trim().length === 0}
-                className={`${QUIET_BUTTON_CLASS} mt-2`}
-              >
-                {updateMutation.isPending ? "Withdrawing…" : "Withdraw"}
-              </button>
-            </div>
-          )}
-
-          {updateError !== null && (
-            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              <p className="font-medium">{updateError.message}</p>
-              {renderFieldErrors(updateError.fieldErrors)}
-            </div>
-          )}
+          <RateCardWithdrawSection
+            cardState={card.state}
+            reason={withdrawReason}
+            onReasonChange={setWithdrawReason}
+            onWithdraw={handleWithdraw}
+            isPending={updateMutation.isPending}
+            error={updateError}
+          />
         </div>
       )}
     </li>

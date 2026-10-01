@@ -41,6 +41,229 @@ type QueueViewState =
 
 const STATUS_FILTERS: readonly UserReportStatus[] = ["open", "actioned", "dismissed"];
 
+function ProfileReportQueueRow({
+  report,
+  note,
+  onNoteChange,
+  isDeciding,
+  isRestoring,
+  onDecide,
+  onRestore,
+}: {
+  report: UserReportQueueItem;
+  note: string;
+  onNoteChange: (note: string) => void;
+  isDeciding: boolean;
+  isRestoring: boolean;
+  onDecide: (decision: "actioned" | "dismissed") => void;
+  onRestore: () => void;
+}) {
+  return (
+    <li className="rounded-xl border border-border p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-medium text-foreground">
+          {report.subject.name}
+          {report.subject.handle !== null && (
+            <span className="text-muted-foreground"> @{report.subject.handle}</span>
+          )}
+        </p>
+        <span className="text-xs text-muted-foreground">
+          {USER_REPORT_REASON_LABELS[report.reason]}
+        </span>
+      </div>
+
+      <p className="mt-1 text-xs text-muted-foreground">
+        {/* Context, not a score. See the header. */}
+        {report.openReportCount} open report(s) about this person ·{" "}
+        {report.subject.profileModerationState === "hidden_by_moderator"
+          ? "profile text is hidden"
+          : "profile text is visible"}
+      </p>
+
+      {/*
+        THE ONE REASON NO ACTION ON THIS PAGE ANSWERS. Without this banner a moderator is
+        offered hide-or-dismiss and nothing else, which quietly implies one of them was the
+        appropriate response to a report about someone being in danger. The controls are
+        unchanged; what changes is that the row says what they do and do not reach.
+      */}
+      {report.reason === "severe_harm_escalation" && (
+        <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
+          No action on this page addresses this report. Hiding the profile text does not answer a
+          report about someone being in danger, and this platform has no account-level enforcement.
+          Escalate it out of band; hide or dismiss only reflects what happens to the description.
+        </p>
+      )}
+
+      {report.detailText !== null && (
+        <p className="mt-2 text-sm whitespace-pre-line text-foreground">{report.detailText}</p>
+      )}
+
+      <div className="mt-2 rounded-lg bg-muted px-3 py-2">
+        <p className="text-xs font-medium text-foreground">The reported description</p>
+        <p className="text-xs whitespace-pre-line text-foreground">
+          {report.subject.bio ?? "No description set."}
+        </p>
+      </div>
+
+      <label className="mt-3 block">
+        <span className="text-xs font-medium text-muted-foreground">
+          Note (required to restore)
+        </span>
+        <textarea
+          value={note}
+          onChange={(changeEvent) => onNoteChange(changeEvent.target.value)}
+          rows={2}
+          maxLength={2000}
+          className="mt-1 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+        />
+      </label>
+
+      {report.status === "open" && (
+        <div className="mt-2 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled={isDeciding}
+            onClick={() => onDecide("actioned")}
+            className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
+          >
+            Hide the profile text
+          </button>
+          <button
+            type="button"
+            disabled={isDeciding}
+            onClick={() => onDecide("dismissed")}
+            className="cursor-pointer text-sm font-medium text-foreground underline disabled:opacity-60"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {report.subject.profileModerationState === "hidden_by_moderator" && (
+        <div className="mt-2">
+          {/* Restoring overturns another moderator's decision, so the note is mandatory —
+              the button stays disabled until there is one. */}
+          <button
+            type="button"
+            disabled={isRestoring || note.trim() === ""}
+            onClick={onRestore}
+            className="cursor-pointer text-sm font-medium text-primary underline disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Restore this profile text
+          </button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function ProfileReportQueueContent({
+  viewState,
+  noteByReportId,
+  onNoteChange,
+  isDeciding,
+  isRestoring,
+  onDecide,
+  onRestore,
+}: {
+  viewState: QueueViewState;
+  noteByReportId: Record<string, string>;
+  onNoteChange: (reportId: string, note: string) => void;
+  isDeciding: boolean;
+  isRestoring: boolean;
+  onDecide: (reportId: string, decision: "actioned" | "dismissed") => void;
+  onRestore: (reportedUserId: string, reportId: string) => void;
+}) {
+  switch (viewState.status) {
+    case "restricted":
+      return (
+        <p className="text-sm text-muted-foreground">
+          You do not hold the capability that opens this queue.
+        </p>
+      );
+    case "loading":
+      return <p className="text-sm text-muted-foreground">Loading…</p>;
+    case "error":
+      return <p className="text-sm text-muted-foreground">{viewState.message}</p>;
+    case "empty":
+      return <p className="text-sm text-muted-foreground">Nothing in this queue.</p>;
+    case "ready":
+      return (
+        <ul className="space-y-4">
+          {viewState.rows.map((report) => (
+            <ProfileReportQueueRow
+              key={report.reportId}
+              report={report}
+              note={noteByReportId[report.reportId] ?? ""}
+              onNoteChange={(note) => onNoteChange(report.reportId, note)}
+              isDeciding={isDeciding}
+              isRestoring={isRestoring}
+              onDecide={(decision) => onDecide(report.reportId, decision)}
+              onRestore={() => onRestore(report.subject.userId, report.reportId)}
+            />
+          ))}
+        </ul>
+      );
+    default: {
+      const exhaustiveCheck: never = viewState;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+function computeReportQueueViewState(
+  canModerateContent: boolean,
+  reportQueueQuery: ReturnType<typeof useUserReportQueueQuery>,
+): QueueViewState {
+  if (!canModerateContent) {
+    return { status: "restricted" };
+  }
+  if (reportQueueQuery.isPending) {
+    return { status: "loading" };
+  }
+  if (reportQueueQuery.data === undefined || !reportQueueQuery.data.success) {
+    return {
+      status: "error",
+      message:
+        reportQueueQuery.data?.success === false
+          ? reportQueueQuery.data.error.message
+          : "The queue could not be loaded.",
+    };
+  }
+  if (reportQueueQuery.data.data.rows.length === 0) {
+    return { status: "empty" };
+  }
+  return { status: "ready", rows: reportQueueQuery.data.data.rows };
+}
+
+function ProfileReportStatusFilterButtons({
+  statusFilter,
+  onStatusFilterChange,
+}: {
+  statusFilter: UserReportStatus;
+  onStatusFilterChange: (status: UserReportStatus) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2 pb-4">
+      {STATUS_FILTERS.map((status) => (
+        <button
+          key={status}
+          type="button"
+          aria-pressed={statusFilter === status}
+          onClick={() => onStatusFilterChange(status)}
+          className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+            statusFilter === status
+              ? "bg-primary text-primary-foreground"
+              : "bg-background text-foreground outline -outline-offset-1 outline-border"
+          }`}
+        >
+          {status}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ProfileReportQueuePage() {
   const [statusFilter, setStatusFilter] = useState<UserReportStatus>("open");
   const [noteByReportId, setNoteByReportId] = useState<Record<string, string>>({});
@@ -53,22 +276,7 @@ export default function ProfileReportQueuePage() {
   const decideReportMutation = useDecideUserReportMutation();
   const restoreProfileTextMutation = useRestoreProfileTextMutation();
 
-  // `canModerateContent` first — see the header.
-  const viewState: QueueViewState = !canModerateContent
-    ? { status: "restricted" }
-    : reportQueueQuery.isPending
-      ? { status: "loading" }
-      : reportQueueQuery.data === undefined || !reportQueueQuery.data.success
-        ? {
-            status: "error",
-            message:
-              reportQueueQuery.data?.success === false
-                ? reportQueueQuery.data.error.message
-                : "The queue could not be loaded.",
-          }
-        : reportQueueQuery.data.data.rows.length === 0
-          ? { status: "empty" }
-          : { status: "ready", rows: reportQueueQuery.data.data.rows };
+  const viewState = computeReportQueueViewState(canModerateContent, reportQueueQuery);
 
   function handleDecide(reportId: string, decision: "actioned" | "dismissed") {
     const note = noteByReportId[reportId]?.trim() ?? "";
@@ -100,149 +308,22 @@ export default function ProfileReportQueuePage() {
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2 pb-4">
-        {STATUS_FILTERS.map((status) => (
-          <button
-            key={status}
-            type="button"
-            aria-pressed={statusFilter === status}
-            onClick={() => setStatusFilter(status)}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              statusFilter === status
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-foreground outline -outline-offset-1 outline-border"
-            }`}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
+      <ProfileReportStatusFilterButtons
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
 
-      {viewState.status === "restricted" && (
-        <p className="text-sm text-muted-foreground">
-          You do not hold the capability that opens this queue.
-        </p>
-      )}
-      {viewState.status === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {viewState.status === "error" && (
-        <p className="text-sm text-muted-foreground">{viewState.message}</p>
-      )}
-      {viewState.status === "empty" && (
-        <p className="text-sm text-muted-foreground">Nothing in this queue.</p>
-      )}
-
-      {viewState.status === "ready" && (
-        <ul className="space-y-4">
-          {viewState.rows.map((report) => (
-            <li key={report.reportId} className="rounded-xl border border-border p-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-foreground">
-                  {report.subject.name}
-                  {report.subject.handle !== null && (
-                    <span className="text-muted-foreground"> @{report.subject.handle}</span>
-                  )}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {USER_REPORT_REASON_LABELS[report.reason]}
-                </span>
-              </div>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {/* Context, not a score. See the header. */}
-                {report.openReportCount} open report(s) about this person ·{" "}
-                {report.subject.profileModerationState === "hidden_by_moderator"
-                  ? "profile text is hidden"
-                  : "profile text is visible"}
-              </p>
-
-              {/*
-                THE ONE REASON NO ACTION ON THIS PAGE ANSWERS. Without this banner a moderator is
-                offered hide-or-dismiss and nothing else, which quietly implies one of them was the
-                appropriate response to a report about someone being in danger. The controls are
-                unchanged; what changes is that the row says what they do and do not reach.
-              */}
-              {report.reason === "severe_harm_escalation" && (
-                <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
-                  No action on this page addresses this report. Hiding the profile text does not
-                  answer a report about someone being in danger, and this platform has no
-                  account-level enforcement. Escalate it out of band; hide or dismiss only reflects
-                  what happens to the description.
-                </p>
-              )}
-
-              {report.detailText !== null && (
-                <p className="mt-2 text-sm whitespace-pre-line text-foreground">
-                  {report.detailText}
-                </p>
-              )}
-
-              <div className="mt-2 rounded-lg bg-muted px-3 py-2">
-                <p className="text-xs font-medium text-foreground">The reported description</p>
-                <p className="text-xs whitespace-pre-line text-foreground">
-                  {report.subject.bio ?? "No description set."}
-                </p>
-              </div>
-
-              <label className="mt-3 block">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Note (required to restore)
-                </span>
-                <textarea
-                  value={noteByReportId[report.reportId] ?? ""}
-                  onChange={(changeEvent) =>
-                    setNoteByReportId((existing) => ({
-                      ...existing,
-                      [report.reportId]: changeEvent.target.value,
-                    }))
-                  }
-                  rows={2}
-                  maxLength={2000}
-                  className="mt-1 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </label>
-
-              {report.status === "open" && (
-                <div className="mt-2 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={decideReportMutation.isPending}
-                    onClick={() => handleDecide(report.reportId, "actioned")}
-                    className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground disabled:opacity-60"
-                  >
-                    Hide the profile text
-                  </button>
-                  <button
-                    type="button"
-                    disabled={decideReportMutation.isPending}
-                    onClick={() => handleDecide(report.reportId, "dismissed")}
-                    className="cursor-pointer text-sm font-medium text-foreground underline disabled:opacity-60"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              )}
-
-              {report.subject.profileModerationState === "hidden_by_moderator" && (
-                <div className="mt-2">
-                  {/* Restoring overturns another moderator's decision, so the note is mandatory —
-                      the button stays disabled until there is one. */}
-                  <button
-                    type="button"
-                    disabled={
-                      restoreProfileTextMutation.isPending ||
-                      (noteByReportId[report.reportId]?.trim() ?? "") === ""
-                    }
-                    onClick={() => handleRestore(report.subject.userId, report.reportId)}
-                    className="cursor-pointer text-sm font-medium text-primary underline disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Restore this profile text
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ProfileReportQueueContent
+        viewState={viewState}
+        noteByReportId={noteByReportId}
+        onNoteChange={(reportId, note) =>
+          setNoteByReportId((existing) => ({ ...existing, [reportId]: note }))
+        }
+        isDeciding={decideReportMutation.isPending}
+        isRestoring={restoreProfileTextMutation.isPending}
+        onDecide={handleDecide}
+        onRestore={handleRestore}
+      />
     </div>
   );
 }

@@ -59,6 +59,151 @@ type QueueViewState =
 
 const STATE_FILTERS: readonly SupportCaseState[] = ["open", "awaiting_user", "resolved", "closed"];
 
+function SupportCaseFilterControls({
+  stateFilter,
+  onStateFilterChange,
+  categoryFilter,
+  onCategoryFilterChange,
+}: {
+  stateFilter: SupportCaseState;
+  onStateFilterChange: (state: SupportCaseState) => void;
+  categoryFilter: SupportCaseCategory | undefined;
+  onCategoryFilterChange: (category: SupportCaseCategory | undefined) => void;
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 pb-2">
+        {STATE_FILTERS.map((state) => (
+          <button
+            key={state}
+            type="button"
+            aria-pressed={stateFilter === state}
+            onClick={() => onStateFilterChange(state)}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              stateFilter === state
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-foreground outline -outline-offset-1 outline-border"
+            }`}
+          >
+            {SUPPORT_CASE_STATE_QUEUE_LABELS[state]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 pb-4">
+        <button
+          type="button"
+          aria-pressed={categoryFilter === undefined}
+          onClick={() => onCategoryFilterChange(undefined)}
+          className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition-colors ${
+            categoryFilter === undefined
+              ? "bg-foreground text-background"
+              : "bg-background text-muted-foreground outline -outline-offset-1 outline-border"
+          }`}
+        >
+          Every kind
+        </button>
+        {SUPPORT_CASE_CATEGORIES.map((category) => (
+          <button
+            key={category}
+            type="button"
+            aria-pressed={categoryFilter === category}
+            onClick={() => onCategoryFilterChange(category)}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition-colors ${
+              categoryFilter === category
+                ? "bg-foreground text-background"
+                : "bg-background text-muted-foreground outline -outline-offset-1 outline-border"
+            }`}
+          >
+            {category.replaceAll("_", " ")}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function SupportCaseQueueItem({
+  supportCase,
+  isOpen,
+  onToggleOpen,
+}: {
+  supportCase: StaffSupportCaseSummary;
+  isOpen: boolean;
+  onToggleOpen: () => void;
+}) {
+  return (
+    <li className="rounded-xl border border-border p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-medium text-foreground">{supportCase.subject}</p>
+        <span className="text-xs text-muted-foreground">
+          {SUPPORT_CASE_STATE_QUEUE_LABELS[supportCase.state]}
+        </span>
+      </div>
+
+      <p className="mt-1 text-xs text-muted-foreground">
+        {supportCase.openerName}
+        {supportCase.openerHandle !== null && ` @${supportCase.openerHandle}`} ·{" "}
+        {SUPPORT_CASE_CATEGORY_LABELS[supportCase.category]} · opened{" "}
+        {formatIsoInstantLabel(supportCase.createdAt)}
+        {supportCase.orderReference !== null && ` · order reference ${supportCase.orderReference}`}
+      </p>
+
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className="mt-2 cursor-pointer text-sm font-medium text-foreground underline"
+      >
+        {isOpen ? "Hide the conversation" : "Open the conversation"}
+      </button>
+
+      {isOpen && <SupportCaseWorkspace caseId={supportCase.id} />}
+    </li>
+  );
+}
+
+function SupportCaseQueueContent({
+  viewState,
+  openCaseId,
+  onToggleCase,
+}: {
+  viewState: QueueViewState;
+  openCaseId: string | null;
+  onToggleCase: (caseId: string) => void;
+}) {
+  switch (viewState.status) {
+    case "restricted":
+      return (
+        <p className="text-sm text-muted-foreground">
+          You do not hold the capability that opens this queue.
+        </p>
+      );
+    case "loading":
+      return <p className="text-sm text-muted-foreground">Loading…</p>;
+    case "error":
+      return <p className="text-sm text-muted-foreground">{viewState.message}</p>;
+    case "empty":
+      return <p className="text-sm text-muted-foreground">Nothing in this queue.</p>;
+    case "ready":
+      return (
+        <ul className="space-y-4">
+          {viewState.rows.map((supportCase) => (
+            <SupportCaseQueueItem
+              key={supportCase.id}
+              supportCase={supportCase}
+              isOpen={openCaseId === supportCase.id}
+              onToggleOpen={() => onToggleCase(supportCase.id)}
+            />
+          ))}
+        </ul>
+      );
+    default: {
+      const exhaustiveCheck: never = viewState;
+      return exhaustiveCheck;
+    }
+  }
+}
+
 export default function SupportCaseQueuePage() {
   const [stateFilter, setStateFilter] = useState<SupportCaseState>("open");
   const [categoryFilter, setCategoryFilter] = useState<SupportCaseCategory | undefined>(undefined);
@@ -95,104 +240,20 @@ export default function SupportCaseQueuePage() {
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2 pb-2">
-        {STATE_FILTERS.map((state) => (
-          <button
-            key={state}
-            type="button"
-            aria-pressed={stateFilter === state}
-            onClick={() => setStateFilter(state)}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              stateFilter === state
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-foreground outline -outline-offset-1 outline-border"
-            }`}
-          >
-            {SUPPORT_CASE_STATE_QUEUE_LABELS[state]}
-          </button>
-        ))}
-      </div>
+      <SupportCaseFilterControls
+        stateFilter={stateFilter}
+        onStateFilterChange={setStateFilter}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+      />
 
-      <div className="flex flex-wrap gap-2 pb-4">
-        <button
-          type="button"
-          aria-pressed={categoryFilter === undefined}
-          onClick={() => setCategoryFilter(undefined)}
-          className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition-colors ${
-            categoryFilter === undefined
-              ? "bg-foreground text-background"
-              : "bg-background text-muted-foreground outline -outline-offset-1 outline-border"
-          }`}
-        >
-          Every kind
-        </button>
-        {SUPPORT_CASE_CATEGORIES.map((category) => (
-          <button
-            key={category}
-            type="button"
-            aria-pressed={categoryFilter === category}
-            onClick={() => setCategoryFilter(category)}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition-colors ${
-              categoryFilter === category
-                ? "bg-foreground text-background"
-                : "bg-background text-muted-foreground outline -outline-offset-1 outline-border"
-            }`}
-          >
-            {category.replaceAll("_", " ")}
-          </button>
-        ))}
-      </div>
-
-      {viewState.status === "restricted" && (
-        <p className="text-sm text-muted-foreground">
-          You do not hold the capability that opens this queue.
-        </p>
-      )}
-      {viewState.status === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {viewState.status === "error" && (
-        <p className="text-sm text-muted-foreground">{viewState.message}</p>
-      )}
-      {viewState.status === "empty" && (
-        <p className="text-sm text-muted-foreground">Nothing in this queue.</p>
-      )}
-
-      {viewState.status === "ready" && (
-        <ul className="space-y-4">
-          {viewState.rows.map((supportCase) => (
-            <li key={supportCase.id} className="rounded-xl border border-border p-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-foreground">{supportCase.subject}</p>
-                <span className="text-xs text-muted-foreground">
-                  {SUPPORT_CASE_STATE_QUEUE_LABELS[supportCase.state]}
-                </span>
-              </div>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {supportCase.openerName}
-                {supportCase.openerHandle !== null && ` @${supportCase.openerHandle}`} ·{" "}
-                {SUPPORT_CASE_CATEGORY_LABELS[supportCase.category]} · opened{" "}
-                {formatIsoInstantLabel(supportCase.createdAt)}
-                {supportCase.orderReference !== null &&
-                  ` · order reference ${supportCase.orderReference}`}
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setOpenCaseId((currentId) =>
-                    currentId === supportCase.id ? null : supportCase.id,
-                  )
-                }
-                className="mt-2 cursor-pointer text-sm font-medium text-foreground underline"
-              >
-                {openCaseId === supportCase.id ? "Hide the conversation" : "Open the conversation"}
-              </button>
-
-              {openCaseId === supportCase.id && <SupportCaseWorkspace caseId={supportCase.id} />}
-            </li>
-          ))}
-        </ul>
-      )}
+      <SupportCaseQueueContent
+        viewState={viewState}
+        openCaseId={openCaseId}
+        onToggleCase={(caseId) =>
+          setOpenCaseId((currentId) => (currentId === caseId ? null : caseId))
+        }
+      />
     </div>
   );
 }

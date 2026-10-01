@@ -42,8 +42,8 @@ import {
   CustomsLine,
   FreightLine,
   ManufacturingLine,
-  formatIsoDayLabel,
 } from "@/components/commerce/sections/arrival-window-component-lines";
+import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 type ArrivalWindowViewState =
   | { status: "loading" }
@@ -127,8 +127,8 @@ function WindowHeadline({ projection }: { readonly projection: ArrivalWindowProj
     return (
       <p className="text-sm text-foreground">
         <span className="font-medium">
-          {formatIsoDayLabel(projection.arrivalWindow.fromDate)} –{" "}
-          {formatIsoDayLabel(projection.arrivalWindow.toDate)}
+          {formatIsoInstantAsDateLabel(projection.arrivalWindow.fromDate)} –{" "}
+          {formatIsoInstantAsDateLabel(projection.arrivalWindow.toDate)}
         </span>
         <span className="block text-xs text-muted-foreground">
           Anchored to the manufacturing deadline, then freight and customs on top.

@@ -134,6 +134,104 @@ function toYoutubeThumbnailUrl(youtubeUrl: string): string | null {
   return youtubeVideoId === null ? null : `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`;
 }
 
+function computePickState(
+  candidateFile: File | null,
+  checkOutcome:
+    | { file: File; status: "ready"; previewUrl: string }
+    | { file: File; status: "rejected"; message: string }
+    | null,
+): ThumbnailPickState {
+  if (candidateFile === null) return { status: "idle" };
+  if (checkOutcome?.file === candidateFile && checkOutcome.status === "ready") {
+    return { status: "ready", previewUrl: checkOutcome.previewUrl };
+  }
+  if (checkOutcome?.file === candidateFile && checkOutcome.status === "rejected") {
+    return { status: "rejected", message: checkOutcome.message };
+  }
+  return { status: "checking" };
+}
+
+function ThumbnailPreview({
+  previewUrl,
+  isCustomReady,
+}: {
+  readonly previewUrl: string | null;
+  readonly isCustomReady: boolean;
+}) {
+  return (
+    <div className="flex aspect-video w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-secondary">
+      {previewUrl === null ? (
+        <div className="flex flex-col items-center gap-1 px-2 text-center">
+          <Image
+            src="/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={24}
+            height={24}
+          />
+          <p className="text-xs text-muted-foreground">Paste a YouTube link first</p>
+        </div>
+      ) : (
+        <Image
+          src={previewUrl}
+          alt="Video thumbnail"
+          width={160}
+          height={90}
+          unoptimized={isCustomReady}
+          className="size-full object-cover"
+        />
+      )}
+    </div>
+  );
+}
+
+function ThumbnailFeedback({
+  pickState,
+  selectedFile,
+  currentThumbnailUrl,
+  onClearClick,
+}: {
+  readonly pickState: ThumbnailPickState;
+  readonly selectedFile: File | null;
+  readonly currentThumbnailUrl?: string | null;
+  readonly onClearClick: () => void;
+}) {
+  if (pickState.status === "checking") {
+    return <p className="text-xs text-muted-foreground">Checking that image…</p>;
+  }
+
+  if (pickState.status === "rejected") {
+    return (
+      <p role="alert" className="max-w-72 text-xs text-destructive">
+        {pickState.message}
+      </p>
+    );
+  }
+
+  if (pickState.status === "ready" && selectedFile !== null) {
+    return (
+      <div className="flex items-center gap-2">
+        <p className="text-xs text-muted-foreground">
+          Custom thumbnail ready — it uploads when you save.
+        </p>
+        <button
+          type="button"
+          onClick={onClearClick}
+          className="cursor-pointer text-xs font-medium text-muted-foreground underline hover:text-foreground"
+        >
+          Clear
+        </button>
+      </div>
+    );
+  }
+
+  const idleHelpText =
+    currentThumbnailUrl === null || currentThumbnailUrl === undefined
+      ? "YouTube's thumbnail is used unless you upload your own. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9."
+      : "Upload a new image to replace this one. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9.";
+
+  return <p className="max-w-72 text-xs text-muted-foreground">{idleHelpText}</p>;
+}
+
 export default function ThumbnailPicker({
   youtubeUrl,
   currentThumbnailUrl,
@@ -151,7 +249,6 @@ export default function ThumbnailPicker({
   readonly onFileSelected: (file: File | null) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  /** What the creator last chose, verdict not yet known. The parent never sees this one. */
   const [candidateFile, setCandidateFile] = useState<File | null>(null);
   const [checkOutcome, setCheckOutcome] = useState<
     | { file: File; status: "ready"; previewUrl: string }
@@ -159,36 +256,24 @@ export default function ThumbnailPicker({
     | null
   >(null);
 
-  // The parent is told about a file only once it PASSES. Holding the candidate here is what
-  // lets "rejected" be a state the picker can stay in — clearing the parent's file to keep it
-  // out of the submit would feed a `null` back down and wipe the message explaining why.
   const onFileSelectedRef = useRef(onFileSelected);
   useEffect(() => {
     onFileSelectedRef.current = onFileSelected;
   }, [onFileSelected]);
 
-  const pickState: ThumbnailPickState =
-    candidateFile === null
-      ? { status: "idle" }
-      : checkOutcome?.file === candidateFile && checkOutcome.status === "ready"
-        ? { status: "ready", previewUrl: checkOutcome.previewUrl }
-        : checkOutcome?.file === candidateFile && checkOutcome.status === "rejected"
-          ? { status: "rejected", message: checkOutcome.message }
-          : { status: "checking" };
+  const pickState = computePickState(candidateFile, checkOutcome);
 
   useEffect(() => {
     if (candidateFile === null) return undefined;
 
     let isCurrentCandidate = true;
+    const objectUrl = URL.createObjectURL(candidateFile);
 
     const runCheck = async () => {
       const result = await checkThumbnailFile(candidateFile);
-      // The effect can be torn down mid-decode when the creator picks a second file; applying
-      // a stale verdict would show the previous file's rejection under the new preview.
       if (!isCurrentCandidate) return;
       if (result.success) {
-        const previewUrl = URL.createObjectURL(candidateFile);
-        setCheckOutcome({ file: candidateFile, status: "ready", previewUrl });
+        setCheckOutcome({ file: candidateFile, status: "ready", previewUrl: objectUrl });
         onFileSelectedRef.current(candidateFile);
         return;
       }
@@ -199,17 +284,11 @@ export default function ThumbnailPicker({
 
     return () => {
       isCurrentCandidate = false;
+      URL.revokeObjectURL(objectUrl);
     };
   }, [candidateFile]);
 
-  useEffect(() => {
-    if (checkOutcome?.status !== "ready") return undefined;
-    const previewUrl = checkOutcome.previewUrl;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [checkOutcome]);
-
   const youtubeThumbnailUrl = toYoutubeThumbnailUrl(youtubeUrl);
-  // Precedence: the file being picked right now, then whatever is saved, then YouTube's own.
   const fallbackPreviewUrl = currentThumbnailUrl ?? youtubeThumbnailUrl;
   const previewUrl = pickState.status === "ready" ? pickState.previewUrl : fallbackPreviewUrl;
 
@@ -227,40 +306,7 @@ export default function ThumbnailPicker({
       </label>
 
       <div className="flex flex-wrap items-start gap-3">
-        <div className="flex aspect-video w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-secondary">
-          {previewUrl === null ? (
-            <div className="flex flex-col items-center gap-1 px-2 text-center">
-              <Image
-                src="/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-              <p className="text-xs text-muted-foreground">Paste a YouTube link first</p>
-            </div>
-          ) : (
-            /*
-              `unoptimized` on the object-URL preview only — a `blob:` src has no host for
-              next/image to fetch through its optimizer, and the same escape hatch is used by
-              `slide-image-picker.tsx` and `profile-photo-panel.tsx`.
-
-              CENTRE-CROPPED, not letterboxed, mirroring `object-cover` on the card in
-              `home/shared/video-card.tsx`. The server re-encodes with sharp `fit: "inside"`
-              and never crops, so a non-16:9 upload reaches the feed at its own aspect and the
-              CARD is what crops it. Showing the whole frame here would promise the creator
-              edges no viewer ever sees — this way they find out which ones they lose before
-              they save, not after.
-            */
-            <Image
-              src={previewUrl}
-              alt="Video thumbnail"
-              width={160}
-              height={90}
-              unoptimized={pickState.status === "ready"}
-              className="size-full object-cover"
-            />
-          )}
-        </div>
+        <ThumbnailPreview previewUrl={previewUrl} isCustomReady={pickState.status === "ready"} />
 
         <div className="flex min-w-0 flex-col gap-2">
           <input
@@ -276,35 +322,12 @@ export default function ThumbnailPicker({
             className="text-xs text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-border file:bg-transparent file:px-4 file:py-2 file:text-sm file:font-medium file:text-foreground"
           />
 
-          {pickState.status === "checking" && (
-            <p className="text-xs text-muted-foreground">Checking that image…</p>
-          )}
-          {pickState.status === "rejected" && (
-            <p role="alert" className="max-w-72 text-xs text-destructive">
-              {pickState.message}
-            </p>
-          )}
-          {pickState.status === "ready" && selectedFile !== null && (
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground">
-                Custom thumbnail ready — it uploads when you save.
-              </p>
-              <button
-                type="button"
-                onClick={handleClearClick}
-                className="cursor-pointer text-xs font-medium text-muted-foreground underline hover:text-foreground"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-          {pickState.status === "idle" && (
-            <p className="max-w-72 text-xs text-muted-foreground">
-              {currentThumbnailUrl === null || currentThumbnailUrl === undefined
-                ? "YouTube's thumbnail is used unless you upload your own. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9."
-                : "Upload a new image to replace this one. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9."}
-            </p>
-          )}
+          <ThumbnailFeedback
+            pickState={pickState}
+            selectedFile={selectedFile}
+            currentThumbnailUrl={currentThumbnailUrl}
+            onClearClick={handleClearClick}
+          />
         </div>
       </div>
     </div>

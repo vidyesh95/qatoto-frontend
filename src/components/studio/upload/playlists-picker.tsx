@@ -35,9 +35,10 @@ export default function PlaylistsPicker({
   const matchingPlaylists = playlists.filter((playlist) =>
     playlist.title.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
+  const selectedPlaylistIdsSet = new Set(selectedPlaylistIds);
 
   function handlePlaylistToggle(playlistId: string) {
-    const isAlreadySelected = selectedPlaylistIds.includes(playlistId);
+    const isAlreadySelected = selectedPlaylistIdsSet.has(playlistId);
     onSelectedPlaylistIdsChange(
       isAlreadySelected
         ? selectedPlaylistIds.filter((selectedId) => selectedId !== playlistId)
@@ -99,7 +100,7 @@ export default function PlaylistsPicker({
                 </li>
               ) : (
                 matchingPlaylists.map((playlist) => {
-                  const isSelected = selectedPlaylistIds.includes(playlist.id);
+                  const isSelected = selectedPlaylistIdsSet.has(playlist.id);
                   return (
                     <li key={playlist.id}>
                       <button

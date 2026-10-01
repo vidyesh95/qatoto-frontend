@@ -6,47 +6,20 @@
 
 import { useState } from "react";
 
-import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
-import { LABEL_CLASS } from "@/components/ui/field-classes";
+import {
+  ClaimEvidenceList,
+  ClaimMinutesSummary,
+  ClaimReverifyForm,
+} from "@/components/home/research-and-development/sections/claim-disclosure-views";
+import { VerificationStepItem } from "@/components/home/research-and-development/sections/verification-step-item";
 import {
   useEffortClaimQuery,
   useOverrideVerificationStepMutation,
   useReverifyEffortClaimMutation,
 } from "@/hooks/rnd/proof-of-effort";
 import { ApiRequestError } from "@/lib/http";
-import { formatIsoInstant, formatMoneyFromCents, shortenHashForDisplay } from "@/lib/rnd/format";
-import {
-  VERIFICATION_STEP_STATUSES,
-  VerificationStepStatusSchema,
-  type EffortVerificationStatus,
-  type VerificationStep,
-  type VerificationStepStatus,
-} from "@/lib/rnd/proof-of-effort.schemas";
-import { VERIFICATION_STEP_KIND_LABELS } from "@/lib/rnd/labels";
-
-const STEP_STATUS_LABELS: Record<VerificationStepStatus, string> = {
-  pending: "Pending",
-  passed: "Passed",
-  flagged: "Flagged",
-  failed: "Failed",
-  skipped: "Skipped",
-};
-
-/**
- * `skipped` is grey, not red. When grounding flags without a connected provider, substance
- * and temporal analysis skip DELIBERATELY so review has one gate rather than three —
- * rendering that as a failure would triple the apparent problem.
- */
-const STEP_STATUS_BADGE_CLASS: Record<VerificationStepStatus, string> = {
-  pending: "bg-muted text-muted-foreground",
-  passed: "bg-primary-imprint/10 text-primary-imprint",
-  flagged: "bg-warning-container text-warning-container-foreground",
-  failed: "bg-destructive/10 text-destructive",
-  skipped: "bg-muted text-muted-foreground",
-};
-
-/** The two statuses whose verdict has not landed, and the only ones worth polling. */
-const IN_FLIGHT_STATUSES: EffortVerificationStatus[] = ["queued", "running"];
+import { formatIsoInstant } from "@/lib/rnd/format";
+import type { EffortVerificationStatus } from "@/lib/rnd/proof-of-effort.schemas";
 
 /** Maintainer and above. Anyone else gets a 404 from the override route itself. */
 const OVERRIDE_ROLES = ["founder", "admin", "maintainer"];
@@ -54,6 +27,9 @@ const OVERRIDE_ROLES = ["founder", "admin", "maintainer"];
 function canOverride(viewerProjectRole: string | null): boolean {
   return viewerProjectRole !== null && OVERRIDE_ROLES.includes(viewerProjectRole);
 }
+
+/** The two statuses whose verdict has not landed, and the only ones worth polling. */
+const IN_FLIGHT_STATUSES: EffortVerificationStatus[] = ["queued", "running"];
 
 /**
  * One claim's full history: every run, every step in order, and the evidence behind it.
@@ -78,21 +54,15 @@ export default function ClaimDetailDisclosure({
   projectCurrency,
   viewerProjectRole,
 }: {
-  projectSlug: string;
-  claimId: string;
-  initialVerificationStatus: EffortVerificationStatus;
-  projectCurrency: string;
-  viewerProjectRole: string | null;
+  readonly projectSlug: string;
+  readonly claimId: string;
+  readonly initialVerificationStatus: EffortVerificationStatus;
+  readonly projectCurrency: string;
+  readonly viewerProjectRole: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [overridingStepId, setOverridingStepId] = useState<string | null>(null);
-  const [overrideReason, setOverrideReason] = useState("");
-  const [overriddenStatus, setOverriddenStatus] = useState<VerificationStepStatus>("passed");
-  const [reverifyReason, setReverifyReason] = useState("");
 
-  // The query polls itself while the verdict is outstanding and stops the moment the
-  // status turns terminal — that decision lives in the hook because only the fetched
-  // claim knows it.
   const claimQuery = useEffortClaimQuery(projectSlug, isOpen ? claimId : undefined);
   const overrideMutation = useOverrideVerificationStepMutation(projectSlug);
   const reverifyMutation = useReverifyEffortClaimMutation(projectSlug);
@@ -117,114 +87,6 @@ export default function ClaimDetailDisclosure({
       </button>
     );
   }
-  function renderStep(step: VerificationStep) {
-    // The override REPLACES the status for the verdict when present, so it is what the
-    // badge must show — otherwise a reviewed step keeps advertising the machine's opinion.
-    const effectiveStatus = step.overriddenStatus ?? step.status;
-    const isOverriding = overridingStepId === step.id;
-
-    return (
-      <li key={step.id} className="space-y-1 rounded-lg bg-card/60 p-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm">{VERIFICATION_STEP_KIND_LABELS[step.stepKind]}</span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEP_STATUS_BADGE_CLASS[effectiveStatus]}`}
-          >
-            {STEP_STATUS_LABELS[effectiveStatus]}
-            {step.overriddenStatus !== null && " (reviewed)"}
-          </span>
-        </div>
-
-        {step.findingSummary !== null && (
-          <p className="text-xs text-muted-foreground">{step.findingSummary}</p>
-        )}
-
-        {/* Provenance, always. A judgement whose model and confidence are hidden reads as
-            a platform ruling rather than as a machine opinion a human may overrule. */}
-        <p className="text-xs text-muted-foreground">
-          {step.modelName !== null && `${step.modelName} `}
-          {step.promptVersion !== null && `· prompt ${step.promptVersion} `}
-          {step.confidenceBps !== null && `· ${(step.confidenceBps / 100).toFixed(0)}% confidence`}
-        </p>
-
-        {step.overrideReason !== null && (
-          <p className="text-xs text-warning">Reviewer&apos;s reason: {step.overrideReason}</p>
-        )}
-
-        {canOverride(viewerProjectRole) && step.overriddenStatus === null && (
-          <>
-            <button
-              type="button"
-              onClick={() => setOverridingStepId(isOverriding ? null : step.id)}
-              className="cursor-pointer text-xs font-medium text-primary-imprint"
-            >
-              {isOverriding ? "Cancel" : "Override this judgement"}
-            </button>
-
-            {isOverriding && (
-              <form
-                className="space-y-2"
-                onSubmit={(submitEvent) => {
-                  submitEvent.preventDefault();
-                  overrideMutation.mutate({
-                    claimId,
-                    stepId: step.id,
-                    overriddenStatus,
-                    overrideReason,
-                  });
-                }}
-              >
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Corrected status</span>
-                  <select
-                    value={overriddenStatus}
-                    onChange={(changeEvent) => {
-                      // Parsed, not cast: an unrecognized value reaching a `.strict()` body
-                      // schema is a 422 rather than an ignored field.
-                      const parsed = VerificationStepStatusSchema.safeParse(
-                        changeEvent.target.value,
-                      );
-                      if (parsed.success) setOverriddenStatus(parsed.data);
-                    }}
-                    className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                  >
-                    {VERIFICATION_STEP_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {STEP_STATUS_LABELS[status]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Reason for the override</span>
-                  <textarea
-                    required
-                    rows={2}
-                    value={overrideReason}
-                    onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
-                    placeholder="Why is the machine wrong here?"
-                    className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                  />
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  You are correcting a judgement, not a number. The formula recomputes the minutes
-                  from the corrected step.
-                </p>
-                <button
-                  type="submit"
-                  disabled={overrideMutation.isPending}
-                  className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
-                >
-                  {overrideMutation.isPending ? "Recording…" : "Record the override"}
-                </button>
-                {overrideError !== null && <MutationErrorNotice error={overrideError} />}
-              </form>
-            )}
-          </>
-        )}
-      </li>
-    );
-  }
 
   return (
     <div className="mt-3 space-y-3 border-t border-outline-variant/40 pt-3">
@@ -238,7 +100,6 @@ export default function ClaimDetailDisclosure({
 
       {claimQuery.isPending && <p className="text-xs text-muted-foreground">Loading the runs…</p>}
 
-      {/* The 202 state, made visible. The claim exists; the number does not yet. */}
       {isVerdictOutstanding && (
         <p className="text-xs text-primary-imprint">
           The pipeline is still checking this claim. No minutes and no slices exist for it yet —
@@ -254,30 +115,13 @@ export default function ClaimDetailDisclosure({
 
       {claimQuery.data && (
         <div className="space-y-3">
-          <dl className="grid gap-2 sm:grid-cols-2">
-            <div className="rounded-xl bg-muted/50 p-3">
-              <dt className="text-xs text-muted-foreground">What the member said</dt>
-              <dd className="text-sm">
-                {claimQuery.data.extractedMinutes === null
-                  ? "Nothing extracted"
-                  : `${claimQuery.data.extractedMinutes} minutes`}
-                {claimQuery.data.extractedCashInCents !== null &&
-                  ` · ${formatMoneyFromCents(BigInt(claimQuery.data.extractedCashInCents), projectCurrency)}`}
-              </dd>
-              <dd className="text-xs text-muted-foreground">This pays nobody on its own.</dd>
-            </div>
-            <div className="rounded-xl bg-muted/50 p-3">
-              <dt className="text-xs text-muted-foreground">What the artifacts prove</dt>
-              <dd className="text-sm">
-                {claimQuery.data.groundedMinutes === null
-                  ? "Not graded yet"
-                  : `${claimQuery.data.groundedMinutes} minutes`}
-                {claimQuery.data.groundedCashInCents !== null &&
-                  ` · ${formatMoneyFromCents(BigInt(claimQuery.data.groundedCashInCents), projectCurrency)}`}
-              </dd>
-              <dd className="text-xs text-muted-foreground">This is what the ledger prices.</dd>
-            </div>
-          </dl>
+          <ClaimMinutesSummary
+            extractedMinutes={claimQuery.data.extractedMinutes}
+            extractedCashInCents={claimQuery.data.extractedCashInCents}
+            groundedMinutes={claimQuery.data.groundedMinutes}
+            groundedCashInCents={claimQuery.data.groundedCashInCents}
+            projectCurrency={projectCurrency}
+          />
 
           {claimQuery.data.overriddenMinutes !== null && (
             <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
@@ -306,77 +150,41 @@ export default function ClaimDetailDisclosure({
               {run.triggerReason !== null && (
                 <p className="text-xs text-muted-foreground">Triggered by: {run.triggerReason}</p>
               )}
-              <ul className="space-y-2">{run.steps.map((step) => renderStep(step))}</ul>
-            </section>
-          ))}
-
-          {claimQuery.data.evidence.length > 0 && (
-            <section className="space-y-1">
-              <p className="text-sm font-medium">Evidence</p>
-              <ul className="space-y-1 text-xs">
-                {claimQuery.data.evidence.map((evidence) => (
-                  <li key={evidence.payloadSha256}>
-                    <span className="text-muted-foreground">{evidence.provider}:</span>{" "}
-                    {evidence.externalUrl === null ? (
-                      evidence.label
-                    ) : (
-                      <a
-                        href={evidence.externalUrl}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="text-primary-imprint underline underline-offset-2"
-                      >
-                        {evidence.label}
-                      </a>
-                    )}{" "}
-                    · hash {shortenHashForDisplay(evidence.payloadSha256)} · signature{" "}
-                    {evidence.signatureStatus}
-                    {!evidence.countsTowardSlices && " · does not count toward slices"}
-                    {/* The proof survives a revocation; the copy does not. Saying which
-                        is which is the difference between "deleted" and "never was". */}
-                    {!evidence.evidenceRetained &&
-                      " · the stored copy was purged when consent was revoked; the hash stands"}
-                  </li>
+              <ul className="space-y-2">
+                {run.steps.map((step) => (
+                  <VerificationStepItem
+                    key={step.id}
+                    step={step}
+                    canOverride={canOverride(viewerProjectRole)}
+                    isOverriding={overridingStepId === step.id}
+                    onToggleOverriding={() =>
+                      setOverridingStepId(overridingStepId === step.id ? null : step.id)
+                    }
+                    onSubmitOverride={(overriddenStatus, reason) =>
+                      overrideMutation.mutate({
+                        claimId,
+                        stepId: step.id,
+                        overriddenStatus,
+                        overrideReason: reason,
+                      })
+                    }
+                    isOverridePending={overrideMutation.isPending}
+                    overrideError={overrideError}
+                  />
                 ))}
               </ul>
             </section>
-          )}
+          ))}
+
+          <ClaimEvidenceList evidence={claimQuery.data.evidence} />
 
           {canOverride(viewerProjectRole) && (
-            <form
-              className="space-y-2 rounded-xl bg-muted/50 p-3"
-              onSubmit={(submitEvent) => {
-                submitEvent.preventDefault();
-                reverifyMutation.mutate({ claimId, reason: reverifyReason });
-              }}
-            >
-              <label className="block space-y-1">
-                <span className="text-xs text-muted-foreground">
-                  Ask for a fresh run — this adds an attempt, it does not replace one
-                </span>
-                <input
-                  required
-                  value={reverifyReason}
-                  onChange={(changeEvent) => setReverifyReason(changeEvent.target.value)}
-                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                  placeholder="Why re-verify?"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={reverifyMutation.isPending}
-                className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
-              >
-                {reverifyMutation.isPending ? "Requesting…" : "Re-verify this claim"}
-              </button>
-              {/* 202: the run is queued, the number does not exist yet. */}
-              {reverifyMutation.isSuccess && (
-                <p className="text-xs text-primary-imprint">
-                  Queued. The new attempt appears above when it finishes — nothing has changed yet.
-                </p>
-              )}
-              {reverifyError !== null && <MutationErrorNotice error={reverifyError} />}
-            </form>
+            <ClaimReverifyForm
+              onSubmit={(reason) => reverifyMutation.mutate({ claimId, reason })}
+              isPending={reverifyMutation.isPending}
+              isSuccess={reverifyMutation.isSuccess}
+              reverifyError={reverifyError}
+            />
           )}
         </div>
       )}

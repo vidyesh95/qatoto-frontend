@@ -35,6 +35,7 @@ import {
   type CommerceContentTargetKind,
   type CommerceReportReason,
 } from "@/lib/store/content-reports.schemas";
+import { ReportReasonSelectList } from "@/components/home/shared/report-reason-select-list";
 
 /** Matches the backend's `.max(2000)`, so the server never has to refuse on length. */
 const DETAIL_MAX_LENGTH = 2000;
@@ -234,31 +235,12 @@ export default function ReportContentSheet({
                 What&rsquo;s wrong with{" "}
                 <span className="text-foreground">&ldquo;{targetLabel}&rdquo;</span>?
               </p>
-              <ul>
-                {COMMERCE_REPORT_REASONS.map((reason) => (
-                  <li key={reason}>
-                    <button
-                      type="button"
-                      aria-pressed={selectedReason === reason}
-                      onClick={() => setSelectedReason(reason)}
-                      className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
-                    >
-                      <span
-                        className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
-                          selectedReason === reason ? "border-foreground" : "border-border"
-                        }`}
-                      >
-                        {selectedReason === reason && (
-                          <span className="size-2 rounded-full bg-foreground" />
-                        )}
-                      </span>
-                      <span className="text-sm text-foreground">
-                        {COMMERCE_REPORT_REASON_LABELS[reason]}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <ReportReasonSelectList
+                reasons={COMMERCE_REPORT_REASONS}
+                reasonLabels={COMMERCE_REPORT_REASON_LABELS}
+                selectedReason={selectedReason}
+                onSelectReason={setSelectedReason}
+              />
 
               <div className="px-4 pt-2 pb-3">
                 <label

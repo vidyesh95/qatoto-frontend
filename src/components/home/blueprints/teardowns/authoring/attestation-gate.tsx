@@ -62,27 +62,3 @@ export default function AttestationGate({
     </section>
   );
 }
-
-/**
- * Why submit is unavailable, in words, or `null` when it is available.
- *
- * ⚠️ A DISABLED BUTTON MUST SAY WHY. A grey control with no explanation is the most common way a
- * form wastes somebody's afternoon: they check every field they can see and never find the one that
- * is wrong. This names the count and the remaining statements, so the reason is on screen next to
- * the thing that is refusing.
- */
-export function describeAttestationGap(
-  acceptedClauseIds: readonly TeardownAttestationClauseId[],
-): string | null {
-  const outstandingClauses = TEARDOWN_ATTESTATION_CLAUSES.filter(
-    (clause) => !acceptedClauseIds.includes(clause.id),
-  );
-  if (outstandingClauses.length === 0) return null;
-
-  // ⚠️ THE LABELS ARE JOINED VERBATIM, NOT LOWERCASED. Every clause begins "I …", and lowercasing to
-  // make the list read as one sentence produced "i obtained this unit lawfully" — a sentence that
-  // looks like a typo in the one place on this surface that has to read as careful.
-  return `${outstandingClauses.length} of ${TEARDOWN_ATTESTATION_CLAUSES.length} statements still unchecked: ${outstandingClauses
-    .map((clause) => clause.label)
-    .join("; ")}.`;
-}

@@ -34,7 +34,173 @@ import SellerReviewReply from "@/components/studio/commerce/reviews/seller-revie
 import { useSellerReviewInboxQuery } from "@/hooks/store/reviews";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import { REVIEW_SORTS, REVIEW_SORT_LABELS } from "@/lib/store/products.schemas";
-import type { ReviewSort } from "@/lib/store/products.schemas";
+import type {
+  ReviewSort,
+  StoreReview,
+  StoreReviewListPage,
+  StoreReviewSummary,
+} from "@/lib/store/products.schemas";
+
+interface SellerReviewsFilterBarProps {
+  sort: ReviewSort;
+  isUnrepliedOnly: boolean;
+  onSortChange: (nextSort: ReviewSort) => void;
+  onUnrepliedChange: (nextUnrepliedOnly: boolean) => void;
+}
+
+function SellerReviewsFilterBar({
+  sort,
+  isUnrepliedOnly,
+  onSortChange,
+  onUnrepliedChange,
+}: SellerReviewsFilterBarProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 pb-4">
+      <div className="flex flex-wrap gap-2">
+        {REVIEW_SORTS.map((reviewSort) => (
+          <button
+            key={reviewSort}
+            type="button"
+            aria-pressed={sort === reviewSort}
+            onClick={() => onSortChange(reviewSort)}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              sort === reviewSort
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-foreground outline -outline-offset-1 outline-border"
+            }`}
+          >
+            {REVIEW_SORT_LABELS[reviewSort]}
+          </button>
+        ))}
+      </div>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={isUnrepliedOnly}
+          onChange={(changeEvent) => onUnrepliedChange(changeEvent.target.checked)}
+          className="size-4 cursor-pointer accent-primary"
+        />
+        <span className="text-sm text-foreground">Only ones you have not answered</span>
+      </label>
+    </div>
+  );
+}
+
+function SellerReviewItemCard({ review }: { review: StoreReview }) {
+  const reviewerName = review.reviewer?.displayName ?? "Verified buyer";
+  return (
+    <li className="rounded-xl border border-border p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded bg-primary px-1.5 py-0.5 text-xs font-medium text-primary-foreground">
+          {review.rating.toFixed(1)}
+        </span>
+        <span className="text-xs font-medium text-foreground">{reviewerName}</span>
+        <span className="text-xs text-muted-foreground">
+          {formatIsoInstantLabel(review.createdAt)}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {formatCountLabel(review.helpfulCount)} found this helpful
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm leading-5 whitespace-pre-line text-foreground">{review.body}</p>
+
+      <SellerReviewReply reviewId={review.id} existingReplyBody={review.reply?.body ?? null} />
+    </li>
+  );
+}
+
+interface SellerReviewsPaginationProps {
+  hasMore: boolean;
+  nextCursor: string | null;
+  cursor: string | null;
+  onStartOver: () => void;
+  onNextPage: (next: string) => void;
+}
+
+function SellerReviewsPagination({
+  hasMore,
+  nextCursor,
+  cursor,
+  onStartOver,
+  onNextPage,
+}: SellerReviewsPaginationProps) {
+  if (!hasMore && cursor === null) return null;
+
+  return (
+    <div className="mt-4 flex items-center gap-3">
+      {cursor !== null && (
+        <button
+          type="button"
+          onClick={onStartOver}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
+        >
+          Start over
+        </button>
+      )}
+      {hasMore && nextCursor !== null && (
+        <button
+          type="button"
+          onClick={() => onNextPage(nextCursor)}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
+        >
+          Show older
+        </button>
+      )}
+    </div>
+  );
+}
+
+function formatSummaryText(summary: StoreReviewSummary): string {
+  if (summary.reviewCount === 0) {
+    return "Nobody has reviewed you yet.";
+  }
+  const formattedCount = formatCountLabel(summary.reviewCount);
+  const formattedRating = summary.averageRating?.toFixed(1) ?? "—";
+  return `${formattedCount} in total, averaging ${formattedRating}.`;
+}
+
+interface SellerReviewsListProps {
+  page: StoreReviewListPage;
+  isUnrepliedOnly: boolean;
+  cursor: string | null;
+  onStartOver: () => void;
+  onNextPage: (next: string) => void;
+}
+
+function SellerReviewsList({
+  page,
+  isUnrepliedOnly,
+  cursor,
+  onStartOver,
+  onNextPage,
+}: SellerReviewsListProps) {
+  return (
+    <>
+      <p className="pb-3 text-xs text-muted-foreground">{formatSummaryText(page.summary)}</p>
+
+      {page.items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {isUnrepliedOnly ? "You have answered every review." : "Nothing matches that filter."}
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {page.items.map((review) => (
+            <SellerReviewItemCard key={review.id} review={review} />
+          ))}
+        </ul>
+      )}
+
+      <SellerReviewsPagination
+        hasMore={page.page.hasMore}
+        nextCursor={page.page.nextCursor}
+        cursor={cursor}
+        onStartOver={onStartOver}
+        onNextPage={onNextPage}
+      />
+    </>
+  );
+}
 
 export default function SellerReviewsPage() {
   const [sort, setSort] = useState<ReviewSort>("recent");
@@ -70,34 +236,12 @@ export default function SellerReviewsPage() {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-3 pb-4">
-        <div className="flex flex-wrap gap-2">
-          {REVIEW_SORTS.map((reviewSort) => (
-            <button
-              key={reviewSort}
-              type="button"
-              aria-pressed={sort === reviewSort}
-              onClick={() => changeSort(reviewSort)}
-              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                sort === reviewSort
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-foreground outline -outline-offset-1 outline-border"
-              }`}
-            >
-              {REVIEW_SORT_LABELS[reviewSort]}
-            </button>
-          ))}
-        </div>
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isUnrepliedOnly}
-            onChange={(changeEvent) => changeUnrepliedOnly(changeEvent.target.checked)}
-            className="size-4 cursor-pointer accent-primary"
-          />
-          <span className="text-sm text-foreground">Only ones you have not answered</span>
-        </label>
-      </div>
+      <SellerReviewsFilterBar
+        sort={sort}
+        isUnrepliedOnly={isUnrepliedOnly}
+        onSortChange={changeSort}
+        onUnrepliedChange={changeUnrepliedOnly}
+      />
 
       {inboxQuery.isPending ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -108,80 +252,13 @@ export default function SellerReviewsPage() {
             : "These reviews could not be loaded."}
         </p>
       ) : (
-        <>
-          <p className="pb-3 text-xs text-muted-foreground">
-            {/* Over every visible review, never the filtered page — see note 3. */}
-            {page.summary.reviewCount === 0
-              ? "Nobody has reviewed you yet."
-              : `${formatCountLabel(page.summary.reviewCount)} in total, averaging ${page.summary.averageRating?.toFixed(1) ?? "—"}.`}
-          </p>
-
-          {page.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {isUnrepliedOnly ? "You have answered every review." : "Nothing matches that filter."}
-            </p>
-          ) : (
-            <ul className="space-y-4">
-              {page.items.map((review) => (
-                <li key={review.id} className="rounded-xl border border-border p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-primary px-1.5 py-0.5 text-xs font-medium text-primary-foreground">
-                      {review.rating.toFixed(1)}
-                    </span>
-                    {/* No privileged identity here — see note 2. */}
-                    <span className="text-xs font-medium text-foreground">
-                      {review.reviewer?.displayName ?? "Verified buyer"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatIsoInstantLabel(review.createdAt)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatCountLabel(review.helpfulCount)} found this helpful
-                    </span>
-                  </div>
-
-                  <p className="mt-2 text-sm leading-5 whitespace-pre-line text-foreground">
-                    {review.body}
-                  </p>
-
-                  <SellerReviewReply
-                    reviewId={review.id}
-                    existingReplyBody={review.reply?.body ?? null}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/*
-            FORWARD-ONLY, and that is the keyset's shape rather than a shortcut. A keyset cursor
-            points at one row; there is no "previous" token to hold without stacking them, and a
-            page-number control would need a COUNT this route does not return. "Start over" is the
-            honest way back, and it is exactly the reset every filter change performs.
-          */}
-          {(page.page.hasMore || cursor !== null) && (
-            <div className="mt-4 flex items-center gap-3">
-              {cursor !== null && (
-                <button
-                  type="button"
-                  onClick={() => setCursor(null)}
-                  className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
-                >
-                  Start over
-                </button>
-              )}
-              {page.page.hasMore && page.page.nextCursor !== null && (
-                <button
-                  type="button"
-                  onClick={() => setCursor(page.page.nextCursor)}
-                  className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
-                >
-                  Show older
-                </button>
-              )}
-            </div>
-          )}
-        </>
+        <SellerReviewsList
+          page={page}
+          isUnrepliedOnly={isUnrepliedOnly}
+          cursor={cursor}
+          onStartOver={() => setCursor(null)}
+          onNextPage={(next) => setCursor(next)}
+        />
       )}
     </div>
   );

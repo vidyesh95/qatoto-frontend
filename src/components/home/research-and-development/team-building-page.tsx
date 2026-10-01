@@ -44,8 +44,10 @@ export default async function TeamBuildingPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  const [resolvedSearchParams, requestOptions] = await Promise.all([
+    searchParams,
+    callerRequestOptions(),
+  ]);
 
   const openRolesFilter: ListOpenRolesFilter = {
     limit: OPEN_ROLES_PAGE_LIMIT,

@@ -11,6 +11,7 @@ import HairlineDefinitionRow, {
   type HairlineDefinitionFact,
 } from "@/components/home/shared/hairline-definition-row";
 import { getProblemCluster } from "@/lib/rnd/discovery.api";
+import type { ProblemClusterDetail } from "@/lib/rnd/discovery.schemas";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import { callerRequestOptions } from "@/lib/server-http";
 
@@ -111,6 +112,108 @@ function buildClusterFacts(cluster: {
  * absence. Zero would publish "no opportunity here" as a finding about the place when the
  * only finding is that no job has run yet.
  */
+type ProblemCluster = ProblemClusterDetail;
+
+function ClusterStatusBanners({ cluster }: { cluster: ProblemCluster }) {
+  return (
+    <>
+      {/* A merged cluster still resolves, and saying where it went is the only honest
+          way to render it — the reports did not disappear, they were deduplicated. */}
+      {cluster.status === "merged" && cluster.mergedIntoClusterId !== null && (
+        <div className="rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
+          This cluster was merged into another one.{" "}
+          <Link
+            href={`/research-and-development/problem-map/cluster/${cluster.mergedIntoClusterId}`}
+            className="font-medium text-primary-imprint"
+          >
+            Open the cluster it merged into →
+          </Link>
+        </div>
+      )}
+
+      {/* A resolved cluster is off the map, like a merged one, and its page says why. The note is
+          the moderator's PUBLIC account of the fix — the "verified" in "verified problem
+          resolution" — never anything a reporter wrote. */}
+      {cluster.status === "resolved" && cluster.resolvedAt !== null && (
+        <div className="space-y-1 rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
+          <p className="font-medium">Marked resolved on {formatIsoInstant(cluster.resolvedAt)}</p>
+          {cluster.resolutionNote !== null && (
+            <p className="max-w-prose text-muted-foreground">{cluster.resolutionNote}</p>
+          )}
+        </div>
+      )}
+
+      {/* Rendered only for a `moderate_clusters` holder, and only where a verb exists. */}
+      {(cluster.status === "active" || cluster.status === "resolved") && (
+        <ClusterResolutionControl clusterId={cluster.id} status={cluster.status} />
+      )}
+    </>
+  );
+}
+
+function ClusterPhotosSection({
+  photos,
+  title,
+  photosRemovedAt,
+}: {
+  photos: ProblemCluster["photos"];
+  title: string;
+  photosRemovedAt: string | null;
+}) {
+  if (photos.length > 0) {
+    return (
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium">Photos from reporters</h2>
+        <ProblemReportPhotoRow
+          photos={photos}
+          size="regular"
+          altText={`A reporter's photo of: ${title}`}
+        />
+        <p className="text-xs text-muted-foreground">
+          Posted by reporters and not reviewed by Qatoto. Location data is removed from every file
+          before it is stored.
+        </p>
+      </section>
+    );
+  }
+
+  if (photosRemovedAt !== null) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Photo removed upon verified problem resolution.
+      </p>
+    );
+  }
+
+  return null;
+}
+
+function ClusterCentroidSection({
+  centroidLatitudeMicrodegrees,
+  centroidLongitudeMicrodegrees,
+  countryCode,
+}: {
+  centroidLatitudeMicrodegrees: number;
+  centroidLongitudeMicrodegrees: number;
+  countryCode: string | null;
+}) {
+  return (
+    <section className="space-y-1 text-xs text-muted-foreground">
+      <p>
+        Centroid{" "}
+        <code className="font-mono">
+          {formatCentroid(centroidLatitudeMicrodegrees, centroidLongitudeMicrodegrees)}
+        </code>
+        {countryCode !== null && ` · ${countryCode}`}
+      </p>
+      <p>
+        Location is server-geocoded from the submissions, never claimed by a reporter, and the
+        centroid is quantized before publication so no single report can be located from it.
+      </p>
+    </section>
+  );
+}
+
 export default async function ClusterDetailPage({ clusterId }: { clusterId: string }) {
   const requestOptions = await callerRequestOptions();
   const clusterResult = await getProblemCluster(clusterId, requestOptions);
@@ -143,67 +246,17 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
         </p>
       </header>
 
-      {/* A merged cluster still resolves, and saying where it went is the only honest
-          way to render it — the reports did not disappear, they were deduplicated. */}
-      {cluster.status === "merged" && cluster.mergedIntoClusterId !== null && (
-        <div className="rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
-          This cluster was merged into another one.{" "}
-          <Link
-            href={`/research-and-development/problem-map/cluster/${cluster.mergedIntoClusterId}`}
-            className="font-medium text-primary-imprint"
-          >
-            Open the cluster it merged into →
-          </Link>
-        </div>
-      )}
-
-      {/* A resolved cluster is off the map, like a merged one, and its page says why. The note is
-          the moderator's PUBLIC account of the fix — the "verified" in "verified problem
-          resolution" — never anything a reporter wrote. */}
-      {cluster.status === "resolved" && cluster.resolvedAt !== null && (
-        <div className="space-y-1 rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
-          <p className="font-medium">Marked resolved on {formatIsoInstant(cluster.resolvedAt)}</p>
-          {cluster.resolutionNote !== null && (
-            <p className="max-w-prose text-muted-foreground">{cluster.resolutionNote}</p>
-          )}
-        </div>
-      )}
-
-      {/* Rendered only for a `moderate_clusters` holder, and only where a verb exists. */}
-      {(cluster.status === "active" || cluster.status === "resolved") && (
-        <ClusterResolutionControl clusterId={cluster.id} status={cluster.status} />
-      )}
+      <ClusterStatusBanners cluster={cluster} />
 
       {cluster.description !== null && (
         <p className="max-w-prose text-sm leading-6">{cluster.description}</p>
       )}
 
-      {/* Ground proof from the people who reported it, newest first and at most twelve. The
-          server sends none for a hidden cluster or a report struck from the count, and an empty
-          list renders nothing — most clusters have no photos. */}
-      {cluster.photos.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-medium">Photos from reporters</h2>
-          <ProblemReportPhotoRow
-            photos={cluster.photos}
-            size="regular"
-            altText={`A reporter's photo of: ${cluster.title}`}
-          />
-          <p className="text-xs text-muted-foreground">
-            Posted by reporters and not reviewed by Qatoto. Location data is removed from every file
-            before it is stored.
-          </p>
-        </section>
-      )}
-
-      {/* ⚠️ **ONLY WHERE IT IS TRUE.** `photosRemovedAt` is stamped by the 90-days-after-resolution
-          purge only when it actually removed photos, so a cluster that never had any — most of
-          them — still renders nothing here. New photos after a reopen show instead of this. */}
-      {cluster.photos.length === 0 && cluster.photosRemovedAt !== null && (
-        <p className="text-sm text-muted-foreground">
-          Photo removed upon verified problem resolution.
-        </p>
-      )}
+      <ClusterPhotosSection
+        photos={cluster.photos}
+        title={cluster.title}
+        photosRemovedAt={cluster.photosRemovedAt}
+      />
 
       {/* ⚠️ **ONE HAIRLINE ROW, NOT FOUR BOXES** (`todo.md` §19.11). This was a
           `sm:grid-cols-2 xl:grid-cols-4` of bordered `rounded-2xl` cards with the figures at
@@ -217,25 +270,11 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
           boxes claimed a symmetry the content does not have. */}
       <HairlineDefinitionRow facts={buildClusterFacts(cluster)} />
 
-      <section className="space-y-1 text-xs text-muted-foreground">
-        <p>
-          {/* Mono here and NOT on the counts above. `docs/Design.md` §3 reserves Code type for
-              "anything that must be copied exactly" — a coordinate is; a reporter count is a figure
-              to compare. `place-picker.tsx` already renders a coordinate this way. */}
-          Centroid{" "}
-          <code className="font-mono">
-            {formatCentroid(
-              cluster.centroidLatitudeMicrodegrees,
-              cluster.centroidLongitudeMicrodegrees,
-            )}
-          </code>
-          {cluster.countryCode !== null && ` · ${cluster.countryCode}`}
-        </p>
-        <p>
-          Location is server-geocoded from the submissions, never claimed by a reporter, and the
-          centroid is quantized before publication so no single report can be located from it.
-        </p>
-      </section>
+      <ClusterCentroidSection
+        centroidLatitudeMicrodegrees={cluster.centroidLatitudeMicrodegrees}
+        centroidLongitudeMicrodegrees={cluster.centroidLongitudeMicrodegrees}
+        countryCode={cluster.countryCode}
+      />
     </div>
   );
 }

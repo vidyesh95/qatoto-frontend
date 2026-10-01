@@ -213,9 +213,19 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
         </section>
       )}
 
-      {profile.state === "published" && <EngagementStateControl profile={profile} />}
+      {profile.state === "published" && (
+        <EngagementStateControl
+          key={`${profile.profile.id}:${profile.profile.engagementState}`}
+          profile={profile}
+        />
+      )}
 
-      {isEditable && <EditProfileForm profile={profile} />}
+      {isEditable && (
+        <EditProfileForm
+          key={`${profile.profile.id}:${profile.profile.headline}:${profile.bio}:${profile.lookingFor}`}
+          profile={profile}
+        />
+      )}
 
       <LifecycleControls profile={profile} isEditable={isEditable} />
     </article>
@@ -240,9 +250,9 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
  * would quietly discard somebody's bio.
  */
 function EditProfileForm({ profile }: { profile: OwnCofounderProfile }) {
-  const [headline, setHeadline] = useState(profile.profile.headline);
-  const [bio, setBio] = useState(profile.bio);
-  const [lookingFor, setLookingFor] = useState(profile.lookingFor);
+  const [headline, setHeadline] = useState(() => profile.profile.headline);
+  const [bio, setBio] = useState(() => profile.bio);
+  const [lookingFor, setLookingFor] = useState(() => profile.lookingFor);
   const updateProfile = useUpdateOwnCofounderProfile();
 
   const trimmedHeadline = headline.trim();
@@ -328,7 +338,7 @@ function EditProfileForm({ profile }: { profile: OwnCofounderProfile }) {
 
 function EngagementStateControl({ profile }: { profile: OwnCofounderProfile }) {
   const [engagementState, setEngagementState] = useState<CofounderEngagementState>(
-    profile.profile.engagementState,
+    () => profile.profile.engagementState,
   );
   const updateEngagementState = useUpdateOwnCofounderEngagementState();
 

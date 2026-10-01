@@ -4,9 +4,9 @@
 import {
   MetricsSection,
   MetricsStateNotice,
-  toMetricsViewState,
   type MetricsViewState,
 } from "@/components/admin/metrics/metrics-section";
+import { toMetricsViewState } from "@/lib/admin/metrics-view-state";
 import { BarSeries } from "@/components/charts/bar-series";
 import { ChartFrame, type ChartBand } from "@/components/charts/chart-frame";
 import { useActivityByHourQuery } from "@/hooks/admin/platform-metrics";

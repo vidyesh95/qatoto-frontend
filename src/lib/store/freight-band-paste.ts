@@ -1,4 +1,4 @@
-import type { WeightBandDraft } from "@/components/commerce/freight/weight-band-editor";
+import type { WeightBandDraft } from "@/lib/store/freight-band-draft";
 
 /**
  * A forwarder's tariff pasted straight out of a spreadsheet (§19.12).

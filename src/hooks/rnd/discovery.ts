@@ -279,8 +279,12 @@ export function useCreateProblemReportMutation() {
  * it, and the report's own mutation invalidates the list that will show it.
  */
 export function useUploadProblemReportPhotoMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (photoFile: File) => unwrap(await uploadProblemReportPhoto(photoFile)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.myProblemReports(undefined) });
+    },
   });
 }
 

@@ -64,8 +64,141 @@ const MISSING_FIELD_LABELS: Record<string, string> = {
  * `PUT`, not `PATCH`: the whole profile goes every time, because a partial would make
  * "cleared this field" and "did not touch it" the same request.
  */
-export default function EditTalentProfileSheet() {
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+type DiscoverySkillItem = NonNullable<ReturnType<typeof useDiscoverySkillsQuery>["data"]>[number];
+
+function mapLoadedCompensationAsks(loadedProfile?: TalentProfileMe) {
+  return (loadedProfile?.compensationAsks ?? []).map((ask) => {
+    switch (ask.kind) {
+      case "salary":
+        return {
+          kind: "salary" as const,
+          salaryMinInCentsPerMonth: ask.salaryMinInCentsPerMonth,
+          ...(ask.salaryMaxInCentsPerMonth === null
+            ? {}
+            : { salaryMaxInCentsPerMonth: ask.salaryMaxInCentsPerMonth }),
+        };
+      case "one_time":
+        return {
+          kind: "one_time" as const,
+          oneTimeMinInCents: ask.oneTimeMinInCents,
+          ...(ask.oneTimeMaxInCents === null ? {} : { oneTimeMaxInCents: ask.oneTimeMaxInCents }),
+        };
+      case "equity":
+        return {
+          kind: "equity" as const,
+          equityBasisPointsMin: ask.equityBasisPointsMin,
+          ...(ask.equityBasisPointsMax === null
+            ? {}
+            : { equityBasisPointsMax: ask.equityBasisPointsMax }),
+        };
+      default: {
+        const exhaustiveCheck: never = ask;
+        return exhaustiveCheck;
+      }
+    }
+  });
+}
+
+function TalentProfileSkillSelector({
+  skills,
+  selectedSlugs,
+  onToggleSkill,
+}: {
+  skills: readonly DiscoverySkillItem[];
+  selectedSlugs: readonly string[];
+  onToggleSkill: (slug: string) => void;
+}) {
+  const selectedSlugsSet = new Set(selectedSlugs);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={LABEL_CLASS}>Skills</span>
+      <div className="flex flex-wrap gap-2">
+        {skills.map((skill) => (
+          <button
+            key={skill.slug}
+            type="button"
+            onClick={() => onToggleSkill(skill.slug)}
+            aria-pressed={selectedSlugsSet.has(skill.slug)}
+            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
+              selectedSlugsSet.has(skill.slug)
+                ? "bg-primary-imprint text-primary-imprint-foreground"
+                : "bg-muted text-foreground"
+            }`}
+          >
+            {skill.displayLabel}
+          </button>
+        ))}
+      </div>
+      <span className="text-xs text-muted-foreground">
+        Chosen from Qatoto&apos;s skill list, not typed. A ✓ on your public profile means the
+        verification pipeline recorded effort against that skill — nobody can set that by hand,
+        including you.
+      </span>
+    </div>
+  );
+}
+
+function TalentProfileActions({
+  isSavePending,
+  isUnpublishPending,
+  isPublished,
+  isPublishable,
+  missingForPublish,
+  onSaveAndPublish,
+  onUnpublish,
+}: {
+  isSavePending: boolean;
+  isUnpublishPending: boolean;
+  isPublished: boolean;
+  isPublishable: boolean;
+  missingForPublish: readonly string[];
+  onSaveAndPublish: () => void;
+  onUnpublish: () => void;
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          disabled={isSavePending}
+          className="rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
+        >
+          {isSavePending ? "Saving…" : "Save"}
+        </button>
+
+        {isPublished ? (
+          <button
+            type="button"
+            disabled={isUnpublishPending}
+            onClick={onUnpublish}
+            className="rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-40"
+          >
+            Take it out of the directory
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={isSavePending || !isPublishable}
+            onClick={onSaveAndPublish}
+            className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
+          >
+            Save and publish
+          </button>
+        )}
+      </div>
+
+      {!isPublished && missingForPublish.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Before it can be published you need{" "}
+          {missingForPublish.map((field) => MISSING_FIELD_LABELS[field] ?? field).join(", ")}.
+        </p>
+      )}
+    </>
+  );
+}
+
+function EditTalentProfileForm({ onClose: _onClose }: { onClose: () => void }) {
   const [headlineRole, setHeadlineRole] = useState("");
   const [bio, setBio] = useState("");
   const [availability, setAvailability] = useState<TalentAvailability>("open_to_offers");
@@ -74,13 +207,11 @@ export default function EditTalentProfileSheet() {
   const [skillSlugs, setSkillSlugs] = useState<string[]>([]);
   const [seededProfile, setSeededProfile] = useState<TalentProfileMe | undefined>(undefined);
 
-  const profileQuery = useMyTalentProfileQuery(isSheetOpen);
+  const profileQuery = useMyTalentProfileQuery(true);
   const skillsQuery = useDiscoverySkillsQuery();
   const saveMutation = useSaveTalentProfileMutation();
   const unpublishMutation = useUnpublishTalentProfileMutation();
 
-  // Seed the form once the profile arrives. A profile that has never existed answers
-  // 404, and the empty form IS the correct first-run state rather than an error.
   const loadedProfile = profileQuery.data;
   if (loadedProfile !== undefined && loadedProfile !== seededProfile) {
     setSeededProfile(loadedProfile);
@@ -101,11 +232,12 @@ export default function EditTalentProfileSheet() {
   const isPublished = loadedProfile?.isPublished ?? false;
 
   function toggleSkill(skillSlug: string) {
-    setSkillSlugs((previousSlugs) =>
-      previousSlugs.includes(skillSlug)
+    setSkillSlugs((previousSlugs) => {
+      const previousSlugsSet = new Set(previousSlugs);
+      return previousSlugsSet.has(skillSlug)
         ? previousSlugs.filter((slug) => slug !== skillSlug)
-        : [...previousSlugs, skillSlug],
-    );
+        : [...previousSlugs, skillSlug];
+    });
   }
 
   function saveProfile(shouldPublish: boolean) {
@@ -117,37 +249,112 @@ export default function EditTalentProfileSheet() {
         locationLabel: locationLabel.trim() || null,
         bio: bio.trim() || null,
         skillSlugs,
-        // The ask editor is not built, and a PUT that omitted `compensationAsks` would
-        // CLEAR them — so the loaded asks are echoed back rather than silently dropped.
-        compensationAsks: (loadedProfile?.compensationAsks ?? []).map((ask) =>
-          ask.kind === "salary"
-            ? {
-                kind: "salary" as const,
-                salaryMinInCentsPerMonth: ask.salaryMinInCentsPerMonth,
-                ...(ask.salaryMaxInCentsPerMonth === null
-                  ? {}
-                  : { salaryMaxInCentsPerMonth: ask.salaryMaxInCentsPerMonth }),
-              }
-            : ask.kind === "one_time"
-              ? {
-                  kind: "one_time" as const,
-                  oneTimeMinInCents: ask.oneTimeMinInCents,
-                  ...(ask.oneTimeMaxInCents === null
-                    ? {}
-                    : { oneTimeMaxInCents: ask.oneTimeMaxInCents }),
-                }
-              : {
-                  kind: "equity" as const,
-                  equityBasisPointsMin: ask.equityBasisPointsMin,
-                  ...(ask.equityBasisPointsMax === null
-                    ? {}
-                    : { equityBasisPointsMax: ask.equityBasisPointsMax }),
-                },
-        ),
+        compensationAsks: mapLoadedCompensationAsks(loadedProfile),
       },
       shouldPublish,
     });
   }
+
+  return (
+    <form
+      className="flex flex-col gap-4 px-4 pb-6"
+      onSubmit={(submitEvent) => {
+        submitEvent.preventDefault();
+        saveProfile(false);
+      }}
+    >
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Headline role</span>
+        <input
+          type="text"
+          value={headlineRole}
+          onChange={(changeEvent) => setHeadlineRole(changeEvent.target.value)}
+          placeholder="e.g. Embedded firmware engineer"
+          className={INPUT_CLASS}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>About you</span>
+        <textarea
+          value={bio}
+          onChange={(changeEvent) => setBio(changeEvent.target.value)}
+          rows={4}
+          className={INPUT_CLASS}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Availability</span>
+        <select
+          value={availability}
+          onChange={(changeEvent) => {
+            const parsed = TalentAvailabilitySchema.safeParse(changeEvent.target.value);
+            if (parsed.success) setAvailability(parsed.data);
+          }}
+          className={INPUT_CLASS}
+        >
+          {TALENT_AVAILABILITIES.map((option) => (
+            <option key={option} value={option}>
+              {AVAILABILITY_LABELS[option]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Commitment</span>
+        <select
+          value={commitment}
+          onChange={(changeEvent) => {
+            const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
+            if (parsed.success) setCommitment(parsed.data);
+          }}
+          className={INPUT_CLASS}
+        >
+          {ROLE_COMMITMENTS.map((option) => (
+            <option key={option} value={option}>
+              {ROLE_COMMITMENT_LABELS[option]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Where you are</span>
+        <input
+          type="text"
+          value={locationLabel}
+          onChange={(changeEvent) => setLocationLabel(changeEvent.target.value)}
+          placeholder="City or region"
+          className={INPUT_CLASS}
+        />
+      </label>
+
+      <TalentProfileSkillSelector
+        skills={skillsQuery.data ?? []}
+        selectedSlugs={skillSlugs}
+        onToggleSkill={toggleSkill}
+      />
+
+      <TalentProfileActions
+        isSavePending={saveMutation.isPending}
+        isUnpublishPending={unpublishMutation.isPending}
+        isPublished={isPublished}
+        isPublishable={isPublishable}
+        missingForPublish={missingForPublish}
+        onSaveAndPublish={() => saveProfile(true)}
+        onUnpublish={() => unpublishMutation.mutate()}
+      />
+
+      {saveError !== undefined && <MutationErrorNotice error={saveError.apiError} />}
+      {saveMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
+    </form>
+  );
+}
+
+export default function EditTalentProfileSheet() {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   return (
     <>
@@ -162,154 +369,9 @@ export default function EditTalentProfileSheet() {
       <RndSheet
         title="Your talent profile"
         isOpen={isSheetOpen}
-        onClose={() => {
-          setIsSheetOpen(false);
-          saveMutation.reset();
-          unpublishMutation.reset();
-        }}
+        onClose={() => setIsSheetOpen(false)}
       >
-        <form
-          className="flex flex-col gap-4 px-4 pb-6"
-          onSubmit={(submitEvent) => {
-            submitEvent.preventDefault();
-            saveProfile(false);
-          }}
-        >
-          <label className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>Headline role</span>
-            <input
-              type="text"
-              value={headlineRole}
-              onChange={(changeEvent) => setHeadlineRole(changeEvent.target.value)}
-              placeholder="e.g. Embedded firmware engineer"
-              className={INPUT_CLASS}
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>About you</span>
-            <textarea
-              value={bio}
-              onChange={(changeEvent) => setBio(changeEvent.target.value)}
-              rows={4}
-              className={INPUT_CLASS}
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>Availability</span>
-            <select
-              value={availability}
-              onChange={(changeEvent) => {
-                const parsed = TalentAvailabilitySchema.safeParse(changeEvent.target.value);
-                if (parsed.success) setAvailability(parsed.data);
-              }}
-              className={INPUT_CLASS}
-            >
-              {TALENT_AVAILABILITIES.map((option) => (
-                <option key={option} value={option}>
-                  {AVAILABILITY_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>Commitment</span>
-            <select
-              value={commitment}
-              onChange={(changeEvent) => {
-                const parsed = RoleCommitmentSchema.safeParse(changeEvent.target.value);
-                if (parsed.success) setCommitment(parsed.data);
-              }}
-              className={INPUT_CLASS}
-            >
-              {ROLE_COMMITMENTS.map((option) => (
-                <option key={option} value={option}>
-                  {ROLE_COMMITMENT_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>Where you are</span>
-            <input
-              type="text"
-              value={locationLabel}
-              onChange={(changeEvent) => setLocationLabel(changeEvent.target.value)}
-              placeholder="City or region"
-              className={INPUT_CLASS}
-            />
-          </label>
-
-          <div className="flex flex-col gap-1">
-            <span className={LABEL_CLASS}>Skills</span>
-            <div className="flex flex-wrap gap-2">
-              {(skillsQuery.data ?? []).map((skill) => (
-                <button
-                  key={skill.slug}
-                  type="button"
-                  onClick={() => toggleSkill(skill.slug)}
-                  aria-pressed={skillSlugs.includes(skill.slug)}
-                  className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
-                    skillSlugs.includes(skill.slug)
-                      ? "bg-primary-imprint text-primary-imprint-foreground"
-                      : "bg-muted text-foreground"
-                  }`}
-                >
-                  {skill.displayLabel}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Chosen from Qatoto&apos;s skill list, not typed. A ✓ on your public profile means the
-              verification pipeline recorded effort against that skill — nobody can set that by
-              hand, including you.
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={saveMutation.isPending}
-              className="rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
-            >
-              {saveMutation.isPending ? "Saving…" : "Save"}
-            </button>
-
-            {isPublished ? (
-              <button
-                type="button"
-                disabled={unpublishMutation.isPending}
-                onClick={() => unpublishMutation.mutate()}
-                className="rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-40"
-              >
-                Take it out of the directory
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={saveMutation.isPending || !isPublishable}
-                onClick={() => saveProfile(true)}
-                className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
-              >
-                Save and publish
-              </button>
-            )}
-          </div>
-
-          {/* Names what is missing rather than leaving the button inexplicably grey. */}
-          {!isPublished && missingForPublish.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Before it can be published you need{" "}
-              {missingForPublish.map((field) => MISSING_FIELD_LABELS[field] ?? field).join(", ")}.
-            </p>
-          )}
-
-          {saveError !== undefined && <MutationErrorNotice error={saveError.apiError} />}
-          {saveMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
-        </form>
+        {isSheetOpen && <EditTalentProfileForm onClose={() => setIsSheetOpen(false)} />}
       </RndSheet>
     </>
   );

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 
+import { AuthoringReceiptMeta } from "@/components/home/blueprints/shared/authoring-receipt-meta";
 import ShowcaseLaunchRowPreview from "@/components/home/blueprints/showcase/authoring/showcase-launch-row-preview";
 import { MutationAcceptedNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import type { ShowcaseSubmissionReceipt } from "@/lib/blueprints/showcase-authoring.schemas";
-import { formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
  * THE TERMINAL SCREEN, after the launch is stored.
@@ -33,18 +33,11 @@ export default function ShowcaseLaunchReceipt({
         <MutationAcceptedNotice message="Your launch is saved and waiting for a moderator. It is not in the feed, and nobody else can see it while it is in review." />
       </div>
 
-      <dl className="mt-4">
-        <div className="border-t border-border py-2">
-          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Launch</dt>
-          <dd className="mt-0.5 font-mono text-sm text-foreground">{receipt.submissionId}</dd>
-        </div>
-        <div className="border-t border-border py-2">
-          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Received</dt>
-          <dd className="mt-0.5 text-sm text-foreground">
-            {formatIsoInstantLabel(receipt.receivedAt)}
-          </dd>
-        </div>
-      </dl>
+      <AuthoringReceiptMeta
+        itemLabel="Launch"
+        submissionId={receipt.submissionId}
+        receivedAt={receipt.receivedAt}
+      />
 
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
         <p className="text-xs tracking-wider text-muted-foreground uppercase">

@@ -20,66 +20,16 @@ import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 import { pricingErrorLabel } from "@/lib/store/merchandising.schemas";
 import { STOCK_STATE_LABELS } from "@/lib/store/organizations.schemas";
 
-export default function CartLineRow({ item }: { item: CommerceCartItem }) {
-  const setCartItem = useSetCartItem();
-  const removeCartItem = useRemoveCartItem();
-
-  const isMutating = setCartItem.isPending || removeCartItem.isPending;
-
-  // The MOQ floor for a bulk line, and 1 for a sample — a sample bypasses the minimum order quantity
-  // because a minimum expresses bulk economics and a sample is the negation of bulk. The server
-  // enforces this; the stepper only avoids sending a value it already knows will be refused.
-  const minimumQuantity = item.isSample ? 1 : (item.minimumOrderQuantity ?? 1);
-
-  // And the ceiling, which only a sample line has. A bulk line has a floor it may walk up from —
-  // that is what a tier ladder is for — while a sample is bounded above because the bypass of the
-  // ladder and the MOQ only holds while the line stays small.
-  //
-  // FAILS CLOSED ON NULL. A sample line that did not price reports no ceiling, and an unknown
-  // ceiling is not an absent one: on a refundable listing the quantity is what sizes the credit,
-  // so the stepper refuses to raise it rather than guessing the seller allows more.
-  const maximumQuantity = item.isSample ? item.maximumSampleQuantity : null;
-  const isAtMaximumQuantity =
-    item.isSample && (maximumQuantity === null || item.quantity >= maximumQuantity);
-
-  const submitQuantity = (quantity: number) => {
-    if (quantity < minimumQuantity) return;
-    if (maximumQuantity !== null && quantity > maximumQuantity) return;
-    if (item.isSample && maximumQuantity === null && quantity > item.quantity) return;
-    setCartItem.mutate({
-      productId: item.productId,
-      input: {
-        quantity,
-        // Both flags travel with every write: they are part of the line's identity, so omitting one
-        // would edit — or create — a different line.
-        ...(item.variantId === null ? {} : { variantId: item.variantId }),
-        isSample: item.isSample,
-      },
-    });
-  };
-
-  const priceLabel =
-    item.currency === null || item.unitPriceInCents === null
-      ? null
-      : formatCentsLabel(item.unitPriceInCents, item.currency);
-  const lineTotalLabel =
-    item.currency === null || item.lineTotalInCents === null
-      ? null
-      : formatCentsLabel(item.lineTotalInCents, item.currency);
-
+function CartLineBadgesAndStatus({ item }: { item: CommerceCartItem }) {
   return (
-    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+    <>
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
         <p className="min-w-0 flex-1 text-sm leading-5 font-medium text-foreground">{item.title}</p>
-
-        {/* A sample and a bulk line of the same product are two entries, so the badge is what tells
-            them apart at a glance. */}
         {item.isSample && (
           <span className="rounded bg-secondary px-1.5 py-0.5 text-xs leading-4 font-medium text-primary-imprint">
             Sample
           </span>
         )}
-
         {item.isMadeToOrder === true && (
           <span className="rounded bg-muted px-1.5 py-0.5 text-xs leading-4 font-medium text-outline-strong">
             Made to order
@@ -91,12 +41,6 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
         <p className="text-xs leading-4 text-outline-strong">{item.variantName}</p>
       )}
 
-      {/* Only an unusual stock state earns a line. "In stock" on every row is noise, and `stockState`
-          is optional on the wire so its absence is not a state to render either.
-
-          `made_to_order` is ALSO excluded, because `isMadeToOrder` already put that badge above — the
-          first version of this row rendered "Made to order" twice, once from each field. They are two
-          spellings of one fact, and the badge is the better placement. */}
       {item.stockState !== undefined &&
         item.stockState !== "in_stock" &&
         item.stockState !== "made_to_order" && (
@@ -110,63 +54,135 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
           {pricingErrorLabel(item.pricingError)}
         </p>
       )}
+    </>
+  );
+}
+
+function CartLinePriceDisplay({ item }: { item: CommerceCartItem }) {
+  const priceLabel =
+    item.currency === null || item.unitPriceInCents === null
+      ? null
+      : formatCentsLabel(item.unitPriceInCents, item.currency);
+  const lineTotalLabel =
+    item.currency === null || item.lineTotalInCents === null
+      ? null
+      : formatCentsLabel(item.lineTotalInCents, item.currency);
+
+  if (lineTotalLabel === null) {
+    return (
+      <div className="text-right">
+        <p className="text-xs leading-4 text-outline-strong">Not priced</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-right">
+      <p className="text-sm leading-5 font-medium text-foreground">{lineTotalLabel}</p>
+      {priceLabel !== null && (
+        <p className="text-xs leading-4 text-outline-strong">{priceLabel} each</p>
+      )}
+    </div>
+  );
+}
+
+interface CartLineQuantityStepperProps {
+  item: CommerceCartItem;
+  isMutating: boolean;
+  minimumQuantity: number;
+  maximumQuantity: number | null;
+  isAtMaximumQuantity: boolean;
+  onQuantitySubmit: (quantity: number) => void;
+}
+
+function CartLineQuantityStepper({
+  item,
+  isMutating,
+  minimumQuantity,
+  maximumQuantity,
+  isAtMaximumQuantity,
+  onQuantitySubmit,
+}: CartLineQuantityStepperProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onQuantitySubmit(item.quantity - 1)}
+        disabled={isMutating || item.quantity <= minimumQuantity}
+        aria-label={`Reduce quantity of ${item.title}`}
+        className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
+      >
+        −
+      </button>
+
+      <span className="min-w-12 text-center text-sm font-medium text-foreground">
+        {formatCountLabel(item.quantity)}
+      </span>
+
+      <button
+        type="button"
+        onClick={() => onQuantitySubmit(item.quantity + 1)}
+        disabled={isMutating || isAtMaximumQuantity}
+        aria-label={`Increase quantity of ${item.title}`}
+        className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
+      >
+        +
+      </button>
+
+      {item.minimumOrderQuantity !== null && !item.isSample && (
+        <span className="text-xs leading-4 text-outline-strong">
+          min {formatCountLabel(item.minimumOrderQuantity)}
+        </span>
+      )}
+
+      {item.isSample && maximumQuantity !== null && (
+        <span className="text-xs leading-4 text-outline-strong">
+          max {formatCountLabel(maximumQuantity)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default function CartLineRow({ item }: { item: CommerceCartItem }) {
+  const setCartItem = useSetCartItem();
+  const removeCartItem = useRemoveCartItem();
+
+  const isMutating = setCartItem.isPending || removeCartItem.isPending;
+  const minimumQuantity = item.isSample ? 1 : (item.minimumOrderQuantity ?? 1);
+  const maximumQuantity = item.isSample ? item.maximumSampleQuantity : null;
+  const isAtMaximumQuantity =
+    item.isSample && (maximumQuantity === null || item.quantity >= maximumQuantity);
+
+  const submitQuantity = (quantity: number) => {
+    if (quantity < minimumQuantity) return;
+    if (maximumQuantity !== null && quantity > maximumQuantity) return;
+    if (item.isSample && maximumQuantity === null && quantity > item.quantity) return;
+    setCartItem.mutate({
+      productId: item.productId,
+      input: {
+        quantity,
+        ...(item.variantId === null ? {} : { variantId: item.variantId }),
+        isSample: item.isSample,
+      },
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-outline-variant/60 px-4 py-3">
+      <CartLineBadgesAndStatus item={item} />
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => submitQuantity(item.quantity - 1)}
-            disabled={isMutating || item.quantity <= minimumQuantity}
-            aria-label={`Reduce quantity of ${item.title}`}
-            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
-          >
-            −
-          </button>
+        <CartLineQuantityStepper
+          item={item}
+          isMutating={isMutating}
+          minimumQuantity={minimumQuantity}
+          maximumQuantity={maximumQuantity}
+          isAtMaximumQuantity={isAtMaximumQuantity}
+          onQuantitySubmit={submitQuantity}
+        />
 
-          {/* Rendered, not editable. A free-text quantity would need debouncing, and a debounced
-              write to a stock reservation is a race the buyer loses silently. */}
-          <span className="min-w-12 text-center text-sm font-medium text-foreground">
-            {formatCountLabel(item.quantity)}
-          </span>
-
-          <button
-            type="button"
-            onClick={() => submitQuantity(item.quantity + 1)}
-            disabled={isMutating || isAtMaximumQuantity}
-            aria-label={`Increase quantity of ${item.title}`}
-            className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
-          >
-            +
-          </button>
-
-          {item.minimumOrderQuantity !== null && !item.isSample && (
-            <span className="text-xs leading-4 text-outline-strong">
-              min {formatCountLabel(item.minimumOrderQuantity)}
-            </span>
-          )}
-
-          {/* The sample line's mirror image of the `min` hint. Rendered only when the ceiling is
-              known — a line that did not price has its stepper disabled and its reason above, and
-              a `max` with no number beside it would read as a bug rather than as caution. */}
-          {item.isSample && maximumQuantity !== null && (
-            <span className="text-xs leading-4 text-outline-strong">
-              max {formatCountLabel(maximumQuantity)}
-            </span>
-          )}
-        </div>
-
-        <div className="text-right">
-          {lineTotalLabel === null ? (
-            <p className="text-xs leading-4 text-outline-strong">Not priced</p>
-          ) : (
-            <>
-              <p className="text-sm leading-5 font-medium text-foreground">{lineTotalLabel}</p>
-              {priceLabel !== null && (
-                <p className="text-xs leading-4 text-outline-strong">{priceLabel} each</p>
-              )}
-            </>
-          )}
-        </div>
+        <CartLinePriceDisplay item={item} />
       </div>
 
       <div className="mt-2 flex items-center gap-3">
@@ -175,10 +191,6 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
           onClick={() =>
             removeCartItem.mutate({
               productId: item.productId,
-              // BOTH halves of the line's identity, for the same reason the quantity write sends
-              // both: variant alone does not name a line. A sample line and a bulk line of one
-              // product share a product id and a variant id, so omitting `isSample` removed the
-              // pair — which is exactly the pair samples exist to let a buyer hold.
               input: {
                 ...(item.variantId === null ? {} : { variantId: item.variantId }),
                 isSample: item.isSample,
@@ -194,8 +206,6 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
         {isMutating && <span className="text-xs leading-4 text-outline-strong">Updating…</span>}
       </div>
 
-      {/* Two notices, one per mutation — see `shared/mutation-notice.tsx` for why a refusal renders
-          the server's own sentence rather than a house error string. */}
       <MutationNotice
         result={setCartItem.data}
         fallbackMessage="Couldn't update that line."

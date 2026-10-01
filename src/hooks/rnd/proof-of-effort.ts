@@ -410,6 +410,7 @@ export function useResolveDisputeMutation(projectSlug: string) {
  * is single-use and expires in ten minutes, so it must not be prefetched or stored.
  */
 export function useIntegrationAuthorizeUrlMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: {
       provider: IntegrationProvider;
@@ -420,6 +421,9 @@ export function useIntegrationAuthorizeUrlMutation(projectSlug: string) {
           requestedResourceIds: variables.requestedResourceIds,
         }),
       ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.integrations(projectSlug) });
+    },
   });
 }
 

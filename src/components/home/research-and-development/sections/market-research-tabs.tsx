@@ -11,9 +11,7 @@
 import Link from "next/link";
 
 import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
-
-export const MARKET_RESEARCH_TABS = ["overview", "demand", "import-substitution"] as const;
-export type MarketResearchTab = (typeof MARKET_RESEARCH_TABS)[number];
+import { MARKET_RESEARCH_TABS, type MarketResearchTab } from "@/lib/rnd/discovery.schemas";
 
 const TAB_LABELS: Record<MarketResearchTab, string> = {
   overview: "Overview",

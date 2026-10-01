@@ -39,7 +39,7 @@ export default function WatchOpenRoles({
       <h2 className="text-sm font-medium text-foreground">Roles this venture is hiring for</h2>
 
       <ul className="space-y-2">
-        {openRoles.map((openRole, index) => {
+        {openRoles.map((openRole) => {
           const linkedRole = openRole.linkedRole;
           const hasOpenSeat =
             linkedRole !== null &&
@@ -48,9 +48,7 @@ export default function WatchOpenRoles({
 
           return (
             <li
-              // The blurbs carry no stable id on the wire and their rows are regenerated on
-              // every save, so position is the only honest key here.
-              key={`${openRole.roleTitle}-${String(index)}`}
+              key={linkedRole?.id ?? `${openRole.roleTitle}:${openRole.roleDescription ?? ""}`}
               className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/50 pb-2 last:border-b-0 last:pb-0"
             >
               <div className="min-w-0">

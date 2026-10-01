@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 
-import CreatableCombobox, { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
+import CreatableCombobox from "@/components/ui/creatable-combobox";
+import { appendOptionNameIfNew } from "@/lib/combobox-helpers";
 import {
   LabeledEnumSelect,
   LabeledTextInput,
@@ -22,7 +23,7 @@ import {
   TEARDOWN_MATERIAL_CLASSES,
 } from "@/lib/blueprints/schemas";
 
-export function newMaterialDraftRow(): MaterialDraftRow {
+function newMaterialDraftRow(): MaterialDraftRow {
   return {
     rowId: crypto.randomUUID(),
     appliesToLabel: "",

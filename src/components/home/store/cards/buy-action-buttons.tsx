@@ -75,186 +75,90 @@ function findBulkCartLine(cart: CommerceCart, productId: string, variantId: stri
   );
 }
 
-export default function BuyActionButtons({
-  productId,
-  productSlug,
-  hasVariants,
-  sellingState,
-  isViewerSignedIn,
-}: BuyActionButtonsProps) {
-  // The composer's route reads this slug server-side and seeds its first product line from the
-  // listing. Encoded because a slug is server-generated but still a URL segment being placed into
-  // a query value.
-  const requestQuoteHref = `/store/rfqs/new?productSlug=${encodeURIComponent(productSlug)}`;
-  // The quantity the buyer set on the price chart's stepper and the variant they picked, not
-  // constants — both controls are visible on the page, and an add that ignored either would put
-  // something different in the cart than the one the buyer is looking at.
-  const { quantity, selectedVariantId } = useProductSelection();
-  const variantId = selectedVariantId;
+interface NotSellingPanelProps {
+  sellingState: Exclude<ProductSellingState, "selling">;
+  requestQuoteHref: string;
+}
 
-  // The one client-side gate here, and it is a refusal the server would issue anyway: a product
-  // that declares variants cannot be added without one. Declining to offer a known-refused request
-  // is not the client enforcing a rule.
-  const isVariantMissing = hasVariants && variantId === null;
-
-  // THE PRODUCT PAGE IS PUBLIC, so the cart read is gated on the session. Without the gate every
-  // anonymous visitor to a product fires a read that can only come back 401.
-  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
-
-  // `useCartQuery`, not the navbar's badge hook: this one refetches on mount, and a stale quantity is
-  // what the addition would be computed from.
-  const router = useRouter();
-  const cartQuery = useCartQuery({ isEnabled: isSignedIn });
-  const setCartItem = useSetCartItem();
-
-  const cartResult = cartQuery.data;
-  const cart = cartResult !== undefined && cartResult.success ? cartResult.data : null;
-
-  // Two ways to land here: the session says signed out, or the cart read itself answered 401.
-  const isSignInRequired =
-    !isSignedIn ||
-    (cartResult !== undefined && !cartResult.success && cartResult.error.code === "401");
-
-  // A DISABLED QUERY STAYS `isPending` FOREVER, so "still loading" cannot be read off the query alone
-  // — a signed-out visitor would sit at a permanent pending state and never be told why the button is
-  // dead. Loading now means only "a query that actually ran has not answered yet": the session no
-  // longer contributes an unknown, because `isViewerSignedIn` seeds it from the server render.
-  const isCartLoading = isSignedIn && cartQuery.isPending;
-
-  const canAddToCart = cart !== null && !setCartItem.isPending && !isVariantMissing;
-
-  const handleAddToCartClick = () => {
-    if (cart === null) return;
-    const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
-    setCartItem.mutate({
-      productId,
-      input: {
-        quantity: existingQuantity + quantity,
-        ...(variantId === null ? {} : { variantId }),
-        isSample: false,
-      },
-    });
-  };
-
-  /**
-   * "BUY NOW" IS ADD-THEN-GO, AND THE ADD IS AWAITED.
-   *
-   * The line has to EXIST before checkout can name it: prepare selects cart lines by tuple, so
-   * navigating before the write lands would arrive at a checkout scoped to a line that is not
-   * there yet and be refused with `CHECKOUT_ITEMS_NOT_IN_CART`.
-   *
-   * IT REUSES `useSetCartItem` rather than adding a second write path, which means it inherits the
-   * read-modify-write above: buying 50 of something a colleague already has 120 of in the shared
-   * organization cart checks out 170, not 50. That is the same arithmetic "Add to cart" does, and
-   * the alternative — a private quantity this button alone knows about — is a second cart.
-   */
-  const handleBuyNowClick = () => {
-    if (cart === null) return;
-    const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
-    setCartItem.mutate(
-      {
-        productId,
-        input: {
-          quantity: existingQuantity + quantity,
-          ...(variantId === null ? {} : { variantId }),
-          isSample: false,
-        },
-      },
-      {
-        onSuccess: (result) => {
-          // A refusal is a resolved mutation, not an error. Staying put leaves the reason on
-          // screen; navigating would replace it with a checkout that cannot name the line.
-          if (!result.success) return;
-          const parameters = new URLSearchParams({ buyNow: productId });
-          if (variantId !== null) parameters.set("variantId", variantId);
-          router.push(`/checkout?${parameters.toString()}`);
-        },
-      },
-    );
-  };
-
-  const addResult = setCartItem.data;
-  const confirmedLine =
-    addResult !== undefined && addResult.success
-      ? findBulkCartLine(addResult.data, productId, variantId)
-      : null;
-
-  /**
-   * §21.2. NOT SELLING MEANS NO BUY CONTROLS AT ALL — not disabled ones.
-   *
-   * The server refuses the add with a 409, so a live-looking button would only produce an error the
-   * buyer cannot act on. The quote link SURVIVES, deliberately: "this exact one is gone, ask the
-   * seller what replaces it" is the single most useful thing a discontinued page can offer, and it
-   * is the whole reason the page stays at 200 instead of 404ing.
-   */
-  if (sellingState !== "selling") {
-    return (
-      <div className="w-full">
-        <p className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
-          <span className="font-medium">{SELLING_STATE_LABELS[sellingState]}.</span>{" "}
-          {sellingState === "discontinued"
-            ? "This listing is no longer sold. Any replacements the seller has listed are shown below."
-            : "The seller has paused this listing, so it cannot be ordered right now."}
-        </p>
-        <Link
-          href={requestQuoteHref}
-          className="flex w-full items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
-        >
-          Request a quote
-        </Link>
-      </div>
-    );
-  }
-
+function NotSellingPanel({ sellingState, requestQuoteHref }: NotSellingPanelProps) {
   return (
     <div className="w-full">
-      <div className="flex gap-2">
-        {/* THIS WAS AN INERT "Send inquiry", AND IT WAS ALSO A DUPLICATE. The comment here used to
-            say an inquiry is the RFQ path and left the button doing nothing — but the inquiry half
-            already works elsewhere on this page: `sections/store-and-chat-actions.tsx` renders a
-            real contact control (Chat now / Ask a question / Sign in, chosen by
-            `contactAffordance`) with `ManufacturerChatSheet` behind it. A second, dead entrance to
-            a live feature is worse than no entrance.
+      <p className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
+        <span className="font-medium">{SELLING_STATE_LABELS[sellingState]}.</span>{" "}
+        {sellingState === "discontinued"
+          ? "This listing is no longer sold. Any replacements the seller has listed are shown below."
+          : "The seller has paused this listing, so it cannot be ordered right now."}
+      </p>
+      <Link
+        href={requestQuoteHref}
+        className="flex w-full items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
+      >
+        Request a quote
+      </Link>
+    </div>
+  );
+}
 
-            The RFQ half is what was genuinely unreachable. `POST /commerce/rfqs` and the whole
-            quote-and-compare surface behind it have shipped for some time with no way in from a
-            product. This link is that way in — and it stays a LINK rather than a mutation, because
-            the composer is five steps and its own idempotency key. */}
-        <Link
-          href={requestQuoteHref}
-          className="flex flex-1 items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
-        >
-          Request a quote
-        </Link>
-        <button
-          type="button"
-          onClick={handleAddToCartClick}
-          disabled={!canAddToCart}
-          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
-        >
-          {setCartItem.isPending ? "Adding…" : "Add to cart"}
-        </button>
-        {/* LIVE SINCE THE CHECKOUT COULD BE SCOPED. This used to be inert, and the reason was that
-            checkout prepared the ENTIRE cart — it reserved stock against every other seller's lines
-            and confirmed into one order per counterparty, so a button labelled as buying this chair
-            was a false statement about what the buyer had just committed to. `checkout/prepare` now
-            takes an `items` selection, so this names its own line and nothing else moves.
+interface BuyActionControlsProps {
+  requestQuoteHref: string;
+  onAddToCart: () => void;
+  onBuyNow: () => void;
+  canAddToCart: boolean;
+  isPending: boolean;
+}
 
-            IT CARRIES THE SAME GATE AS "ADD TO CART", and that matters independently: while it was
-            inert it was also the ONLY ungated control of the three, so it rendered as the most
-            prominent button on the page and did nothing when a signed-out visitor pressed it. */}
-        <button
-          type="button"
-          onClick={handleBuyNowClick}
-          disabled={!canAddToCart}
-          className="flex-1 rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-40"
-        >
-          {setCartItem.isPending ? "Starting…" : "Buy now"}
-        </button>
-      </div>
+function BuyActionControls({
+  requestQuoteHref,
+  onAddToCart,
+  onBuyNow,
+  canAddToCart,
+  isPending,
+}: BuyActionControlsProps) {
+  return (
+    <div className="flex gap-2">
+      <Link
+        href={requestQuoteHref}
+        className="flex flex-1 items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong"
+      >
+        Request a quote
+      </Link>
+      <button
+        type="button"
+        onClick={onAddToCart}
+        disabled={!canAddToCart}
+        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
+      >
+        {isPending ? "Adding…" : "Add to cart"}
+      </button>
+      <button
+        type="button"
+        onClick={onBuyNow}
+        disabled={!canAddToCart}
+        className="flex-1 rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-40"
+      >
+        {isPending ? "Starting…" : "Buy now"}
+      </button>
+    </div>
+  );
+}
 
-      {/* Why the button is disabled, when it is disabled for a reason the buyer can act on. A
-          disabled control with no explanation reads as a broken page. */}
+interface BuyActionFeedbackProps {
+  isVariantMissing: boolean;
+  cart: CommerceCart | null;
+  isCartLoading: boolean;
+  isSignInRequired: boolean;
+  confirmedLine: ReturnType<typeof findBulkCartLine>;
+}
+
+function BuyActionFeedback({
+  isVariantMissing,
+  cart,
+  isCartLoading,
+  isSignInRequired,
+  confirmedLine,
+}: BuyActionFeedbackProps) {
+  return (
+    <>
       {isVariantMissing && (
         <p className="mt-1 text-xs leading-4 text-outline-strong">Choose an option to continue.</p>
       )}
@@ -282,6 +186,100 @@ export default function BuyActionButtons({
           </Link>
         </p>
       )}
+    </>
+  );
+}
+
+export default function BuyActionButtons({
+  productId,
+  productSlug,
+  hasVariants,
+  sellingState,
+  isViewerSignedIn,
+}: BuyActionButtonsProps) {
+  const requestQuoteHref = `/store/rfqs/new?productSlug=${encodeURIComponent(productSlug)}`;
+  const { quantity, selectedVariantId } = useProductSelection();
+  const variantId = selectedVariantId;
+  const isVariantMissing = hasVariants && variantId === null;
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
+
+  const router = useRouter();
+  const cartQuery = useCartQuery({ isEnabled: isSignedIn });
+  const setCartItem = useSetCartItem();
+
+  const cartResult = cartQuery.data;
+  const cart = cartResult !== undefined && cartResult.success ? cartResult.data : null;
+
+  const isSignInRequired =
+    !isSignedIn ||
+    (cartResult !== undefined && !cartResult.success && cartResult.error.code === "401");
+
+  const isCartLoading = isSignedIn && cartQuery.isPending;
+  const canAddToCart = cart !== null && !setCartItem.isPending && !isVariantMissing;
+
+  const handleAddToCartClick = () => {
+    if (cart === null) return;
+    const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
+    setCartItem.mutate({
+      productId,
+      input: {
+        quantity: existingQuantity + quantity,
+        ...(variantId === null ? {} : { variantId }),
+        isSample: false,
+      },
+    });
+  };
+
+  const handleBuyNowClick = () => {
+    if (cart === null) return;
+    const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
+    setCartItem.mutate(
+      {
+        productId,
+        input: {
+          quantity: existingQuantity + quantity,
+          ...(variantId === null ? {} : { variantId }),
+          isSample: false,
+        },
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) return;
+          const parameters = new URLSearchParams({ buyNow: productId });
+          if (variantId !== null) parameters.set("variantId", variantId);
+          router.push(`/checkout?${parameters.toString()}`);
+        },
+      },
+    );
+  };
+
+  const addResult = setCartItem.data;
+  const confirmedLine =
+    addResult !== undefined && addResult.success
+      ? findBulkCartLine(addResult.data, productId, variantId)
+      : null;
+
+  if (sellingState !== "selling") {
+    return <NotSellingPanel sellingState={sellingState} requestQuoteHref={requestQuoteHref} />;
+  }
+
+  return (
+    <div className="w-full">
+      <BuyActionControls
+        requestQuoteHref={requestQuoteHref}
+        onAddToCart={handleAddToCartClick}
+        onBuyNow={handleBuyNowClick}
+        canAddToCart={canAddToCart}
+        isPending={setCartItem.isPending}
+      />
+
+      <BuyActionFeedback
+        isVariantMissing={isVariantMissing}
+        cart={cart}
+        isCartLoading={isCartLoading}
+        isSignInRequired={isSignInRequired}
+        confirmedLine={confirmedLine}
+      />
 
       <MutationNotice
         result={setCartItem.data}

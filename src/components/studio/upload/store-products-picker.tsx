@@ -43,9 +43,10 @@ export default function StoreProductsPicker({
   const matchingProducts = ownProducts.filter((product) =>
     product.title.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
+  const attachedProductIdsSet = new Set(attachedProductIds);
 
   function handleProductToggle(productId: string) {
-    const isAlreadyAttached = attachedProductIds.includes(productId);
+    const isAlreadyAttached = attachedProductIdsSet.has(productId);
     onAttachedProductIdsChange(
       isAlreadyAttached
         ? attachedProductIds.filter((attachedId) => attachedId !== productId)
@@ -106,7 +107,7 @@ export default function StoreProductsPicker({
                 </li>
               ) : (
                 matchingProducts.map((product) => {
-                  const isAttached = attachedProductIds.includes(product.id);
+                  const isAttached = attachedProductIdsSet.has(product.id);
                   return (
                     <li key={product.id}>
                       <button

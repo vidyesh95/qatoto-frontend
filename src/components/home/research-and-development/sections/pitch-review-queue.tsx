@@ -5,10 +5,10 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { describeLinkDestination } from "@/components/pitches/pitch-shared";
 import { INPUT_CLASS } from "@/components/ui/field-classes";
 import { useModeratePitchMutation, usePitchReviewQueueQuery } from "@/hooks/rnd/pitches";
 import { ApiRequestError } from "@/lib/http";
+import { describeLinkDestination } from "@/lib/rnd/format";
 import type { PitchReviewQueueEntry } from "@/lib/rnd/pitches.schemas";
 
 /**

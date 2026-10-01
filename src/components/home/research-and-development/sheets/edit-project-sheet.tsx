@@ -45,20 +45,8 @@ function isFounder(viewerProjectRole: string | null): boolean {
  */
 export default function EditProjectSheet({ project }: { project: ResearchProjectDetail }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [draftName, setDraftName] = useState(project.name);
-  const [draftTagline, setDraftTagline] = useState(project.tagline);
-  // `description` is nullable on the wire; a controlled textarea needs a string.
-  const [draftDescription, setDraftDescription] = useState(project.description ?? "");
-  const [draftStage, setDraftStage] = useState<ProjectStage>(project.stage);
-  const [stageNote, setStageNote] = useState("");
-
-  const settingsMutation = useProjectSettingsMutation(project.slug);
-  const settingsError =
-    settingsMutation.error instanceof ApiRequestError ? settingsMutation.error.apiError : null;
 
   if (!canEdit(project.viewerProjectRole)) return null;
-
-  const isDraft = project.publishedAt === null;
 
   return (
     <>
@@ -70,161 +58,171 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
         Edit project
       </button>
 
-      <RndSheet
-        title="Edit project"
-        isOpen={isSheetOpen}
-        onClose={() => {
-          setIsSheetOpen(false);
-          settingsMutation.reset();
+      <RndSheet title="Edit project" isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
+        {isSheetOpen && <ProjectEditorContent key={project.slug} project={project} />}
+      </RndSheet>
+    </>
+  );
+}
+
+function ProjectEditorContent({ project }: { project: ResearchProjectDetail }) {
+  const [draftName, setDraftName] = useState(() => project.name);
+  const [draftTagline, setDraftTagline] = useState(() => project.tagline);
+  // `description` is nullable on the wire; a controlled textarea needs a string.
+  const [draftDescription, setDraftDescription] = useState(() => project.description ?? "");
+  const [draftStage, setDraftStage] = useState<ProjectStage>(() => project.stage);
+  const [stageNote, setStageNote] = useState("");
+
+  const settingsMutation = useProjectSettingsMutation(project.slug);
+  const settingsError =
+    settingsMutation.error instanceof ApiRequestError ? settingsMutation.error.apiError : null;
+
+  const isDraft = project.publishedAt === null;
+
+  return (
+    <div className="flex flex-col gap-6 px-4 pb-6">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(submitEvent) => {
+          submitEvent.preventDefault();
+          settingsMutation.mutate({
+            action: "update",
+            input: {
+              name: draftName.trim(),
+              tagline: draftTagline.trim(),
+              description: draftDescription.trim() || undefined,
+            },
+          });
         }}
       >
-        <div className="flex flex-col gap-6 px-4 pb-6">
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Name</span>
+          <input
+            type="text"
+            value={draftName}
+            onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
+            className={INPUT_CLASS}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Tagline</span>
+          <input
+            type="text"
+            value={draftTagline}
+            onChange={(changeEvent) => setDraftTagline(changeEvent.target.value)}
+            className={INPUT_CLASS}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Description</span>
+          <textarea
+            value={draftDescription}
+            onChange={(changeEvent) => setDraftDescription(changeEvent.target.value)}
+            rows={4}
+            className={INPUT_CLASS}
+          />
+        </label>
+
+        <button
+          type="submit"
+          disabled={settingsMutation.isPending}
+          className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
+        >
+          Save details
+        </button>
+      </form>
+
+      <label className="flex flex-col gap-1 border-t border-outline-variant/40 pt-4">
+        <span className={LABEL_CLASS}>Cover image</span>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(changeEvent) => {
+            const coverFile = changeEvent.target.files?.[0];
+            if (coverFile) settingsMutation.mutate({ action: "cover", coverFile });
+          }}
+          className="text-sm"
+        />
+      </label>
+
+      {isFounder(project.viewerProjectRole) && (
+        <>
           <form
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4"
             onSubmit={(submitEvent) => {
               submitEvent.preventDefault();
               settingsMutation.mutate({
-                action: "update",
-                input: {
-                  name: draftName.trim(),
-                  tagline: draftTagline.trim(),
-                  description: draftDescription.trim() || undefined,
-                },
+                action: "stage",
+                stage: draftStage,
+                stageNote: stageNote.trim() || undefined,
               });
             }}
           >
             <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Name</span>
+              <span className={LABEL_CLASS}>Pipeline stage</span>
+              <select
+                value={draftStage}
+                onChange={(changeEvent) => {
+                  const parsed = ProjectStageSchema.safeParse(changeEvent.target.value);
+                  if (parsed.success) setDraftStage(parsed.data);
+                }}
+                className={INPUT_CLASS}
+              >
+                {PROJECT_STAGES.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {PROJECT_STAGE_LABELS[stage]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Reason for the move (optional)</span>
               <input
                 type="text"
-                value={draftName}
-                onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
+                value={stageNote}
+                onChange={(changeEvent) => setStageNote(changeEvent.target.value)}
+                placeholder="Why is it moving? (optional)"
                 className={INPUT_CLASS}
               />
             </label>
-
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Tagline</span>
-              <input
-                type="text"
-                value={draftTagline}
-                onChange={(changeEvent) => setDraftTagline(changeEvent.target.value)}
-                className={INPUT_CLASS}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Description</span>
-              <textarea
-                value={draftDescription}
-                onChange={(changeEvent) => setDraftDescription(changeEvent.target.value)}
-                rows={4}
-                className={INPUT_CLASS}
-              />
-            </label>
-
+            {/* Said out loud, because it is why this is not a dropdown that
+                    auto-saves: the move is recorded against the person making it. */}
+            <span className="text-xs text-muted-foreground">
+              A stage change is recorded in the project&apos;s audit trail with your name on it. It
+              cannot be edited afterwards, only followed by another change.
+            </span>
             <button
               type="submit"
-              disabled={settingsMutation.isPending}
-              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
+              disabled={settingsMutation.isPending || draftStage === project.stage}
+              className="self-start rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
             >
-              Save details
+              Move the stage
             </button>
           </form>
 
-          <label className="flex flex-col gap-1 border-t border-outline-variant/40 pt-4">
-            <span className={LABEL_CLASS}>Cover image</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(changeEvent) => {
-                const coverFile = changeEvent.target.files?.[0];
-                if (coverFile) settingsMutation.mutate({ action: "cover", coverFile });
-              }}
-              className="text-sm"
-            />
-          </label>
+          <div className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4">
+            <span className={LABEL_CLASS}>Visibility</span>
+            <p className="text-xs text-muted-foreground">
+              {isDraft
+                ? "This is a draft. Nobody but you can open it — everyone else gets the same answer they would for a project that does not exist."
+                : "This project is public. Unpublishing hides it again; it does not delete anything."}
+            </p>
+            <button
+              type="button"
+              disabled={settingsMutation.isPending}
+              onClick={() => settingsMutation.mutate({ action: isDraft ? "publish" : "unpublish" })}
+              className="self-start rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
+            >
+              {isDraft ? "Publish it" : "Unpublish it"}
+            </button>
+          </div>
+        </>
+      )}
 
-          {isFounder(project.viewerProjectRole) && (
-            <>
-              <form
-                className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4"
-                onSubmit={(submitEvent) => {
-                  submitEvent.preventDefault();
-                  settingsMutation.mutate({
-                    action: "stage",
-                    stage: draftStage,
-                    stageNote: stageNote.trim() || undefined,
-                  });
-                }}
-              >
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Pipeline stage</span>
-                  <select
-                    value={draftStage}
-                    onChange={(changeEvent) => {
-                      const parsed = ProjectStageSchema.safeParse(changeEvent.target.value);
-                      if (parsed.success) setDraftStage(parsed.data);
-                    }}
-                    className={INPUT_CLASS}
-                  >
-                    {PROJECT_STAGES.map((stage) => (
-                      <option key={stage} value={stage}>
-                        {PROJECT_STAGE_LABELS[stage]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Reason for the move (optional)</span>
-                  <input
-                    type="text"
-                    value={stageNote}
-                    onChange={(changeEvent) => setStageNote(changeEvent.target.value)}
-                    placeholder="Why is it moving? (optional)"
-                    className={INPUT_CLASS}
-                  />
-                </label>
-                {/* Said out loud, because it is why this is not a dropdown that
-                    auto-saves: the move is recorded against the person making it. */}
-                <span className="text-xs text-muted-foreground">
-                  A stage change is recorded in the project&apos;s audit trail with your name on it.
-                  It cannot be edited afterwards, only followed by another change.
-                </span>
-                <button
-                  type="submit"
-                  disabled={settingsMutation.isPending || draftStage === project.stage}
-                  className="self-start rounded-full border border-primary-imprint/40 px-4 py-2 text-sm font-medium text-primary-imprint disabled:opacity-40"
-                >
-                  Move the stage
-                </button>
-              </form>
-
-              <div className="flex flex-col gap-2 border-t border-outline-variant/40 pt-4">
-                <span className={LABEL_CLASS}>Visibility</span>
-                <p className="text-xs text-muted-foreground">
-                  {isDraft
-                    ? "This is a draft. Nobody but you can open it — everyone else gets the same answer they would for a project that does not exist."
-                    : "This project is public. Unpublishing hides it again; it does not delete anything."}
-                </p>
-                <button
-                  type="button"
-                  disabled={settingsMutation.isPending}
-                  onClick={() =>
-                    settingsMutation.mutate({ action: isDraft ? "publish" : "unpublish" })
-                  }
-                  className="self-start rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
-                >
-                  {isDraft ? "Publish it" : "Unpublish it"}
-                </button>
-              </div>
-            </>
-          )}
-
-          {settingsError !== null && <MutationErrorNotice error={settingsError} />}
-          {settingsMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
-        </div>
-      </RndSheet>
-    </>
+      {settingsError !== null && <MutationErrorNotice error={settingsError} />}
+      {settingsMutation.isSuccess && <p className="text-sm text-primary-imprint">Saved.</p>}
+    </div>
   );
 }

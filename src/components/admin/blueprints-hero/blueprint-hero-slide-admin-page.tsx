@@ -7,6 +7,11 @@ import { useState } from "react";
 
 import { AdminImagePicker } from "@/components/admin/shared/admin-image-picker";
 import {
+  SlideActionButtons,
+  SlideOrderControls,
+} from "@/components/admin/shared/slide-row-controls";
+import { toOrdinalLabel } from "@/lib/format-ordinal";
+import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
@@ -60,15 +65,6 @@ function toSlideListViewState(
     };
   }
   return query.data.length === 0 ? { status: "empty" } : { status: "ready", slides: query.data };
-}
-
-/** "1st", "2nd", "3rd", "4th"… from a 0-based position. */
-function toOrdinalLabel(zeroBasedPosition: number): string {
-  const displayPosition = zeroBasedPosition + 1;
-  const lastTwoDigits = displayPosition % 100;
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return `${String(displayPosition)}th`;
-  const suffix = { 1: "st", 2: "nd", 3: "rd" }[displayPosition % 10] ?? "th";
-  return `${String(displayPosition)}${suffix}`;
 }
 
 /**
@@ -378,6 +374,150 @@ function CreateSlideForm({
   );
 }
 
+function SlideRowSummary({
+  slide,
+  index,
+  slideCount,
+  isReordering,
+  isReplacePending,
+  onMove,
+}: {
+  slide: AdminBlueprintHeroSlide;
+  index: number;
+  slideCount: number;
+  isReordering: boolean;
+  isReplacePending: boolean;
+  onMove: (targetPosition: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-start gap-4">
+      {/* `object-cover` on a 16:9 box, NOT `object-contain`: the live carousel covers
+          (`blueprints-hero-carousel.tsx`), so a letterboxed thumbnail here would show framing
+          the visitor never gets. */}
+      <Image
+        src={slide.imageUrl}
+        width={160}
+        height={90}
+        alt=""
+        unoptimized={slide.imageUrl.startsWith("https://")}
+        className={`aspect-video w-40 rounded-lg bg-muted object-cover transition-opacity ${
+          isReplacePending ? "opacity-40" : ""
+        }`}
+      />
+
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+            {toOrdinalLabel(slide.position)}
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs ${
+              slide.isActive ? "bg-green-100 text-green-900" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {slide.isActive ? "Live" : "Hidden"}
+          </span>
+          {slide.destinationPath === null && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Not clickable</span>
+          )}
+          {isSeededImage(slide.imageUrl) && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Placeholder art</span>
+          )}
+        </div>
+        <p className="truncate text-sm font-medium">{slide.title}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {slide.destinationPath ?? "No link"}
+        </p>
+      </div>
+
+      {/* Ordering. Arrows nudge one step; the select jumps straight to a position, so
+          moving the 6th slide to 1st is one action rather than five clicks. */}
+      <SlideOrderControls
+        index={index}
+        slideCount={slideCount}
+        isReordering={isReordering}
+        onMove={onMove}
+      />
+    </div>
+  );
+}
+
+function SlideImageReplacementPanel({
+  slideId,
+  isSeeded,
+  isMutating,
+  replacementImageFile,
+  isPending,
+  onFileSelected,
+  onConfirmReplace,
+  onCancel,
+}: {
+  slideId: string;
+  isSeeded: boolean;
+  isMutating: boolean;
+  replacementImageFile: File | null;
+  isPending: boolean;
+  onFileSelected: (file: File | null) => void;
+  onConfirmReplace: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="space-y-3 border-t border-outline-variant/40 pt-3">
+      <p className="text-sm font-medium">New image</p>
+      {isSeeded && (
+        <p className="text-xs text-muted-foreground">
+          This slide still uses placeholder art shipped with the site. Uploading here replaces it
+          with a real image.
+        </p>
+      )}
+      <AdminImagePicker
+        inputId={`replace-blueprint-hero-image-${slideId}`}
+        isDisabled={isMutating}
+        selectedFile={replacementImageFile}
+        onFileSelected={onFileSelected}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={isMutating || replacementImageFile === null}
+          onClick={onConfirmReplace}
+          className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPending ? "Replacing…" : "Replace image"}
+        </button>
+        <button
+          type="button"
+          disabled={isMutating}
+          onClick={onCancel}
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SlideRowStatusNotices({
+  isPending,
+  rowError,
+  isSuccess,
+}: {
+  isPending: boolean;
+  rowError: ApiRequestError | undefined;
+  isSuccess: boolean;
+}) {
+  return (
+    <>
+      {isPending && (
+        <output className="block text-xs text-muted-foreground">Replacing image…</output>
+      )}
+      {rowError && <MutationErrorNotice error={rowError.apiError} />}
+      {isSuccess && !isPending && <MutationSuccessNotice message="Image replaced." />}
+    </>
+  );
+}
+
 /** One slide: what it is, where it goes, where it sits, and how to remove it. */
 function SlideRow({
   slide,
@@ -411,8 +551,6 @@ function SlideRow({
   );
 
   const [isEditing, setIsEditing] = useState(false);
-  const [draftTitle, setDraftTitle] = useState(slide.title);
-  const [draftDestinationPath, setDraftDestinationPath] = useState(slide.destinationPath ?? "");
   // Two-step inline confirm. `window.confirm` is not available — oxlint sets no-alert: error.
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   /**
@@ -431,266 +569,141 @@ function SlideRow({
     updateSlide.mutate({ slideId: slide.id, patch });
   }
 
+  function handleConfirmReplace() {
+    if (replacementImageFile === null) return;
+    replaceImage.mutate(
+      { slideId: slide.id, imageFile: replacementImageFile },
+      {
+        onSuccess: () => {
+          setIsReplacingImage(false);
+          setReplacementImageFile(null);
+        },
+      },
+    );
+  }
+
   return (
     <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
-      <div className="flex flex-wrap items-start gap-4">
-        {/* `object-cover` on a 16:9 box, NOT `object-contain`: the live carousel covers
-            (`blueprints-hero-carousel.tsx`), so a letterboxed thumbnail here would show framing
-            the visitor never gets. */}
-        <Image
-          src={slide.imageUrl}
-          width={160}
-          height={90}
-          alt=""
-          unoptimized={slide.imageUrl.startsWith("https://")}
-          className={`aspect-video w-40 rounded-lg bg-muted object-cover transition-opacity ${
-            replaceImage.isPending ? "opacity-40" : ""
-          }`}
-        />
+      <SlideRowSummary
+        slide={slide}
+        index={index}
+        slideCount={slideCount}
+        isReordering={isReordering}
+        isReplacePending={replaceImage.isPending}
+        onMove={(targetPosition) => onMove(slide.id, targetPosition)}
+      />
 
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-              {toOrdinalLabel(slide.position)}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs ${
-                slide.isActive ? "bg-green-100 text-green-900" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {slide.isActive ? "Live" : "Hidden"}
-            </span>
-            {slide.destinationPath === null && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Not clickable</span>
-            )}
-            {isSeededImage(slide.imageUrl) && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Placeholder art</span>
-            )}
-          </div>
-          <p className="truncate text-sm font-medium">{slide.title}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {slide.destinationPath ?? "No link"}
-          </p>
-        </div>
-
-        {/* Ordering. Arrows nudge one step; the select jumps straight to a position, so
-            moving the 6th slide to 1st is one action rather than five clicks. */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={isReordering || index === 0}
-            onClick={() => onMove(slide.id, index - 1)}
-            aria-label="Move up one place"
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            disabled={isReordering || index === slideCount - 1}
-            onClick={() => onMove(slide.id, index + 1)}
-            aria-label="Move down one place"
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ▼
-          </button>
-          <label className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
-            Show as
-            <select
-              value={index}
-              disabled={isReordering}
-              onChange={(event) => onMove(slide.id, Number(event.target.value))}
-              className="cursor-pointer rounded-lg border border-outline-variant/60 bg-background p-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {Array.from({ length: slideCount }, (_unused, position) => (
-                <option key={position} value={position}>
-                  {toOrdinalLabel(position)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={isMutating}
-          onClick={() => handleUpdate({ isActive: !slide.isActive })}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {slide.isActive ? "Hide from Blueprints page" : "Show on Blueprints page"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
-        >
-          {isEditing ? "Cancel edit" : "Edit"}
-        </button>
-
-        {/* Its own control, separate from Edit — so it is never ambiguous whether a save is
-            about to touch the image. */}
-        <button
-          type="button"
-          disabled={isMutating}
-          onClick={() => {
-            setIsReplacingImage((wasReplacing) => !wasReplacing);
-            setReplacementImageFile(null);
-          }}
-          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {replaceImage.isPending
-            ? "Replacing…"
-            : isReplacingImage
-              ? "Cancel replace"
-              : "Replace image"}
-        </button>
-
-        {isConfirmingDelete ? (
-          <span className="flex items-center gap-2 text-xs">
-            Really delete?
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={onDelete}
-              className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Yes, delete
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsConfirmingDelete(false)}
-              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
-            >
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            className="cursor-pointer rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive"
-          >
-            Delete
-          </button>
-        )}
-      </div>
+      <SlideActionButtons
+        activeToggleLabel={slide.isActive ? "Hide from Blueprints page" : "Show on Blueprints page"}
+        onToggleActive={() => handleUpdate({ isActive: !slide.isActive })}
+        isEditing={isEditing}
+        onToggleEditing={() => setIsEditing((wasEditing) => !wasEditing)}
+        isReplacingImage={isReplacingImage}
+        onToggleReplacingImage={() => {
+          setIsReplacingImage((wasReplacing) => !wasReplacing);
+          setReplacementImageFile(null);
+        }}
+        isReplaceImagePending={replaceImage.isPending}
+        isConfirmingDelete={isConfirmingDelete}
+        onToggleConfirmingDelete={setIsConfirmingDelete}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+        isMutating={isMutating}
+      />
 
       {isReplacingImage && (
-        <div className="space-y-3 border-t border-outline-variant/40 pt-3">
-          <p className="text-sm font-medium">New image</p>
-          {isSeededImage(slide.imageUrl) && (
-            <p className="text-xs text-muted-foreground">
-              This slide still uses placeholder art shipped with the site. Uploading here replaces
-              it with a real image.
-            </p>
-          )}
-          <AdminImagePicker
-            inputId={`replace-blueprint-hero-image-${slide.id}`}
-            isDisabled={isMutating}
-            selectedFile={replacementImageFile}
-            onFileSelected={setReplacementImageFile}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={isMutating || replacementImageFile === null}
-              onClick={() => {
-                if (replacementImageFile === null) return;
-                replaceImage.mutate(
-                  { slideId: slide.id, imageFile: replacementImageFile },
-                  {
-                    // Closing on SUCCESS ONLY. A failed replace leaves the panel open with
-                    // the file still staged, so the admin retries rather than re-picking —
-                    // and the row's own error notice sits directly beneath it.
-                    onSuccess: () => {
-                      setIsReplacingImage(false);
-                      setReplacementImageFile(null);
-                    },
-                  },
-                );
-              }}
-              className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {replaceImage.isPending ? "Replacing…" : "Replace image"}
-            </button>
-            <button
-              type="button"
-              disabled={isMutating}
-              onClick={() => {
-                setIsReplacingImage(false);
-                setReplacementImageFile(null);
-              }}
-              className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <SlideImageReplacementPanel
+          slideId={slide.id}
+          isSeeded={isSeededImage(slide.imageUrl)}
+          isMutating={isMutating}
+          replacementImageFile={replacementImageFile}
+          isPending={replaceImage.isPending}
+          onFileSelected={setReplacementImageFile}
+          onConfirmReplace={handleConfirmReplace}
+          onCancel={() => {
+            setIsReplacingImage(false);
+            setReplacementImageFile(null);
+          }}
+        />
       )}
 
-      {/*
-        THE ROW'S OWN VERDICT, six inches from the button that caused it. The SUCCESS notice
-        matters more than it looks: a replacement image can resemble the one it replaced, so
-        "Image replaced." is what tells the admin the write landed rather than leaving them to
-        squint at a thumbnail. React Query clears mutation state on the next `mutate()`, so it
-        needs no timer.
-      */}
-      {replaceImage.isPending && (
-        <output className="block text-xs text-muted-foreground">Replacing image…</output>
-      )}
-      {rowError && <MutationErrorNotice error={rowError.apiError} />}
-      {replaceImage.isSuccess && !replaceImage.isPending && (
-        <MutationSuccessNotice message="Image replaced." />
-      )}
+      <SlideRowStatusNotices
+        isPending={replaceImage.isPending}
+        rowError={rowError}
+        isSuccess={replaceImage.isSuccess}
+      />
 
       {isEditing && (
-        <form
-          className="space-y-3 border-t border-outline-variant/40 pt-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const trimmedDestination = draftDestinationPath.trim();
-            handleUpdate({
-              title: draftTitle,
-              // An emptied field CLEARS the link — `null` and absent are different edits on
-              // this route, and the backend 422s an empty string.
-              destinationPath: trimmedDestination.length === 0 ? null : trimmedDestination,
-            });
+        <SlideEditForm
+          key={slide.id}
+          slide={slide}
+          isMutating={isMutating}
+          onSave={(patch) => {
+            handleUpdate(patch);
             setIsEditing(false);
           }}
-        >
-          <input
-            type="text"
-            required
-            maxLength={160}
-            value={draftTitle}
-            onChange={(event) => setDraftTitle(event.target.value)}
-            aria-label="Title"
-            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
-          />
-          <input
-            type="text"
-            maxLength={512}
-            value={draftDestinationPath}
-            onChange={(event) => setDraftDestinationPath(event.target.value)}
-            placeholder="/blueprints/solar-cold-storage-controller-teardown"
-            aria-label="Links to"
-            className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            Clear this field to make the slide non-clickable.
-          </p>
-          <button
-            type="submit"
-            disabled={isMutating}
-            className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Save changes
-          </button>
-        </form>
+        />
       )}
     </li>
+  );
+}
+
+function SlideEditForm({
+  slide,
+  isMutating,
+  onSave,
+}: {
+  slide: AdminBlueprintHeroSlide;
+  isMutating: boolean;
+  onSave: (patch: { title: string; destinationPath: string | null }) => void;
+}) {
+  const [draftTitle, setDraftTitle] = useState(() => slide.title);
+  const [draftDestinationPath, setDraftDestinationPath] = useState(
+    () => slide.destinationPath ?? "",
+  );
+
+  return (
+    <form
+      className="space-y-3 border-t border-outline-variant/40 pt-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const trimmedDestination = draftDestinationPath.trim();
+        onSave({
+          title: draftTitle,
+          // An emptied field CLEARS the link — `null` and absent are different edits on
+          // this route, and the backend 422s an empty string.
+          destinationPath: trimmedDestination.length === 0 ? null : trimmedDestination,
+        });
+      }}
+    >
+      <input
+        type="text"
+        required
+        maxLength={160}
+        value={draftTitle}
+        onChange={(event) => setDraftTitle(event.target.value)}
+        aria-label="Title"
+        className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
+      />
+      <input
+        type="text"
+        maxLength={512}
+        value={draftDestinationPath}
+        onChange={(event) => setDraftDestinationPath(event.target.value)}
+        placeholder="/blueprints/solar-cold-storage-controller-teardown"
+        aria-label="Links to"
+        className="w-full rounded-xl border border-outline-variant/60 bg-background p-2 text-sm"
+      />
+      <p className="text-xs text-muted-foreground">
+        Clear this field to make the slide non-clickable.
+      </p>
+      <button
+        type="submit"
+        disabled={isMutating}
+        className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Save changes
+      </button>
+    </form>
   );
 }

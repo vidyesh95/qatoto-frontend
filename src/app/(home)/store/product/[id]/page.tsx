@@ -4,7 +4,8 @@ import ProductDetail from "@/components/home/store/product-detail";
 import { prettifySlugForDisplay } from "@/lib/store";
 import { SITE_SHARE_IMAGE, SITE_URL } from "@/lib/site";
 import { withSentinelValues } from "@/lib/static-params";
-import { StructuredData, buildProductStructuredData } from "@/lib/structured-data";
+import { StructuredData } from "@/lib/structured-data";
+import { buildProductStructuredData } from "@/lib/structured-data-builders";
 import { getStoreProduct } from "@/lib/store/products.api";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.

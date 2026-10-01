@@ -45,13 +45,13 @@ export default function VideoCard({
 
   const avatar = isLive ? (
     <div className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-primary-imprint">
-      <div className="pointer-events-none absolute -inset-1.25 animate-live-ring rounded-full border border-primary-imprint will-change-transform" />
+      <div className="pointer-events-none absolute -inset-1.25 animate-live-ring rounded-full border border-primary-imprint" />
       <Image
         src={profileSrc}
         width={34}
         height={34}
         alt="profile image"
-        className="size-8.5 animate-live-image rounded-full will-change-transform"
+        className="size-8.5 animate-live-image rounded-full"
       />
     </div>
   ) : (

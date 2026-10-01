@@ -37,11 +37,12 @@ import {
   toOptionalPairedRange,
   toOptionalText,
 } from "@/components/commerce/composer/composer-input";
-import ServiceOfferingDetailFields, {
+import ServiceOfferingDetailFields from "@/components/studio/commerce/services/service-offering-detail-fields";
+import {
   buildOfferingDetailInput,
   EMPTY_SERVICE_OFFERING_DETAIL_DRAFT,
   type ServiceOfferingDetailDraft,
-} from "@/components/studio/commerce/services/service-offering-detail-fields";
+} from "@/lib/store/service-offering-draft";
 import { useCreateServiceOffering } from "@/hooks/store/providers";
 import { useAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import { PROVIDER_KIND_LABELS } from "@/lib/store/labels";

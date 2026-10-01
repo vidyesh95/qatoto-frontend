@@ -2,16 +2,18 @@
 // The panels it swaps between own their own reads; the three preference panels read `localStorage`.
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "@/lib/auth-client";
 import { LanguagePanel } from "@/components/home/account/menus/language-menu";
-import { countryName, LocationPanel } from "@/components/home/account/menus/location-menu";
+import { LocationPanel } from "@/components/home/account/menus/location-menu";
 import { useBrowserPreferences } from "@/state/browser-preferences-context";
 import { AiAssistPanel } from "@/components/home/account/menus/ai-assist-menu";
 import { SettingsPanel } from "@/components/home/account/menus/settings-menu";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
+import {
+  AccountMenuMainView,
+  type AccountMenuView,
+} from "@/components/home/account/menus/account-menu-main-view";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
@@ -30,31 +32,6 @@ type AccountMenuProps = {
   onSendFeedback: () => void;
 };
 
-/** Marketing/information pages, shown as a divider section near the foot of the menu. */
-const INFORMATION_LINKS = [
-  { label: "How Qatoto Works", href: "/how-qatoto-works" },
-  { label: "About", href: "/about" },
-  { label: "Press", href: "/press" },
-  { label: "Blogs", href: "/blogs" },
-  { label: "Contact Us", href: "/contact-us" },
-  { label: "Creator", href: "/creator" },
-  { label: "Careers", href: "/careers" },
-  { label: "Developers", href: "/developers" },
-  { label: "Roadmap", href: "/roadmap" },
-] as const;
-
-/** Legal/policy pages, shown as the final divider section of the menu. */
-const LEGAL_LINKS = [
-  { label: "Terms and Conditions", href: "/terms-and-conditions" },
-  { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Copyright Policy", href: "/copyright-policy" },
-  { label: "Community Guidelines", href: "/community-guidelines" },
-  { label: "Vulnerability Disclosure Policy", href: "/vulnerability-disclosure-policy" },
-] as const;
-
-/** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "ai-assist" | "language" | "location" | "settings" | "switch-account";
-
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
  * actions (channel, creator studio, settings, sign-out, etc.).
@@ -70,7 +47,7 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
   const { data: session } = useSession();
 
   // Which panel is showing.
-  const [view, setView] = useState<MenuView>("main");
+  const [view, setView] = useState<AccountMenuView>("main");
 
   // THE PREFERENCES ARE NOT LOCAL STATE ANY MORE. They were, and closing this dropdown threw every
   // one of them away — a language picked here was gone the next time the panel opened. They live in
@@ -97,7 +74,7 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
   // Reset scroll to the top whenever the visible panel changes, so opening a
   // sub-panel (or returning to main) always starts at the top rather than
   // inheriting the previous panel's scroll position.
-  function handleViewChange(nextView: MenuView) {
+  function handleViewChange(nextView: AccountMenuView) {
     setView(nextView);
     menuPanelRef.current?.scrollTo({ top: 0 });
   }
@@ -139,374 +116,16 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
       ) : view === "switch-account" ? (
         <SwitchAccountPanel onBack={() => handleViewChange("main")} onSignOutAll={handleSignOut} />
       ) : (
-        <div className="space-y-8">
-          <div className="rounded-lg bg-secondary">
-            <header className="rounded-lg bg-background">
-              <div className="flex w-full flex-row">
-                <div className="min-w-0 flex-1">
-                  <div className="w-full py-4 pl-4">
-                    <p className="w-full truncate text-base text-foreground">
-                      {session?.user.name ?? "董雪博士"}
-                    </p>
-                    <p className="w-full truncate text-xs text-foreground">
-                      @{session?.user.handle ?? "…"}
-                    </p>
-                  </div>
-                  <p className="ml-4 flex w-full gap-1 text-4xl text-primary-imprint">
-                    <span>Level</span>
-                    <span className="min-w-0 flex-1 truncate">1</span>
-                  </p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-4 p-4">
-                  <button
-                    type="button"
-                    onClick={() => handleViewChange("settings")}
-                    aria-label="Open settings"
-                    className="cursor-pointer rounded-full"
-                  >
-                    <Image
-                      src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
-                      alt="Account"
-                      width={40}
-                      height={40}
-                      className="rounded-full ring-1 ring-primary"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    className="w-fit cursor-pointer rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
-                  >
-                    Check-in
-                  </button>
-                </div>
-              </div>
-              <div className="flex w-full flex-row gap-4 p-4">
-                <div className="flex w-full flex-col items-center rounded-sm bg-primary p-2">
-                  <div className="flex flex-row items-center">
-                    <span className="w-full truncate text-right text-sm">0</span>
-                    <Image
-                      src="/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt="Coins"
-                      width={24}
-                      height={24}
-                    />
-                  </div>
-                  <p className="text-sm">Coins</p>
-                </div>
-                <div className="flex w-full flex-col items-center rounded-sm bg-primary p-2">
-                  <div className="flex flex-row items-center">
-                    <span className="w-full truncate text-right text-sm">0</span>
-                    <Image
-                      src="/icons/local_activity_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt="Social Reputation"
-                      width={24}
-                      height={24}
-                    />
-                  </div>
-                  <p className="text-sm">Social Reputation</p>
-                </div>
-              </div>
-            </header>
-            <button
-              type="button"
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4"
-            >
-              <Image
-                src="/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Premium membership"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">
-                Premium membership
-              </span>
-            </button>
-          </div>
-
-          <div>
-            <Link
-              href="/library"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your channel"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Library</span>
-            </Link>
-            <Link
-              href="/history"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your channel"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">History</span>
-            </Link>
-            <Link
-              href="/wishlist"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/bookmark_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your wishlist"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Wishlist</span>
-            </Link>
-            <Link
-              href="/cart"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your cart"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Cart</span>
-            </Link>
-            <Link
-              href="/orders-and-returns"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your orders"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">
-                Orders and returns
-              </span>
-            </Link>
-            {/* Both of these had a page and no way in. `/messages` is the A38 inbox — before it,
-                a conversation was reachable only in the session that opened it — and `/disputes` is
-                what makes `/disputes/[disputeId]` reachable at all. */}
-            <Link
-              href="/messages"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your conversations"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Messages</span>
-            </Link>
-            <Link
-              href="/disputes"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your disputes"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Disputes</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => handleViewChange("settings")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Settings"
-                width={24}
-                height={24}
-              />
-              <span className="w-full text-left text-sm font-medium text-secondary-foreground">
-                Settings
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change device theme"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewChange("switch-account")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Switch account"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Switch account</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Sign out"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Sign out</span>
-            </button>
-            <hr className="mx-4" />
-            <button
-              type="button"
-              onClick={() => handleViewChange("language")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Language"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">Language:</span>
-                <span className="truncate">{preferences.language}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change language"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewChange("ai-assist")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/assistant_navigation_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="AI Assist Mode"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">AI assist mode:</span>
-                <span className="truncate">{preferences.isAiAssistModeOn ? "On" : "Off"}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change AI Assist Mode"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewChange("location")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Location"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">Location:</span>
-                <span className="truncate">{countryName(preferences.countryCode)}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change Location"
-                width={24}
-                height={24}
-              />
-            </button>
-            <hr className="mx-4" />
-            <a
-              href="https://github.com/vidyesh95/qatoto-frontend/discussions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Forum"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Forum</span>
-            </a>
-            {/*
-              THE "Help" ROW WAS REMOVED HERE, not disabled. It was a `<button>` with no
-              onClick and no href — a control that did nothing — sitting directly above
-              "Customer service", which goes where a person clicking "Help" was trying to get.
-              Two rows to one destination, one of them inert, is worse than one row that works.
-            */}
-            <Link
-              href="/customer-service"
-              onClick={onClose}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">
-                Customer service
-              </span>
-            </Link>
-            <button
-              type="button"
-              onClick={onSendFeedback}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Send feedback</span>
-            </button>
-            <hr className="mx-4" />
-            {INFORMATION_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={onClose}
-                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-              >
-                <span className="text-sm font-medium text-secondary-foreground">{link.label}</span>
-              </Link>
-            ))}
-            <hr className="mx-4" />
-            {LEGAL_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={onClose}
-                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-              >
-                <span className="text-sm font-medium text-secondary-foreground">{link.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <AccountMenuMainView
+          userName={session?.user.name}
+          userHandle={session?.user.handle}
+          userImage={session?.user.image}
+          preferences={preferences}
+          onViewChange={handleViewChange}
+          onSignOut={handleSignOut}
+          onClose={onClose}
+          onSendFeedback={onSendFeedback}
+        />
       )}
     </div>
   );

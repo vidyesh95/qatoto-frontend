@@ -4,9 +4,9 @@
 import {
   MetricsSection,
   MetricsStateNotice,
-  toMetricsViewState,
   type MetricsViewState,
 } from "@/components/admin/metrics/metrics-section";
+import { toMetricsViewState } from "@/lib/admin/metrics-view-state";
 import { useRetentionCohortsQuery } from "@/hooks/admin/platform-metrics";
 import { formatCohortMonthLabel } from "@/lib/admin/metrics-window";
 import type { RetentionCohortRow } from "@/lib/admin/platform-metrics.schemas";

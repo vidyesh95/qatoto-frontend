@@ -116,6 +116,172 @@ export default function QuoteDetail({ quoteId }: { quoteId: string }) {
   );
 }
 
+function buildQuoteTerms(
+  quote: QuoteDetailValue,
+  revision: QuoteRevision | null,
+): DefinitionListItem[] {
+  return [
+    { term: "Status", value: QUOTE_STATUS_LABELS[quote.status] },
+    { term: "Latest revision", value: formatCountLabel(quote.latestRevisionNumber) },
+    ...(quote.acceptedRevisionNumber === null
+      ? []
+      : [
+          {
+            term: "Accepted revision",
+            value: `${formatCountLabel(quote.acceptedRevisionNumber)} — this is what the order is bound to`,
+          },
+        ]),
+    ...lifecycleTimestampItems(quote),
+    ...(revision === null
+      ? []
+      : [
+          { term: "Valid until", value: formatIsoInstantLabel(revision.validityDeadlineAt) },
+          { term: "Payment terms", value: revision.paymentTerms },
+          { term: "Incoterm", value: formatIncotermLabel(revision.incoterm) },
+          { term: "Provider notes", value: revision.notes },
+        ]),
+  ];
+}
+
+interface QuoteDetailHeaderProps {
+  quote: QuoteDetailValue;
+  revision: QuoteRevision | null;
+  isProvider: boolean;
+  isBuyer: boolean;
+  rfqTitle: string | null;
+}
+
+function QuoteDetailHeader({
+  quote,
+  revision,
+  isProvider,
+  isBuyer,
+  rfqTitle,
+}: QuoteDetailHeaderProps) {
+  return (
+    <header className="px-4 pt-4 lg:px-6">
+      <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
+        {isProvider ? "Quote you submitted" : "Quote you received"}
+      </p>
+      <h1 className="text-xl font-medium text-foreground lg:text-2xl">
+        {revision === null
+          ? "No revision submitted yet"
+          : formatCentsLabel(revision.totalInCents, revision.currency)}
+      </h1>
+      <p className="mt-0.5 text-sm text-muted-foreground">{QUOTE_STATUS_LABELS[quote.status]}</p>
+
+      {rfqTitle !== null && (
+        <Link
+          href={isProvider ? `/studio/rfqs/${quote.rfqId}` : `/store/rfqs/${quote.rfqId}`}
+          className="mt-1 inline-block text-xs font-medium text-primary underline"
+        >
+          Against: {rfqTitle}
+        </Link>
+      )}
+
+      {isBuyer && (
+        <Link
+          href={`/store/rfqs/${quote.rfqId}/compare`}
+          className="mt-1 ml-3 inline-block text-xs font-medium text-primary underline"
+        >
+          Compare all quotes on this request
+        </Link>
+      )}
+    </header>
+  );
+}
+
+interface QuoteTermsTabContentProps {
+  quote: QuoteDetailValue;
+  revision: QuoteRevision | null;
+  terms: DefinitionListItem[];
+  isRelationPending: boolean;
+  isBuyer: boolean;
+  isProvider: boolean;
+  acceptQuote: ReturnType<typeof useAcceptQuote>;
+  declineQuote: ReturnType<typeof useDeclineQuote>;
+  withdrawQuote: ReturnType<typeof useWithdrawQuote>;
+  idempotencyKey: string;
+}
+
+function resolveBuyerErrorMessage(
+  acceptResult: ReturnType<typeof useAcceptQuote>["data"],
+  declineResult: ReturnType<typeof useDeclineQuote>["data"],
+): string | null {
+  if (acceptResult !== undefined && !acceptResult.success) {
+    return acceptResult.error.message;
+  }
+  if (declineResult !== undefined && !declineResult.success) {
+    return declineResult.error.message;
+  }
+  return null;
+}
+
+function QuoteTermsTabContent({
+  quote,
+  revision,
+  terms,
+  isRelationPending,
+  isBuyer,
+  isProvider,
+  acceptQuote,
+  declineQuote,
+  withdrawQuote,
+  idempotencyKey,
+}: QuoteTermsTabContentProps) {
+  const acceptResult = acceptQuote.data;
+  const declineResult = declineQuote.data;
+  const withdrawResult = withdrawQuote.data;
+
+  return (
+    <div className="space-y-4 px-4 pb-4 lg:px-6">
+      <DefinitionList items={terms} />
+      {revision !== null && <MoneyBreakdown revision={revision} />}
+      {revision !== null && <RevisionDocuments revision={revision} />}
+
+      {isRelationPending && (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Checking your role on this request before showing any actions…
+        </p>
+      )}
+
+      {isBuyer && revision !== null && (
+        <BuyerQuoteActions
+          quote={quote}
+          revision={revision}
+          isBusy={acceptQuote.isPending || declineQuote.isPending}
+          onAccept={() =>
+            acceptQuote.mutate({
+              quoteId: quote.id,
+              expectedRevision: revision.revisionNumber,
+              idempotencyKey,
+            })
+          }
+          onDecline={() => declineQuote.mutate({ quoteId: quote.id })}
+          errorMessage={resolveBuyerErrorMessage(acceptResult, declineResult)}
+          errorCode={
+            acceptResult !== undefined && !acceptResult.success ? acceptResult.error.code : null
+          }
+          hasThrown={acceptQuote.isError}
+        />
+      )}
+
+      {isProvider && (
+        <ProviderQuoteActions
+          quote={quote}
+          isBusy={withdrawQuote.isPending}
+          onWithdraw={() => withdrawQuote.mutate({ quoteId: quote.id })}
+          errorMessage={
+            withdrawResult !== undefined && !withdrawResult.success
+              ? withdrawResult.error.message
+              : null
+          }
+        />
+      )}
+    </div>
+  );
+}
+
 function QuoteBody({
   quote,
   callerRelation,
@@ -130,87 +296,27 @@ function QuoteBody({
   const acceptQuote = useAcceptQuote();
   const declineQuote = useDeclineQuote();
   const withdrawQuote = useWithdrawQuote();
-
-  // MINTED ONCE, when the component mounts and the attempt begins — held in state so every retry of this
-  // acceptance carries the same key. Minting it inside the click handler would give each press a new one,
-  // which is the duplicate-acceptance bug idempotency exists to stop.
   const [idempotencyKey] = useState(() => newIdempotencyKey());
 
   const isBuyer = callerRelation === "buyer";
   const isProvider = callerRelation === "invited_provider" || callerRelation === "matched_provider";
-
   const revision = quote.latestRevision;
+  const terms = buildQuoteTerms(quote, revision);
 
-  const terms: DefinitionListItem[] = [
-    { term: "Status", value: QUOTE_STATUS_LABELS[quote.status] },
-    { term: "Latest revision", value: formatCountLabel(quote.latestRevisionNumber) },
-    // ONLY ONCE SOMETHING WAS ACCEPTED, for the same reason as the lifecycle rows below: "Accepted
-    // revision — Not provided" on a quote nobody accepted reads as a missing field rather than as an
-    // acceptance that never happened. When it IS set it is NOT necessarily the latest, which is the whole
-    // reason it gets its own row and its own sentence.
-    ...(quote.acceptedRevisionNumber === null
-      ? []
-      : [
-          {
-            term: "Accepted revision",
-            value: `${formatCountLabel(quote.acceptedRevisionNumber)} — this is what the order is bound to`,
-          },
-        ]),
-    // ONLY THE LIFECYCLE EVENTS THAT HAPPENED. These five timestamps are mutually exclusive outcomes, so
-    // four of them are null on every quote — and `DefinitionList` renders a null as "Not provided", which
-    // beside a stated `Accepted` status reads as five half-answers instead of one. Nothing is hidden: the
-    // status line above says what became of the quote, and a timestamp that is absent is an event that did
-    // not occur rather than a value the server failed to send.
-    ...lifecycleTimestampItems(quote),
-    ...(revision === null
-      ? []
-      : [
-          { term: "Valid until", value: formatIsoInstantLabel(revision.validityDeadlineAt) },
-          { term: "Payment terms", value: revision.paymentTerms },
-          // Through the label map the composer's own picker uses — a buyer should read the same
-          // words the provider chose from, not the three-letter code underneath them.
-          { term: "Incoterm", value: formatIncotermLabel(revision.incoterm) },
-          { term: "Provider notes", value: revision.notes },
-        ]),
-  ];
-
-  const acceptResult = acceptQuote.data;
-  const declineResult = declineQuote.data;
-  const withdrawResult = withdrawQuote.data;
+  const linesBadge =
+    revision === null
+      ? undefined
+      : formatCountLabel(revision.productLines.length + revision.serviceLines.length);
 
   return (
     <div className="pb-10">
-      <header className="px-4 pt-4 lg:px-6">
-        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
-          {isProvider ? "Quote you submitted" : "Quote you received"}
-        </p>
-        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
-          {revision === null
-            ? "No revision submitted yet"
-            : formatCentsLabel(revision.totalInCents, revision.currency)}
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{QUOTE_STATUS_LABELS[quote.status]}</p>
-
-        {rfqTitle !== null && (
-          <Link
-            href={isProvider ? `/studio/rfqs/${quote.rfqId}` : `/store/rfqs/${quote.rfqId}`}
-            className="mt-1 inline-block text-xs font-medium text-primary underline"
-          >
-            Against: {rfqTitle}
-          </Link>
-        )}
-
-        {/* Comparison is RFQ-SCOPED, so the link goes to the canonical route rather than a quote-scoped
-            one that would need two reads to answer the same question. */}
-        {isBuyer && (
-          <Link
-            href={`/store/rfqs/${quote.rfqId}/compare`}
-            className="mt-1 ml-3 inline-block text-xs font-medium text-primary underline"
-          >
-            Compare all quotes on this request
-          </Link>
-        )}
-      </header>
+      <QuoteDetailHeader
+        quote={quote}
+        revision={revision}
+        isProvider={isProvider}
+        isBuyer={isBuyer}
+        rfqTitle={rfqTitle}
+      />
 
       <TabStrip
         ariaLabel="Quote sections"
@@ -219,73 +325,25 @@ function QuoteBody({
           {
             id: "lines",
             label: "What is quoted",
-            ...(revision === null
-              ? {}
-              : {
-                  badge: formatCountLabel(
-                    revision.productLines.length + revision.serviceLines.length,
-                  ),
-                }),
+            ...(linesBadge !== undefined ? { badge: linesBadge } : {}),
             panel: <QuoteLines revision={revision} />,
           },
           {
             id: "terms",
             label: "Terms",
             panel: (
-              <div className="space-y-4 px-4 pb-4 lg:px-6">
-                <DefinitionList items={terms} />
-                {revision !== null && <MoneyBreakdown revision={revision} />}
-                {revision !== null && <RevisionDocuments revision={revision} />}
-
-                {isRelationPending && (
-                  <p className="text-xs leading-4 text-muted-foreground">
-                    Checking your role on this request before showing any actions…
-                  </p>
-                )}
-
-                {isBuyer && revision !== null && (
-                  <BuyerQuoteActions
-                    quote={quote}
-                    revision={revision}
-                    isBusy={acceptQuote.isPending || declineQuote.isPending}
-                    onAccept={() =>
-                      acceptQuote.mutate({
-                        quoteId: quote.id,
-                        // THE REVISION ON SCREEN, which is the one the buyer read.
-                        expectedRevision: revision.revisionNumber,
-                        idempotencyKey,
-                      })
-                    }
-                    onDecline={() => declineQuote.mutate({ quoteId: quote.id })}
-                    errorMessage={
-                      acceptResult !== undefined && !acceptResult.success
-                        ? acceptResult.error.message
-                        : declineResult !== undefined && !declineResult.success
-                          ? declineResult.error.message
-                          : null
-                    }
-                    errorCode={
-                      acceptResult !== undefined && !acceptResult.success
-                        ? acceptResult.error.code
-                        : null
-                    }
-                    hasThrown={acceptQuote.isError}
-                  />
-                )}
-
-                {isProvider && (
-                  <ProviderQuoteActions
-                    quote={quote}
-                    isBusy={withdrawQuote.isPending}
-                    onWithdraw={() => withdrawQuote.mutate({ quoteId: quote.id })}
-                    errorMessage={
-                      withdrawResult !== undefined && !withdrawResult.success
-                        ? withdrawResult.error.message
-                        : null
-                    }
-                  />
-                )}
-              </div>
+              <QuoteTermsTabContent
+                quote={quote}
+                revision={revision}
+                terms={terms}
+                isRelationPending={isRelationPending}
+                isBuyer={isBuyer}
+                isProvider={isProvider}
+                acceptQuote={acceptQuote}
+                declineQuote={declineQuote}
+                withdrawQuote={withdrawQuote}
+                idempotencyKey={idempotencyKey}
+              />
             ),
           },
         ]}

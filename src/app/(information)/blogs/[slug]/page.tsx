@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import BlogDetail from "@/components/information/blog-detail";
 import { getBlog, getBlogs } from "@/lib/cms";
 import { SITE_URL } from "@/lib/site";
-import { StructuredData, buildArticleStructuredData } from "@/lib/structured-data";
+import { StructuredData } from "@/lib/structured-data";
+import { buildArticleStructuredData } from "@/lib/structured-data-builders";
 
 type Params = Promise<{ slug: string }>;
 

@@ -193,16 +193,13 @@ async function saveProductHighlights(
       // the server decides. Skipping is right: inventing an id would upload against someone else's
       // block, and the service would refuse it anyway.
       if (savedHighlight === undefined) return;
-      const result = unwrap(
-        await uploadProductHighlightImage(productId, savedHighlight.id, imageFile),
-      );
+      unwrap(await uploadProductHighlightImage(productId, savedHighlight.id, imageFile));
       uploadedHighlightCount += 1;
       onProgress?.({
         phase: "highlights",
         current: uploadedHighlightCount,
         total: imageFileByIndex.size,
       });
-      return result;
     }),
   );
 }
@@ -276,7 +273,9 @@ export function useCreateListingMutation() {
         }),
       );
       if (imageFiles.length > 1) {
-        const sortedIds = uploadedImages.sort((a, b) => a.index - b.index).map((img) => img.id);
+        const sortedIds = uploadedImages
+          .toSorted((first, second) => first.index - second.index)
+          .map((img) => img.id);
         unwrap(await reorderProductImages(created.id, sortedIds));
       }
 
@@ -414,7 +413,7 @@ export function useUpdateListingMutation() {
         }),
       );
       const uploadedImageIds = uploadedImageEntries
-        .sort((a, b) => a.index - b.index)
+        .toSorted((first, second) => first.index - second.index)
         .map((entry) => entry.id);
 
       /**

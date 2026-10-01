@@ -246,13 +246,13 @@ A core requirement is determining **which country is facing which problem** and 
 
 $$\text{FeasibilityScore} = 0.30 \cdot S_{\text{density}} + 0.25 \cdot S_{\text{tam}} + 0.25 \cdot S_{\text{manufacturing}} + 0.20 \cdot S_{\text{regulatory}}$$
 
-1. **Unmet Need Density ($S_{\text{density}}$, 0–30 pts)**:
+1. **Unmet Need Density ($S\_{\text{density}}$, 0–30 pts)**:
    Derived from Qatoto's internal cluster data: $\log_{10}(\text{distinctReporterCount}) \times \text{clusteringDensity}$.
-2. **Purchasing Power & Addressable Market ($S_{\text{tam}}$, 0–25 pts)**:
+2. **Purchasing Power & Addressable Market ($S\_{\text{tam}}$, 0–25 pts)**:
    Derived from the World Bank API (`NY.GDP.PCAP.PP.CD`) multiplied by estimated population affected.
-3. **Manufacturing & Supply Chain Feasibility ($S_{\text{manufacturing}}$, 0–25 pts)**:
+3. **Manufacturing & Supply Chain Feasibility ($S\_{\text{manufacturing}}$, 0–25 pts)**:
    Derived from UN Comtrade HS6 tariff and import records joined against the Qatoto Original Design Manufacturer (ODM) network.
-4. **Regulatory Clarity & Ease of Deployment ($S_{\text{regulatory}}$, 0–20 pts)**:
+4. **Regulatory Clarity & Ease of Deployment ($S\_{\text{regulatory}}$, 0–20 pts)**:
    Derived from the World Bank B-READY institutional readiness indicator.
 
 ### 9.2 Problem Severity vs. Commercial Viability

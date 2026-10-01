@@ -28,24 +28,151 @@ const ROLE_DESCRIPTIONS: Record<PlatformRole, string> = {
 
 const REVOKE_CHOICE = "none";
 
-/**
- * Grant and revoke platform staff roles — under TWO-PERSON CONTROL.
- *
- * NOTHING ON THIS SCREEN CHANGES A ROLE BY ITSELF. One admin proposes; a DIFFERENT admin
- * countersigns; only then does `user.platform_role` move. That is the shape §7A already uses
- * for compensation statements, and it is here for the same reason: a single signature on
- * something that hands out moderation and granting power is one compromised session away
- * from being nobody's signature. A Postgres CHECK enforces it underneath, so it survives a
- * code path that forgets.
- *
- * ONE ACCOUNT AT A TIME, BY EXACT EMAIL. There is no user list and no search — an admin
- * console that could page through every account is an enumeration surface, and the backend
- * declines to offer one.
- *
- * IT NEEDS TWO ADMINS TO WORK AT ALL. With one, every proposal sits unratified.
- * `pnpm db:grant-platform-role` remains the bootstrap, and is the only way to make the first
- * two.
- */
+function StaffSubjectRoleProposalForm({
+  selectedRole,
+  onSelectRole,
+  isPending,
+  isSuccess,
+  onPropose,
+}: {
+  selectedRole: PlatformRole | typeof REVOKE_CHOICE | null;
+  onSelectRole: (role: PlatformRole | typeof REVOKE_CHOICE) => void;
+  isPending: boolean;
+  isSuccess: boolean;
+  onPropose: () => void;
+}) {
+  return (
+    <>
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-medium">Propose role</legend>
+        {PLATFORM_ROLES.map((role) => (
+          <label key={role} className="flex items-start gap-2 text-xs">
+            <input
+              type="radio"
+              name="platform-role"
+              value={role}
+              // The visible text lives in nested spans; naming the control directly
+              // keeps the accessible name flat and unambiguous.
+              aria-label={role}
+              checked={selectedRole === role}
+              onChange={() => onSelectRole(role)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">{role}</span>
+              <span className="block text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</span>
+            </span>
+          </label>
+        ))}
+        <label className="flex items-start gap-2 text-xs">
+          <input
+            type="radio"
+            name="platform-role"
+            value={REVOKE_CHOICE}
+            aria-label="none — revoke any role"
+            checked={selectedRole === REVOKE_CHOICE}
+            onChange={() => onSelectRole(REVOKE_CHOICE)}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="font-medium">none</span>
+            <span className="block text-muted-foreground">
+              Revokes any role, once countersigned.
+            </span>
+          </span>
+        </label>
+      </fieldset>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={onPropose}
+          disabled={selectedRole === null || isPending}
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isPending ? "Proposing…" : "Propose"}
+        </button>
+        {isSuccess && (
+          <output className="text-xs text-muted-foreground">
+            Proposed. It takes effect when another admin countersigns it below.
+          </output>
+        )}
+      </div>
+    </>
+  );
+}
+
+type PlatformRoleProposal = NonNullable<
+  ReturnType<typeof usePlatformRoleProposalsQuery>["data"]
+>[number];
+
+function StaffRoleProposalItem({
+  proposal,
+  ownUserId,
+  isCountersignPending,
+  isCancelPending,
+  onCountersign,
+  onCancel,
+}: {
+  proposal: PlatformRoleProposal;
+  ownUserId: string | undefined;
+  isCountersignPending: boolean;
+  isCancelPending: boolean;
+  onCountersign: () => void;
+  onCancel: () => void;
+}) {
+  // Both are refused by the backend — and by a CHECK constraint underneath it.
+  // Disabled here so the refusal is not how anyone finds out.
+  const isOwnProposal = proposal.proposedByUserId === ownUserId;
+  const isAboutSelf = proposal.subjectUserId === ownUserId;
+  const isBlocked = isOwnProposal || isAboutSelf;
+
+  return (
+    <li className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4">
+      <div className="space-y-0.5">
+        <p className="text-sm font-medium">
+          {proposal.subjectName}{" "}
+          <span className="font-normal text-muted-foreground">
+            {proposal.previousPlatformRole ?? "none"} → {proposal.nextPlatformRole ?? "none"}
+          </span>
+        </p>
+        <p className="text-xs text-muted-foreground">{proposal.subjectEmail}</p>
+        <p className="text-xs text-muted-foreground">
+          Proposed by {proposal.proposedByName ?? proposal.proposedByUserId} ·{" "}
+          {formatIsoInstant(proposal.proposedAt)}
+        </p>
+        {proposal.proposeNote !== "" && <p className="text-xs">{proposal.proposeNote}</p>}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={isBlocked || isCountersignPending}
+          onClick={onCountersign}
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Countersign
+        </button>
+        <button
+          type="button"
+          disabled={isCancelPending}
+          onClick={onCancel}
+          className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Withdraw
+        </button>
+        {isOwnProposal && (
+          <span className="text-xs text-muted-foreground">
+            You proposed this, so another admin has to countersign it.
+          </span>
+        )}
+        {isAboutSelf && !isOwnProposal && (
+          <span className="text-xs text-muted-foreground">This is about your own account.</span>
+        )}
+      </div>
+    </li>
+  );
+}
 export default function StaffRolePage() {
   const ownStaffContextQuery = useOwnStaffContextQuery();
   const [submittedEmail, setSubmittedEmail] = useState("");
@@ -162,65 +289,13 @@ export default function StaffRolePage() {
                 This is your own account. You cannot change your own role — ask another admin.
               </output>
             ) : (
-              <>
-                <fieldset className="space-y-2">
-                  <legend className="text-xs font-medium">Propose role</legend>
-                  {PLATFORM_ROLES.map((role) => (
-                    <label key={role} className="flex items-start gap-2 text-xs">
-                      <input
-                        type="radio"
-                        name="platform-role"
-                        value={role}
-                        // The visible text lives in nested spans; naming the control directly
-                        // keeps the accessible name flat and unambiguous.
-                        aria-label={role}
-                        checked={selectedRole === role}
-                        onChange={() => setSelectedRole(role)}
-                        className="mt-0.5"
-                      />
-                      <span>
-                        <span className="font-medium">{role}</span>
-                        <span className="block text-muted-foreground">
-                          {ROLE_DESCRIPTIONS[role]}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                  <label className="flex items-start gap-2 text-xs">
-                    <input
-                      type="radio"
-                      name="platform-role"
-                      value={REVOKE_CHOICE}
-                      aria-label="none — revoke any role"
-                      checked={selectedRole === REVOKE_CHOICE}
-                      onChange={() => setSelectedRole(REVOKE_CHOICE)}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      <span className="font-medium">none</span>
-                      <span className="block text-muted-foreground">
-                        Revokes any role, once countersigned.
-                      </span>
-                    </span>
-                  </label>
-                </fieldset>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleProposeClick}
-                    disabled={selectedRole === null || proposeMutation.isPending}
-                    className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {proposeMutation.isPending ? "Proposing…" : "Propose"}
-                  </button>
-                  {proposeMutation.isSuccess && (
-                    <output className="text-xs text-muted-foreground">
-                      Proposed. It takes effect when another admin countersigns it below.
-                    </output>
-                  )}
-                </div>
-              </>
+              <StaffSubjectRoleProposalForm
+                selectedRole={selectedRole}
+                onSelectRole={setSelectedRole}
+                isPending={proposeMutation.isPending}
+                isSuccess={proposeMutation.isSuccess}
+                onPropose={handleProposeClick}
+              />
             )}
           </div>
         )}
@@ -234,69 +309,19 @@ export default function StaffRolePage() {
           <p className="text-sm text-muted-foreground">Nothing waiting.</p>
         ) : (
           <ul className="space-y-3">
-            {pendingProposals.map((proposal) => {
-              // Both are refused by the backend — and by a CHECK constraint underneath it.
-              // Disabled here so the refusal is not how anyone finds out.
-              const isOwnProposal = proposal.proposedByUserId === ownUserId;
-              const isAboutSelf = proposal.subjectUserId === ownUserId;
-              const isBlocked = isOwnProposal || isAboutSelf;
-
-              return (
-                <li
-                  key={proposal.proposalId}
-                  className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
-                >
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">
-                      {proposal.subjectName}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        {proposal.previousPlatformRole ?? "none"} →{" "}
-                        {proposal.nextPlatformRole ?? "none"}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">{proposal.subjectEmail}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Proposed by {proposal.proposedByName ?? proposal.proposedByUserId} ·{" "}
-                      {formatIsoInstant(proposal.proposedAt)}
-                    </p>
-                    {proposal.proposeNote !== "" && (
-                      <p className="text-xs">{proposal.proposeNote}</p>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={isBlocked || countersignMutation.isPending}
-                      onClick={() =>
-                        countersignMutation.mutate({ proposalId: proposal.proposalId })
-                      }
-                      className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Countersign
-                    </button>
-                    <button
-                      type="button"
-                      disabled={cancelMutation.isPending}
-                      onClick={() => cancelMutation.mutate(proposal.proposalId)}
-                      className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-xs transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Withdraw
-                    </button>
-                    {isOwnProposal && (
-                      <span className="text-xs text-muted-foreground">
-                        You proposed this, so another admin has to countersign it.
-                      </span>
-                    )}
-                    {isAboutSelf && !isOwnProposal && (
-                      <span className="text-xs text-muted-foreground">
-                        This is about your own account.
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
+            {pendingProposals.map((proposal) => (
+              <StaffRoleProposalItem
+                key={proposal.proposalId}
+                proposal={proposal}
+                ownUserId={ownUserId}
+                isCountersignPending={countersignMutation.isPending}
+                isCancelPending={cancelMutation.isPending}
+                onCountersign={() =>
+                  countersignMutation.mutate({ proposalId: proposal.proposalId })
+                }
+                onCancel={() => cancelMutation.mutate(proposal.proposalId)}
+              />
+            ))}
           </ul>
         )}
       </section>

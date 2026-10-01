@@ -20,6 +20,7 @@ import {
   VIDEO_REPORT_REASON_LABELS,
   type VideoReportReason,
 } from "@/lib/videos/content-reports.api";
+import { ReportReasonSelectList } from "./report-reason-select-list";
 
 /** Matches `video_content_report_detail_ck`, so the server never has to reject on length. */
 const DETAIL_MAX_LENGTH = 2000;
@@ -158,31 +159,12 @@ export default function ReportVideoSheet({ videoId, title, onClose }: ReportVide
                 What&rsquo;s wrong with{" "}
                 <span className="text-foreground">&ldquo;{title}&rdquo;</span>?
               </p>
-              <ul>
-                {VIDEO_REPORT_REASONS.map((reason) => (
-                  <li key={reason}>
-                    <button
-                      type="button"
-                      aria-pressed={selectedReason === reason}
-                      onClick={() => setSelectedReason(reason)}
-                      className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted"
-                    >
-                      <span
-                        className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
-                          selectedReason === reason ? "border-foreground" : "border-border"
-                        }`}
-                      >
-                        {selectedReason === reason && (
-                          <span className="size-2 rounded-full bg-foreground" />
-                        )}
-                      </span>
-                      <span className="text-sm text-foreground">
-                        {VIDEO_REPORT_REASON_LABELS[reason]}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <ReportReasonSelectList
+                reasons={VIDEO_REPORT_REASONS}
+                reasonLabels={VIDEO_REPORT_REASON_LABELS}
+                selectedReason={selectedReason}
+                onSelectReason={setSelectedReason}
+              />
 
               <div className="px-4 pt-2 pb-3">
                 <label htmlFor="report-detail" className="block text-xs text-muted-foreground">

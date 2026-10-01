@@ -49,8 +49,10 @@ export default async function GoToMarketPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  const [resolvedSearchParams, requestOptions] = await Promise.all([
+    searchParams,
+    callerRequestOptions(),
+  ]);
 
   const suppliersFilter: ListSuppliersFilter = {
     limit: SUPPLIERS_PAGE_LIMIT,

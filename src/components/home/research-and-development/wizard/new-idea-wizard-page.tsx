@@ -24,7 +24,7 @@ import {
   IDEA_CATEGORIES,
   type NewIdeaDraft,
 } from "@/components/home/research-and-development/wizard/wizard-shared";
-import { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
+import { appendOptionNameIfNew } from "@/lib/combobox-helpers";
 
 /**
  * Multi-step post-idea wizard.

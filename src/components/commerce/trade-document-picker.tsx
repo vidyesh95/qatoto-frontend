@@ -94,6 +94,7 @@ export default function TradeDocumentPicker({
   }
 
   const availableDocuments = documentsQuery.data?.items ?? [];
+  const selectedDocumentIdsSet = new Set(selectedDocumentIds);
 
   return (
     <div className="flex flex-col gap-3">
@@ -145,7 +146,7 @@ export default function TradeDocumentPicker({
               <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
-                  checked={selectedDocumentIds.includes(tradeDocument.documentId)}
+                  checked={selectedDocumentIdsSet.has(tradeDocument.documentId)}
                   disabled={isDisabled}
                   onChange={() => toggleDocument(tradeDocument.documentId)}
                   className="size-4 cursor-pointer"

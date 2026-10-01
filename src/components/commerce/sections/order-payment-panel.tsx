@@ -32,7 +32,7 @@
 // decides — a `409` from a bad state is rendered rather than pre-empted, the same argument
 // `order-cancel-control.tsx` makes about its own state check being UX rather than authorization.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import {
@@ -80,15 +80,18 @@ export default function OrderPaymentPanel({
    * success because a genuinely new payment attempt, after a first one failed terminally, is a
    * different act that must not dedupe against the one before it.
    */
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const handlePayClick = () => {
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = newIdempotencyKey();
+    }
     createPaymentIntent.mutate(
-      { orderId, idempotencyKey },
+      { orderId, idempotencyKey: idempotencyKeyRef.current },
       {
         onSuccess: (result) => {
           if (!result.success) return;
-          setIdempotencyKey(newIdempotencyKey());
+          idempotencyKeyRef.current = newIdempotencyKey();
         },
       },
     );
@@ -373,6 +376,7 @@ function RazorpayCheckoutControl({ orderId, intent }: { orderId: string; intent:
       },
     });
     // Razorpay keeps its window open after a decline so the buyer can retry in place.
+    // react-doctor-disable-next-line effect-needs-cleanup
     checkout.on("payment.failed", (paymentFailure) => {
       const parsedFailure = RazorpayPaymentFailedSchema.safeParse(paymentFailure);
       const description = parsedFailure.success ? parsedFailure.data.error?.description : undefined;
@@ -501,7 +505,7 @@ function RequestRefundControl({
   const [reasonInput, setReasonInput] = useState("");
   // ONCE PER ATTEMPT. A key regenerated inside a retry refunds twice — the whole mechanism is that
   // the same value goes out on every send of one attempt.
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const createRefundMutation = useCreateRefund();
   const result = createRefundMutation.data;
@@ -534,6 +538,9 @@ function RequestRefundControl({
       onSubmit={(submitEvent) => {
         submitEvent.preventDefault();
         const trimmedAmount = amountInput.trim();
+        if (idempotencyKeyRef.current === null) {
+          idempotencyKeyRef.current = newIdempotencyKey();
+        }
         createRefundMutation.mutate({
           orderId,
           input: {
@@ -541,7 +548,7 @@ function RequestRefundControl({
             ...(trimmedAmount === "" ? {} : { amountInCents: Number(trimmedAmount) }),
             ...(reasonInput.trim() === "" ? {} : { reason: reasonInput.trim() }),
           },
-          idempotencyKey,
+          idempotencyKey: idempotencyKeyRef.current,
         });
       }}
     >
@@ -587,7 +594,7 @@ function RequestRefundControl({
             createRefundMutation.reset();
             // A NEW ATTEMPT GETS A NEW KEY. Closing the form ends this attempt; reusing the key
             // afterwards would make a deliberate second refund a silent no-op replay of the first.
-            setIdempotencyKey(newIdempotencyKey());
+            idempotencyKeyRef.current = newIdempotencyKey();
           }}
           className="cursor-pointer text-xs leading-4 text-muted-foreground underline"
         >

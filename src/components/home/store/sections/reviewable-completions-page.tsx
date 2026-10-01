@@ -87,7 +87,13 @@ export default function ReviewableCompletionsPage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Completed {new Date(completion.completedAt).toLocaleDateString()}
+                Completed{" "}
+                {new Date(completion.completedAt).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
               </p>
               <div className="mt-2">
                 {completion.hasReview ? (

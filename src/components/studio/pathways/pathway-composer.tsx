@@ -189,7 +189,7 @@ function PathwayEditor({ pathway }: { readonly pathway: PathwayAuthoring }) {
         )}
       </header>
 
-      <MetadataSection pathway={pathway} isEditable={isEditable} />
+      <MetadataSection key={pathway.id} pathway={pathway} isEditable={isEditable} />
       <ImageSection pathway={pathway} isEditable={isEditable} />
       <PlanSection pathway={pathway} isEditable={isEditable} />
       <SubmitSection pathway={pathway} isEditable={isEditable} />
@@ -204,7 +204,7 @@ function MetadataSection({
   readonly pathway: PathwayAuthoring;
   readonly isEditable: boolean;
 }) {
-  const [title, setTitle] = useState(pathway.title);
+  const [title, setTitle] = useState(() => pathway.title);
   const [summary, setSummary] = useState(pathway.summary ?? "");
   const [accent, setAccent] = useState<PathwayAccent>(() => narrowToAccent(pathway.accent));
   const [endsAt, setEndsAt] = useState(() => pathway.endsAt?.slice(0, 10) ?? "");

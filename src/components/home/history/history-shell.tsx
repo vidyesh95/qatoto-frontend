@@ -8,7 +8,7 @@
 // real page, so this branch exists nowhere else except `feed-shell.tsx`'s copy of it.
 
 import { FeedErrorPanel, FeedSignInRequiredPanel } from "@/components/home/feed/feed-status-panel";
-import { describeFeedError } from "@/components/home/feed/feed-status-panel";
+import { describeFeedError } from "@/lib/feed/format";
 import ClearWatchHistoryControl from "@/components/home/history/clear-watch-history-control";
 import HistoryList from "@/components/home/history/history-list";
 import { listFeedVideos } from "@/lib/feed/api";

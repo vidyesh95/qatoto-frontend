@@ -151,12 +151,18 @@ export function useSetCartItem(): UseMutationResult<
   Error,
   { readonly productId: string; readonly input: SetCartItemInput }
 > {
+  const queryClient = useQueryClient();
   const writeCart = useCartWriter();
 
   return useMutation({
     mutationFn: ({ productId, input }) => setCartItem(productId, input),
     // NO `onMutate`. See rule 1 — there is deliberately no optimistic branch to get wrong.
-    onSuccess: writeCart,
+    onSuccess: (result) => {
+      writeCart(result);
+      if (result.success) {
+        void queryClient.invalidateQueries({ queryKey: storeKeys.cart() });
+      }
+    },
   });
 }
 
@@ -165,11 +171,17 @@ export function useRemoveCartItem(): UseMutationResult<
   Error,
   { readonly productId: string; readonly input?: RemoveCartItemInput }
 > {
+  const queryClient = useQueryClient();
   const writeCart = useCartWriter();
 
   return useMutation({
     mutationFn: ({ productId, input }) => removeCartItem(productId, input),
-    onSuccess: writeCart,
+    onSuccess: (result) => {
+      writeCart(result);
+      if (result.success) {
+        void queryClient.invalidateQueries({ queryKey: storeKeys.cart() });
+      }
+    },
   });
 }
 
@@ -197,6 +209,7 @@ export function usePrepareCheckout(): UseMutationResult<
     readonly items?: readonly CheckoutItemSelector[];
   }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     // A45. RE-PREPARING WITH A DIFFERENT MODE IS A DIFFERENT REQUEST, and the caller mints a fresh
     // idempotency key for it — replaying the first key would return the first prepare's body and
@@ -212,6 +225,11 @@ export function usePrepareCheckout(): UseMutationResult<
         },
         { headers: { "Idempotency-Key": idempotencyKey } },
       ),
+    onSuccess: (result) => {
+      if (result.success) {
+        void queryClient.invalidateQueries({ queryKey: storeKeys.cart() });
+      }
+    },
   });
 }
 

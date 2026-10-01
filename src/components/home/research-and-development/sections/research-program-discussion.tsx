@@ -48,20 +48,18 @@ type ResearchProgramDiscussionProps = {
  *
  * Two components would mean two places to fix the next bug in either.
  */
-export default function ResearchProgramDiscussion({
+function ResearchProgramPostComposer({
   programSlug,
   track,
-  sort,
-  sortChips,
-  initialPage,
   branches,
   canPost,
-  canModerate,
-}: ResearchProgramDiscussionProps) {
+}: {
+  programSlug: string;
+  track: ResearchPostTrack;
+  branches: ResearchBranch[];
+  canPost: boolean;
+}) {
   const postMutation = useProgramPostMutation(programSlug);
-  const postFeed = useProgramPostFeed(programSlug, track, sort, initialPage);
-  const posts = postFeed.rows;
-
   const [title, setTitle] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -79,8 +77,6 @@ export default function ResearchProgramDiscussion({
       {
         action: "post",
         track,
-        // Null for an idea, non-null for an informal paper — the backend's CHECK requires
-        // exactly this, so sending the other shape is a 422 rather than a surprise.
         title: isTitled ? title.trim() : null,
         bodyText: bodyText.trim(),
         branchId: !isTitled && branchId !== "" ? branchId : null,
@@ -95,6 +91,145 @@ export default function ResearchProgramDiscussion({
     );
   }
 
+  if (!canPost) {
+    return <p className="text-sm text-muted-foreground">Sign in to join the discussion.</p>;
+  }
+
+  const isSubmitDisabled =
+    postMutation.isPending || !bodyText.trim() || (isTitled && !title.trim());
+
+  return (
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
+      >
+        {isTitled && (
+          <input
+            required
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            maxLength={200}
+            aria-label="Post title"
+            placeholder="A title for your post"
+            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+          />
+        )}
+
+        <textarea
+          required
+          value={bodyText}
+          onChange={(event) => setBodyText(event.target.value)}
+          maxLength={10_000}
+          rows={3}
+          aria-label={isTitled ? "Your argument" : "Your idea"}
+          placeholder={isTitled ? "What are you arguing?" : "What should we try?"}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+
+        {!isTitled && (
+          <BranchPickerField
+            programSlug={programSlug}
+            branches={branches}
+            selectedBranchId={branchId}
+            onBranchSelect={setBranchId}
+            labelText="About a branch? (optional)"
+            noBranchOptionLabel="Programme-wide"
+            helpText="Filing it against a branch is what makes it show on the research map. Type a name that does not exist yet to create it."
+            canCreateBranch={canPost}
+          />
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitDisabled}
+          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {postMutation.isPending ? "Posting…" : isTitled ? "Publish post" : "Post idea"}
+        </button>
+      </form>
+
+      {mutationError && <MutationErrorNotice error={mutationError.apiError} />}
+    </>
+  );
+}
+
+function ResearchProgramPostFeedView({
+  posts,
+  programSlug,
+  isTitled,
+  canPost,
+  canModerate,
+  loadMoreErrorMessage,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadNextPage,
+}: {
+  posts: ResearchPost[];
+  programSlug: string;
+  isTitled: boolean;
+  canPost: boolean;
+  canModerate: boolean;
+  loadMoreErrorMessage: string | null;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadNextPage: () => void;
+}) {
+  if (posts.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {isTitled ? "No informal posts yet." : "No ideas posted yet. Be the first."}
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <ul className="space-y-3">
+        {posts.map((post) => (
+          <ResearchPostItem
+            key={post.postId}
+            programSlug={programSlug}
+            post={post}
+            canInteract={canPost}
+            canModerate={canModerate}
+          />
+        ))}
+      </ul>
+
+      {loadMoreErrorMessage !== null && (
+        <p role="alert" className="text-sm text-destructive">
+          {loadMoreErrorMessage}
+        </p>
+      )}
+
+      {hasNextPage && (
+        <button
+          type="button"
+          onClick={onLoadNextPage}
+          disabled={isFetchingNextPage}
+          className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-60"
+        >
+          {isFetchingNextPage ? "Loading…" : "Load more"}
+        </button>
+      )}
+    </>
+  );
+}
+
+export default function ResearchProgramDiscussion({
+  programSlug,
+  track,
+  sort,
+  sortChips,
+  initialPage,
+  branches,
+  canPost,
+  canModerate,
+}: ResearchProgramDiscussionProps) {
+  const postFeed = useProgramPostFeed(programSlug, track, sort, initialPage);
+  const isTitled = track === "informal_paper";
+
   return (
     <div className="space-y-4 px-4 lg:px-6">
       <p className="max-w-2xl text-sm text-muted-foreground">
@@ -103,69 +238,18 @@ export default function ResearchProgramDiscussion({
           : "Anyone can post an idea. No credentials required — the argument is what matters."}
       </p>
 
-      {canPost ? (
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
-        >
-          {isTitled && (
-            <input
-              required
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              maxLength={200}
-              aria-label="Post title"
-              placeholder="A title for your post"
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-          )}
-
-          <textarea
-            required
-            value={bodyText}
-            onChange={(event) => setBodyText(event.target.value)}
-            maxLength={10_000}
-            rows={3}
-            aria-label={isTitled ? "Your argument" : "Your idea"}
-            placeholder={isTitled ? "What are you arguing?" : "What should we try?"}
-            className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-          />
-
-          {/* No `branches.length > 0` gate: an empty tree is exactly when creating one matters. */}
-          {!isTitled && (
-            <BranchPickerField
-              programSlug={programSlug}
-              branches={branches}
-              selectedBranchId={branchId}
-              onBranchSelect={setBranchId}
-              labelText="About a branch? (optional)"
-              noBranchOptionLabel="Programme-wide"
-              helpText="Filing it against a branch is what makes it show on the research map. Type a name that does not exist yet to create it."
-              canCreateBranch={canPost}
-            />
-          )}
-
-          <button
-            type="submit"
-            disabled={postMutation.isPending || !bodyText.trim() || (isTitled && !title.trim())}
-            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {postMutation.isPending ? "Posting…" : isTitled ? "Publish post" : "Post idea"}
-          </button>
-        </form>
-      ) : (
-        <p className="text-sm text-muted-foreground">Sign in to join the discussion.</p>
-      )}
-
-      {mutationError && <MutationErrorNotice error={mutationError.apiError} />}
+      <ResearchProgramPostComposer
+        programSlug={programSlug}
+        track={track}
+        branches={branches}
+        canPost={canPost}
+      />
 
       <div className="space-y-1">
         <FilterChipRow
           options={sortChips}
           ariaLabel={isTitled ? "Sort informal papers" : "Sort ideas"}
         />
-        {/* Says what "Trending" means rather than leaving the word to be guessed — and that it is
-            hourly, so a reaction a minute ago is not expected to move anything yet. */}
         {sort === "trending" && (
           <p className="text-xs text-muted-foreground">
             Reactions and replies from the last 7 days, updated hourly.
@@ -173,40 +257,17 @@ export default function ResearchProgramDiscussion({
         )}
       </div>
 
-      {posts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {isTitled ? "No informal posts yet." : "No ideas posted yet. Be the first."}
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {posts.map((post) => (
-            <ResearchPostItem
-              key={post.postId}
-              programSlug={programSlug}
-              post={post}
-              canInteract={canPost}
-              canModerate={canModerate}
-            />
-          ))}
-        </ul>
-      )}
-
-      {/* A failed page two must not blank page one, and must not silently do nothing either. */}
-      {postFeed.loadMoreErrorMessage !== null && (
-        <p role="alert" className="text-sm text-destructive">
-          {postFeed.loadMoreErrorMessage}
-        </p>
-      )}
-      {postFeed.hasNextPage && (
-        <button
-          type="button"
-          onClick={postFeed.loadNextPage}
-          disabled={postFeed.isFetchingNextPage}
-          className="cursor-pointer rounded-full border border-outline-variant px-4 py-2 text-sm font-medium disabled:opacity-60"
-        >
-          {postFeed.isFetchingNextPage ? "Loading…" : "Load more"}
-        </button>
-      )}
+      <ResearchProgramPostFeedView
+        posts={postFeed.rows}
+        programSlug={programSlug}
+        isTitled={isTitled}
+        canPost={canPost}
+        canModerate={canModerate}
+        loadMoreErrorMessage={postFeed.loadMoreErrorMessage}
+        hasNextPage={postFeed.hasNextPage}
+        isFetchingNextPage={postFeed.isFetchingNextPage}
+        onLoadNextPage={postFeed.loadNextPage}
+      />
     </div>
   );
 }

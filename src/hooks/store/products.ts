@@ -122,11 +122,16 @@ function useEngagementWriter(productSlug: string) {
 export function useToggleProductLiked(
   productSlug: string,
 ): UseMutationResult<ActionResponse<ProductEngagement>, Error, { readonly isLiked: boolean }> {
+  const queryClient = useQueryClient();
   const writeEngagement = useEngagementWriter(productSlug);
   return useMutation({
     mutationFn: ({ isLiked }) =>
       isLiked ? unlikeStoreProduct(productSlug) : likeStoreProduct(productSlug),
-    onSuccess: writeEngagement,
+    onSuccess: (result) => {
+      writeEngagement(result);
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.productEngagement(productSlug) });
+    },
   });
 }
 
@@ -164,10 +169,15 @@ export function useToggleProductBookmarked(
 export function useRecordProductShare(
   productSlug: string,
 ): UseMutationResult<ActionResponse<ProductEngagement>, Error, void> {
+  const queryClient = useQueryClient();
   const writeEngagement = useEngagementWriter(productSlug);
   return useMutation({
     mutationFn: () => shareStoreProduct(productSlug),
-    onSuccess: writeEngagement,
+    onSuccess: (result) => {
+      writeEngagement(result);
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.productEngagement(productSlug) });
+    },
   });
 }
 

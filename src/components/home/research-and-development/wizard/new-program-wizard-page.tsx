@@ -12,11 +12,14 @@ import { MutationErrorNotice } from "../sections/mutation-feedback";
 
 /** A branch the proposer sketches while writing the programme. Optional, and often empty. */
 interface SeedBranchDraft {
+  readonly id: string;
   readonly title: string;
   readonly summary: string;
 }
 
-const EMPTY_SEED_BRANCH: SeedBranchDraft = { title: "", summary: "" };
+function createEmptySeedBranch(): SeedBranchDraft {
+  return { id: crypto.randomUUID(), title: "", summary: "" };
+}
 
 /**
  * Propose a research programme.
@@ -43,7 +46,9 @@ export default function NewProgramWizardPage() {
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [missionStatement, setMissionStatement] = useState("");
-  const [seedBranches, setSeedBranches] = useState<SeedBranchDraft[]>([EMPTY_SEED_BRANCH]);
+  const [seedBranches, setSeedBranches] = useState<SeedBranchDraft[]>(() => [
+    createEmptySeedBranch(),
+  ]);
   const [submittedSlugTitle, setSubmittedSlugTitle] = useState<string | null>(null);
 
   const createError =
@@ -52,11 +57,9 @@ export default function NewProgramWizardPage() {
   const isSubmittable =
     title.trim().length >= 3 && tagline.trim().length >= 3 && missionStatement.trim().length >= 20;
 
-  function updateSeedBranch(index: number, patch: Partial<SeedBranchDraft>): void {
+  function updateSeedBranch(branchId: string, patch: Partial<SeedBranchDraft>): void {
     setSeedBranches((branches) =>
-      branches.map((branch, branchIndex) =>
-        branchIndex === index ? { ...branch, ...patch } : branch,
-      ),
+      branches.map((branch) => (branch.id === branchId ? { ...branch, ...patch } : branch)),
     );
   }
 
@@ -176,10 +179,10 @@ export default function NewProgramWizardPage() {
             nothing here is submitted yet.
           </p>
           {seedBranches.map((branch, index) => (
-            <div key={index} className="space-y-2">
+            <div key={branch.id} className="space-y-2">
               <input
                 value={branch.title}
-                onChange={(event) => updateSeedBranch(index, { title: event.target.value })}
+                onChange={(event) => updateSeedBranch(branch.id, { title: event.target.value })}
                 maxLength={120}
                 aria-label={`Branch ${index + 1} title`}
                 placeholder="Branch title"
@@ -187,7 +190,7 @@ export default function NewProgramWizardPage() {
               />
               <textarea
                 value={branch.summary}
-                onChange={(event) => updateSeedBranch(index, { summary: event.target.value })}
+                onChange={(event) => updateSeedBranch(branch.id, { summary: event.target.value })}
                 maxLength={2000}
                 rows={2}
                 aria-label={`What branch ${index + 1} is asking`}
@@ -198,7 +201,7 @@ export default function NewProgramWizardPage() {
           ))}
           <button
             type="button"
-            onClick={() => setSeedBranches((branches) => [...branches, EMPTY_SEED_BRANCH])}
+            onClick={() => setSeedBranches((branches) => [...branches, createEmptySeedBranch()])}
             className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs transition-colors hover:bg-muted"
           >
             Add another branch

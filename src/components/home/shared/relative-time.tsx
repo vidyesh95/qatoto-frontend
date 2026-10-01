@@ -40,7 +40,7 @@ function toUnitLabel(count: number, unit: string): string {
  * and a row whose `publishedAt` is a few seconds ahead of the reader's clock is a clock skew,
  * not a video from the future.
  */
-export function formatRelativeTimeLabel(isoInstant: string, nowMs: number): string {
+function formatRelativeTimeLabel(isoInstant: string, nowMs: number): string {
   const publishedMs = Date.parse(isoInstant);
   if (Number.isNaN(publishedMs)) return "";
 

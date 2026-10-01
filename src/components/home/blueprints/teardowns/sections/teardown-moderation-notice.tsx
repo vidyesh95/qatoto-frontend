@@ -78,13 +78,3 @@ export default function TeardownModerationNotice({
     }
   }
 }
-
-/**
- * Whether the payload — files, model, composition, bill of materials — may render at all.
- *
- * EXPORTED FROM HERE rather than derived at each call site, because it is the same decision in five
- * places and five copies of `state !== "quarantined"` is five places to forget one.
- */
-export function canRenderTeardownPayload(moderationState: BlueprintModerationState): boolean {
-  return moderationState !== "quarantined";
-}

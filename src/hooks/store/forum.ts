@@ -193,7 +193,11 @@ export function useCreateCommunityReport(): UseMutationResult<
   Error,
   { readonly input: CreateCommunityReportInput }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input }) => createCommunityReport(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["store", "community", "reports"] });
+    },
   });
 }

@@ -170,8 +170,12 @@ export function useRevealDeliveryAddress(): UseMutationResult<
   Error,
   { readonly orderId: string }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId }) => getOrderDeliveryAddress(orderId),
+    onSuccess: (_data, { orderId }) => {
+      void queryClient.invalidateQueries({ queryKey: storeKeys.order(orderId) });
+    },
   });
 }
 

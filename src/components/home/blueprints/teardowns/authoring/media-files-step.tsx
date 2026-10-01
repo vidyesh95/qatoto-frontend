@@ -5,12 +5,14 @@
 import { useState } from "react";
 
 import {
-  LabeledEnumSelect,
   LabeledTextInput,
-  RepeatableRowShell,
   RepeatableRowsShell,
 } from "@/components/home/blueprints/authoring/form-fields";
 import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
+import {
+  MediaDocumentRowItem,
+  MediaManufacturingFileRowItem,
+} from "@/components/home/blueprints/teardowns/authoring/media-file-row-items";
 import type {
   DocumentDraftRow,
   ManufacturingFileDraftRow,
@@ -18,12 +20,6 @@ import type {
 } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import { uploadTeardownFile } from "@/lib/blueprints/authoring.api";
 import type { TeardownUploadFormat } from "@/lib/blueprints/authoring.schemas";
-import {
-  BLUEPRINT_DOCUMENT_KIND_LABELS,
-  BLUEPRINT_DOCUMENT_KINDS,
-  TEARDOWN_MANUFACTURING_FILE_KIND_LABELS,
-  TEARDOWN_MANUFACTURING_FILE_KINDS,
-} from "@/lib/blueprints/schemas";
 
 /**
  * A new empty row, per list. `crypto.randomUUID()` for a stable React key — never sent.
@@ -161,171 +157,33 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
   }
 
   function renderDocumentRows() {
-    return draft.documents.map((row, rowIndex) => {
-      const isUploading = uploadingRowIds.has(row.rowId);
-      const rowError = uploadErrors[row.rowId];
-
-      return (
-        <RepeatableRowShell
-          key={row.rowId}
-          rowLabel={`Document ${rowIndex + 1}`}
-          onRemoveRow={() => removeDocumentRow(row.rowId)}
-        >
-          <LabeledTextInput
-            label="Name"
-            value={row.title}
-            onValueChange={(title) => updateDocumentRow(row.rowId, { title })}
-            placeholder="Control board schematic"
-          />
-          <LabeledEnumSelect
-            label="Kind"
-            value={row.kind}
-            options={BLUEPRINT_DOCUMENT_KINDS}
-            optionLabels={BLUEPRINT_DOCUMENT_KIND_LABELS}
-            onValueChange={(kind) =>
-              kind === "" ? undefined : updateDocumentRow(row.rowId, { kind })
-            }
-          />
-          <div className="sm:col-span-2">
-            {row.source === "uploaded" && row.uploadId ? (
-              <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
-                <div className="min-w-0 pr-3">
-                  <p className="truncate text-xs font-medium text-foreground">
-                    Uploaded: {row.fileName ?? row.uploadId}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Staged securely on Qatoto</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateDocumentRow(row.rowId, {
-                      source: "pasted_link",
-                      uploadId: undefined,
-                      fileName: undefined,
-                      url: "",
-                    })
-                  }
-                  className="shrink-0 text-xs text-primary-imprint hover:underline"
-                >
-                  Change to link
-                </button>
-              </div>
-            ) : (
-              <div>
-                <LabeledTextInput
-                  label="Link"
-                  inputType="url"
-                  value={row.url ?? ""}
-                  onValueChange={(url) => updateDocumentRow(row.rowId, { url })}
-                  placeholder="https://…"
-                />
-                <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>or upload a PDF (up to 50 MB)</span>
-                  <label className="cursor-pointer font-medium text-primary-imprint hover:underline">
-                    {isUploading ? "Uploading…" : "Upload PDF"}
-                    <input
-                      type="file"
-                      accept=".pdf,application/pdf"
-                      className="sr-only"
-                      disabled={isUploading}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void handleDocumentUpload(row.rowId, file);
-                      }}
-                    />
-                  </label>
-                </div>
-                {rowError ? <p className="mt-1 text-xs text-destructive">{rowError}</p> : null}
-              </div>
-            )}
-          </div>
-        </RepeatableRowShell>
-      );
-    });
+    return draft.documents.map((row, rowIndex) => (
+      <MediaDocumentRowItem
+        key={row.rowId}
+        row={row}
+        rowIndex={rowIndex}
+        isUploading={uploadingRowIds.has(row.rowId)}
+        rowError={uploadErrors[row.rowId]}
+        onRemove={() => removeDocumentRow(row.rowId)}
+        onUpdate={(patch) => updateDocumentRow(row.rowId, patch)}
+        onUpload={(file) => void handleDocumentUpload(row.rowId, file)}
+      />
+    ));
   }
 
   function renderManufacturingFileRows() {
-    return draft.manufacturingFiles.map((row, rowIndex) => {
-      const isUploading = uploadingRowIds.has(row.rowId);
-      const rowError = uploadErrors[row.rowId];
-
-      return (
-        <RepeatableRowShell
-          key={row.rowId}
-          rowLabel={`File ${rowIndex + 1}`}
-          onRemoveRow={() => removeManufacturingFileRow(row.rowId)}
-        >
-          <LabeledTextInput
-            label="Name"
-            value={row.title}
-            onValueChange={(title) => updateManufacturingFileRow(row.rowId, { title })}
-            placeholder="Enclosure, STEP"
-          />
-          <LabeledEnumSelect
-            label="Kind"
-            value={row.kind}
-            options={TEARDOWN_MANUFACTURING_FILE_KINDS}
-            optionLabels={TEARDOWN_MANUFACTURING_FILE_KIND_LABELS}
-            onValueChange={(kind) =>
-              kind === "" ? undefined : updateManufacturingFileRow(row.rowId, { kind })
-            }
-          />
-          <div className="sm:col-span-2">
-            {row.source === "uploaded" && row.uploadId ? (
-              <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
-                <div className="min-w-0 pr-3">
-                  <p className="truncate text-xs font-medium text-foreground">
-                    Uploaded: {row.fileName ?? row.uploadId}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Staged securely on Qatoto</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateManufacturingFileRow(row.rowId, {
-                      source: "pasted_link",
-                      uploadId: undefined,
-                      fileName: undefined,
-                      url: "",
-                    })
-                  }
-                  className="shrink-0 text-xs text-primary-imprint hover:underline"
-                >
-                  Change to link
-                </button>
-              </div>
-            ) : (
-              <div>
-                <LabeledTextInput
-                  label="Link"
-                  inputType="url"
-                  value={row.url ?? ""}
-                  onValueChange={(url) => updateManufacturingFileRow(row.rowId, { url })}
-                  placeholder="https://…"
-                />
-                <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>or upload CAD/3D model (STEP, STL, DXF, GLB, PDF)</span>
-                  <label className="cursor-pointer font-medium text-primary-imprint hover:underline">
-                    {isUploading ? "Uploading…" : "Upload file"}
-                    <input
-                      type="file"
-                      accept=".step,.stp,.stl,.dxf,.glb,.pdf"
-                      className="sr-only"
-                      disabled={isUploading}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void handleManufacturingFileUpload(row.rowId, file);
-                      }}
-                    />
-                  </label>
-                </div>
-                {rowError ? <p className="mt-1 text-xs text-destructive">{rowError}</p> : null}
-              </div>
-            )}
-          </div>
-        </RepeatableRowShell>
-      );
-    });
+    return draft.manufacturingFiles.map((row, rowIndex) => (
+      <MediaManufacturingFileRowItem
+        key={row.rowId}
+        row={row}
+        rowIndex={rowIndex}
+        isUploading={uploadingRowIds.has(row.rowId)}
+        rowError={uploadErrors[row.rowId]}
+        onRemove={() => removeManufacturingFileRow(row.rowId)}
+        onUpdate={(patch) => updateManufacturingFileRow(row.rowId, patch)}
+        onUpload={(file) => void handleManufacturingFileUpload(row.rowId, file)}
+      />
+    ));
   }
 
   return (

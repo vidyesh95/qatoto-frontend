@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-export const AI_ASSIST_OPTIONS: { value: boolean; label: string }[] = [
+const AI_ASSIST_OPTIONS: { value: boolean; label: string }[] = [
   { value: false, label: "Off" },
   { value: true, label: "On" },
 ];

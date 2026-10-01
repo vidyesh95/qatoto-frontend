@@ -4,14 +4,8 @@
 // the parent does the fetching, so the canvas still owns no transport of its own.
 "use client";
 
-import type {
-  GeoJSONSource,
-  Map as MapLibreMap,
-  MapOptions,
-  Marker as MapLibreMarker,
-} from "maplibre-gl";
 import Image from "next/image";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -20,213 +14,44 @@ import {
   PIN_SIZE_CLASS,
 } from "@/components/home/research-and-development/sections/problem-map-pins";
 import {
-  buildCatchmentRingPolygon,
-  type CatchmentRingPolygon,
-  isDarkThemeActive,
-  MAP_VIEW_PITCH_DEGREES,
-  type MapViewMode,
-  resolveCssColorToRgb,
-  resolveMapStyleUrl,
-} from "@/lib/rnd/civic-pulse-map";
+  type MapViewportReport,
+  type VectorMapStatus,
+  useCivicPulseMaplibreController,
+} from "@/hooks/rnd/use-civic-pulse-maplibre-controller";
+import type { MapViewMode } from "@/lib/rnd/civic-pulse-map";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 import { toOpportunityBand } from "@/lib/rnd/map-projection";
-import {
-  computeUncoveredFitPaddingPx,
-  computeUnobscuredCentreOffsetPx,
-  type MapCamera,
-  toViewportBoundsMicrodegrees,
-  type ViewportBoundsMicrodegrees,
-} from "@/lib/rnd/map-viewport";
+import type { MapCamera } from "@/lib/rnd/map-viewport";
 
-/**
- * The Civic Pulse vector basemap — the same cluster pins the static canvas draws, over real
- * OpenStreetMap geography instead of `public/dummy/world_map.svg`.
- *
- * **WHY THE SWAP IS WORTH A DEPENDENCY.** `map-projection.ts` says of its own two latitude
- * constants that they are "calibrated estimates from the aspect ratio, not exact … if a pin sits
- * visibly off its country the fix is one visual pass". That is a permanent, unfixable-in-principle
- * error bar on every pin: the SVG carries no `viewBox` and declares no projection, so there is
- * nothing to calibrate *against*. A vector basemap has a real projection, so a centroid lands
- * where the centroid is.
- *
- * **MAPLIBRE IS LOADED WITH `await import()` INSIDE AN EFFECT AND MUST STAY THAT WAY.** It is the
- * second-largest dependency in this repo after `three`, and it follows exactly the rule the
- * teardown 3D engine follows (CLAUDE.md, Blueprints §3D viewer): both stacks "load through
- * `await import()` inside an effect and never share a page's chunk graph". A static import here
- * would put a megabyte of GPU map renderer into the `(home)` shell for every reader of every
- * route in it.
- *
- * **EVERY PIN IS A REAL `<button aria-pressed>`, PORTALLED INTO A MARKER CONTAINER.**
- * ⚠️ This is load-bearing and not a style preference. `tests/specs/rnd-backend.spec.ts` asserts
- * on `button[aria-pressed]` for pin rendering, single-select and cross-highlighting. The obvious
- * alternative — a GeoJSON source with a `symbol` layer — draws pins *into the WebGL canvas*, where
- * they have no DOM node, take no keyboard focus, carry no accessible name and match no selector.
- * MapLibre's own `MarkerOptions` documents that markers with a custom `element` keep their
- * "focusability and keyboard behavior application-owned", which is the seam this uses.
- *
- * **THE PIN ART IS THE STATIC CANVAS'S PIN ART.** The icon, size and ring records come from
- * `problem-map-pins.ts`, which both renderers import, so the two cannot drift into showing the
- * same cluster two different ways.
- */
-
-/** What the map is showing, handed upward so the parent can fetch for it. */
-export interface MapViewportReport {
-  readonly bounds: ViewportBoundsMicrodegrees;
-  readonly camera: MapCamera;
-  /**
-   * True for the one report the map makes on its own as soon as it exists, rather than after a
-   * reader moved it. The parent uses it to fetch without writing a camera nobody chose into the
-   * address bar.
-   */
-  readonly isInitial: boolean;
-}
+export type { MapViewportReport };
 
 type CivicPulseVectorMapProps = {
   readonly clusters: ProblemCluster[];
   readonly selectedClusterId: string | null;
   readonly onSelectCluster: (clusterId: string) => void;
-  /**
-   * Where to open. `null` means nobody named a camera, so the map fits to the clusters instead.
-   *
-   * ⚠️ **READ ONCE, AT MOUNT.** It is held in a `useRef` initialiser precisely so a later change
-   * cannot move a map the reader is currently panning.
-   */
   readonly initialCamera: MapCamera | null;
-  /** Debounced on `moveend`, plus one `isInitial` report as soon as the map exists. */
   readonly onViewportChange: (viewport: MapViewportReport) => void;
-  /**
-   * Flat or tilted. NOT a basemap — same style, same tiles, same licence; only the camera moves.
-   * The `building-3d` layer `liberty` already ships is what appears once there is pitch to see it
-   * from, and only from z14, where the vector data actually carries building geometry.
-   */
   readonly viewMode: MapViewMode;
-  /**
-   * Called when the basemap cannot be shown, so the parent can fall back to the static canvas.
-   *
-   * ⚠️ **THE FALLBACK IS A WORKING MAP, NOT A MESSAGE.** An earlier draft painted an
-   * "unavailable" panel over the dead canvas, which left a reader with the flag on strictly worse
-   * off than a reader with it off: the pins were gone. Handing the surface back to the SVG means a
-   * tile outage costs geographic precision and nothing else.
-   */
   readonly onUnavailable: () => void;
-  /**
-   * The panel or sheet floating over the map. Read only at the moment a selection is eased to, so
-   * the cluster lands in the middle of the part of the map the reader can see rather than under
-   * the list. `null` inside the ref when nothing is mounted over the map.
-   */
   readonly mapOverlayRef: RefObject<HTMLElement | null>;
-  /**
-   * How far apart two reports may be and still join one cluster, from the list envelope. Drawn as
-   * a ring around the SELECTED cluster only; `null` (the backend did not send it) draws nothing —
-   * never a copied 25 km.
-   */
   readonly matchRadiusMeters: number | null;
 };
 
-/**
- * What the canvas is doing right now.
- *
- * A discriminated union rather than `isLoading` + `hasFailed` (CLAUDE.md Pattern 1): "tiles are
- * still loading" and "the tile host is unreachable" are states that must not be constructible at
- * the same time, and the overlay renders from an exhaustive `switch`.
- */
-type VectorMapStatus = { readonly kind: "loading" } | { readonly kind: "ready" };
-
-/**
- * How many tile errors in a row mean the host is down rather than one tile being slow.
- *
- * A single `error` event is ordinary — a tile 404s at the edge of coverage on every map ever
- * made. Three consecutive ones is a provider outage, which is the risk OpenFreeMap's lack of an
- * SLA buys us (`docs/MAP_TILE_FALLBACK.md` §1: an unhardened frontend "renders a completely blank
- * gray canvas").
- */
-const CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP = 3;
-
-/** Whole world, roughly centred — only when there is no URL camera AND no cluster to open on. */
-const INITIAL_MAP_CENTER: [number, number] = [10, 20];
-const INITIAL_MAP_ZOOM = 1.3;
-
-/** How close an opening fit may zoom — one cluster's zero-area box would otherwise hit maximum. */
-const OPENING_FIT_MAX_ZOOM = 6;
-/** Room left between the outermost opening pins and the uncovered part's edges. */
-const OPENING_FIT_MARGIN_PX = 64;
-
-/**
- * How long after the last camera movement the viewport is reported.
- *
- * `moveend` already fires once per gesture rather than per frame, but a flick fires it again when
- * the inertia settles and a pinch fires it per discrete zoom. This collapses a burst into the one
- * request that describes where the reader actually stopped.
- */
-const VIEWPORT_REPORT_DEBOUNCE_MS = 300;
-
-const CATCHMENT_SOURCE_ID = "selected-cluster-catchment";
-const CATCHMENT_FILL_LAYER_ID = "selected-cluster-catchment-fill";
-const CATCHMENT_LINE_LAYER_ID = "selected-cluster-catchment-line";
-
-/** Points the ring's source at `catchmentRing`, or at nothing. A no-op until the source exists. */
-function applyCatchmentRing(map: MapLibreMap, catchmentRing: CatchmentRingPolygon | null): void {
-  // `setData` resolves once the worker has re-tiled the source; nothing waits on that.
-  void map.getSource<GeoJSONSource>(CATCHMENT_SOURCE_ID)?.setData({
-    type: "FeatureCollection",
-    features:
-      catchmentRing === null ? [] : [{ type: "Feature", properties: {}, geometry: catchmentRing }],
-  });
-}
-
-/**
- * Adds the ring's source and its two layers — a faint fill and a dashed outline, both in
- * `--primary-imprint` (the One Hue Rule) resolved to rgb because MapLibre cannot read `oklch()`.
- * Canvas layers, never interactive, and always under the DOM pins, which stay `<button>`s.
- */
-function addCatchmentRingLayers(
-  map: MapLibreMap,
-  catchmentRing: CatchmentRingPolygon | null,
-): void {
-  const ringColor = resolveCssColorToRgb("--primary-imprint");
-  if (map.getSource(CATCHMENT_SOURCE_ID) === undefined) {
-    map.addSource(CATCHMENT_SOURCE_ID, {
-      type: "geojson",
-      data: { type: "FeatureCollection", features: [] },
-    });
+function VectorMapStatusOverlay({ status }: { readonly status: VectorMapStatus }) {
+  switch (status.kind) {
+    case "loading":
+      return (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <span className="text-xs text-muted-foreground">Loading map…</span>
+        </div>
+      );
+    case "ready":
+      return null;
+    default: {
+      const exhaustiveCheck: never = status;
+      return exhaustiveCheck;
+    }
   }
-  if (map.getLayer(CATCHMENT_FILL_LAYER_ID) === undefined) {
-    map.addLayer({
-      id: CATCHMENT_FILL_LAYER_ID,
-      type: "fill",
-      source: CATCHMENT_SOURCE_ID,
-      paint: { "fill-color": ringColor, "fill-opacity": 0.08 },
-    });
-  }
-  if (map.getLayer(CATCHMENT_LINE_LAYER_ID) === undefined) {
-    map.addLayer({
-      id: CATCHMENT_LINE_LAYER_ID,
-      type: "line",
-      source: CATCHMENT_SOURCE_ID,
-      paint: { "line-color": ringColor, "line-width": 1.5, "line-dasharray": [2, 2] },
-    });
-  }
-  applyCatchmentRing(map, catchmentRing);
-}
-
-/**
- * The west/south/east/north box around a set of clusters, in degrees, as MapLibre's `bounds` takes
- * it. A single cluster gives a zero-area box, which `OPENING_FIT_MAX_ZOOM` keeps from zooming in
- * to the maximum.
- */
-function toClusterBoundsDegrees(
-  clusters: readonly ProblemCluster[],
-): [[number, number], [number, number]] {
-  const longitudesDegrees = clusters.map(
-    (cluster) => cluster.centroidLongitudeMicrodegrees / 1_000_000,
-  );
-  const latitudesDegrees = clusters.map(
-    (cluster) => cluster.centroidLatitudeMicrodegrees / 1_000_000,
-  );
-  return [
-    [Math.min(...longitudesDegrees), Math.min(...latitudesDegrees)],
-    [Math.max(...longitudesDegrees), Math.max(...latitudesDegrees)],
-  ];
 }
 
 export default function CivicPulseVectorMap({
@@ -240,436 +65,19 @@ export default function CivicPulseVectorMap({
   mapOverlayRef,
   matchRadiusMeters,
 }: CivicPulseVectorMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  /**
-   * The camera the URL asked for, frozen at mount.
-   *
-   * `useRef(value)` keeps its FIRST argument forever, which is exactly the semantics wanted here
-   * and is why this is not a prop read inside the effect: the map is created once, and a later
-   * prop change must not be able to recentre a map somebody is dragging.
-   */
-  const initialCameraRef = useRef(initialCamera);
-  /**
-   * The pitch the map is BORN with, frozen at mount for the same reason `initialCamera` is: the
-   * map-creation effect must never re-run, and a prop it reads directly would be a dependency.
-   * Later changes are applied by the `easeTo` effect below instead.
-   */
-  const initialViewModeRef = useRef(viewMode);
-  /**
-   * The clusters the page OPENED with, frozen at mount — the server's unbounded page, since the
-   * query seeds only its no-viewport key. The map opens fitted to these.
-   *
-   * ⚠️ **THE OPENING FIT HAPPENS AT CONSTRUCTION, NOT IN THE MARKER EFFECT, AND BOTH HALVES OF
-   * THAT ARE FIXES.** It used to be a `fitBounds` at the end of the marker effect, latched to once
-   * per map (`hasFittedToClustersRef`) because that effect re-runs on every `clusters` change and
-   * an unlatched fit was an endless pan → refetch → fit loop. It also RACED the first viewport read:
-   * the map reports its viewport the moment it exists, and on a 375px phone the world view spans
-   * only longitude −43°…63°, so that read came back empty before the fit ran and the fit never
-   * happened — measured, a phone reader with no URL camera got "No clusters in this view". Fitted
-   * at construction, the first viewport report is already the fitted view, no effect can repeat
-   * the fit, and the latch is gone because there is no loop left for it to break.
-   */
-  const initialClustersRef = useRef(clusters);
-  /**
-   * The latest `onViewportChange` and `onUnavailable`, so the map-creation effect can call them
-   * without taking either as a dependency.
-   *
-   * ⚠️ **THE MAP IS CREATED ONCE. A CALLBACK PROP MUST NOT BE ABLE TO CHANGE THAT, AND THIS IS
-   * MEASURED RATHER THAN DEFENSIVE.** The effect used to list `onUnavailable`, which the parent
-   * passes as an inline arrow. That held for as long as the parent barely re-rendered — but once
-   * it owned a React Query subscription it re-rendered on every fetch, handing down a fresh
-   * closure each time, and the effect tore the map down and built a new one. `createMap` ends in
-   * `setReadyMapToken`, so each rebuild scheduled the render that caused the next: measured as
-   * "Maximum update depth exceeded" ×129, a map whose `load` never fired, and every marker
-   * destroyed microseconds after it was attached — which took `button[aria-pressed]` off the
-   * page, and with it both the accessible path to the pins and the selector the E2E spec asserts.
-   *
-   * Refs rather than `useCallback` in the parent: a stable identity there would be a promise this
-   * component depends on and cannot check, and the next person to add a prop would have no way to
-   * know they had broken it.
-   */
-  const onViewportChangeRef = useRef(onViewportChange);
-  const onUnavailableRef = useRef(onUnavailable);
-  /**
-   * The latest clusters, for the selection ease below — which must NOT take `clusters` as a
-   * dependency, for the reason given there.
-   */
-  const latestClustersRef = useRef(clusters);
-  /**
-   * The selection the camera last eased to, seeded with the one the page OPENED on. Seeding it is
-   * what makes mount a no-op: a `?cluster=` link already carries its own camera or gets the
-   * opening fit, and easing on top of either would throw that view away.
-   */
-  const lastEasedSelectionIdRef = useRef(selectedClusterId);
-  /**
-   * The ring currently owed to the map, kept here because a theme swap REPLACES the style and with
-   * it every custom source: the `style.load` handler re-adds the layers and re-applies this.
-   */
-  const selectedCatchmentRef = useRef<CatchmentRingPolygon | null>(null);
-  // `import type` is ERASED AT COMPILE TIME, so naming MapLibre's own types here costs nothing at
-  // runtime — the package still arrives only through the `await import()` below. An earlier draft
-  // hand-rolled structural types (`{ remove: () => void }`) to avoid an import that was never a
-  // problem, and paid for it in `as` casts on every call, which CLAUDE.md Pattern 2 rules out.
-  const mapInstanceRef = useRef<MapLibreMap | null>(null);
-
-  const [status, setStatus] = useState<VectorMapStatus>({ kind: "loading" });
-  /** Set once the map exists, which is the signal the marker effect waits on. */
-  const [readyMapToken, setReadyMapToken] = useState(0);
-  const [markerContainersByClusterId, setMarkerContainersByClusterId] = useState<
-    ReadonlyMap<string, HTMLDivElement>
-  >(() => new Map());
-
-  useEffect(() => {
-    onViewportChangeRef.current = onViewportChange;
-    onUnavailableRef.current = onUnavailable;
-    latestClustersRef.current = clusters;
-  }, [onViewportChange, onUnavailable, clusters]);
-
-  // --- Create the map exactly once -------------------------------------------------------
-  useEffect(() => {
-    const mapContainer = mapContainerRef.current;
-    let isEffectStillMounted = true;
-    let consecutiveTileErrorCount = 0;
-    let viewportReportTimer: ReturnType<typeof setTimeout> | undefined;
-
-    async function createMap(container: HTMLDivElement) {
-      // Both the module and its stylesheet are fetched here, so neither reaches a reader who
-      // never opens this surface.
-      const [maplibreModule] = await Promise.all([
-        import("maplibre-gl"),
-        import("maplibre-gl/dist/maplibre-gl.css"),
-      ]);
-      if (!isEffectStillMounted) return;
-
-      // ⚠️ TURBOPACK BREAKS MAPLIBRE'S TILE WORKER, AND WITHOUT THIS LINE THE MAP IS A BACKDROP
-      // WITH NO MAP ON IT. MapLibre parses every vector tile in a Web Worker whose URL it derives
-      // from its own `import.meta.url`, bailing to an empty string when that is not http(s):
-      //
-      //     let e = import.meta.url;
-      //     if (!/^https?:/.test(e)) return ``;
-      //
-      // Under Turbopack that value is `file:///ROOT/src/...`, so MapLibre calls
-      // `new Worker("", { type: "module" })`, the worker dies on construction, and NOTHING
-      // SURFACES — no throw, no error event, no console message. The style, sprites and Natural
-      // Earth raster still load on the main thread, so the canvas renders a convincing
-      // shaded-relief backdrop while every `.pbf` is silently never fetched. Measured before the
-      // fix: 0 `.pbf` requests, `load` never fired.
-      //
-      // ⚠️ **AND IT MUST POINT AT `public/`, NOT AT TURBOPACK'S OWN EMITTED COPY.** Turbopack emits
-      // the worker as a raw asset WITHOUT rewriting the imports inside it, so its
-      // `/_next/static/media/maplibre-gl-worker.<hash>.mjs` still says
-      // `import … from "./maplibre-gl-shared.mjs"` while the sibling is emitted under a different
-      // content hash — measured 404 on the unhashed path, 200 on the hashed one. Both files have
-      // to sit together under their ORIGINAL names, which `scripts/sync-maplibre-worker.mjs`
-      // guarantees by re-copying them on every `dev` and every `build`.
-      maplibreModule.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
-
-      const requestedCamera = initialCameraRef.current;
-      const openingClusters = initialClustersRef.current;
-
-      // Three ways to open, in order: a shared link's own camera, else FITTED to the clusters that
-      // exist (clear of the panel or sheet over the map), else the whole world. All set at
-      // construction rather than by a `jumpTo` afterwards, so the first painted frame is already
-      // the right one and the first viewport report describes it.
-      const openingCamera: Pick<MapOptions, "center" | "zoom" | "bounds" | "fitBoundsOptions"> =
-        requestedCamera !== null
-          ? {
-              center: [requestedCamera.longitudeDegrees, requestedCamera.latitudeDegrees],
-              zoom: requestedCamera.zoom,
-            }
-          : openingClusters.length > 0
-            ? {
-                bounds: toClusterBoundsDegrees(openingClusters),
-                fitBoundsOptions: {
-                  padding: computeUncoveredFitPaddingPx(
-                    container.getBoundingClientRect(),
-                    mapOverlayRef.current === null
-                      ? null
-                      : mapOverlayRef.current.getBoundingClientRect(),
-                    OPENING_FIT_MARGIN_PX,
-                  ),
-                  maxZoom: OPENING_FIT_MAX_ZOOM,
-                },
-              }
-            : { center: INITIAL_MAP_CENTER, zoom: INITIAL_MAP_ZOOM };
-
-      const map = new maplibreModule.Map({
-        container,
-        style: resolveMapStyleUrl(isDarkThemeActive()),
-        ...openingCamera,
-        // Set at construction rather than eased afterwards, so a reader who arrives in 3D does not
-        // watch the map tilt itself on first paint.
-        pitch: MAP_VIEW_PITCH_DEGREES[initialViewModeRef.current],
-        // Keyboard pan/zoom on the canvas itself, so the map is operable without a pointer.
-        keyboard: true,
-        // Without this, a two-finger scroll over a full-width map eats the page scroll on
-        // touch and a trackpad scroll zooms instead of scrolling past. MapLibre renders its
-        // own "use ctrl + scroll to zoom" hint.
-        cooperativeGestures: true,
-        // The ODbL credit is not optional and is not ours to compose: it arrives on the planet
-        // TileJSON and MapLibre renders it from there.
-        attributionControl: { compact: true },
-      });
-
-      mapInstanceRef.current = map;
-      map.addControl(new maplibreModule.NavigationControl({ showCompass: false }), "top-right");
-
-      // ⚠️ **MARKERS ATTACH AS SOON AS THE MAP OBJECT EXISTS, NOT ON `load`.** A `Marker` needs
-      // only the map's transform to place itself, so gating the pins on `load` made every pin
-      // depend on a third-party tile host finishing its work. That is how the worker bug above
-      // presented: `load` never fired, and the surface rendered a map with NO PINS AT ALL — worse
-      // than the SVG it replaced. The pins are our data and must not wait on anyone else's.
-      setReadyMapToken((previousToken) => previousToken + 1);
-
-      function reportViewport(isInitial: boolean) {
-        if (!isEffectStillMounted) return;
-        const bounds = map.getBounds();
-        const center = map.getCenter();
-        onViewportChangeRef.current({
-          bounds: toViewportBoundsMicrodegrees({
-            westDegrees: bounds.getWest(),
-            southDegrees: bounds.getSouth(),
-            eastDegrees: bounds.getEast(),
-            northDegrees: bounds.getNorth(),
-          }),
-          camera: {
-            latitudeDegrees: center.lat,
-            longitudeDegrees: center.lng,
-            zoom: map.getZoom(),
-          },
-          isInitial,
-        });
-      }
-
-      // ⚠️ **REPORT ONCE IMMEDIATELY, FOR THE SAME REASON THE MARKERS ATTACH IMMEDIATELY.** A map
-      // that is never touched fires no `moveend`, so without this the first viewport-scoped read
-      // would wait for a reader to drag something and the panel would keep showing the unbounded
-      // server page in the meantime. A `Marker` needs only the map's transform to place itself and
-      // so does `getBounds()`, so neither has any business waiting on a third-party tile host.
-      reportViewport(true);
-
-      map.on("moveend", () => {
-        if (!isEffectStillMounted) return;
-        clearTimeout(viewportReportTimer);
-        viewportReportTimer = setTimeout(() => reportViewport(false), VIEWPORT_REPORT_DEBOUNCE_MS);
-      });
-
-      // The catchment ring's layers. `style.load` fires for the first style AND after every
-      // `setStyle` — the theme observer below swaps the whole style, which drops custom sources.
-      map.on("style.load", () => {
-        if (!isEffectStillMounted) return;
-        addCatchmentRingLayers(map, selectedCatchmentRef.current);
-      });
-
-      // `load` now only clears the "Loading map…" caption. Nothing depends on it.
-      map.on("load", () => {
-        if (!isEffectStillMounted) return;
-        setStatus({ kind: "ready" });
-      });
-
-      map.on("error", () => {
-        if (!isEffectStillMounted) return;
-        consecutiveTileErrorCount += 1;
-        if (consecutiveTileErrorCount >= CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP) {
-          onUnavailableRef.current();
-        }
-      });
-
-      // ⚠️ **RESET ONLY ON A TILE THAT ACTUALLY ARRIVED** (`event.tile` is set), never on any
-      // `sourcedata`. The first draft reset the streak on every `sourcedata` event, which fires
-      // repeatedly while a source loads its metadata — so a source that could never serve a single
-      // tile kept clearing its own error count and the failure was unreachable by construction.
-      // The streak exists to tell one 404 at the edge of coverage apart from a dead host, and only
-      // a delivered tile proves the host is alive.
-      map.on("data", (dataEvent) => {
-        if (dataEvent.dataType === "source" && "tile" in dataEvent && dataEvent.tile) {
-          consecutiveTileErrorCount = 0;
-        }
-      });
-    }
-
-    if (mapContainer) {
-      void createMap(mapContainer).catch(() => {
-        if (!isEffectStillMounted) return;
-        onUnavailableRef.current();
-      });
-    }
-
-    return () => {
-      isEffectStillMounted = false;
-      clearTimeout(viewportReportTimer);
-      mapInstanceRef.current?.remove();
-      mapInstanceRef.current = null;
-    };
-    // Empty on purpose — see the ref block above. Every value this effect needs is either read
-    // once at mount or reached through a ref, so there is nothing here that could legitimately
-    // ask for a second map.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // --- Follow the theme ------------------------------------------------------------------
-  // The map is created with whatever theme was active at mount; this keeps it in step if `.dark`
-  // lands on `<html>` later. Nothing writes that class today (see `civic-pulse-map.ts`), so this
-  // observer is dormant by design rather than dead — it is what makes the map follow appearance
-  // for free on the day appearance returns.
-  useEffect(() => {
-    const themeObserver = new MutationObserver(() => {
-      mapInstanceRef.current?.setStyle(resolveMapStyleUrl(isDarkThemeActive()));
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => themeObserver.disconnect();
-  }, []);
-
-  // --- Follow the view mode --------------------------------------------------------------
-  //
-  // ⚠️ **THIS FIRES `moveend`, AND `moveend` DRIVES THE CLUSTER FETCH.** That is correct rather
-  // than incidental: a tilted camera genuinely sees further toward the horizon, so `getBounds()`
-  // widens and the viewport-scoped read should widen with it. What it must NOT do is feed itself — a
-  // camera move that re-triggers a camera move never settles, which is why the opening fit lives at
-  // construction. This one is safe because it eases only when `viewMode` actually changed, and
-  // nothing downstream of the fetch can change `viewMode`.
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (map === null) return;
-    const targetPitch = MAP_VIEW_PITCH_DEGREES[viewMode];
-    // Already there on the first run, because the map was constructed with this pitch. Skipping
-    // spares one pointless `moveend` and therefore one pointless read on every mount.
-    if (map.getPitch() === targetPitch) return;
-    map.easeTo({ pitch: targetPitch, duration: 400 });
-  }, [viewMode, readyMapToken]);
-
-  // --- Ease to the selected cluster (`docs/PROBLEM_MAP_UX.md` §6, "Cluster selected") ----------
-  //
-  // ⚠️ **THIS FIRES `moveend` TOO, AND `clusters` MUST STAY OUT OF THE DEPENDENCY LIST.** The ease
-  // moves the camera, the debounced `moveend` reports the viewport, and the refetch hands down a new
-  // `clusters` array. With `clusters` as a dependency that array would re-run this effect and ease
-  // again — the loop that moved the opening fit to construction. So the clusters are read through a ref,
-  // and the effect acts only when the selected id CHANGED since it last acted: one selection, one
-  // ease, one extra read, which is what the view-mode toggle above costs as well.
-  //
-  // Zoom is left alone: the spec asks for the centroid, and a zoom change would swing the viewport
-  // read much further than a pan. `prefers-reduced-motion` needs no code here — MapLibre skips any
-  // animation not marked `essential` and jumps instead, which still fires `moveend`.
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (map === null) return;
-    if (selectedClusterId === lastEasedSelectionIdRef.current) return;
-    lastEasedSelectionIdRef.current = selectedClusterId;
-    // Deselecting leaves the camera where the reader put it.
-    if (selectedClusterId === null) return;
-
-    const selectedCluster = latestClustersRef.current.find(
-      (cluster) => cluster.id === selectedClusterId,
-    );
-    if (!selectedCluster) return;
-
-    const overlayElement = mapOverlayRef.current;
-    const unobscuredCentreOffsetPx = computeUnobscuredCentreOffsetPx(
-      map.getContainer().getBoundingClientRect(),
-      overlayElement === null ? null : overlayElement.getBoundingClientRect(),
-    );
-    map.easeTo({
-      center: [
-        selectedCluster.centroidLongitudeMicrodegrees / 1_000_000,
-        selectedCluster.centroidLatitudeMicrodegrees / 1_000_000,
-      ],
-      // Applies to this animation only — unlike `padding`, it leaves the map's own padding, and so
-      // `getBounds()` and the viewport read, exactly as they were.
-      offset: unobscuredCentreOffsetPx,
-      duration: 600,
-    });
-  }, [selectedClusterId, readyMapToken, mapOverlayRef]);
-
-  // --- The selected cluster's catchment ring (`docs/PROBLEM_MAP_UX.md` §8) -------------------
-  //
-  // A report joins a cluster only if it is within `matchRadiusMeters` of the centroid AND in the
-  // same category AND worded alike (`geocode-and-cluster-submission.ts`), so this is a catchment,
-  // not a promise — the legend says "may". It never moves the camera, so it costs no read, and
-  // like the ease above it reads the clusters through a ref rather than depending on them.
-  useEffect(() => {
-    const selectedCluster =
-      selectedClusterId === null || matchRadiusMeters === null
-        ? undefined
-        : latestClustersRef.current.find((cluster) => cluster.id === selectedClusterId);
-    const catchmentRing =
-      selectedCluster === undefined || matchRadiusMeters === null
-        ? null
-        : buildCatchmentRingPolygon(
-            selectedCluster.centroidLongitudeMicrodegrees / 1_000_000,
-            selectedCluster.centroidLatitudeMicrodegrees / 1_000_000,
-            matchRadiusMeters,
-          );
-    selectedCatchmentRef.current = catchmentRing;
-    const map = mapInstanceRef.current;
-    // Before the style has loaded there is no source yet; `style.load` applies the ref then.
-    if (map !== null) applyCatchmentRing(map, catchmentRing);
-  }, [selectedClusterId, matchRadiusMeters, readyMapToken]);
-
-  // --- Follow the container -------------------------------------------------------------
-  // ⚠️ **THE MAP'S BOX NOW CHANGES WITHOUT THE WINDOW CHANGING.** Collapsing the tablet panel or
-  // dragging the mobile sheet to another detent resizes this element while the viewport stays
-  // exactly the same size, and a MapLibre canvas that is not told about that keeps its old
-  // transform: the picture stretches and every marker lands off its coordinate. A window `resize`
-  // listener cannot see any of it, which is why this observes the container instead.
-  useEffect(() => {
-    const mapContainer = mapContainerRef.current;
-    // Returns a no-op teardown rather than bailing with a bare `return`, so every path out of this
-    // effect hands React the same kind of value.
-    if (mapContainer === null || typeof ResizeObserver === "undefined") return () => {};
-
-    const containerObserver = new ResizeObserver(() => {
-      mapInstanceRef.current?.resize();
-    });
-    containerObserver.observe(mapContainer);
-    return () => containerObserver.disconnect();
-  }, []);
-
-  // --- One marker per cluster ------------------------------------------------------------
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    let isEffectStillMounted = true;
-    const createdMarkers: MapLibreMarker[] = [];
-
-    async function attachMarkers(readyMap: MapLibreMap) {
-      const maplibreModule = await import("maplibre-gl");
-      if (!isEffectStillMounted) return;
-
-      const containersByClusterId = new Map<string, HTMLDivElement>();
-
-      for (const cluster of clusters) {
-        const longitudeDegrees = cluster.centroidLongitudeMicrodegrees / 1_000_000;
-        const latitudeDegrees = cluster.centroidLatitudeMicrodegrees / 1_000_000;
-
-        const markerContainer = document.createElement("div");
-        const marker = new maplibreModule.Marker({ element: markerContainer })
-          .setLngLat([longitudeDegrees, latitudeDegrees])
-          .addTo(readyMap);
-
-        containersByClusterId.set(cluster.id, markerContainer);
-        createdMarkers.push(marker);
-      }
-
-      setMarkerContainersByClusterId(containersByClusterId);
-    }
-
-    if (map && readyMapToken > 0) void attachMarkers(map);
-
-    return () => {
-      isEffectStillMounted = false;
-      for (const marker of createdMarkers) marker.remove();
-      setMarkerContainersByClusterId(new Map());
-    };
-  }, [clusters, readyMapToken]);
+  const { mapContainerRef, status, markerContainersByClusterId } = useCivicPulseMaplibreController({
+    clusters,
+    selectedClusterId,
+    initialCamera,
+    onViewportChange,
+    viewMode,
+    onUnavailable,
+    mapOverlayRef,
+    matchRadiusMeters,
+  });
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-primary-imprint/5">
-      {/* Fills the region the shell gives it. It used to carry `aspect-2000/857` so that flipping
-          the flag did not move the content below it — there is no content below it any more, the
-          map IS the page, and a fixed aspect inside a full-height box would letterbox the one
-          renderer that does not need to. */}
       <div
         ref={mapContainerRef}
         className="h-full w-full"
@@ -687,6 +95,7 @@ export default function CivicPulseVectorMap({
 
         return createPortal(
           <button
+            key={clusterId}
             type="button"
             onClick={() => onSelectCluster(cluster.id)}
             aria-label={`${cluster.title} — ${cluster.locationLabel ?? "location not resolved"}`}
@@ -709,29 +118,4 @@ export default function CivicPulseVectorMap({
       })}
     </div>
   );
-}
-
-/**
- * The only thing ever drawn over the canvas: a caption while the tiles arrive.
- *
- * `ready` renders NOTHING — an overlay that says "loaded" over a loaded map is the placeholder
- * PRODUCT.md Principle 2 rules out. There is no failure branch here on purpose: a basemap that
- * cannot load hands the whole surface back to the static canvas (`onUnavailable`), because a
- * reader is better served by an approximate map with pins than by an exact message with none.
- */
-function VectorMapStatusOverlay({ status }: { status: VectorMapStatus }) {
-  switch (status.kind) {
-    case "loading":
-      return (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <span className="text-xs text-muted-foreground">Loading map…</span>
-        </div>
-      );
-    case "ready":
-      return null;
-    default: {
-      const exhaustiveCheck: never = status;
-      return exhaustiveCheck;
-    }
-  }
 }

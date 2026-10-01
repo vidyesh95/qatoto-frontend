@@ -3,7 +3,7 @@
 // that mutate.
 "use client";
 
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useEffect, useEffectEvent, type ReactNode } from "react";
 
 import Image from "next/image";
 
@@ -31,14 +31,14 @@ export default function RndSheet({
   onClose: () => void;
   children: ReactNode;
 }) {
-  // Stable identity so the keydown effect below does not re-wire its listener and thrash
-  // `document.body.style.overflow` on every render.
-  const handleClose = useCallback(() => onClose(), [onClose]);
+  const onKeyDownClose = useEffectEvent(() => {
+    onClose();
+  });
 
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape" && !keyEvent.defaultPrevented) handleClose();
+      if (keyEvent.key === "Escape" && !keyEvent.defaultPrevented) onKeyDownClose();
     };
     document.addEventListener("keydown", handleKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -47,7 +47,7 @@ export default function RndSheet({
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen, handleClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,7 +56,7 @@ export default function RndSheet({
       <button
         type="button"
         aria-label={`Close ${title.toLowerCase()} sheet`}
-        onClick={handleClose}
+        onClick={onClose}
         className="fixed inset-0 z-55 bg-black/40"
       />
 
@@ -73,7 +73,7 @@ export default function RndSheet({
           <h2 className="flex-1 text-base font-medium">{title}</h2>
           <button
             type="button"
-            onClick={handleClose}
+            onClick={onClose}
             aria-label="Close"
             className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
           >

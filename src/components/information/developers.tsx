@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { InfoLinkCardGrid, InfoPillarsSection } from "@/components/information/info-shared";
 
 const CAPABILITIES = [
   {
@@ -210,33 +210,7 @@ export default function Developers() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="grid gap-6 md:grid-cols-2">
-          {CAPABILITIES.map((c) => (
-            <article
-              key={c.title}
-              className="group relative overflow-hidden rounded-4xl border border-border bg-card p-10 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
-              />
-              <div className="relative">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
-                  <Image src={c.icon} alt="" width={28} height={28} />
-                </div>
-                <span className="mt-7 block text-xs font-medium tracking-eyebrow text-muted-foreground uppercase">
-                  {c.eyebrow}
-                </span>
-                <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
-                  {c.title}
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-muted-foreground">{c.body}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      <InfoPillarsSection items={CAPABILITIES} />
 
       <section id="endpoints" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
@@ -297,25 +271,7 @@ export default function Developers() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {SDKS.map((sdk) => (
-              <div
-                key={sdk.label}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-6 py-5 shadow-sm transition hover:border-foreground/20"
-              >
-                <div>
-                  <div className="text-base font-semibold tracking-tight">{sdk.label}</div>
-                  <div className="text-sm text-muted-foreground">{sdk.desc}</div>
-                </div>
-                <span
-                  aria-hidden
-                  className="flex size-8 items-center justify-center rounded-full bg-muted text-foreground"
-                >
-                  →
-                </span>
-              </div>
-            ))}
-          </div>
+          <InfoLinkCardGrid items={SDKS} />
         </div>
       </section>
 

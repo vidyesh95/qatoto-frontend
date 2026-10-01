@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import { signIn } from "@/lib/auth-client";
 import ToggleSwitch from "@/components/ui/toggle-switch";
@@ -32,6 +32,10 @@ export default function SignIn() {
   // navigation away from this page (no full reload) would otherwise leave it
   // pending, and the next explicit passkey sign-in call to the same browser
   // WebAuthn stack can then be rejected outright with no prompt at all.
+  const onPasskeyAuthenticated = useEffectEvent(() => {
+    router.replace("/");
+  });
+
   useEffect(() => {
     let isActive = true;
     void (async () => {
@@ -39,13 +43,13 @@ export default function SignIn() {
         await window.PublicKeyCredential?.isConditionalMediationAvailable?.();
       if (!isActive || !isConditionalUiAvailable) return;
       const { error } = await signIn.passkey({ autoFill: true });
-      if (isActive && !error) router.replace("/");
+      if (isActive && !error) onPasskeyAuthenticated();
     })();
     return () => {
       isActive = false;
       WebAuthnAbortService.cancelCeremony();
     };
-  }, [router]);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

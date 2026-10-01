@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import { StudioSubmissionsSkeleton } from "@/components/studio/blueprints/studio-submissions-skeleton";
 import UnsubmittedDraftsSection from "@/components/studio/blueprints/unsubmitted-drafts-section";
 import {
   SUBMISSION_STATE_CHIP_CLASS,
@@ -82,23 +83,7 @@ export default function StudioBlueprintsPage() {
           over spinners, and three rows of title, meta line and chip is what the list resolves into,
           so nothing jumps when it arrives. The real words are for screen readers. */}
       {submissionsQuery.isPending ? (
-        <div className="mt-6 max-w-3xl">
-          <p className="sr-only">Loading your teardowns</p>
-          <ul aria-hidden="true" className="animate-pulse">
-            {[0, 1, 2].map((placeholderIndex) => (
-              <li
-                key={placeholderIndex}
-                className="flex items-start justify-between gap-4 border-t border-border py-4"
-              >
-                <div className="w-full max-w-md space-y-2">
-                  <div className="h-4 w-3/4 rounded-full bg-muted" />
-                  <div className="h-3 w-1/2 rounded-full bg-muted" />
-                </div>
-                <div className="h-6 w-20 shrink-0 rounded-full bg-muted" />
-              </li>
-            ))}
-          </ul>
-        </div>
+        <StudioSubmissionsSkeleton loadingText="Loading your teardowns" />
       ) : null}
 
       {submissionsQuery.isError ? (

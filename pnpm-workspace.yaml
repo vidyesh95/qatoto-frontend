@@ -1,3 +1,9 @@
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - "eslint-import-resolver-typescript@3.10.1"
+  - "semver@6.3.1"
+  - "why-is-node-running@3.2.2"
 allowBuilds:
   msgpackr-extract: true
   sharp: true

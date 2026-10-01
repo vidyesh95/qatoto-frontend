@@ -2,10 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { describeLinkDestination } from "@/components/pitches/pitch-shared";
 import RndStatusPanel, {
   RndErrorPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
+import { describeLinkDestination } from "@/lib/rnd/format";
 import { listPublicPitches } from "@/lib/rnd/pitches.api";
 import { toListViewState } from "@/lib/view-state";
 

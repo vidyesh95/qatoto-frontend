@@ -57,6 +57,7 @@ export default function SupplierDirectory({
   searchParams: RawSearchParams;
 }) {
   const selectedCapabilitySlugs = readMultiParam(searchParams, "capability");
+  const selectedCapabilitySlugsSet = new Set(selectedCapabilitySlugs);
   const selectedVerificationState = searchParams.verificationState;
   const selectedRegionSlug = readSingleParam(searchParams, "region");
 
@@ -72,7 +73,7 @@ export default function SupplierDirectory({
         searchParams,
         toggleMultiParamPatch(searchParams, "capability", capability.slug),
       ),
-      isSelected: selectedCapabilitySlugs.includes(capability.slug),
+      isSelected: selectedCapabilitySlugsSet.has(capability.slug),
     })),
   ];
 

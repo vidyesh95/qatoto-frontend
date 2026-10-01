@@ -16,6 +16,8 @@
 // widen that exposure for no reason.
 
 import BlueprintReportCard from "@/components/admin/blueprint-reports/blueprint-report-card";
+import { AdminPageHeader } from "@/components/admin/shared/admin-page-header";
+import { ModerationStatusTabFilter } from "@/components/admin/shared/moderation-status-tab-filter";
 import { useBlueprintReportQueue } from "@/hooks/blueprints/content-moderation";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import {
@@ -56,34 +58,20 @@ export default function BlueprintModerationPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <header className="max-w-3xl space-y-1">
-        <h1 className="text-2xl font-semibold">Blueprint reports</h1>
-        <p className="text-sm text-muted-foreground">
-          What readers have reported about published blueprints (teardowns, case studies and
-          showcases), oldest first.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Nothing here was hidden automatically — a report changes no state on its own, so every
-          page below is exactly as its readers see it until you decide otherwise.
-        </p>
-      </header>
+      <AdminPageHeader
+        title="Blueprint reports"
+        description="What readers have reported about published blueprints (teardowns, case studies and showcases), oldest first."
+        secondaryDescription="Nothing here was hidden automatically — a report changes no state on its own, so every page below is exactly as its readers see it until you decide otherwise."
+      />
 
       {consoleState.status === "permitted" ? (
-        <div className="flex flex-wrap gap-2">
-          {BLUEPRINT_REPORT_STATUSES.map((candidate) => (
-            <button
-              key={candidate}
-              type="button"
-              onClick={() => {
-                setStatus(candidate);
-              }}
-              aria-pressed={status === candidate}
-              className={`${QUIET_BUTTON_CLASS} ${status === candidate ? "bg-primary" : ""}`}
-            >
-              {STATUS_LABELS[candidate]}
-            </button>
-          ))}
-        </div>
+        <ModerationStatusTabFilter
+          statuses={BLUEPRINT_REPORT_STATUSES}
+          statusLabels={STATUS_LABELS}
+          currentStatus={status}
+          onStatusChange={setStatus}
+          quietButtonClass={QUIET_BUTTON_CLASS}
+        />
       ) : null}
 
       {renderConsole(consoleState, status)}

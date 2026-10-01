@@ -79,9 +79,13 @@ export function useResearchCategoriesQuery() {
  * had.
  */
 export function useCreateResearchCategoryMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { label: string }) =>
       unwrap(await createResearchCategory({ label: input.label })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.researchCategories("pending") });
+    },
   });
 }
 
@@ -407,6 +411,7 @@ export function useDecideApplicationMutation(projectSlug: string) {
 }
 
 export function useInviteToProjectMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: {
       inviteeUserId: string;
@@ -414,6 +419,9 @@ export function useInviteToProjectMutation(projectSlug: string) {
       roleTitle?: string;
       message?: string;
     }) => unwrap(await createProjectInvite(projectSlug, variables)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.projectTeam(projectSlug) });
+    },
   });
 }
 

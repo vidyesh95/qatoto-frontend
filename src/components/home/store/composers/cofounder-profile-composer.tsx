@@ -43,12 +43,12 @@ import Link from "next/link";
 
 import {
   ChipMultiSelectField,
-  ComposerStepRail,
   SelectField,
   TextAreaField,
   TextField,
   TokenListField,
 } from "@/components/commerce/composer/composer-fields";
+import { ComposerWizardShell } from "./composer-wizard-shell";
 import {
   toOptionalCountryCode,
   toOptionalText,
@@ -246,70 +246,40 @@ export default function CofounderProfileComposer() {
   }
 
   return (
-    <div className="space-y-4">
-      <header>
-        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
-          List yourself as a cofounder
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          This saves a draft. Nobody can see it and nobody can find you until it is published.
-        </p>
-      </header>
-
-      <ComposerStepRail
-        steps={COMPOSER_STEPS}
-        currentStepIndex={currentStepIndex}
-        onStepSelect={setCurrentStepIndex}
-      />
-
-      <section aria-label={COMPOSER_STEPS[currentStepIndex]?.label ?? "Step"}>
-        {renderStep()}
-      </section>
-
-      <footer className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        {currentStepIndex > 0 && (
-          <button
-            type="button"
-            onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
-            className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
-          >
-            Back
-          </button>
-        )}
-        {currentStepIndex < COMPOSER_STEPS.length - 1 && (
-          <button
-            type="button"
-            onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Next
-          </button>
-        )}
-        {currentStepIndex === COMPOSER_STEPS.length - 1 && (
-          <button
-            type="button"
-            disabled={input === null || createCofounderProfile.isPending}
-            onClick={() => {
-              if (input === null) return;
-              createCofounderProfile.mutate({ input, idempotencyKey: getIdempotencyKey() });
-            }}
-            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
-          >
-            {createCofounderProfile.isPending ? "Saving…" : "Save as draft"}
-          </button>
-        )}
-      </footer>
-
+    <ComposerWizardShell
+      title="List yourself as a cofounder"
+      description="This saves a draft. Nobody can see it and nobody can find you until it is published."
+      steps={COMPOSER_STEPS}
+      currentStepIndex={currentStepIndex}
+      onStepSelect={setCurrentStepIndex}
+      onPreviousStep={() => setCurrentStepIndex(currentStepIndex - 1)}
+      onNextStep={() => setCurrentStepIndex(currentStepIndex + 1)}
+      isLastStep={currentStepIndex === COMPOSER_STEPS.length - 1}
+      submitButton={
+        <button
+          type="button"
+          disabled={input === null || createCofounderProfile.isPending}
+          onClick={() => {
+            if (input === null) return;
+            createCofounderProfile.mutate({ input, idempotencyKey: getIdempotencyKey() });
+          }}
+          className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+        >
+          {createCofounderProfile.isPending ? "Saving…" : "Save as draft"}
+        </button>
+      }
+    >
+      {renderStep()}
       {createResult !== undefined && !createResult.success && (
-        <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
+        <p className="mt-4 text-xs leading-4 text-destructive">{createResult.error.message}</p>
       )}
       {createCofounderProfile.isError && (
-        <p className="text-xs leading-4 text-destructive">
+        <p className="mt-4 text-xs leading-4 text-destructive">
           Couldn&apos;t reach the server. Pressing save again is safe — the request carries an
           idempotency key, so a retry cannot create a second profile.
         </p>
       )}
-    </div>
+    </ComposerWizardShell>
   );
 }
 

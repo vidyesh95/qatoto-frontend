@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import FeedShell from "@/components/home/feed/feed-shell";
 import PromoCarouselSection from "@/components/home/feed/promo-carousel-section";
+import { VideoGridFallback } from "@/components/home/shared/video-grid-fallback";
 import type { RawSearchParams } from "@/lib/filter-href";
 
 export default function Home({
@@ -41,27 +42,9 @@ export default function Home({
         The fallback is a chip-row-height bar plus a grid of skeletons so the first paint has
         the page's real shape rather than a blank column.
       */}
-      <Suspense fallback={<FeedShellFallback />}>
+      <Suspense fallback={<VideoGridFallback />}>
         <FeedShell searchParams={searchParams} />
       </Suspense>
-    </div>
-  );
-}
-
-/** Chip row plus one screenful of card skeletons, at the real dimensions. */
-function FeedShellFallback() {
-  return (
-    <div aria-hidden>
-      <div className="h-14 w-full" />
-      <div className="grid grid-cols-1 gap-x-3 gap-y-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
-        {Array.from({ length: 8 }, (_unused, index) => index).map((skeletonIndex) => (
-          <div key={skeletonIndex} className="space-y-2">
-            <div className="aspect-video w-full rounded-xl bg-gray-200" />
-            <div className="h-4 w-3/4 rounded bg-gray-200" />
-            <div className="h-3 w-1/2 rounded bg-gray-200" />
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

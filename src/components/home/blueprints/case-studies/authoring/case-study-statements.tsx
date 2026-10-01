@@ -43,6 +43,8 @@ export default function CaseStudyStatements({
     );
   }
 
+  const acceptedStatementIdsSet = new Set(acceptedStatementIds);
+
   return (
     <div>
       {CASE_STUDY_STATEMENT_IDS_BY_RELATIONSHIP[authorRelationship].map((statementId) => (
@@ -50,27 +52,10 @@ export default function CaseStudyStatements({
           key={statementId}
           label={CASE_STUDY_STATEMENTS[statementId].label}
           detail={CASE_STUDY_STATEMENTS[statementId].detail}
-          isChecked={acceptedStatementIds.includes(statementId)}
+          isChecked={acceptedStatementIdsSet.has(statementId)}
           onCheckedChange={(nextIsChecked) => toggleStatement(statementId, nextIsChecked)}
         />
       ))}
     </div>
   );
-}
-
-/** Why Send is unavailable because of the answer or the statements, in words, or `null`. */
-export function describeCaseStudyStatementGap(
-  authorRelationship: CaseStudyAuthorRelationship | "",
-  acceptedStatementIds: readonly CaseStudyStatementId[],
-): string | null {
-  if (authorRelationship === "") return "Answer How you know this before you send.";
-
-  const untickedStatementIds = CASE_STUDY_STATEMENT_IDS_BY_RELATIONSHIP[authorRelationship].filter(
-    (statementId) => !acceptedStatementIds.includes(statementId),
-  );
-  if (untickedStatementIds.length === 0) return null;
-
-  return `Tick ${untickedStatementIds.length === 1 ? "the last statement" : "both statements"} below: ${untickedStatementIds
-    .map((statementId) => CASE_STUDY_STATEMENTS[statementId].label)
-    .join("; ")}.`;
 }

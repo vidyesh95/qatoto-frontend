@@ -61,12 +61,15 @@ export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
   }
 
   function toggleSkill(skill: string) {
-    setSelectedSkills((previousSkills) =>
-      previousSkills.includes(skill)
+    setSelectedSkills((previousSkills) => {
+      const previousSkillsSet = new Set(previousSkills);
+      return previousSkillsSet.has(skill)
         ? previousSkills.filter((selectedSkill) => selectedSkill !== skill)
-        : [...previousSkills, skill],
-    );
+        : [...previousSkills, skill];
+    });
   }
+
+  const selectedSkillsSet = new Set(selectedSkills);
 
   return (
     <>
@@ -136,9 +139,9 @@ export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
                       key={skill}
                       type="button"
                       onClick={() => toggleSkill(skill)}
-                      aria-pressed={selectedSkills.includes(skill)}
+                      aria-pressed={selectedSkillsSet.has(skill)}
                       className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
-                        selectedSkills.includes(skill)
+                        selectedSkillsSet.has(skill)
                           ? "bg-primary-imprint text-primary-imprint-foreground"
                           : "bg-muted text-foreground"
                       }`}

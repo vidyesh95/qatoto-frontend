@@ -85,36 +85,102 @@ type ReportProblemSheetProps = {
    */
   isTriggerFullWidth?: boolean;
 };
-export default function ReportProblemSheet({
+function buildCategoryOptions(
+  approvedCategories: readonly ResearchCategory[],
+  proposedCategories: readonly ResearchCategory[],
+): ComboboxOption[] {
+  return [
+    ...approvedCategories.map((category) => ({
+      optionId: category.id,
+      optionName: category.displayLabel,
+    })),
+    ...proposedCategories
+      .filter((proposed) => !approvedCategories.some((category) => category.id === proposed.id))
+      .map((proposed) => ({
+        optionId: proposed.id,
+        optionName: proposed.displayLabel,
+        ...(proposed.status === "approved"
+          ? {}
+          : { optionNote: RESEARCH_CATEGORY_STATUS_LABELS[proposed.status] }),
+      })),
+  ];
+}
+
+function buildCategoryHelpText(
+  isCreatingCategory: boolean,
+  hasProposedCategories: boolean,
+  canCreateCategory: boolean,
+): string | undefined {
+  if (isCreatingCategory) return "Creating…";
+  if (hasProposedCategories) {
+    return "Created and selected. A moderator reviews the name later; your report is not held up by it.";
+  }
+  if (canCreateCategory) return "Type a name that does not exist yet to create it.";
+  return undefined;
+}
+
+function ReportProblemSuccessView({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <>
+      <RndSheetConfirmation
+        headline="Received — we are matching it to a cluster"
+        detail="Your report is queued. It is not on the map yet: reports from separate people are grouped first, and where yours lands is decided by that job, not by this form."
+        onDismiss={onDismiss}
+      />
+      <p className="px-4 pb-6 text-center text-xs text-muted-foreground">
+        <Link
+          href="/research-and-development/my-reports"
+          className="font-medium text-primary-imprint underline underline-offset-2"
+        >
+          See your reports
+        </Link>{" "}
+        to find out where it landed.
+      </p>
+    </>
+  );
+}
+
+function ReportProblemSubmitButton({
+  isPending,
+  isAnyPhotoUploading,
+  isFormValid,
+}: {
+  isPending: boolean;
+  isAnyPhotoUploading: boolean;
+  isFormValid: boolean;
+}) {
+  const buttonLabel = isPending
+    ? "Sending…"
+    : isAnyPhotoUploading
+      ? "Waiting for photos…"
+      : "Send my report";
+
+  return (
+    <button
+      type="submit"
+      disabled={!isFormValid || isAnyPhotoUploading || isPending}
+      className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
+    >
+      {buttonLabel}
+    </button>
+  );
+}
+
+function ReportProblemForm({
   canCreateCategory,
-  isTriggerFullWidth = false,
-}: ReportProblemSheetProps) {
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  onClose,
+}: {
+  canCreateCategory: boolean;
+  onClose: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [locationText, setLocationText] = useState("");
   const [description, setDescription] = useState("");
-  /**
-   * The optional coarse pin.
-   *
-   * ⚠️ **ONE PIECE OF STATE HOLDING BOTH COORDINATES, NEVER TWO.** Both or neither is refined by
-   * the request schema and CHECKed by the database; holding them together is what makes a half pin
-   * unconstructible here rather than merely refused later.
-   */
   const [pin, setPin] = useState<ApproximatePin | null>(null);
-  /**
-   * Categories proposed during this session.
-   *
-   * Every read of this taxonomy asks for `?status=approved`, so a row that just landed
-   * `pending` appears in no query. Holding it here is what lets the field SHOW it — greyed,
-   * unpickable — instead of silently forgetting it and offering "Create" again on the next
-   * keystroke, which the backend answers with a 409.
-   */
   const [proposedCategories, setProposedCategories] = useState<ResearchCategory[]>([]);
-  /** Photos picked for this report. Only `uploaded` tiles carry an id the submit can send. */
   const [photoTiles, setPhotoTiles] = useState<ProblemPhotoTile[]>([]);
-  // Title and description are both published verbatim as a new cluster's text, so both carry the
-  // contact-detail advisory. Neither advisory gates submit.
+
   const titleAdvisoryId = useId();
   const descriptionAdvisoryId = useId();
 
@@ -123,63 +189,28 @@ export default function ReportProblemSheet({
   const createCategoryMutation = useCreateResearchCategoryMutation();
 
   const approvedCategories = categoriesQuery.data ?? [];
-  const categoryOptions: ComboboxOption[] = [
-    ...approvedCategories.map((category) => ({
-      optionId: category.id,
-      optionName: category.displayLabel,
-    })),
-    // Dropped the moment the approved list carries one, so an entry cannot appear twice if a
-    // moderator approves it while the sheet is open.
-    ...proposedCategories
-      .filter((proposed) => !approvedCategories.some((category) => category.id === proposed.id))
-      .map((proposed) => ({
-        optionId: proposed.id,
-        optionName: proposed.displayLabel,
-        // No tag once a moderator approves it — at that point it is an ordinary entry in the
-        // vocabulary and saying anything about it would be noise.
-        ...(proposed.status === "approved"
-          ? {}
-          : { optionNote: RESEARCH_CATEGORY_STATUS_LABELS[proposed.status] }),
-      })),
-  ];
+  const categoryOptions = buildCategoryOptions(approvedCategories, proposedCategories);
+  const categoryHelpText = buildCategoryHelpText(
+    createCategoryMutation.isPending,
+    proposedCategories.length > 0,
+    canCreateCategory,
+  );
 
-  // Whichever write failed first. The proposal and the report are separate requests with
-  // separate refusals — a 409 on a duplicate name and a 422 on the report are both worth
-  // reading verbatim, and showing only the report's would swallow half of them.
   const firstError = [createCategoryMutation.error, reportMutation.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
   );
 
-  const categoryHelpText = createCategoryMutation.isPending
-    ? "Creating…"
-    : proposedCategories.length > 0
-      ? "Created and selected. A moderator reviews the name later; your report is not held up by it."
-      : canCreateCategory
-        ? "Type a name that does not exist yet to create it."
-        : undefined;
-
-  // Mirrors the server's own minimums so the button does not invite a 422 the user can
-  // see coming. The server re-checks; this is courtesy, not validation.
   const isFormValid =
     title.trim().length >= 8 &&
     categoryId !== "" &&
     locationText.trim().length >= 2 &&
     description.trim().length >= 20;
 
-  // A report sent mid-upload would go without the photo the reporter can see on screen.
   const isAnyPhotoUploading = photoTiles.some((tile) => tile.status === "uploading");
   const uploadedPhotoIds = photoTiles.flatMap((tile) =>
     tile.status === "uploaded" ? [tile.photo.photoId] : [],
   );
 
-  /**
-   * Proposes the category the user typed, then selects it.
-   *
-   * It lands `pending` and that is fine: every writer of `research_category` refuses only
-   * `rejected`, so a category minted a second ago is a usable foreign key. The row is tagged
-   * "Awaiting review" in the list rather than hidden — the reporter should know a moderator
-   * has not settled the name yet, without being blocked on it.
-   */
   function handleCategoryCreateRequest(typedCategoryLabel: string): void {
     createCategoryMutation.mutate(
       { label: typedCategoryLabel },
@@ -192,18 +223,105 @@ export default function ReportProblemSheet({
     );
   }
 
-  function closeSheet() {
-    setIsSheetOpen(false);
-    reportMutation.reset();
-    createCategoryMutation.reset();
-    setTitle("");
-    setCategoryId("");
-    setLocationText("");
-    setDescription("");
-    setPin(null);
-    setProposedCategories([]);
-    setPhotoTiles([]);
+  if (reportMutation.isSuccess) {
+    return <ReportProblemSuccessView onDismiss={onClose} />;
   }
+
+  const handleFormSubmit = (submitEvent: React.FormEvent<HTMLFormElement>) => {
+    submitEvent.preventDefault();
+    if (!isFormValid || isAnyPhotoUploading) return;
+    reportMutation.mutate({
+      title: title.trim(),
+      categoryId,
+      description: description.trim(),
+      locationText: locationText.trim(),
+      ...(pin === null
+        ? {}
+        : {
+            approxLatitudeMicrodegrees: pin.latitudeMicrodegrees,
+            approxLongitudeMicrodegrees: pin.longitudeMicrodegrees,
+          }),
+      ...(uploadedPhotoIds.length === 0 ? {} : { photoIds: uploadedPhotoIds }),
+    });
+  };
+
+  return (
+    <form className="flex flex-col gap-4 px-4 pb-6" onSubmit={handleFormSubmit}>
+      <div className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Title</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+            placeholder="e.g. No reliable cold storage at the market"
+            aria-describedby={titleAdvisoryId}
+            className={INPUT_CLASS}
+          />
+        </label>
+        <ContactDetailAdvisory id={titleAdvisoryId} text={title} />
+      </div>
+
+      <CreatableCombobox
+        labelText="Category"
+        placeholderText="Search or create a category"
+        selectedOptionId={categoryId}
+        options={categoryOptions}
+        onOptionSelect={setCategoryId}
+        {...(canCreateCategory ? { onCreateRequest: handleCategoryCreateRequest } : {})}
+        helpText={categoryHelpText}
+      />
+
+      <label className="flex flex-col gap-1">
+        <span className={LABEL_CLASS}>Where is it?</span>
+        <input
+          type="text"
+          value={locationText}
+          onChange={(changeEvent) => setLocationText(changeEvent.target.value)}
+          placeholder="City, region or country"
+          className={INPUT_CLASS}
+        />
+        <span className="text-xs text-muted-foreground">
+          In your own words. We resolve it to coordinates and blur them before anything is
+          published, so no pin can be traced back to one report.
+        </span>
+      </label>
+
+      <PlacePicker pin={pin} onPinChange={setPin} />
+
+      <div className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1">
+          <span className={LABEL_CLASS}>Description</span>
+          <textarea
+            value={description}
+            onChange={(changeEvent) => setDescription(changeEvent.target.value)}
+            placeholder="What's broken, who does it affect, how often?"
+            rows={3}
+            aria-describedby={descriptionAdvisoryId}
+            className={INPUT_CLASS}
+          />
+        </label>
+        <ContactDetailAdvisory id={descriptionAdvisoryId} text={description} />
+      </div>
+
+      <ProblemPhotoPicker tiles={photoTiles} onTilesChange={setPhotoTiles} />
+
+      <ReportProblemSubmitButton
+        isPending={reportMutation.isPending}
+        isAnyPhotoUploading={isAnyPhotoUploading}
+        isFormValid={isFormValid}
+      />
+
+      {firstError && <MutationErrorNotice error={firstError.apiError} />}
+    </form>
+  );
+}
+
+export default function ReportProblemSheet({
+  canCreateCategory,
+  isTriggerFullWidth = false,
+}: ReportProblemSheetProps) {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   return (
     <>
@@ -217,131 +335,12 @@ export default function ReportProblemSheet({
         Report a problem
       </button>
 
-      <RndSheet title="Report a problem" isOpen={isSheetOpen} onClose={closeSheet}>
-        {reportMutation.isSuccess ? (
-          <>
-            <RndSheetConfirmation
-              headline="Received — we are matching it to a cluster"
-              detail="Your report is queued. It is not on the map yet: reports from separate people are grouped first, and where yours lands is decided by that job, not by this form."
-              onDismiss={closeSheet}
-            />
-            {/* Where the answer actually appears. The receipt carries `clusterId: null` by
-                construction, so without somewhere to look a reporter files something and never
-                hears about it again. The list used to sit under the map; the map is now a
-                non-scrolling instrument and it moved to its own route. */}
-            <p className="px-4 pb-6 text-center text-xs text-muted-foreground">
-              <Link
-                href="/research-and-development/my-reports"
-                className="font-medium text-primary-imprint underline underline-offset-2"
-              >
-                See your reports
-              </Link>{" "}
-              to find out where it landed.
-            </p>
-          </>
-        ) : (
-          <form
-            className="flex flex-col gap-4 px-4 pb-6"
-            onSubmit={(submitEvent) => {
-              submitEvent.preventDefault();
-              if (!isFormValid || isAnyPhotoUploading) return;
-              reportMutation.mutate({
-                title: title.trim(),
-                categoryId,
-                description: description.trim(),
-                locationText: locationText.trim(),
-                // Spread so an absent pin sends NO key at all rather than two `undefined`s. The
-                // body is `.strict()` and the pair is refined as both-or-neither, so spreading the
-                // whole object is also what makes half a pin unsendable.
-                ...(pin === null
-                  ? {}
-                  : {
-                      approxLatitudeMicrodegrees: pin.latitudeMicrodegrees,
-                      approxLongitudeMicrodegrees: pin.longitudeMicrodegrees,
-                    }),
-                // A failed tile is not sent: it has no id, and it stays on screen with its reason.
-                ...(uploadedPhotoIds.length === 0 ? {} : { photoIds: uploadedPhotoIds }),
-              });
-            }}
-          >
-            {/* The advisory sits BESIDE the label, not in it: text inside a <label> becomes part of
-                the field's accessible name, and the advisory is its description. */}
-            <div className="flex flex-col gap-1">
-              <label className="flex flex-col gap-1">
-                <span className={LABEL_CLASS}>Title</span>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(changeEvent) => setTitle(changeEvent.target.value)}
-                  placeholder="e.g. No reliable cold storage at the market"
-                  aria-describedby={titleAdvisoryId}
-                  className={INPUT_CLASS}
-                />
-              </label>
-              <ContactDetailAdvisory id={titleAdvisoryId} text={title} />
-            </div>
-
-            <CreatableCombobox
-              labelText="Category"
-              placeholderText="Search or create a category"
-              selectedOptionId={categoryId}
-              options={categoryOptions}
-              onOptionSelect={setCategoryId}
-              {...(canCreateCategory ? { onCreateRequest: handleCategoryCreateRequest } : {})}
-              helpText={categoryHelpText}
-            />
-
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Where is it?</span>
-              <input
-                type="text"
-                value={locationText}
-                onChange={(changeEvent) => setLocationText(changeEvent.target.value)}
-                placeholder="City, region or country"
-                className={INPUT_CLASS}
-              />
-              <span className="text-xs text-muted-foreground">
-                In your own words. We resolve it to coordinates and blur them before anything is
-                published, so no pin can be traced back to one report.
-              </span>
-            </label>
-
-            {/* Optional, and deliberately AFTER the required field rather than instead of it: the
-                text is what the country and region are derived from, and the pin only says where
-                inside that place the problem is. */}
-            <PlacePicker pin={pin} onPinChange={setPin} />
-
-            <div className="flex flex-col gap-1">
-              <label className="flex flex-col gap-1">
-                <span className={LABEL_CLASS}>Description</span>
-                <textarea
-                  value={description}
-                  onChange={(changeEvent) => setDescription(changeEvent.target.value)}
-                  placeholder="What's broken, who does it affect, how often?"
-                  rows={3}
-                  aria-describedby={descriptionAdvisoryId}
-                  className={INPUT_CLASS}
-                />
-              </label>
-              <ContactDetailAdvisory id={descriptionAdvisoryId} text={description} />
-            </div>
-
-            <ProblemPhotoPicker tiles={photoTiles} onTilesChange={setPhotoTiles} />
-
-            <button
-              type="submit"
-              disabled={!isFormValid || isAnyPhotoUploading || reportMutation.isPending}
-              className="rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground disabled:opacity-40"
-            >
-              {reportMutation.isPending
-                ? "Sending…"
-                : isAnyPhotoUploading
-                  ? "Waiting for photos…"
-                  : "Send my report"}
-            </button>
-
-            {firstError && <MutationErrorNotice error={firstError.apiError} />}
-          </form>
+      <RndSheet title="Report a problem" isOpen={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
+        {isSheetOpen && (
+          <ReportProblemForm
+            canCreateCategory={canCreateCategory}
+            onClose={() => setIsSheetOpen(false)}
+          />
         )}
       </RndSheet>
     </>

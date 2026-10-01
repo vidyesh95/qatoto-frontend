@@ -2,7 +2,7 @@
 // `useRecordProgramContributionMutation`. Both carry a body-level idempotency key.
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import {
   useLogProgramEffortMutation,
@@ -47,6 +47,13 @@ type ProgramContributorToolsProps = {
  * BOTH KEYS ARE MINTED ONCE PER ATTEMPT and rotated only on success, so a retry after a network
  * timeout returns the FIRST row instead of double-counting.
  */
+function getTodayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
 export default function ProgramContributorTools({
   programSlug,
   branches,
@@ -56,18 +63,19 @@ export default function ProgramContributorTools({
   const effortMutation = useLogProgramEffortMutation(programSlug);
   const contributionMutation = useRecordProgramContributionMutation(programSlug);
 
+  const todayIsoDate = useSyncExternalStore(subscribeToNothing, getTodayIsoDate, () => "");
   const [minutes, setMinutes] = useState("60");
   const [effortBranchId, setEffortBranchId] = useState("");
-  const [loggedForDate, setLoggedForDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [loggedForDate, setLoggedForDate] = useState("");
   const [effortNote, setEffortNote] = useState("");
-  const [effortIdempotencyKey, setEffortIdempotencyKey] = useState(newIdempotencyKey);
+  const effortIdempotencyKeyRef = useRef<string | null>(null);
 
   const [contributionKind, setContributionKind] =
     useState<ResearchContributionKind>("cash_commitment");
   const [amountInMajorUnits, setAmountInMajorUnits] = useState("");
   const [currencyCode, setCurrencyCode] = useState("USD");
   const [contributionDescription, setContributionDescription] = useState("");
-  const [contributionIdempotencyKey, setContributionIdempotencyKey] = useState(newIdempotencyKey);
+  const contributionIdempotencyKeyRef = useRef<string | null>(null);
 
   const firstError = [effortMutation.error, contributionMutation.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
@@ -89,19 +97,22 @@ export default function ProgramContributorTools({
     if (!Number.isSafeInteger(parsedMinutes) || parsedMinutes < 1 || parsedMinutes > 1440) return;
     if (!effortNote.trim()) return;
 
+    if (effortIdempotencyKeyRef.current === null) {
+      effortIdempotencyKeyRef.current = newIdempotencyKey();
+    }
     effortMutation.mutate(
       {
         minutes: parsedMinutes,
         branchId: effortBranchId === "" ? null : effortBranchId,
-        loggedForDate,
+        loggedForDate: loggedForDate || todayIsoDate,
         note: effortNote.trim(),
-        idempotencyKey: effortIdempotencyKey,
+        idempotencyKey: effortIdempotencyKeyRef.current,
       },
       {
         onSuccess: () => {
           setEffortNote("");
           // Rotated on SUCCESS only: a failed attempt must be retryable under the same key.
-          setEffortIdempotencyKey(newIdempotencyKey());
+          effortIdempotencyKeyRef.current = newIdempotencyKey();
         },
       },
     );
@@ -112,6 +123,9 @@ export default function ProgramContributorTools({
     if (!contributionDescription.trim()) return;
     if (isCashCommitment && amountInMajorUnits.trim() === "") return;
 
+    if (contributionIdempotencyKeyRef.current === null) {
+      contributionIdempotencyKeyRef.current = newIdempotencyKey();
+    }
     contributionMutation.mutate(
       {
         kind: contributionKind,
@@ -123,13 +137,13 @@ export default function ProgramContributorTools({
           : null,
         currencyCode: isCashCommitment ? currencyCode.toUpperCase() : null,
         description: contributionDescription.trim(),
-        idempotencyKey: contributionIdempotencyKey,
+        idempotencyKey: contributionIdempotencyKeyRef.current,
       },
       {
         onSuccess: () => {
           setContributionDescription("");
           setAmountInMajorUnits("");
-          setContributionIdempotencyKey(newIdempotencyKey());
+          contributionIdempotencyKeyRef.current = newIdempotencyKey();
         },
       },
     );
@@ -172,9 +186,9 @@ export default function ProgramContributorTools({
               <input
                 required
                 type="date"
-                value={loggedForDate}
+                value={loggedForDate || todayIsoDate}
                 // A future date is a 422 from the backend; `max` stops the common case here.
-                max={new Date().toISOString().slice(0, 10)}
+                max={todayIsoDate || undefined}
                 onChange={(event) => setLoggedForDate(event.target.value)}
                 className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
               />

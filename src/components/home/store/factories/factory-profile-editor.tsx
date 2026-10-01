@@ -25,7 +25,7 @@
 // lines, sites and terms are already projected by `GET /store/factories/:factorySlug`. A second
 // read of the same rows would be a second place for them to disagree (§16.1).
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import {
@@ -568,7 +568,7 @@ function TermsForm({
   const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(() =>
     toInputText(orderBounds.maximumLeadTimeDays),
   );
-  const [acceptingInquiries, setAcceptingInquiries] = useState(source.acceptingInquiries);
+  const [acceptingInquiries, setAcceptingInquiries] = useState(() => source.acceptingInquiries);
 
   const updateTerms = useUpdateFactoryTermsMutation();
 
@@ -846,7 +846,9 @@ function CompanyFactsForm({
   const [publicSummary, setPublicSummary] = useState(profile.publicSummary ?? "");
   const [businessType, setBusinessType] = useState(profile.businessType ?? "");
   const [visitPolicy, setVisitPolicy] = useState(profile.visitPolicy ?? "");
-  const [acceptingCustomOrders, setAcceptingCustomOrders] = useState(profile.acceptingCustomOrders);
+  const [acceptingCustomOrders, setAcceptingCustomOrders] = useState(
+    () => profile.acceptingCustomOrders,
+  );
 
   const upsertProfile = useUpsertSellerProfileMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
@@ -1749,7 +1751,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
   const [scopeSummary, setScopeSummary] = useState("");
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const evidenceFileRef = useRef<File | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const certificationsQuery = useOrganizationCertificationsQuery(organizationId);
@@ -1774,7 +1776,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
       onSubmit={(event) => {
         event.preventDefault();
         if (submitCertification.isPending) return;
-        if (evidenceFile === null) {
+        if (evidenceFileRef.current === null) {
           setLocalError("Attach the certificate itself — a PDF or a photo of it.");
           return;
         }
@@ -1788,7 +1790,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
         submitCertification.mutate(
           {
             organizationId,
-            evidenceFile,
+            evidenceFile: evidenceFileRef.current,
             idempotencyKey: getIdempotencyKey(),
             input: {
               standardName: standardName.trim(),
@@ -1815,7 +1817,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
               setScopeSummary("");
               setValidFrom("");
               setValidUntil("");
-              setEvidenceFile(null);
+              evidenceFileRef.current = null;
             },
           },
         );
@@ -1981,7 +1983,9 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
         <input
           type="file"
           accept="application/pdf,image/jpeg,image/png"
-          onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => {
+            evidenceFileRef.current = event.target.files?.[0] ?? null;
+          }}
           className="mt-1 block w-full text-xs"
         />
       </label>

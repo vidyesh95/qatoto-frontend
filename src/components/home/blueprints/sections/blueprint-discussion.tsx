@@ -32,7 +32,7 @@ export default function BlueprintDiscussion({
   const thread = useBlueprintCommentThread(arm, slug);
   const createComment = useCreateBlueprintCommentMutation(arm, slug);
   const deleteComment = useDeleteBlueprintCommentMutation(arm, slug);
-  const likeMutation = useBlueprintCommentLikeMutation();
+  const likeMutation = useBlueprintCommentLikeMutation(arm, slug);
   const updateComment = useUpdateBlueprintCommentMutation(arm, slug);
 
   return (

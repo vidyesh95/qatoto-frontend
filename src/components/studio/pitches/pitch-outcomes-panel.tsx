@@ -2,13 +2,14 @@
 // `POST /funding-outcomes/:outcomeId/confirm`.
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { formatOutcomeAmount, OutcomeAttestationNote } from "@/components/pitches/pitch-shared";
+import { OutcomeAttestationNote } from "@/components/pitches/pitch-shared";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useConfirmPitchOutcomeMutation, useRecordPitchOutcomeMutation } from "@/hooks/rnd/pitches";
 import { ApiRequestError } from "@/lib/http";
 import { newIdempotencyKey } from "@/lib/idempotency";
+import { formatOutcomeAmount } from "@/lib/rnd/format";
 import type { PitchFundingOutcome } from "@/lib/rnd/pitches.schemas";
 
 /**
@@ -43,7 +44,7 @@ export default function PitchOutcomesPanel({
   const [funderNameText, setFunderNameText] = useState("");
   const [funderUserId, setFunderUserId] = useState("");
   const [note, setNote] = useState("");
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const recordMutation = useRecordPitchOutcomeMutation();
   const confirmMutation = useConfirmPitchOutcomeMutation();
@@ -128,6 +129,9 @@ export default function PitchOutcomesPanel({
           onSubmit={(submitEvent) => {
             submitEvent.preventDefault();
             if (amountInCents === null) return;
+            if (idempotencyKeyRef.current === null) {
+              idempotencyKeyRef.current = newIdempotencyKey();
+            }
             recordMutation.mutate(
               {
                 pitchId,
@@ -140,14 +144,14 @@ export default function PitchOutcomesPanel({
                     ? {}
                     : { funderUserId: funderUserId.trim() }),
                   ...(note.trim().length === 0 ? {} : { note: note.trim() }),
-                  idempotencyKey,
+                  idempotencyKey: idempotencyKeyRef.current,
                 },
               },
               {
                 // A NEW KEY FOR THE NEXT RECORD. Reusing it would make a different funder
                 // look like a retry of this one and return the first row instead.
                 onSuccess: () => {
-                  setIdempotencyKey(newIdempotencyKey());
+                  idempotencyKeyRef.current = newIdempotencyKey();
                   setIsFormOpen(false);
                   setAmountInMajorUnits("");
                   setFunderNameText("");

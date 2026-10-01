@@ -26,6 +26,7 @@ import {
   type RightsClaimDraft,
   type RightsClaimTarget,
 } from "@/lib/blueprints/rights-claim.schemas";
+import type { TeardownClaimTargets } from "@/lib/blueprints/schemas";
 import { SUPPORT_CONTACT_EMAIL } from "@/lib/site";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
@@ -168,4 +169,31 @@ export function describeSwornClauseGap(acceptedClauseIds: readonly string[]): st
   return `${outstandingClauses.length} of ${RIGHTS_CLAIM_SWORN_CLAUSES.length} statements still unsworn: ${outstandingClauses
     .map((clause) => clause.label)
     .join("; ")}.`;
+}
+
+/** The label for a chosen target, for the notice body. */
+export function resolveClaimTargetLabel(
+  claimTargets: TeardownClaimTargets,
+  target: RightsClaimTarget,
+): string | null {
+  switch (target.kind) {
+    case "whole_teardown":
+      return null;
+    case "document":
+      return (
+        claimTargets.documents.find((document) => document.id === target.documentId)?.title ?? null
+      );
+    case "manufacturing_file":
+      return (
+        claimTargets.manufacturingFiles.find(
+          (manufacturingFile) => manufacturingFile.id === target.manufacturingFileId,
+        )?.title ?? null
+      );
+    case "part":
+      return claimTargets.parts.find((part) => part.id === target.partId)?.label ?? null;
+    default: {
+      const exhaustiveCheck: never = target;
+      return exhaustiveCheck;
+    }
+  }
 }

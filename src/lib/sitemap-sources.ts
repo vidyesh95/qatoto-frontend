@@ -406,12 +406,14 @@ export async function getCategorySitemapEntries(): Promise<SitemapEntry[]> {
  */
 export async function getCatalogSitemapEntries(): Promise<SitemapEntry[]> {
   "use cache";
-  const productHits = await collectCursorPagedRows((cursor) =>
-    searchStore({ documentKind: "product", limit: CURSOR_PAGE_LIMIT, cursor }),
-  );
-  const offeringHits = await collectCursorPagedRows((cursor) =>
-    searchStore({ documentKind: "provider_offering", limit: CURSOR_PAGE_LIMIT, cursor }),
-  );
+  const [productHits, offeringHits] = await Promise.all([
+    collectCursorPagedRows((cursor) =>
+      searchStore({ documentKind: "product", limit: CURSOR_PAGE_LIMIT, cursor }),
+    ),
+    collectCursorPagedRows((cursor) =>
+      searchStore({ documentKind: "provider_offering", limit: CURSOR_PAGE_LIMIT, cursor }),
+    ),
+  ]);
 
   // `lastModified` ON PRODUCT AND SERVICE PAGES, and this is the whole of §12's value. The
   // search document's `updatedAt` moves when the listing itself changes — the backend enqueues

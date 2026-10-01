@@ -102,17 +102,25 @@ export function describeEngagementError(error: unknown): EngagementRefusal {
  * render; the next server read carries it for everyone.
  */
 export function useVideoLikeMutation(videoId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (shouldBeLiked: boolean) =>
       unwrap(await (shouldBeLiked ? likeVideo(videoId) : unlikeVideo(videoId))),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.watchVideo(videoId) });
+    },
   });
 }
 
 /** Watch-later. Same shape and same reasoning as like. */
 export function useVideoSaveMutation(videoId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (shouldBeSaved: boolean) =>
       unwrap(await (shouldBeSaved ? saveVideo(videoId) : unsaveVideo(videoId))),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.watchVideo(videoId) });
+    },
   });
 }
 
@@ -129,8 +137,12 @@ export function useVideoSaveMutation(videoId: string) {
  * answers, which for an anonymous sharer is the unchanged number.
  */
 export function useVideoShareMutation(videoId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (channel: ShareChannel) => unwrap(await recordVideoShare(videoId, channel)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.watchVideo(videoId) });
+    },
   });
 }
 
@@ -160,11 +172,15 @@ export function useVideoShareMutation(videoId: string) {
 
 /** "Not interested" — hides one video from this viewer's feed. `true` sets, `false` undoes. */
 export function useVideoNotInterestedMutation(videoId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (shouldBeSet: boolean) =>
       unwrap(
         await (shouldBeSet ? markVideoNotInterested(videoId) : unmarkVideoNotInterested(videoId)),
       ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.notInterestedVideos() });
+    },
   });
 }
 
@@ -241,6 +257,7 @@ export function useRemoveFeedPreferenceMutation() {
  * hiding the control, since the button is reachable from a creator's own watch page.
  */
 export function useCreatorSubscriptionMutation(creatorId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (shouldBeSubscribed: boolean) =>
       unwrap(
@@ -248,6 +265,9 @@ export function useCreatorSubscriptionMutation(creatorId: string) {
           ? subscribeToCreator(creatorId)
           : unsubscribeFromCreator(creatorId)),
       ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.all });
+    },
   });
 }
 
@@ -334,8 +354,12 @@ export function useDeleteVideoCommentMutation(videoId: string) {
 
 /** Removes one video from the viewer's history. Server-truthful; the caller renders after. */
 export function useHideFromWatchHistoryMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (videoId: string) => unwrap(await hideVideoFromWatchHistory(videoId)),
+    onSuccess: (_data, videoId) => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.watchVideo(videoId) });
+    },
   });
 }
 
@@ -347,8 +371,12 @@ export function useHideFromWatchHistoryMutation() {
  * putting it back would be a lie the next reload corrects.
  */
 export function useRestoreToWatchHistoryMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (videoId: string) => unwrap(await restoreVideoToWatchHistory(videoId)),
+    onSuccess: (_data, videoId) => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.watchVideo(videoId) });
+    },
   });
 }
 
@@ -370,6 +398,7 @@ export function useClearWatchHistoryMutation() {
 
 /** Comment like — optimistic, same class as a video like. */
 export function useVideoCommentLikeMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: {
       readonly commentId: string;
@@ -380,6 +409,9 @@ export function useVideoCommentLikeMutation() {
           ? likeVideoComment(variables.commentId)
           : unlikeVideoComment(variables.commentId)),
       ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["feed", "comments"] });
+    },
   });
 }
 
@@ -388,8 +420,12 @@ export function useVideoCommentLikeMutation() {
  * caller because the list comes from the server-rendered payload.
  */
 export function useSuppressSearchTermMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: { term: string; reason: string }) =>
       unwrap(await suppressSearchTerm(variables)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.searchRoot() });
+    },
   });
 }

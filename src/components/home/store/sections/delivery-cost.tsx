@@ -26,7 +26,7 @@ import Image from "next/image";
 import DeliverySheet from "@/components/home/store/sheets/delivery-sheet";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useProductDeliveryEstimateQuery } from "@/hooks/store/products";
-import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { formatCentsRangeLabel, formatLeadTimeRangeLabel } from "@/lib/store/format";
 import type { ProductDeliveryEstimate } from "@/lib/store/products.schemas";
 import type { FreightLanePlan } from "@/lib/store/freight.schemas";
@@ -51,6 +51,87 @@ type DeliveryEstimateViewState =
       lanePlan: FreightLanePlan | null;
     };
 
+function resolveDeliveryEstimateViewState(
+  destinationCountryCode: string | null,
+  isPending: boolean,
+  data: ReturnType<typeof useProductDeliveryEstimateQuery>["data"],
+): DeliveryEstimateViewState {
+  if (destinationCountryCode === null) {
+    return { status: "no_destination" };
+  }
+  if (isPending || data === undefined) {
+    return { status: "loading" };
+  }
+  if (!data.success) {
+    return { status: "error", message: data.error.message };
+  }
+  if (data.data.estimates.length === 0) {
+    return { status: "uncovered", lanePlan: data.data.lanePlan };
+  }
+  return {
+    status: "ready",
+    estimates: data.data.estimates,
+    lanePlan: data.data.lanePlan,
+  };
+}
+
+interface DeliveryDestinationSelectorProps {
+  value: string | null;
+  onChange: (code: string | null) => void;
+}
+
+function DeliveryDestinationSelector({ value, onChange }: DeliveryDestinationSelectorProps) {
+  return (
+    <label className="flex items-center gap-2 text-xs">
+      <span className="text-foreground">Deliver to</span>
+      <select
+        value={value ?? ""}
+        onChange={(changeEvent) =>
+          onChange(changeEvent.target.value === "" ? null : changeEvent.target.value)
+        }
+        className="flex-1 rounded border border-outline-variant px-2 py-1 text-xs text-foreground"
+      >
+        <option value="">Choose a country…</option>
+        {COUNTRY_OPTIONS.map((country) => (
+          <option key={country.code} value={country.code}>
+            {country.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+interface DeliveryRouteSheetButtonProps {
+  isSheetReachable: boolean;
+  isReady: boolean;
+  onOpen: () => void;
+}
+
+function DeliveryRouteSheetButton({
+  isSheetReachable,
+  isReady,
+  onOpen,
+}: DeliveryRouteSheetButtonProps) {
+  if (!isSheetReachable) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-primary-imprint"
+    >
+      <span className="flex-1">{isReady ? "See how this was worked out" : "See the route"}</span>
+      <Image
+        src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+        width={20}
+        height={20}
+        alt=""
+      />
+    </button>
+  );
+}
+
 export default function DeliveryCost({ productSlug }: { readonly productSlug: string }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [destinationCountryCode, setDestinationCountryCode] = useState<string | null>(null);
@@ -62,73 +143,30 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
     quantity,
   );
 
-  const result = estimateQuery.data;
-  const viewState: DeliveryEstimateViewState =
-    destinationCountryCode === null
-      ? { status: "no_destination" }
-      : estimateQuery.isPending
-        ? { status: "loading" }
-        : result === undefined
-          ? { status: "loading" }
-          : !result.success
-            ? { status: "error", message: result.error.message }
-            : result.data.estimates.length === 0
-              ? { status: "uncovered", lanePlan: result.data.lanePlan }
-              : {
-                  status: "ready",
-                  estimates: result.data.estimates,
-                  lanePlan: result.data.lanePlan,
-                };
+  const viewState = resolveDeliveryEstimateViewState(
+    destinationCountryCode,
+    estimateQuery.isPending,
+    estimateQuery.data,
+  );
 
-  // THE SHEET OPENS FROM EVERY RESOLVED STATE, NOT JUST THE PRICED ONE. It used to be reachable only
-  // from `ready`, which is backwards now: with no rate cards loaded — today's state on every lane —
-  // `uncovered` is where the buyer most needs to see WHICH leg is uncovered, why, and which
-  // forwarders sell the route anyway.
   const isSheetReachable = viewState.status === "ready" || viewState.status === "uncovered";
   const lanePlanForSheet = isSheetReachable ? viewState.lanePlan : null;
 
   return (
     <>
       <div className="border-y border-outline-variant/60 px-4 py-2 lg:px-6">
-        <label className="flex items-center gap-2 text-xs">
-          <span className="text-foreground">Deliver to</span>
-          <select
-            value={destinationCountryCode ?? ""}
-            onChange={(changeEvent) =>
-              setDestinationCountryCode(
-                changeEvent.target.value === "" ? null : changeEvent.target.value,
-              )
-            }
-            className="flex-1 rounded border border-outline-variant px-2 py-1 text-xs text-foreground"
-          >
-            <option value="">Choose a country…</option>
-            {COUNTRY_OPTIONS.map((country) => (
-              <option key={country.code} value={country.code}>
-                {country.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <DeliveryDestinationSelector
+          value={destinationCountryCode}
+          onChange={setDestinationCountryCode}
+        />
 
         <div className="mt-1.5">{renderEstimate(viewState)}</div>
 
-        {isSheetReachable && (
-          <button
-            type="button"
-            onClick={() => setIsSheetOpen(true)}
-            className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-primary-imprint"
-          >
-            <span className="flex-1">
-              {viewState.status === "ready" ? "See how this was worked out" : "See the route"}
-            </span>
-            <Image
-              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              width={20}
-              height={20}
-              alt=""
-            />
-          </button>
-        )}
+        <DeliveryRouteSheetButton
+          isSheetReachable={isSheetReachable}
+          isReady={viewState.status === "ready"}
+          onOpen={() => setIsSheetOpen(true)}
+        />
       </div>
 
       {isSheetOpen && (

@@ -30,6 +30,7 @@ import type {
 } from "@/lib/rnd/daily-logs.schemas";
 import type {
   CompensationEarnedAsPolicy,
+  CompensationKind,
   ProjectStage,
   ResearchCategoryDomain,
   RoleCommitment,
@@ -52,6 +53,12 @@ export const ROLE_COMMITMENT_LABELS: Record<RoleCommitment, string> = {
   full_time: "Full-time",
   part_time: "Part-time",
   hobby: "Hobby",
+};
+
+export const COMPENSATION_KIND_LABELS: Record<CompensationKind, string> = {
+  salary: "Salary",
+  one_time: "One-time",
+  equity: "Equity",
 };
 
 /**

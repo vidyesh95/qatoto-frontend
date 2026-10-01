@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { InfoFeatureGridSection } from "@/components/information/info-shared";
 
 const VALUES = [
   {
@@ -146,36 +146,12 @@ export default function Careers() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-eyebrow text-foreground uppercase">
-            How we work
-          </span>
-          <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-            The same rules we ask of every team on the platform.
-          </h2>
-          <p className="mt-6 text-lg text-muted-foreground">
-            Qatoto is built by people who use Qatoto. We post EOD updates. Our compensation lives on
-            the same ledger. AI watches our workflow and suggests cuts. It's the only honest way to
-            ship the thing.
-          </p>
-        </div>
-
-        <div className="mt-16 grid gap-6 sm:grid-cols-2">
-          {VALUES.map((v) => (
-            <article
-              key={v.title}
-              className="group rounded-3xl border border-border bg-card p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/40">
-                <Image src={v.icon} alt="" width={28} height={28} />
-              </div>
-              <h3 className="mt-6 text-xl font-semibold tracking-tight">{v.title}</h3>
-              <p className="mt-3 text-base leading-relaxed text-muted-foreground">{v.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      <InfoFeatureGridSection
+        eyebrow="How we work"
+        title="The same rules we ask of every team on the platform."
+        description="Qatoto is built by people who use Qatoto. We post EOD updates. Our compensation lives on the same ledger. AI watches our workflow and suggests cuts. It's the only honest way to ship the thing."
+        items={VALUES}
+      />
 
       <section id="open-roles" className="relative overflow-hidden py-24">
         <div

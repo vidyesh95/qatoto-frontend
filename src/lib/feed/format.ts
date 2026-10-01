@@ -6,6 +6,8 @@
 // correct for the life of the cache entry. A relative timestamp is the opposite, and lives in
 // `src/components/home/shared/relative-time.tsx` behind a client boundary.
 
+import type { ApiError } from "@/lib/http";
+
 /** Below this, print the exact number — "847" reads better than "0.8K". */
 const THOUSAND = 1_000;
 const MILLION = 1_000_000;
@@ -130,4 +132,23 @@ export function formatWatchTimeAxisTick(watchedSeconds: number): string {
     return remainder === 0 ? `${wholeHours}h` : `${wholeHours}.${remainder}h`;
   }
   return `${Math.max(1, Math.trunc(watchedSeconds / SECONDS_PER_MINUTE))}m`;
+}
+
+/**
+ * Explain a feed load failure to the user in actionable, plain language.
+ */
+export function describeFeedError(error: ApiError): string {
+  if (error.code === "NETWORK") {
+    return "Can't reach the server. Is the backend running?";
+  }
+  if (error.code === "PARSE") {
+    return "The server sent something this page can't read. Check the dev server log for the field.";
+  }
+  if (error.code === "429") {
+    return "Too many requests — wait a moment and reload.";
+  }
+  if (error.code.startsWith("5")) {
+    return "The server had a problem. Please try again.";
+  }
+  return error.message;
 }

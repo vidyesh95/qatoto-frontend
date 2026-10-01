@@ -27,7 +27,7 @@
 // uploaded and authorized, and the only multipart routes in this backend are verification evidence
 // and customization assets. There is no first-party video ingest anywhere either.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import {
@@ -58,8 +58,8 @@ export default function ManufacturerChatSheet({
   readonly onClose: () => void;
 }) {
   const [draft, setDraft] = useState("");
-  const [inquiryIdempotencyKey] = useState(newIdempotencyKey);
-  const [messageIdempotencyKey, setMessageIdempotencyKey] = useState(newIdempotencyKey);
+  const inquiryIdempotencyKeyRef = useRef<string | null>(null);
+  const messageIdempotencyKeyRef = useRef<string | null>(null);
 
   const createInquiry = useCreateProductInquiry();
   const inquiryResult = createInquiry.data;
@@ -70,7 +70,13 @@ export default function ManufacturerChatSheet({
 
   // `createOrGet`, so this is idempotent by construction — see the header.
   useEffect(() => {
-    createInquiry.mutate({ productId, idempotencyKey: inquiryIdempotencyKey });
+    if (inquiryIdempotencyKeyRef.current === null) {
+      inquiryIdempotencyKeyRef.current = newIdempotencyKey();
+    }
+    createInquiry.mutate({
+      productId,
+      idempotencyKey: inquiryIdempotencyKeyRef.current,
+    });
     // Deliberately once per mount: the mutation object identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
@@ -161,14 +167,21 @@ export default function ManufacturerChatSheet({
               disabled={!isSendable}
               onClick={() => {
                 if (threadId === null) return;
+                if (messageIdempotencyKeyRef.current === null) {
+                  messageIdempotencyKeyRef.current = newIdempotencyKey();
+                }
                 appendMessage.mutate(
-                  { threadId, bodyText: trimmedDraft, idempotencyKey: messageIdempotencyKey },
+                  {
+                    threadId,
+                    bodyText: trimmedDraft,
+                    idempotencyKey: messageIdempotencyKeyRef.current,
+                  },
                   {
                     onSuccess: (result) => {
                       if (!result.success) return;
                       setDraft("");
                       // A new key for the next message — the one just used belongs to this send.
-                      setMessageIdempotencyKey(newIdempotencyKey());
+                      messageIdempotencyKeyRef.current = newIdempotencyKey();
                     },
                   },
                 );

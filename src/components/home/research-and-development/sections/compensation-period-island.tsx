@@ -10,75 +10,27 @@ import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
-import { LABEL_CLASS } from "@/components/ui/field-classes";
+import {
+  CompensationLineItem,
+  CompensationPeriodActions,
+  StatementChainVerificationView,
+} from "@/components/home/research-and-development/sections/compensation-period-subviews";
 import {
   useCompensationPeriodQuery,
-  useStatementChainVerificationQuery,
   useConfirmCompensationPaymentMutation,
   useCountersignCompensationPeriodMutation,
   useFinalizeCompensationPeriodMutation,
   useRecordCompensationPaymentMutation,
+  useStatementChainVerificationQuery,
   useSupersedeCompensationPeriodMutation,
 } from "@/hooks/rnd/compensation";
 import { ApiRequestError } from "@/lib/http";
-import { API_BASE_URL } from "@/lib/api";
-import { buildCompensationExportPath } from "@/lib/rnd/compensation.api";
-import {
-  COMPENSATION_PAYMENT_METHOD_KEYS,
-  CompensationPaymentMethodKeySchema,
-  type CompensationPaymentMethodKey,
-  type CompensationPeriodLineKind,
-  type CompensationPeriodStatus,
-} from "@/lib/rnd/compensation.schemas";
-import {
-  formatEffortFromMinutes,
-  formatIsoDate,
-  formatIsoInstant,
-  formatMoneyFromCents,
-  formatSignedEquityFromBasisPoints,
-  shortenHashForDisplay,
-} from "@/lib/rnd/format";
+import type { CompensationPeriodStatus } from "@/lib/rnd/compensation.schemas";
 import { newIdempotencyKey } from "@/lib/idempotency";
-
-const LINE_KIND_LABELS: Record<CompensationPeriodLineKind, string> = {
-  cash_retainer: "Cash · retainer",
-  cash_hourly: "Cash · hourly",
-  equity_delta: "Equity delta",
-};
-
-const PAYMENT_METHOD_LABELS: Record<CompensationPaymentMethodKey, string> = {
-  bank_transfer: "Bank transfer",
-  sepa_transfer: "SEPA transfer",
-  upi: "UPI",
-  payroll_provider: "Payroll provider",
-  cash: "Cash",
-  other: "Other",
-};
 
 const FOUNDER_ROLE = "founder";
 const ADMIN_ROLES = ["founder", "admin"];
 
-/**
- * One statement, opened.
- *
- * FOUR CONTROLS, EACH WITH A DIFFERENT ACTOR, and getting that wrong is the whole risk on
- * this screen:
- *
- * - FINALIZE is the founder's, and its body is an acknowledgement with NO AMOUNTS. The
- *   server recomputes, freezes and hashes in one transaction; a body carrying figures
- *   would let the client decide what the statement says.
- * - COUNTERSIGN is A DIFFERENT ADMIN'S. `422 SELF_COUNTERSIGN_FORBIDDEN` even for a
- *   founder, because a second signature from the first signer is not a second signature.
- * - RECORDING A PAYMENT is the founder's or an admin's, and it is an ATTESTATION about
- *   money that moved elsewhere. It changes no line.
- * - CONFIRMING one is THE MEMBER'S, and only theirs. Until it lands the payment renders as
- *   unconfirmed.
- *
- * THERE IS NO EDIT AND NO "MARK PAID". A finalized statement is corrected by SUPERSEDING
- * it — editing would invalidate the statement hash and every hash chained after it — and
- * no endpoint marks a line paid, because payment is an attestation plus a confirmation or
- * it is not evidence.
- */
 export default function CompensationPeriodIsland({
   projectSlug,
   periodId,
@@ -86,20 +38,15 @@ export default function CompensationPeriodIsland({
   isCountersigned,
   viewerProjectRole,
 }: {
-  projectSlug: string;
-  periodId: string;
-  periodStatus: CompensationPeriodStatus;
-  isCountersigned: boolean;
-  viewerProjectRole: string | null;
+  readonly projectSlug: string;
+  readonly periodId: string;
+  readonly periodStatus: CompensationPeriodStatus;
+  readonly isCountersigned: boolean;
+  readonly viewerProjectRole: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [payingLineId, setPayingLineId] = useState<string | null>(null);
-  const [paidAmountInCents, setPaidAmountInCents] = useState("");
-  const [paidOnDate, setPaidOnDate] = useState("");
-  const [methodKey, setMethodKey] = useState<CompensationPaymentMethodKey>("bank_transfer");
-  const [referenceNote, setReferenceNote] = useState("");
   const [paymentIdempotencyKey] = useState(newIdempotencyKey);
-  const [supersedeReason, setSupersedeReason] = useState("");
   const [isChainVerificationRequested, setIsChainVerificationRequested] = useState(false);
 
   const periodQuery = useCompensationPeriodQuery(projectSlug, isOpen ? periodId : undefined);
@@ -136,61 +83,6 @@ export default function CompensationPeriodIsland({
       </button>
     );
   }
-  /**
-   * THE VERDICT IS THE STATUS CODE, NOT A FIELD.
-   *
-   * `StatementChainVerification` carries `periodsChecked`, the sequence bounds and the head
-   * hash — and NO boolean. A break arrives as `409 STATEMENT_CHAIN_BROKEN`. So the success
-   * branch reports what was re-walked and the failure branch prints the backend's own code
-   * and message; neither invents a verdict the wire did not carry.
-   *
-   * The failure branch is styled as an alarm on purpose. A broken statement chain means a
-   * finalized statement no longer agrees with its own hash, which is a claim about money
-   * that somebody can no longer prove — it is not a loading problem and reloading will not
-   * clear it.
-   */
-  function renderChainVerification() {
-    if (chainVerificationQuery.isPending) {
-      return <p className="text-xs text-muted-foreground">Re-walking the statement chain…</p>;
-    }
-
-    const verificationError =
-      chainVerificationQuery.error instanceof ApiRequestError
-        ? chainVerificationQuery.error.apiError
-        : null;
-
-    if (verificationError !== null) {
-      return (
-        <div className="space-y-1 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          <p className="font-medium">The statement chain did not verify.</p>
-          <p className="text-xs">
-            {verificationError.code} · {verificationError.message}
-          </p>
-          <p className="text-xs">
-            This is not a display problem. Report it rather than retrying — a finalized statement is
-            never edited, so a break means something changed that should not have.
-          </p>
-        </div>
-      );
-    }
-
-    const verification = chainVerificationQuery.data;
-    if (verification === undefined) return null;
-
-    return (
-      <div className="space-y-1 rounded-2xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm">
-        <p className="font-medium text-primary-imprint">
-          {verification.periodsChecked} statement
-          {verification.periodsChecked === 1 ? "" : "s"} re-walked, and every one checked out.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Sequences {verification.firstSequence ?? "—"} to {verification.lastSequence ?? "—"}
-          {verification.headStatementHash !== null &&
-            ` · head ${shortenHashForDisplay(verification.headStatementHash)}`}
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-3 space-y-3 border-t border-outline-variant/40 pt-3">
@@ -211,8 +103,6 @@ export default function CompensationPeriodIsland({
 
       {periodQuery.data && (
         <div className="space-y-3">
-          {/* The notice travels with the numbers rather than living in a client string
-              table, so a statement can never be rendered as a payslip. */}
           <p className="rounded-xl bg-muted/50 p-3 text-xs">{periodQuery.data.grossOnlyNotice}</p>
 
           <ul className="space-y-2">
@@ -222,265 +112,55 @@ export default function CompensationPeriodIsland({
               );
 
               return (
-                <li
+                <CompensationLineItem
                   key={line.id}
-                  className="space-y-2 rounded-xl border border-outline-variant/60 p-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2 text-sm">
-                    <span className="min-w-0">
-                      <span className="font-medium">{line.memberName}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {LINE_KIND_LABELS[line.kind]}
-                        {line.effortMinutes !== null &&
-                          ` · ${formatEffortFromMinutes(line.effortMinutes)}`}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-right">
-                      {line.grossAmountInCents !== null && line.currency !== null && (
-                        <span className="font-medium">
-                          {formatMoneyFromCents(BigInt(line.grossAmountInCents), line.currency)}
-                        </span>
-                      )}
-                      {line.equityBasisPointsDelta !== null && (
-                        <span className="block text-xs">
-                          {formatSignedEquityFromBasisPoints(line.equityBasisPointsDelta)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-
-                  {/* The one place a verdict touches a cash line, and it changes no
-                      number. Rendered as an annotation, never as a reason the amount is
-                      lower — verification never reduces cash. */}
-                  {line.verificationNote !== null && (
-                    <p className="text-xs text-muted-foreground">
-                      Note from verification: {line.verificationNote}. This annotates the line and
-                      changes no figure on it.
-                    </p>
-                  )}
-
-                  {linePayments.map((payment) => (
-                    <div key={payment.id} className="rounded-lg bg-muted/50 p-2 text-xs">
-                      {formatMoneyFromCents(BigInt(payment.paidAmountInCents), payment.currency)} ·{" "}
-                      {PAYMENT_METHOD_LABELS[payment.methodKey]} ·{" "}
-                      {formatIsoDate(payment.paidOnDate)}
-                      {payment.referenceNote !== null && ` · ${payment.referenceNote}`}
-                      <span className="block">
-                        {payment.confirmedByMemberAt === null ? (
-                          <>
-                            <span className="font-medium">Unconfirmed.</span> Nobody has said they
-                            received this yet.
-                            <button
-                              type="button"
-                              onClick={() =>
-                                confirmPaymentMutation.mutate({
-                                  lineId: line.id,
-                                  paymentId: payment.id,
-                                })
-                              }
-                              disabled={confirmPaymentMutation.isPending}
-                              className="ml-2 cursor-pointer font-medium text-primary-imprint disabled:opacity-50"
-                            >
-                              I received this
-                            </button>
-                          </>
-                        ) : (
-                          `Confirmed by the member ${formatIsoInstant(payment.confirmedByMemberAt)}`
-                        )}
-                      </span>
-                    </div>
-                  ))}
-
-                  {isAdmin && line.grossAmountInCents !== null && (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setPayingLineId(payingLineId === line.id ? null : line.id)}
-                        className="cursor-pointer text-xs font-medium text-primary-imprint"
-                      >
-                        {payingLineId === line.id ? "Cancel" : "Record a payment you already made"}
-                      </button>
-
-                      {payingLineId === line.id && (
-                        <form
-                          className="mt-2 space-y-2"
-                          onSubmit={(submitEvent) => {
-                            submitEvent.preventDefault();
-                            recordPaymentMutation.mutate({
-                              lineId: line.id,
-                              input: {
-                                paidAmountInCents,
-                                paidOnDate,
-                                methodKey,
-                                referenceNote: referenceNote.length > 0 ? referenceNote : undefined,
-                                idempotencyKey: paymentIdempotencyKey,
-                              },
-                            });
-                          }}
-                        >
-                          <label className="flex flex-col gap-1">
-                            <span className={LABEL_CLASS}>Amount paid in cents</span>
-                            <input
-                              required
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={paidAmountInCents}
-                              onChange={(changeEvent) =>
-                                setPaidAmountInCents(changeEvent.target.value)
-                              }
-                              placeholder="Amount in whole cents"
-                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1">
-                            <span className={LABEL_CLASS}>Paid on</span>
-                            <input
-                              required
-                              type="date"
-                              value={paidOnDate}
-                              onChange={(changeEvent) => setPaidOnDate(changeEvent.target.value)}
-                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1">
-                            <span className={LABEL_CLASS}>Payment method</span>
-                            <select
-                              value={methodKey}
-                              onChange={(changeEvent) => {
-                                const parsed = CompensationPaymentMethodKeySchema.safeParse(
-                                  changeEvent.target.value,
-                                );
-                                if (parsed.success) setMethodKey(parsed.data);
-                              }}
-                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                            >
-                              {COMPENSATION_PAYMENT_METHOD_KEYS.map((method) => (
-                                <option key={method} value={method}>
-                                  {PAYMENT_METHOD_LABELS[method]}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className="flex flex-col gap-1">
-                            <span className={LABEL_CLASS}>Reference (optional)</span>
-                            <input
-                              value={referenceNote}
-                              onChange={(changeEvent) => setReferenceNote(changeEvent.target.value)}
-                              placeholder="Your own reference (optional)"
-                              className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                            />
-                          </label>
-                          {/* Said plainly, because the form looks like a payment form and
-                              is not one. */}
-                          <p className="text-xs text-muted-foreground">
-                            This records that you paid someone elsewhere. Qatoto moves no money and
-                            holds none — never enter card, bank or account details here.
-                          </p>
-                          <button
-                            type="submit"
-                            disabled={recordPaymentMutation.isPending}
-                            className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
-                          >
-                            {recordPaymentMutation.isPending ? "Recording…" : "Record it"}
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  )}
-                </li>
+                  line={line}
+                  linePayments={linePayments}
+                  isAdmin={isAdmin}
+                  isPaying={payingLineId === line.id}
+                  onTogglePaying={() => setPayingLineId(payingLineId === line.id ? null : line.id)}
+                  onRecordPayment={(input) =>
+                    recordPaymentMutation.mutate({
+                      lineId: line.id,
+                      input: {
+                        ...input,
+                        idempotencyKey: paymentIdempotencyKey,
+                      },
+                    })
+                  }
+                  isRecordPaymentPending={recordPaymentMutation.isPending}
+                  onConfirmPayment={(paymentId) =>
+                    confirmPaymentMutation.mutate({ lineId: line.id, paymentId })
+                  }
+                  isConfirmPaymentPending={confirmPaymentMutation.isPending}
+                />
               );
             })}
           </ul>
 
-          <div className="flex flex-wrap gap-2">
-            {isFounder && periodStatus === "open" && (
-              <button
-                type="button"
-                onClick={() => finalizeMutation.mutate(periodId)}
-                disabled={finalizeMutation.isPending}
-                className="cursor-pointer rounded-full bg-primary-imprint px-3 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-50"
-              >
-                {finalizeMutation.isPending ? "Finalizing…" : "Finalize this statement"}
-              </button>
-            )}
+          <CompensationPeriodActions
+            projectSlug={projectSlug}
+            periodId={periodId}
+            periodStatus={periodStatus}
+            isCountersigned={isCountersigned}
+            isFounder={isFounder}
+            isAdmin={isAdmin}
+            onFinalize={() => finalizeMutation.mutate(periodId)}
+            isFinalizePending={finalizeMutation.isPending}
+            onCountersign={() => countersignMutation.mutate({ periodId })}
+            isCountersignPending={countersignMutation.isPending}
+            isChainVerificationRequested={isChainVerificationRequested}
+            onRequestChainVerification={() => setIsChainVerificationRequested(true)}
+            onSupersede={(reason) => supersedeMutation.mutate({ periodId, reasonNote: reason })}
+            isSupersedePending={supersedeMutation.isPending}
+          />
 
-            {isAdmin && periodStatus === "finalized" && !isCountersigned && (
-              <button
-                type="button"
-                onClick={() => countersignMutation.mutate({ periodId })}
-                disabled={countersignMutation.isPending}
-                className="cursor-pointer rounded-full border border-primary-imprint/40 px-3 py-1.5 text-xs font-medium text-primary-imprint disabled:opacity-50"
-              >
-                {countersignMutation.isPending ? "Signing…" : "Countersign it"}
-              </button>
-            )}
-
-            {isAdmin && periodStatus === "finalized" && (
-              <a
-                href={`${API_BASE_URL}${buildCompensationExportPath(projectSlug, periodId, "csv")}`}
-                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
-              >
-                Export CSV for payroll
-              </a>
-            )}
-
-            {/*
-              BOTH FORMATS, because `buildCompensationExportPath` has always taken
-              `format: "csv" | "json"` and only CSV was ever offered. A payroll provider
-              wants the CSV; anything programmatic wants the JSON, and neither should be
-              rebuilt in the browser from the rendered labels — the export carries the raw
-              integers, not "$1,980".
-            */}
-            {isAdmin && periodStatus === "finalized" && (
-              <a
-                href={`${API_BASE_URL}${buildCompensationExportPath(projectSlug, periodId, "json")}`}
-                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
-              >
-                Export JSON
-              </a>
-            )}
-
-            {isAdmin && periodStatus === "finalized" && !isChainVerificationRequested && (
-              <button
-                type="button"
-                onClick={() => setIsChainVerificationRequested(true)}
-                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium"
-              >
-                Verify the statement chain
-              </button>
-            )}
-          </div>
-
-          {isChainVerificationRequested && renderChainVerification()}
-
-          {isFounder && periodStatus === "finalized" && (
-            <form
-              className="space-y-2 rounded-xl bg-muted/50 p-3"
-              onSubmit={(submitEvent) => {
-                submitEvent.preventDefault();
-                supersedeMutation.mutate({ periodId, reasonNote: supersedeReason });
-              }}
-            >
-              <label className="block space-y-1">
-                <span className="text-xs text-muted-foreground">
-                  Correct this statement — it creates a new one; nothing here is ever edited
-                </span>
-                <input
-                  required
-                  value={supersedeReason}
-                  onChange={(changeEvent) => setSupersedeReason(changeEvent.target.value)}
-                  placeholder="What was wrong?"
-                  className="w-full rounded-lg border border-outline-variant p-2 text-sm"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={supersedeMutation.isPending}
-                className="cursor-pointer rounded-full border border-outline-variant px-3 py-1.5 text-xs font-medium disabled:opacity-50"
-              >
-                {supersedeMutation.isPending ? "Superseding…" : "Supersede with a correction"}
-              </button>
-            </form>
+          {isChainVerificationRequested && (
+            <StatementChainVerificationView
+              isPending={chainVerificationQuery.isPending}
+              error={chainVerificationQuery.error}
+              verification={chainVerificationQuery.data}
+            />
           )}
 
           {finalizeMutation.isSuccess && (

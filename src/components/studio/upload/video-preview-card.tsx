@@ -16,12 +16,97 @@ const FAKE_PROCESSING_DURATION_MS = 2000;
 
 type VideoPreviewCardProps = { videoFile: File } | { youtubeUrl: string } | { fileName: string };
 
+function resolvePreviewProps(props: VideoPreviewCardProps) {
+  if ("youtubeUrl" in props) {
+    const youtubeVideoId = extractYoutubeVideoId(props.youtubeUrl);
+    return {
+      videoFile: null,
+      youtubeUrl: props.youtubeUrl,
+      youtubeVideoId,
+      fileName: props.youtubeUrl,
+    };
+  }
+  if ("videoFile" in props) {
+    return {
+      videoFile: props.videoFile,
+      youtubeUrl: null,
+      youtubeVideoId: null,
+      fileName: props.videoFile.name,
+    };
+  }
+  return {
+    videoFile: null,
+    youtubeUrl: null,
+    youtubeVideoId: null,
+    fileName: props.fileName,
+  };
+}
+
+function VideoDisplay({
+  youtubeVideoId,
+  videoFile,
+  previewStage,
+  videoObjectUrl,
+}: {
+  readonly youtubeVideoId: string | null;
+  readonly videoFile: File | null;
+  readonly previewStage: PreviewStage;
+  readonly videoObjectUrl: string | null;
+}) {
+  if (youtubeVideoId !== null) {
+    return (
+      <iframe
+        src={buildYoutubeEmbedUrl(youtubeVideoId)}
+        title="YouTube video preview"
+        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-scripts allow-popups allow-presentation"
+        allowFullScreen
+        className="aspect-video w-full bg-black"
+      />
+    );
+  }
+
+  if (videoFile === null) {
+    return (
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-secondary">
+        <Image
+          src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={28}
+          height={28}
+        />
+        <p className="text-xs text-muted-foreground">Preview available on the watch page</p>
+      </div>
+    );
+  }
+
+  if (previewStage === "processing") {
+    return (
+      <div className="flex aspect-video w-full animate-pulse flex-col items-center justify-center gap-2 bg-secondary">
+        <Image
+          src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={28}
+          height={28}
+        />
+        <p className="text-xs text-muted-foreground">Processing video…</p>
+      </div>
+    );
+  }
+
+  if (videoObjectUrl !== null) {
+    return (
+      <video src={videoObjectUrl} controls className="aspect-video w-full bg-black">
+        <track kind="captions" />
+      </video>
+    );
+  }
+
+  return null;
+}
+
 export default function VideoPreviewCard(props: VideoPreviewCardProps) {
-  const videoFile = "videoFile" in props ? props.videoFile : null;
-  const youtubeUrl = "youtubeUrl" in props ? props.youtubeUrl : null;
-  const youtubeVideoId = youtubeUrl === null ? null : extractYoutubeVideoId(youtubeUrl);
-  const sourceLabel = youtubeUrl ?? ("videoFile" in props ? props.videoFile.name : null);
-  const fileName = sourceLabel ?? ("fileName" in props ? props.fileName : "");
+  const { videoFile, youtubeUrl, youtubeVideoId, fileName } = resolvePreviewProps(props);
 
   const [trackedVideoFile, setTrackedVideoFile] = useState(videoFile);
   const [previewStage, setPreviewStage] = useState<PreviewStage>("processing");
@@ -56,46 +141,12 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl bg-secondary/50">
-      {youtubeVideoId ? (
-        <iframe
-          src={buildYoutubeEmbedUrl(youtubeVideoId)}
-          title="YouTube video preview"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          // The player needs both to run; youtube-nocookie is a foreign origin, so
-          // same-origin only grants it its own storage, never ours. Top-level
-          // navigation and form submission stay blocked.
-          // oxlint-disable-next-line iframe-missing-sandbox
-          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
-          allowFullScreen
-          className="aspect-video w-full bg-black"
-        />
-      ) : !videoFile ? (
-        <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-secondary">
-          <Image
-            src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={28}
-            height={28}
-          />
-          <p className="text-xs text-muted-foreground">Preview available on the watch page</p>
-        </div>
-      ) : previewStage === "processing" ? (
-        <div className="flex aspect-video w-full animate-pulse flex-col items-center justify-center gap-2 bg-secondary">
-          <Image
-            src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={28}
-            height={28}
-          />
-          <p className="text-xs text-muted-foreground">Processing video…</p>
-        </div>
-      ) : (
-        videoObjectUrl && (
-          <video src={videoObjectUrl} controls className="aspect-video w-full bg-black">
-            <track kind="captions" />
-          </video>
-        )
-      )}
+      <VideoDisplay
+        youtubeVideoId={youtubeVideoId}
+        videoFile={videoFile}
+        previewStage={previewStage}
+        videoObjectUrl={videoObjectUrl}
+      />
 
       <div className="flex flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">

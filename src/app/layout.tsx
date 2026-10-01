@@ -5,7 +5,8 @@ import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 import "./globals.css";
 import { BrowserPreferencesProvider } from "@/state/browser-preferences-context";
 import { SITE_DESCRIPTION, SITE_SHARE_IMAGE, SITE_TITLE, SITE_URL } from "@/lib/site";
-import { StructuredData, buildOrganizationStructuredData } from "@/lib/structured-data";
+import { StructuredData } from "@/lib/structured-data";
+import { buildOrganizationStructuredData } from "@/lib/structured-data-builders";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components

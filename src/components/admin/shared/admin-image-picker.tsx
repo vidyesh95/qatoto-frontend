@@ -105,6 +105,7 @@ export function AdminImagePicker({
     | { file: File; status: "rejected"; message: string }
     | null
   >(null);
+  const [previousSelectedFile, setPreviousSelectedFile] = useState<File | null>(selectedFile);
 
   /**
    * The parent is told about a file only once it PASSES, and this split is load-bearing.
@@ -188,20 +189,15 @@ export function AdminImagePicker({
     };
   }, [candidate]);
 
-  /**
-   * The parent clearing its file — after a successful submit — clears the preview too.
-   *
-   * The `reportedFileRef` comparison is what makes this safe: it fires only when the parent
-   * dropped a file we had reported as good, never on the null we ourselves just sent while
-   * starting a new check.
-   */
-  useEffect(() => {
-    if (selectedFile === null && reportedFileRef.current !== null) {
-      reportedFileRef.current = null;
+  // Synchronous render-phase adjustment: when the parent clears its file (after submit),
+  // immediately reset candidate and check outcome without an extra effect cycle or flash.
+  if (selectedFile !== previousSelectedFile) {
+    setPreviousSelectedFile(selectedFile);
+    if (selectedFile === null) {
       setCandidate(null);
       setCheckOutcome(null);
     }
-  }, [selectedFile]);
+  }
 
   function handleIncomingFile(incomingFiles: FileList | null) {
     // ONE FILE. The backend's multer config sets `files: 1`; a multi-file drop that silently

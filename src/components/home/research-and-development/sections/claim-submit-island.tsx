@@ -2,7 +2,7 @@
 // POST …/physical-receipts (202, multipart) and DELETE …/physical-receipts/:receiptId.
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   MutationAcceptedNotice,
@@ -76,8 +76,8 @@ export default function ClaimSubmitIsland({
   const [narrative, setNarrative] = useState("");
   const [selectedReceiptIds, setSelectedReceiptIds] = useState<string[]>([]);
   const [receiptKind, setReceiptKind] = useState<PhysicalReceiptKind>("photo_of_work");
-  const [claimIdempotencyKey] = useState(newIdempotencyKey);
-  const [uploadIdempotencyKey, setUploadIdempotencyKey] = useState(newIdempotencyKey);
+  const claimIdempotencyKeyRef = useRef<string | null>(null);
+  const uploadIdempotencyKeyRef = useRef<string | null>(null);
 
   const submitMutation = useSubmitEffortClaimMutation(projectSlug);
   const uploadMutation = useUploadPhysicalReceiptMutation(projectSlug);
@@ -90,12 +90,15 @@ export default function ClaimSubmitIsland({
   if (viewerProjectRole === null) return null;
 
   function toggleReceipt(receiptId: string) {
-    setSelectedReceiptIds((previousIds) =>
-      previousIds.includes(receiptId)
+    setSelectedReceiptIds((previousIds) => {
+      const previousIdsSet = new Set(previousIds);
+      return previousIdsSet.has(receiptId)
         ? previousIds.filter((id) => id !== receiptId)
-        : [...previousIds, receiptId],
-    );
+        : [...previousIds, receiptId];
+    });
   }
+
+  const selectedReceiptIdsSet = new Set(selectedReceiptIds);
 
   return (
     <section className="space-y-4 rounded-2xl border border-outline-variant/60 p-4">
@@ -111,13 +114,16 @@ export default function ClaimSubmitIsland({
         className="space-y-2"
         onSubmit={(submitEvent) => {
           submitEvent.preventDefault();
+          if (claimIdempotencyKeyRef.current === null) {
+            claimIdempotencyKeyRef.current = newIdempotencyKey();
+          }
           submitMutation.mutate({
             sourceKind,
             dailyLogId: sourceKind === "daily_log" ? dailyLogId.trim() : undefined,
             physicalReceiptIds: sourceKind === "physical_receipt" ? selectedReceiptIds : [],
             claimedForDate,
             narrative: narrative.trim() || undefined,
-            idempotencyKey: claimIdempotencyKey,
+            idempotencyKey: claimIdempotencyKeyRef.current,
           });
         }}
       >
@@ -167,9 +173,9 @@ export default function ClaimSubmitIsland({
                     key={receipt.id}
                     type="button"
                     onClick={() => toggleReceipt(receipt.id)}
-                    aria-pressed={selectedReceiptIds.includes(receipt.id)}
+                    aria-pressed={selectedReceiptIdsSet.has(receipt.id)}
                     className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium ${
-                      selectedReceiptIds.includes(receipt.id)
+                      selectedReceiptIdsSet.has(receipt.id)
                         ? "bg-primary-imprint text-primary-imprint-foreground"
                         : "bg-muted text-foreground"
                     }`}
@@ -244,11 +250,22 @@ export default function ClaimSubmitIsland({
             onChange={(changeEvent) => {
               const receiptFile = changeEvent.target.files?.[0];
               if (!receiptFile) return;
+              if (uploadIdempotencyKeyRef.current === null) {
+                uploadIdempotencyKeyRef.current = newIdempotencyKey();
+              }
               uploadMutation.mutate(
-                { receiptFile, receiptKind, idempotencyKey: uploadIdempotencyKey },
+                {
+                  receiptFile,
+                  receiptKind,
+                  idempotencyKey: uploadIdempotencyKeyRef.current,
+                },
                 // A NEW KEY FOR THE NEXT FILE. The one just used belongs to this upload;
                 // reusing it would make a genuinely different receipt look like a retry.
-                { onSuccess: () => setUploadIdempotencyKey(newIdempotencyKey()) },
+                {
+                  onSuccess: () => {
+                    uploadIdempotencyKeyRef.current = newIdempotencyKey();
+                  },
+                },
               );
             }}
             className="text-sm"

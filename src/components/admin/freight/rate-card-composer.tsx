@@ -5,75 +5,157 @@
 import { useState } from "react";
 
 import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
-import WeightBandEditor, {
+import WeightBandEditor from "@/components/commerce/freight/weight-band-editor";
+import {
+  RateCardLaneFields,
+  RateCardOutcomeCard,
+  RateCardStartsField,
+  RateCardSupersedeAlert,
+} from "./rate-card-composer-sections";
+import {
   collectBands,
   newZeroFloorBandDraft,
   type WeightBandDraft,
-} from "@/components/commerce/freight/weight-band-editor";
+} from "@/lib/store/freight-band-draft";
 import {
   useCreateFreightRateCardMutation,
   useSupersedeCandidateQuery,
 } from "@/hooks/store/admin-freight";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
-import { FREIGHT_MODES, type FreightMode } from "@/lib/store/freight.schemas";
-import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
-import { formatIsoInstantLabel } from "@/lib/store/format";
-import type { AdminFreightRateCard } from "@/lib/store/admin-freight.schemas";
+import type { FreightMode } from "@/lib/store/freight.schemas";
 
-/**
- * Author a lane rate card.
- *
- * **TWO IRREVERSIBLE MISTAKES ARE POSSIBLE HERE AND THE FORM EXISTS TO PREVENT BOTH.**
- *
- * 1. `validFrom` IS OPTIONAL ON THE WIRE AND DEFAULTS TO NOW. A card that is already in force can
- *    never have its bands edited — the 409 is permanent, and `validFrom` is in no PATCH schema, so
- *    the only remedy is withdrawing the card and authoring another. So the field is REQUIRED here
- *    and must be in the future; submitting is refused otherwise, with the reason on screen. The
- *    server still decides, as always. This is a form that will not let someone lose an afternoon
- *    to a blank optional field.
- *
- * 2. CREATING SUPERSEDES SILENTLY. An active card on the same
- *    `(provider, origin, destination, mode, currency)` is closed by this create, in the same
- *    transaction, even when the new card is future-dated. Nothing asks first and nothing can opt
- *    out — there is no `supersedesRateCardId` in the product. So the composer looks the incumbent
- *    up BEFORE submitting and makes the operator acknowledge it by name.
- *
- * The mode picker reads `FREIGHT_MODES` — four members. The five-member `FREIGHT_TRANSPORT_MODES`
- * includes `multimodal`, which describes a journey and which no single card can carry.
- */
-
-const CARD_CLASS = "rounded-2xl border border-border p-4";
-const FIELD_CLASS = "w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm";
+const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
 const PRIMARY_BUTTON_CLASS =
-  "cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
 const QUIET_BUTTON_CLASS =
-  "cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium disabled:opacity-50";
-
-/**
- * A default `validFrom` that is unambiguously in the future.
- *
- * Tomorrow rather than "in an hour": a staged card wants a window an operator can still edit
- * bands in after a coffee, and an hour is close enough to now that a slow afternoon freezes it.
- */
-function padTwoDigits(part: number): string {
-  return String(part).padStart(2, "0");
-}
+  "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
 
 function defaultValidFromLocalValue(): string {
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  // `datetime-local` wants `YYYY-MM-DDTHH:mm` in LOCAL time, which is what `toISOString` is not.
-  return `${tomorrow.getFullYear()}-${padTwoDigits(tomorrow.getMonth() + 1)}-${padTwoDigits(tomorrow.getDate())}T${padTwoDigits(tomorrow.getHours())}:${padTwoDigits(tomorrow.getMinutes())}`;
+  tomorrow.setMinutes(0, 0, 0);
+  return tomorrow.toISOString().slice(0, 16);
 }
 
-/**
- * Narrow a `<select>` value to a mode by MEMBERSHIP, not by assertion.
- *
- * The options are rendered from `FREIGHT_MODES` so the value is always one of them in practice —
- * but an assertion here would also silently accept `multimodal` the day someone points this picker
- * at the five-member tuple, and that lands as a 422 from a `.strict()` body with no clue why.
- */
-function toFreightMode(value: string): FreightMode | null {
-  return FREIGHT_MODES.find((freightMode) => freightMode === value) ?? null;
+type RateCardValidationResult =
+  | {
+      ok: true;
+      validFromInstant: Date;
+      validUntilInstant: Date | null;
+      parsedDivisor: number;
+      collectedBands: Extract<ReturnType<typeof collectBands>, { ok: true }>["bands"];
+    }
+  | { ok: false; error: string };
+
+function validateRateCardInput({
+  validFromLocal,
+  validUntilLocal,
+  bandDrafts,
+  volumetricDivisorCm3PerKg,
+}: {
+  validFromLocal: string;
+  validUntilLocal: string;
+  bandDrafts: WeightBandDraft[];
+  volumetricDivisorCm3PerKg: string;
+}): RateCardValidationResult {
+  const validFromInstant = validFromLocal.length > 0 ? new Date(validFromLocal) : null;
+  const isValidFromStillInFuture =
+    validFromInstant !== null &&
+    !Number.isNaN(validFromInstant.getTime()) &&
+    validFromInstant.getTime() > Date.now();
+  if (!isValidFromStillInFuture || validFromInstant === null) {
+    return {
+      ok: false,
+      error:
+        "Start the card in the future. A card that is already in force can never have its bands edited, and that cannot be undone.",
+    };
+  }
+
+  const collected = collectBands(bandDrafts);
+  if (!collected.ok) {
+    return { ok: false, error: collected.error };
+  }
+
+  const parsedDivisor = Number(volumetricDivisorCm3PerKg.trim());
+  if (
+    !Number.isFinite(parsedDivisor) ||
+    !Number.isInteger(parsedDivisor) ||
+    parsedDivisor < 100 ||
+    parsedDivisor > 20000
+  ) {
+    return {
+      ok: false,
+      error: "Volumetric divisor must be an integer between 100 and 20000.",
+    };
+  }
+
+  const validUntilInstant = validUntilLocal.length > 0 ? new Date(validUntilLocal) : null;
+  if (validUntilInstant !== null) {
+    if (Number.isNaN(validUntilInstant.getTime())) {
+      return { ok: false, error: "Valid-until date is not valid." };
+    }
+    if (validUntilInstant.getTime() <= validFromInstant.getTime()) {
+      return { ok: false, error: "Valid-until must be after valid-from." };
+    }
+  }
+
+  return {
+    ok: true,
+    validFromInstant,
+    validUntilInstant,
+    parsedDivisor,
+    collectedBands: collected.bands,
+  };
+}
+
+function RateCardComposerErrorMessages({
+  localError,
+  createResult,
+}: {
+  localError: string | null;
+  createResult: ReturnType<typeof useCreateFreightRateCardMutation>["data"];
+}) {
+  return (
+    <>
+      {localError !== null && (
+        <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{localError}</p>
+      )}
+
+      {createResult !== undefined && !createResult.success && (
+        <div className="space-y-1 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="font-medium">{createResult.error.message}</p>
+          {renderFieldErrors(createResult.error.fieldErrors)}
+        </div>
+      )}
+    </>
+  );
+}
+
+function RateCardComposerActionButtons({
+  isPending,
+  isSubmitBlocked,
+  onSubmit,
+  onClose,
+}: {
+  isPending: boolean;
+  isSubmitBlocked: boolean;
+  onSubmit: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={isPending || isSubmitBlocked}
+        className={PRIMARY_BUTTON_CLASS}
+      >
+        {isPending ? "Creating…" : "Create the card"}
+      </button>
+      <button type="button" onClick={onClose} className={QUIET_BUTTON_CLASS}>
+        Cancel
+      </button>
+    </div>
+  );
 }
 
 export default function RateCardComposer({ onClose }: { onClose: () => void }) {
@@ -125,26 +207,14 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
   function handleSubmit() {
     setLocalError(null);
 
-    const isValidFromStillInFuture =
-      validFromInstant !== null &&
-      !Number.isNaN(validFromInstant.getTime()) &&
-      validFromInstant.getTime() > Date.now();
-    if (!isValidFromStillInFuture) {
-      setLocalError(
-        "Start the card in the future. A card that is already in force can never have its bands edited, and that cannot be undone.",
-      );
-      return;
-    }
-
-    const collected = collectBands(bandDrafts);
-    if (!collected.ok) {
-      setLocalError(collected.error);
-      return;
-    }
-
-    const divisor = Number(volumetricDivisorCm3PerKg.trim());
-    if (!Number.isSafeInteger(divisor) || divisor < 100 || divisor > 20000) {
-      setLocalError("The volumetric divisor must be a whole number between 100 and 20000.");
+    const validation = validateRateCardInput({
+      validFromLocal,
+      validUntilLocal,
+      bandDrafts,
+      volumetricDivisorCm3PerKg,
+    });
+    if (!validation.ok) {
+      setLocalError(validation.error);
       return;
     }
 
@@ -152,61 +222,26 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
       {
         input: {
           providerOrganizationId: providerOrganizationId.trim(),
+          sourceForwarderName: sourceForwarderName.trim(),
           originCountryCode: originCountryCode.trim().toUpperCase(),
           destinationCountryCode: destinationCountryCode.trim().toUpperCase(),
           mode,
           currency: currency.trim().toUpperCase(),
-          validFrom: new Date(validFromLocal).toISOString(),
-          ...(validUntilLocal.length > 0
-            ? { validUntil: new Date(validUntilLocal).toISOString() }
-            : {}),
-          sourceForwarderName: sourceForwarderName.trim(),
-          volumetricDivisorCm3PerKg: divisor,
-          breaks: collected.bands,
+          volumetricDivisorCm3PerKg: validation.parsedDivisor,
+          validFrom: validation.validFromInstant.toISOString(),
+          ...(validation.validUntilInstant === null
+            ? {}
+            : { validUntil: validation.validUntilInstant.toISOString() }),
+          breaks: validation.collectedBands,
         },
         idempotencyKey: getIdempotencyKey(),
       },
       {
         onSuccess: (result) => {
-          // ROTATED ONLY ON A CONFIRMED SUCCESS. A retry after a network failure must carry the key
-          // of the attempt it is retrying, or one operator click authors two rate cards — and the
-          // second one supersedes the first.
           if (!result.success) return;
           resetIdempotencyKey();
         },
       },
-    );
-  }
-  function renderCreateOutcome(card: AdminFreightRateCard, supersededRateCardId: string | null) {
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1 rounded-xl border border-primary-imprint/30 bg-primary-imprint/5 p-3 text-sm">
-          <p className="font-medium text-primary-imprint">Card created.</p>
-          <p className="text-xs text-muted-foreground">
-            {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
-            {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency} · starts{" "}
-            {formatIsoInstantLabel(card.validFrom)}
-          </p>
-          <p className="text-xs">
-            {card.bandsEditable
-              ? "Bands are still editable — this card is staged. That stops the moment it comes into force."
-              : "Bands are already frozen on this card. It came into force on creation, and there is no way to reopen it — withdraw it and author another if the ladder is wrong."}
-          </p>
-        </div>
-
-        {/* Reported EXACTLY ONCE, here. No later read announces it, so it is surfaced plainly
-            rather than folded into a toast that scrolls away. */}
-        {supersededRateCardId !== null && (
-          <p className="rounded-xl bg-warning-container p-3 text-xs text-warning-container-foreground">
-            This create closed the previous card on the lane, id <code>{supersededRateCardId}</code>
-            . That is the only time you will be told.
-          </p>
-        )}
-
-        <button type="button" onClick={onClose} className={QUIET_BUTTON_CLASS}>
-          Back to the lanes
-        </button>
-      </div>
     );
   }
 
@@ -220,144 +255,37 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
       </div>
 
       {createResult !== undefined && createResult.success ? (
-        renderCreateOutcome(createResult.data.rateCard, createResult.data.supersededRateCardId)
+        <RateCardOutcomeCard
+          rateCard={createResult.data.rateCard}
+          supersededRateCardId={createResult.data.supersededRateCardId}
+          onClose={onClose}
+        />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Provider organization id</span>
-              <input
-                value={providerOrganizationId}
-                onChange={(event) => setProviderOrganizationId(event.target.value)}
-                className={FIELD_CLASS}
-                placeholder="commerce organization id"
-              />
-              {/*
-                A TEXT FIELD RATHER THAN A PICKER, on purpose. The only provider list this frontend
-                can read is the PUBLIC directory, which is eligibility-filtered — a forwarder that
-                may legitimately own a rate card can be absent from it, so a dropdown built on it
-                would silently make valid ids unselectable. The backend validates this id and
-                answers a 422 naming this exact field.
-              */}
-              <span className="text-xs text-muted-foreground">
-                Checked by the server; a wrong id comes back as an error on this field.
-              </span>
-            </label>
+          <RateCardLaneFields
+            providerOrganizationId={providerOrganizationId}
+            setProviderOrganizationId={setProviderOrganizationId}
+            sourceForwarderName={sourceForwarderName}
+            setSourceForwarderName={setSourceForwarderName}
+            originCountryCode={originCountryCode}
+            setOriginCountryCode={setOriginCountryCode}
+            destinationCountryCode={destinationCountryCode}
+            setDestinationCountryCode={setDestinationCountryCode}
+            mode={mode}
+            setMode={setMode}
+            currency={currency}
+            setCurrency={setCurrency}
+            volumetricDivisorCm3PerKg={volumetricDivisorCm3PerKg}
+            setVolumetricDivisorCm3PerKg={setVolumetricDivisorCm3PerKg}
+            validUntilLocal={validUntilLocal}
+            setValidUntilLocal={setValidUntilLocal}
+          />
 
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Source forwarder name</span>
-              <input
-                value={sourceForwarderName}
-                onChange={(event) => setSourceForwarderName(event.target.value)}
-                className={FIELD_CLASS}
-                placeholder="Who quoted this lane"
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Origin country (2 letters)</span>
-              <input
-                value={originCountryCode}
-                maxLength={2}
-                onChange={(event) => setOriginCountryCode(event.target.value.toUpperCase())}
-                className={FIELD_CLASS}
-                placeholder="CN"
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Destination country (2 letters)</span>
-              <input
-                value={destinationCountryCode}
-                maxLength={2}
-                onChange={(event) => setDestinationCountryCode(event.target.value.toUpperCase())}
-                className={FIELD_CLASS}
-                placeholder="KE"
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Mode</span>
-              <select
-                value={mode}
-                onChange={(event) => {
-                  const nextMode = toFreightMode(event.target.value);
-                  if (nextMode !== null) setMode(nextMode);
-                }}
-                className={FIELD_CLASS}
-              >
-                {FREIGHT_MODES.map((freightMode) => (
-                  <option key={freightMode} value={freightMode}>
-                    {FREIGHT_TRANSPORT_MODE_LABELS[freightMode]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">Currency (3 letters)</span>
-              <input
-                value={currency}
-                maxLength={3}
-                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                className={FIELD_CLASS}
-              />
-              <span className="text-xs text-muted-foreground">
-                Part of the lane identity — a USD and a EUR card coexist and do not replace each
-                other.
-              </span>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">
-                Volumetric divisor (cm³ per kg, 100–20000)
-              </span>
-              <input
-                inputMode="numeric"
-                value={volumetricDivisorCm3PerKg}
-                onChange={(event) => setVolumetricDivisorCm3PerKg(event.target.value)}
-                className={FIELD_CLASS}
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">
-                Valid until (optional, leave blank for open-ended)
-              </span>
-              <input
-                type="datetime-local"
-                value={validUntilLocal}
-                onChange={(event) => setValidUntilLocal(event.target.value)}
-                className={FIELD_CLASS}
-              />
-            </label>
-          </div>
-
-          {/* THE FIELD THIS WHOLE FORM IS SHAPED AROUND. Given its own block, above the bands it
-              controls the editability of. */}
-          <div className="space-y-1 rounded-xl border border-primary-imprint/30 bg-primary-imprint/5 p-3">
-            <label className="block space-y-1">
-              <span className="text-sm font-medium">Starts (must be in the future)</span>
-              <input
-                type="datetime-local"
-                value={validFromLocal}
-                onChange={(event) => setValidFromLocal(event.target.value)}
-                className={FIELD_CLASS}
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Bands can only be edited while a card is <strong>staged</strong> — active and not yet
-              in force. A card that starts now is frozen the moment it exists, and there is no way
-              to move the start date afterwards: the only remedy is to withdraw it and author
-              another.
-            </p>
-            {!isValidFromInFuture && validFromLocal.length > 0 && (
-              <p className="text-xs font-medium text-destructive">
-                That start time is not in the future. This card&apos;s bands would be frozen
-                immediately.
-              </p>
-            )}
-          </div>
+          <RateCardStartsField
+            validFromLocal={validFromLocal}
+            setValidFromLocal={setValidFromLocal}
+            isValidFromInFuture={isValidFromInFuture}
+          />
 
           <WeightBandEditor
             bandDrafts={bandDrafts}
@@ -365,60 +293,22 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
             currency={currency.trim().toUpperCase() || "USD"}
           />
 
-          {/* The pre-flight. Runs as soon as the lane five-tuple is complete, so the warning is on
-              screen before the operator reaches the submit button rather than after. */}
           {incumbentCard !== null && (
-            <div className="space-y-2 rounded-xl border border-warning/40 bg-warning-container p-3">
-              <p className="text-sm font-medium text-warning-container-foreground">
-                This lane already has an active card. Creating this one will close it.
-              </p>
-              <p className="text-xs text-warning-container-foreground">
-                {incumbentCard.sourceForwarderName} · in force from{" "}
-                {formatIsoInstantLabel(incumbentCard.validFrom)} · id {incumbentCard.id}
-              </p>
-              <p className="text-xs text-warning-container-foreground">
-                Nothing asks for confirmation on the server and there is no way to opt out — the
-                incumbent is superseded in the same transaction, even though this card is
-                future-dated. Its <code>validUntil</code> becomes this card&apos;s start.
-              </p>
-              <label className="flex items-start gap-2 text-xs text-warning-container-foreground">
-                <input
-                  type="checkbox"
-                  checked={hasAcknowledgedSupersede}
-                  onChange={(event) => setHasAcknowledgedSupersede(event.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>I understand this replaces the card above.</span>
-              </label>
-            </div>
+            <RateCardSupersedeAlert
+              incumbentCard={incumbentCard}
+              hasAcknowledgedSupersede={hasAcknowledgedSupersede}
+              onToggleAcknowledge={setHasAcknowledgedSupersede}
+            />
           )}
 
-          {localError !== null && (
-            <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
-              {localError}
-            </p>
-          )}
+          <RateCardComposerErrorMessages localError={localError} createResult={createResult} />
 
-          {createResult !== undefined && !createResult.success && (
-            <div className="space-y-1 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
-              <p className="font-medium">{createResult.error.message}</p>
-              {renderFieldErrors(createResult.error.fieldErrors)}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={createMutation.isPending || isSubmitBlocked}
-              className={PRIMARY_BUTTON_CLASS}
-            >
-              {createMutation.isPending ? "Creating…" : "Create the card"}
-            </button>
-            <button type="button" onClick={onClose} className={QUIET_BUTTON_CLASS}>
-              Cancel
-            </button>
-          </div>
+          <RateCardComposerActionButtons
+            isPending={createMutation.isPending}
+            isSubmitBlocked={isSubmitBlocked}
+            onSubmit={handleSubmit}
+            onClose={onClose}
+          />
         </>
       )}
     </section>

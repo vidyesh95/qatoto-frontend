@@ -1,7 +1,4 @@
-import {
-  collectBands,
-  type WeightBandDraft,
-} from "@/components/commerce/freight/weight-band-editor";
+import { collectBands, type WeightBandDraft } from "@/lib/store/freight-band-draft";
 import type { FreightMode } from "@/lib/store/freight.schemas";
 import {
   CreateProviderFreightRateCardInputSchema,

@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { ModeratorNoteActionPanel } from "@/components/admin/shared/moderator-note-action-panel";
 import {
   useModerateCaseStudyMutation,
   useRefreshCaseStudyReviewQueue,
@@ -28,12 +28,6 @@ import type { ApiError } from "@/lib/http";
 import { formatCentsLabel, formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 const CARD_CLASS = "rounded-2xl border border-outline-variant/60 p-4";
-const PRIMARY_BUTTON_CLASS =
-  "cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40";
-const QUIET_BUTTON_CLASS =
-  "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
-const FIELD_CLASS =
-  "mt-1 w-full rounded-lg border border-outline-variant/60 px-2 py-1.5 text-sm outline-none focus:border-primary";
 
 type DecisionKind = CaseStudyModerationDecision["decision"];
 
@@ -200,88 +194,24 @@ export default function CaseStudyReviewCard({
         <p className="mt-4 text-xs text-muted-foreground">Tags: {submission.tags.join(", ")}</p>
       )}
 
-      <div className="mt-4 border-t border-outline-variant/60 pt-3">
-        <label className="block text-xs text-muted-foreground">
-          Note to the writer
-          <textarea
-            value={moderatorNote}
-            maxLength={CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS}
-            rows={3}
-            disabled={isBusy}
-            onChange={(changeEvent) => handleNoteChange(changeEvent.target.value)}
-            className={FIELD_CLASS}
-          />
-        </label>
-        <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-          {moderatorNote.length} of{" "}
-          {CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS.toLocaleString("en-US")}
-        </p>
-
-        {cardState.status === "confirmingPublish" ? (
-          <div className="mt-2 rounded-lg bg-muted/40 p-3">
-            <p className="text-xs">
-              Publishing puts this case study in the public list under the writer&apos;s name.
-              Withheld company names stay hidden from readers.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => decide("published")}
-                className={PRIMARY_BUTTON_CLASS}
-              >
-                Publish it
-              </button>
-              <button
-                type="button"
-                onClick={() => setCardState({ status: "idle" })}
-                className={QUIET_BUTTON_CLASS}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => setCardState({ status: "confirmingPublish" })}
-              className={PRIMARY_BUTTON_CLASS}
-            >
-              {cardState.status === "deciding" && cardState.decision === "published"
-                ? "Publishing…"
-                : "Publish"}
-            </button>
-            <button
-              type="button"
-              // A send-back must say why, so it waits for a note rather than failing after a click.
-              disabled={isBusy || isNoteEmpty}
-              onClick={() => decide("rejected")}
-              className={QUIET_BUTTON_CLASS}
-            >
-              {cardState.status === "deciding" && cardState.decision === "rejected"
-                ? "Sending back…"
-                : "Send back"}
-            </button>
-            {isNoteEmpty ? (
-              <span className="text-xs text-muted-foreground">
-                Sending back needs a note. It is the only thing the writer sees.
-              </span>
-            ) : null}
-          </div>
-        )}
-
-        {cardState.status === "refused" ? (
-          <div className="mt-3 space-y-2">
-            <MutationErrorNotice error={cardState.error} />
-            {cardState.error.code === "409" ? (
-              <button type="button" onClick={refreshQueue} className={QUIET_BUTTON_CLASS}>
-                Refresh the queue
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+      <ModeratorNoteActionPanel
+        recipientRole="writer"
+        moderatorNote={moderatorNote}
+        maximumNoteCharacters={CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS}
+        isBusy={isBusy}
+        isNoteEmpty={isNoteEmpty}
+        isConfirmingPublish={cardState.status === "confirmingPublish"}
+        isDecidingPublish={cardState.status === "deciding" && cardState.decision === "published"}
+        isDecidingReject={cardState.status === "deciding" && cardState.decision === "rejected"}
+        refusedError={cardState.status === "refused" ? cardState.error : null}
+        publishConfirmationMessage="Publishing puts this case study in the public list under the writer's name. Withheld company names stay hidden from readers."
+        onNoteChange={handleNoteChange}
+        onConfirmPublishClick={() => setCardState({ status: "confirmingPublish" })}
+        onCancelPublishClick={() => setCardState({ status: "idle" })}
+        onPublishConfirm={() => decide("published")}
+        onRejectClick={() => decide("rejected")}
+        onRefreshQueueClick={refreshQueue}
+      />
     </article>
   );
 }

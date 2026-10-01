@@ -20,7 +20,7 @@
 // confirmed success. A key regenerated per render would defeat the uniqueness refusal that exists
 // to stop a second, different claim overwriting the first.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   useOrderSettlementAttestationsQuery,
@@ -167,7 +167,7 @@ function AttestationForm({
   const [occurredOnDate, setOccurredOnDate] = useState("");
   const [referenceNote, setReferenceNote] = useState("");
   /** Minted once per attempt — see the header. Rotated only after a confirmed success. */
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const recordAttestation = useRecordSettlementAttestation();
   const result = recordAttestation.data;
@@ -183,10 +183,14 @@ function AttestationForm({
     formEvent.preventDefault();
     if (amountInCents === null || occurredOnDate === "") return;
 
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
+
     recordAttestation.mutate(
       {
         orderId,
-        idempotencyKey,
+        idempotencyKey: idempotencyKeyRef.current,
         input: {
           amountInCents,
           // Midday UTC rather than midnight: a date entered in a timezone behind UTC would
@@ -198,7 +202,7 @@ function AttestationForm({
       {
         onSuccess: (mutationResult) => {
           if (!mutationResult.success) return;
-          setIdempotencyKey(crypto.randomUUID());
+          idempotencyKeyRef.current = crypto.randomUUID();
           setAmountText("");
           setOccurredOnDate("");
           setReferenceNote("");

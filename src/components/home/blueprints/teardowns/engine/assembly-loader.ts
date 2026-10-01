@@ -175,8 +175,9 @@ async function resolveParts(
     }
     case "individual_parts": {
       const resolved: ResolvedPart[] = [];
+      const filesByUrl = new Map(files.map((candidate) => [candidate.url, candidate]));
       for (const part of assembly.parts) {
-        const file = files.find((candidate) => candidate.url === part.model.url);
+        const file = filesByUrl.get(part.model.url);
         if (file === undefined) {
           return { success: false, message: `The file for "${part.label}" was not fetched.` };
         }

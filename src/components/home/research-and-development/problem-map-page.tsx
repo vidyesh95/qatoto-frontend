@@ -43,10 +43,10 @@ export default async function ProblemMapPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
   // Proposing a category needs a real account, so the sheet is told rather than left to
   // discover it from a 401 on a button it should not have offered.
-  const [requestOptions, isSignedIn] = await Promise.all([
+  const [resolvedSearchParams, requestOptions, isSignedIn] = await Promise.all([
+    searchParams,
     callerRequestOptions(),
     hasCallerSession(),
   ]);

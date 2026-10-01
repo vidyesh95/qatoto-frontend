@@ -6,47 +6,17 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { authClient } from "@/lib/auth-client";
 import { useInvalidatePasskeys } from "@/hooks/account/passkeys";
 import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
+import { PasskeyRowItem, type PasskeyMutationState } from "./passkey-row-item";
 
-/**
- * Manages the WebAuthn passkeys on the signed-in account: list, create,
- * rename, delete. All ceremonies and checks run on the Express backend via
- * Better Auth (`/api/auth/passkey/*`); registration requires the active
- * session (`requireSession: true` server-side), so this panel only ever adds
- * passkeys to the account that is already signed in.
- *
- * Not a trust boundary — the backend verifies every WebAuthn response and
- * scopes list/delete/rename to the session user.
- */
-
-/** The fetch lifecycle of the passkey list, refetched after every mutation. */
 type PasskeyListState =
   | { status: "loading" }
   | { status: "error" }
   | { status: "ready"; passkeys: Passkey[] };
 
-/** At most one mutation is in flight or pending confirmation at a time. */
-type PasskeyMutationState =
-  | { status: "idle" }
-  | { status: "registering" }
-  | { status: "confirm-delete"; passkeyId: string }
-  | { status: "deleting"; passkeyId: string }
-  | { status: "renaming"; passkeyId: string }
-  | { status: "rename-saving"; passkeyId: string }
-  | { status: "rename-error"; passkeyId: string; message: string }
-  | { status: "error"; message: string };
-
 type PasskeysPanelProps = {
   /** Return to the settings action list. */
   onBack: () => void;
 };
-
-function formatPasskeyCreatedDate(createdAt: Date | string) {
-  return new Date(createdAt).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
   const [passkeyListState, setPasskeyListState] = useState<PasskeyListState>({
@@ -54,8 +24,6 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
   });
   const [mutationState, setMutationState] = useState<PasskeyMutationState>({ status: "idle" });
   const [renameDraftName, setRenameDraftName] = useState("");
-  // The "Your account" panel shows a passkey COUNT from a cached query this panel does not read.
-  // Without this, adding a passkey here and going back leaves that row saying the old number.
   const invalidatePasskeys = useInvalidatePasskeys();
   const isWebAuthnSupported = useIsWebAuthnSupported();
 
@@ -89,8 +57,6 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     const { error } = await authClient.passkey.addPasskey();
     if (error) {
       const registrationErrorCode = "code" in error ? error.code : undefined;
-      // Dismissing the OS prompt surfaces as a passed-through NotAllowedError
-      // or an aborted ceremony — a normal outcome, not an error to surface.
       if (
         registrationErrorCode === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" ||
         registrationErrorCode === "ERROR_CEREMONY_ABORTED"
@@ -140,7 +106,6 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     setMutationState({ status: "rename-saving", passkeyId });
     const { error } = await authClient.passkey.updatePasskey({ id: passkeyId, name: trimmedName });
     if (error) {
-      // Keep the row's input open so the typed name isn't lost on retry.
       setMutationState({
         status: "rename-error",
         passkeyId,
@@ -157,136 +122,6 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     mutationState.status === "registering" ||
     mutationState.status === "deleting" ||
     mutationState.status === "rename-saving";
-
-  function renderPasskeyRow(rowPasskey: Passkey) {
-    const isRowRenaming =
-      (mutationState.status === "renaming" ||
-        mutationState.status === "rename-saving" ||
-        mutationState.status === "rename-error") &&
-      mutationState.passkeyId === rowPasskey.id;
-    const rowRenameErrorMessage =
-      mutationState.status === "rename-error" && mutationState.passkeyId === rowPasskey.id
-        ? mutationState.message
-        : null;
-    const isRowConfirmingDelete =
-      mutationState.status === "confirm-delete" && mutationState.passkeyId === rowPasskey.id;
-    const isRowDeleting =
-      mutationState.status === "deleting" && mutationState.passkeyId === rowPasskey.id;
-
-    return (
-      <li
-        key={rowPasskey.id}
-        className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="flex flex-row items-center gap-4">
-          <Image
-            src="/icons/passkey_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={24}
-            height={24}
-            className="size-6 shrink-0"
-          />
-          <div className="flex flex-1 flex-col">
-            {isRowRenaming ? (
-              <input
-                type="text"
-                aria-label="Passkey name"
-                value={renameDraftName}
-                onChange={(inputEvent) => setRenameDraftName(inputEvent.target.value)}
-                placeholder="Passkey name"
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-secondary-foreground outline-none focus:border-primary"
-              />
-            ) : (
-              <span className="text-sm font-medium text-secondary-foreground">
-                {rowPasskey.name ?? "Passkey"}
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              Created {formatPasskeyCreatedDate(rowPasskey.createdAt)}
-            </span>
-          </div>
-          {rowPasskey.backedUp ? (
-            <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-primary-imprint">
-              <Image
-                src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={16}
-                height={16}
-              />
-              Synced
-            </span>
-          ) : null}
-        </div>
-
-        {isRowRenaming ? (
-          <div className="flex flex-row items-center justify-end gap-4">
-            {rowRenameErrorMessage ? (
-              <span className="flex-1 text-xs text-destructive">{rowRenameErrorMessage}</span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setMutationState({ status: "idle" })}
-              disabled={mutationState.status === "rename-saving"}
-              className="cursor-pointer text-sm font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSaveRename(rowPasskey.id)}
-              disabled={
-                mutationState.status === "rename-saving" || renameDraftName.trim().length === 0
-              }
-              className="cursor-pointer text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {mutationState.status === "rename-saving" ? "Saving…" : "Save"}
-            </button>
-          </div>
-        ) : isRowConfirmingDelete ? (
-          <div className="flex flex-row items-center justify-between gap-4">
-            <span className="text-sm text-secondary-foreground">Remove this passkey?</span>
-            <div className="flex flex-row gap-4">
-              <button
-                type="button"
-                onClick={() => setMutationState({ status: "idle" })}
-                className="cursor-pointer text-sm font-medium text-secondary-foreground"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleConfirmDelete(rowPasskey.id)}
-                className="cursor-pointer text-sm font-medium text-destructive"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-row justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => handleStartRename(rowPasskey)}
-              disabled={isMutationInFlight}
-              className="cursor-pointer text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Rename
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setMutationState({ status: "confirm-delete", passkeyId: rowPasskey.id })
-              }
-              disabled={isMutationInFlight}
-              className="cursor-pointer text-sm font-medium text-destructive disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isRowDeleting ? "Removing…" : "Remove"}
-            </button>
-          </div>
-        )}
-      </li>
-    );
-  }
 
   function renderListSection() {
     switch (passkeyListState.status) {
@@ -315,7 +150,26 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
           );
         }
         return (
-          <ul className="flex flex-col gap-3">{passkeyListState.passkeys.map(renderPasskeyRow)}</ul>
+          <ul className="flex flex-col gap-3">
+            {passkeyListState.passkeys.map((rowPasskey) => (
+              <PasskeyRowItem
+                key={rowPasskey.id}
+                rowPasskey={rowPasskey}
+                mutationState={mutationState}
+                renameDraftName={renameDraftName}
+                onRenameDraftNameChange={setRenameDraftName}
+                onStartRename={handleStartRename}
+                onSaveRename={handleSaveRename}
+                onCancelRename={() => setMutationState({ status: "idle" })}
+                onConfirmDeletePrompt={(passkeyId) =>
+                  setMutationState({ status: "confirm-delete", passkeyId })
+                }
+                onCancelDeletePrompt={() => setMutationState({ status: "idle" })}
+                onConfirmDelete={handleConfirmDelete}
+                isMutationInFlight={isMutationInFlight}
+              />
+            ))}
+          </ul>
         );
       default: {
         const exhaustiveCheck: never = passkeyListState;

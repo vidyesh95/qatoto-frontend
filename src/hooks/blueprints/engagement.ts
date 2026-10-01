@@ -14,6 +14,7 @@
 import {
   useMutation,
   useQuery,
+  useQueryClient,
   type UseMutationResult,
   type UseQueryResult,
 } from "@tanstack/react-query";
@@ -53,9 +54,15 @@ export function useBlueprintToggleMutation(
   arm: BlueprintArm,
   verb: BlueprintToggleVerb,
 ): UseMutationResult<BlueprintToggleResult, Error, BlueprintToggleVariables> {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: BlueprintToggleVariables) =>
       unwrap(await setBlueprintToggle({ arm, verb, slug: variables.slug, isSet: variables.isSet })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["blueprints", "engagement"],
+      });
+    },
   });
 }
 

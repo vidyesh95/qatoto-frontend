@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 /** Display-language options shown in the language panel. */
-export const LANGUAGE_OPTIONS: string[] = [
+const LANGUAGE_OPTIONS: string[] = [
   "Abkhaz",
   "Acehnese",
   "Acholi",

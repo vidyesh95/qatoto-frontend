@@ -6,9 +6,9 @@ import { useState } from "react";
 import {
   MetricsSection,
   MetricsStateNotice,
-  toMetricsViewState,
   type MetricsViewState,
 } from "@/components/admin/metrics/metrics-section";
+import { toMetricsViewState } from "@/lib/admin/metrics-view-state";
 import { useUserSegmentQuery } from "@/hooks/admin/platform-metrics";
 import {
   USER_SEGMENTS,

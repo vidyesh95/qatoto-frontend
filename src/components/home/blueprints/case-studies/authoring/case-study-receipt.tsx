@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
+import { AuthoringReceiptMeta } from "@/components/home/blueprints/shared/authoring-receipt-meta";
 import { MutationAcceptedNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import type { CaseStudySubmissionReceipt } from "@/lib/blueprints/case-study-authoring.schemas";
-import { formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
  * THE TERMINAL SCREEN, and the one place the case-study flow admits what it is.
@@ -30,18 +30,11 @@ export default function CaseStudyReceipt({
         <MutationAcceptedNotice message="Your case study has been accepted for review. It is not in the case-study list, and a moderator decides whether it appears there." />
       </div>
 
-      <dl className="mt-4">
-        <div className="border-t border-border py-2">
-          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Case study</dt>
-          <dd className="mt-0.5 font-mono text-sm text-foreground">{receipt.submissionId}</dd>
-        </div>
-        <div className="border-t border-border py-2">
-          <dt className="text-xs tracking-wider text-muted-foreground uppercase">Received</dt>
-          <dd className="mt-0.5 text-sm text-foreground">
-            {formatIsoInstantLabel(receipt.receivedAt)}
-          </dd>
-        </div>
-      </dl>
+      <AuthoringReceiptMeta
+        itemLabel="Case study"
+        submissionId={receipt.submissionId}
+        receivedAt={receipt.receivedAt}
+      />
 
       {/*
         ⚠️ THE "NOTHING WAS STORED" PANEL IS GONE, and it had to go the same day the route landed.

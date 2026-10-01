@@ -6,9 +6,9 @@ import { ChartFrame, type ChartBand } from "@/components/charts/chart-frame";
 import {
   MetricsSection,
   MetricsStateNotice,
-  toMetricsViewState,
   type MetricsViewState,
 } from "@/components/admin/metrics/metrics-section";
+import { toMetricsViewState } from "@/lib/admin/metrics-view-state";
 import { useActiveUsersQuery } from "@/hooks/admin/platform-metrics";
 import type {
   ActiveUserWindow,

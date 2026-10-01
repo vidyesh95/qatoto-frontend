@@ -23,7 +23,7 @@
 // IT RENDERS NOTHING ON THE HAPPY PATH, and nothing while it does not know. A panel that appeared
 // during loading would flash a warning at every buyer with a perfectly good organization.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -128,19 +128,26 @@ export default function BuyerWorkspaceNotice() {
  */
 function CountryDeclarationForm({ organization }: { organization: MyCommerceOrganization }) {
   const [countryCode, setCountryCode] = useState("");
-  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const idempotencyKeyRef = useRef<string | null>(null);
   const updateOrganization = useUpdateCommerceOrganization();
 
   const isSubmittable = countryCode.length === 2 && !updateOrganization.isPending;
 
   const handleSubmit = () => {
     if (!isSubmittable) return;
+    if (idempotencyKeyRef.current === null) {
+      idempotencyKeyRef.current = newIdempotencyKey();
+    }
     updateOrganization.mutate(
-      { organizationId: organization.id, input: { countryCode }, idempotencyKey },
+      {
+        organizationId: organization.id,
+        input: { countryCode },
+        idempotencyKey: idempotencyKeyRef.current,
+      },
       {
         onSuccess: (result) => {
           if (!result.success) return;
-          setIdempotencyKey(newIdempotencyKey());
+          idempotencyKeyRef.current = newIdempotencyKey();
         },
       },
     );

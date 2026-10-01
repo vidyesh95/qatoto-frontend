@@ -1,10 +1,17 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const projectDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 // Fallback to local Express port (e.g., http://localhost:8000) when running `pn dev`
 const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  turbopack: {
+    root: projectDirectory,
+  },
   reactCompiler: true,
   cacheComponents: true,
   staticPageGenerationTimeout: 120,

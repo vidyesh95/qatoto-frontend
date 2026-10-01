@@ -38,8 +38,10 @@ export default async function FundingPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  const [resolvedSearchParams, requestOptions] = await Promise.all([
+    searchParams,
+    callerRequestOptions(),
+  ]);
 
   const dealsFilter: ListFundingDealsFilter = {
     limit: DEALS_PAGE_LIMIT,

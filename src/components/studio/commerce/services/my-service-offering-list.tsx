@@ -230,7 +230,13 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
         </p>
       )}
 
-      {isEditing && <OfferingEditForm offering={offering} onSaved={() => setIsEditing(false)} />}
+      {isEditing && (
+        <OfferingEditForm
+          key={offering.id}
+          offering={offering}
+          onSaved={() => setIsEditing(false)}
+        />
+      )}
     </div>
   );
 }
@@ -254,9 +260,11 @@ function OfferingEditForm({
   offering: CreatedServiceOffering;
   onSaved: () => void;
 }) {
-  const [title, setTitle] = useState(offering.title);
-  const [summary, setSummary] = useState(offering.summary ?? "");
-  const [pricingModel, setPricingModel] = useState<ServicePricingModel>(offering.pricingModel);
+  const [title, setTitle] = useState(() => offering.title);
+  const [summary, setSummary] = useState(() => offering.summary ?? "");
+  const [pricingModel, setPricingModel] = useState<ServicePricingModel>(
+    () => offering.pricingModel,
+  );
   const [priceMin, setPriceMin] = useState(() => toInputText(offering.indicativePriceMinInCents));
   const [priceMax, setPriceMax] = useState(() => toInputText(offering.indicativePriceMaxInCents));
   const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(() =>

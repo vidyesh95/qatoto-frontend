@@ -47,8 +47,10 @@ export default async function TalentPage({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  const [resolvedSearchParams, requestOptions] = await Promise.all([
+    searchParams,
+    callerRequestOptions(),
+  ]);
 
   const talentFilter: ListTalentFilter = {
     limit: TALENT_PAGE_LIMIT,

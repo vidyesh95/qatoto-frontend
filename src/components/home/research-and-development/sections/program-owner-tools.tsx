@@ -48,9 +48,6 @@ export default function ProgramOwnerTools({
   const opportunityMutation = useProgramOpportunityMutation(programSlug);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [title, setTitle] = useState(program.title);
-  const [tagline, setTagline] = useState(program.tagline);
-  const [missionStatement, setMissionStatement] = useState(program.missionStatement);
 
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
   const [productName, setProductName] = useState("");
@@ -63,18 +60,6 @@ export default function ProgramOwnerTools({
   const firstError = [updateMutation.error, opportunityMutation.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
   );
-
-  function handleEditSubmit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    updateMutation.mutate(
-      {
-        title: title.trim(),
-        tagline: tagline.trim(),
-        missionStatement: missionStatement.trim(),
-      },
-      { onSuccess: () => setIsEditOpen(false) },
-    );
-  }
 
   function handleOpportunitySubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -132,59 +117,14 @@ export default function ProgramOwnerTools({
       </div>
 
       {isEditOpen && (
-        <form
-          onSubmit={handleEditSubmit}
-          className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
-        >
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">Name</span>
-            <input
-              required
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              minLength={3}
-              maxLength={120}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-            <span className="text-xs text-muted-foreground">
-              The web address stays <code>{program.slug}</code> — it has been linked and cannot
-              move.
-            </span>
-          </label>
-
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">One-line summary</span>
-            <input
-              required
-              value={tagline}
-              onChange={(event) => setTagline(event.target.value)}
-              minLength={3}
-              maxLength={200}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-          </label>
-
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">Mission</span>
-            <textarea
-              required
-              value={missionStatement}
-              onChange={(event) => setMissionStatement(event.target.value)}
-              minLength={20}
-              maxLength={4000}
-              rows={5}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={updateMutation.isPending}
-            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:opacity-60"
-          >
-            {updateMutation.isPending ? "Saving…" : "Save changes"}
-          </button>
-        </form>
+        <ProgramEditForm
+          key={program.programId}
+          program={program}
+          isPending={updateMutation.isPending}
+          onSubmit={(patch) => {
+            updateMutation.mutate(patch, { onSuccess: () => setIsEditOpen(false) });
+          }}
+        />
       )}
 
       {updateMutation.isSuccess && !isEditOpen && (
@@ -314,5 +254,83 @@ export default function ProgramOwnerTools({
         </ul>
       )}
     </div>
+  );
+}
+
+function ProgramEditForm({
+  program,
+  isPending,
+  onSubmit,
+}: {
+  program: ProgramOwnerToolsProps["program"];
+  isPending: boolean;
+  onSubmit: (patch: { title: string; tagline: string; missionStatement: string }) => void;
+}) {
+  const [title, setTitle] = useState(() => program.title);
+  const [tagline, setTagline] = useState(() => program.tagline);
+  const [missionStatement, setMissionStatement] = useState(() => program.missionStatement);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    onSubmit({
+      title: title.trim(),
+      tagline: tagline.trim(),
+      missionStatement: missionStatement.trim(),
+    });
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-2xl space-y-3 rounded-2xl border border-outline-variant/60 bg-card p-4"
+    >
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Name</span>
+        <input
+          required
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          minLength={3}
+          maxLength={120}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+        <span className="text-xs text-muted-foreground">
+          The web address stays <code>{program.slug}</code> — it has been linked and cannot move.
+        </span>
+      </label>
+
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">One-line summary</span>
+        <input
+          required
+          value={tagline}
+          onChange={(event) => setTagline(event.target.value)}
+          minLength={3}
+          maxLength={200}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+      </label>
+
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Mission</span>
+        <textarea
+          required
+          value={missionStatement}
+          onChange={(event) => setMissionStatement(event.target.value)}
+          minLength={20}
+          maxLength={4000}
+          rows={5}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep disabled:opacity-60"
+      >
+        {isPending ? "Saving…" : "Save changes"}
+      </button>
+    </form>
   );
 }

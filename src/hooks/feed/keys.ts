@@ -46,6 +46,7 @@ export const feedKeys = {
 
   // --- Watch ---
   watch: (videoId: string) => ["feed", "watch", videoId] as const,
+  watchVideo: (videoId: string) => ["feed", "watch", videoId] as const,
 
   // --- Feed preferences ---
   // NO VIEWER ID IN THE KEY, even though the route is `/users/me/…` and the answer is

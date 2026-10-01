@@ -9,6 +9,7 @@ import {
   type ScatterChartScale,
 } from "@/lib/charts/scatter-scale";
 import type { ChartTableRow } from "@/components/charts/chart-frame";
+import { AccessibleChartTable } from "./accessible-chart-table";
 
 // The frame half of the repo's SCATTER charting — the two-continuous-axis sibling of
 // `chart-frame.tsx`. `scatter-series.tsx` draws the points; `scatter-scale.ts` does the
@@ -282,31 +283,12 @@ export function ScatterFrame({
         </span>
       </div>
 
-      <table className="sr-only">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{rowColumnLabel}</th>
-            {valueColumnLabels.map((columnLabel) => (
-              <th key={columnLabel} scope="col">
-                {columnLabel}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {tableRows.map((row) => (
-            <tr key={row.key}>
-              <th scope="row">{row.label}</th>
-              {row.cells.map((cell, cellIndex) => (
-                <td key={`${row.key}-${valueColumnLabels[cellIndex] ?? String(cellIndex)}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <AccessibleChartTable
+        caption={caption}
+        rowHeaderColumnLabel={rowColumnLabel}
+        valueColumnLabels={valueColumnLabels}
+        tableRows={tableRows}
+      />
     </figure>
   );
 }

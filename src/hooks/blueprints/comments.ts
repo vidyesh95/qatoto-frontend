@@ -97,11 +97,15 @@ export interface CommentLikeVariables {
  * ⚠️ OPTIMISTIC, UNLIKE THE OTHER TWO. A comment like is the same class of thing as a blueprint
  * like — one number, instantly reversible — so the row flips and settles on the server's count.
  */
-export function useBlueprintCommentLikeMutation(): UseMutationResult<
+export function useBlueprintCommentLikeMutation(
+  arm?: BlueprintCommentArm,
+  slug?: string,
+): UseMutationResult<
   { readonly isSet: boolean; readonly likeCount: number },
   Error,
   CommentLikeVariables
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: CommentLikeVariables) =>
       unwrap(
@@ -110,6 +114,11 @@ export function useBlueprintCommentLikeMutation(): UseMutationResult<
           isSet: variables.isSet,
         }),
       ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: arm && slug ? blueprintKeys.commentThread(arm, slug) : blueprintKeys.all,
+      });
+    },
   });
 }
 

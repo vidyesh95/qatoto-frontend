@@ -4,7 +4,7 @@
 "use client";
 
 import { useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import {
   Box3,
   type Material,
@@ -212,11 +212,20 @@ export default function PartThumbnailBaker({
   const { gl, scene } = useThree();
   const hasBakedRef = useRef(false);
 
+  const onBaked = useEffectEvent((thumbnails: ReadonlyMap<string, string>) => {
+    onThumbnailsBaked(thumbnails);
+  });
+
   useEffect(() => {
-    if (!isRequested || hasBakedRef.current) return;
+    if (!isRequested || hasBakedRef.current) return undefined;
     hasBakedRef.current = true;
-    onThumbnailsBaked(bakePartThumbnails(gl, scene, loadedAssembly));
-  }, [isRequested, loadedAssembly, gl, scene, onThumbnailsBaked]);
+    const animationFrameId = requestAnimationFrame(() => {
+      onBaked(bakePartThumbnails(gl, scene, loadedAssembly));
+    });
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isRequested, loadedAssembly, gl, scene]);
 
   return null;
 }

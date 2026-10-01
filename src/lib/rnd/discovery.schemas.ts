@@ -509,6 +509,9 @@ export type MyProblemReport = z.infer<typeof MyProblemReportSchema>;
 export const TALENT_SORTS = ["recent", "effort"] as const;
 export type TalentSort = (typeof TALENT_SORTS)[number];
 
+export const MARKET_RESEARCH_TABS = ["overview", "demand", "import-substitution"] as const;
+export type MarketResearchTab = (typeof MARKET_RESEARCH_TABS)[number];
+
 // Re-exported so a consumer needing to read a strand's `kind` doesn't have to know
 // which schema module declares the vocabulary.
 export { CompensationKindSchema };

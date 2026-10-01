@@ -5,7 +5,8 @@ import { getOrganizationStorefront } from "@/lib/store/organizations.api";
 import { prettifySlugForDisplay } from "@/lib/store";
 import { SITE_URL } from "@/lib/site";
 import { withSentinelValues } from "@/lib/static-params";
-import { StructuredData, buildOrganizationStructuredData } from "@/lib/structured-data";
+import { StructuredData } from "@/lib/structured-data";
+import { buildOrganizationStructuredData } from "@/lib/structured-data-builders";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components

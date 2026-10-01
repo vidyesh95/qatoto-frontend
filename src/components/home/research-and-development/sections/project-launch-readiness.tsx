@@ -1,17 +1,18 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the view
 // state arrives as a prop from project-detail, which read
 // GET /research-projects/:slug/launch-readiness.
-import {
-  READINESS_ITEM_NOTES,
-  READINESS_ITEM_TITLES,
-} from "@/components/home/research-and-development/sections/launch-readiness-checklist";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { formatIsoInstant } from "@/lib/rnd/format";
-import type { LaunchReadiness, LaunchReadinessState } from "@/lib/rnd/suppliers.schemas";
+import {
+  READINESS_ITEM_NOTES,
+  READINESS_ITEM_TITLES,
+  type LaunchReadiness,
+  type LaunchReadinessState,
+} from "@/lib/rnd/suppliers.schemas";
 import type { MemberScopedItemViewState } from "@/lib/view-state";
 
 const READINESS_STATE_LABELS: Record<LaunchReadinessState, string> = {

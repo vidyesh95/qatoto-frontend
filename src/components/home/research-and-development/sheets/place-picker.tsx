@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
 
+import { loadMapLibreModule, loadMapLibreWithCss } from "@/lib/maplibre-loader";
 import { LABEL_CLASS } from "@/components/ui/field-classes";
 import {
   getMapCanvasModeSnapshot,
@@ -208,10 +209,7 @@ function PickerMap({ pin, onPinChange, onUnavailable }: PickerMapProps) {
     let consecutiveTileErrorCount = 0;
 
     async function createMap(container: HTMLDivElement) {
-      const [maplibreModule] = await Promise.all([
-        import("maplibre-gl"),
-        import("maplibre-gl/dist/maplibre-gl.css"),
-      ]);
+      const [maplibreModule] = await loadMapLibreWithCss();
       if (!isEffectStillMounted) return;
 
       // Turbopack breaks MapLibre's tile worker without this, and the failure is SILENT — the
@@ -292,7 +290,7 @@ function PickerMap({ pin, onPinChange, onUnavailable }: PickerMapProps) {
         markerRef.current = null;
         return;
       }
-      const maplibreModule = await import("maplibre-gl");
+      const maplibreModule = await loadMapLibreModule();
       if (!isEffectStillMounted) return;
 
       const degrees = toPinDegrees(pin);

@@ -49,14 +49,159 @@ import {
   type RfqServiceLine,
 } from "@/lib/store/rfqs.schemas";
 
+function buildRfqTerms(rfq: RfqDetailValue): DefinitionListItem[] {
+  const deliveryWindow =
+    rfq.desiredDeliveryStartsAt === null && rfq.desiredDeliveryEndsAt === null
+      ? null
+      : `${formatOptionalIsoInstantLabel(rfq.desiredDeliveryStartsAt) ?? "any time"} → ${
+          formatOptionalIsoInstantLabel(rfq.desiredDeliveryEndsAt) ?? "open"
+        }`;
+
+  const destination =
+    rfq.destinationCountryCode === null
+      ? null
+      : `${rfq.destinationLocality ?? ""} ${countryLabelFromCode(rfq.destinationCountryCode)}`.trim();
+
+  return [
+    { term: "State", value: RFQ_STATE_LABELS[rfq.state] },
+    { term: "Who can see it", value: RFQ_VISIBILITY_LABELS[rfq.visibility] },
+    { term: "Quotes due", value: formatOptionalIsoInstantLabel(rfq.responseDeadlineAt) },
+    { term: "Delivery window", value: deliveryWindow },
+    { term: "Destination", value: destination },
+    { term: "Settlement currency", value: rfq.settlementCurrency },
+    { term: "Opened", value: formatOptionalIsoInstantLabel(rfq.openedAt) },
+    { term: "Closed", value: formatOptionalIsoInstantLabel(rfq.closedAt) },
+    { term: "Awarded", value: formatOptionalIsoInstantLabel(rfq.awardedAt) },
+  ];
+}
+
+interface RfqDetailHeaderProps {
+  rfq: RfqDetailValue;
+  isBuyer: boolean;
+}
+
+function RfqDetailHeader({ rfq, isBuyer }: RfqDetailHeaderProps) {
+  return (
+    <header className="px-4 pt-4 lg:px-6">
+      <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
+        {isBuyer ? "Your request" : "Request you can quote"}
+      </p>
+      <h1 className="text-xl font-medium text-foreground lg:text-2xl">{rfq.title}</h1>
+      <p className="mt-0.5 text-sm text-muted-foreground">{RFQ_STATE_LABELS[rfq.state]}</p>
+
+      {rfq.description !== null && (
+        <p className="mt-2 text-sm leading-5 text-foreground">{rfq.description}</p>
+      )}
+
+      {isBuyer && (
+        <Link
+          href={`/store/rfqs/${rfq.id}/compare`}
+          className="mt-1 inline-block text-xs font-medium text-primary underline"
+        >
+          Compare the quotes on this request
+        </Link>
+      )}
+
+      {!isBuyer && (
+        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
+          {rfq.callerRelation === "invited_provider"
+            ? "The buyer invited your organization to quote on this."
+            : "Your organization matched this request. The buyer did not invite you by name."}
+        </p>
+      )}
+
+      {!isBuyer && (
+        <Link
+          href={`/studio/rfqs/${rfq.id}/quote`}
+          className="mt-3 inline-block rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Quote this request
+        </Link>
+      )}
+    </header>
+  );
+}
+
+interface RfqTermsTabContentProps {
+  rfq: RfqDetailValue;
+  terms: DefinitionListItem[];
+  isBuyer: boolean;
+  openRfq: ReturnType<typeof useOpenRfq>;
+  closeRfq: ReturnType<typeof useCloseRfq>;
+  openAttempt: ReturnType<typeof useResettableAttemptIdempotencyKey>;
+  closeAttempt: ReturnType<typeof useResettableAttemptIdempotencyKey>;
+}
+
+function RfqTermsTabContent({
+  rfq,
+  terms,
+  isBuyer,
+  openRfq,
+  closeRfq,
+  openAttempt,
+  closeAttempt,
+}: RfqTermsTabContentProps) {
+  const openResult = openRfq.data;
+  const closeResult = closeRfq.data;
+  const errorMessage =
+    openResult !== undefined && !openResult.success
+      ? openResult.error.message
+      : closeResult !== undefined && !closeResult.success
+        ? closeResult.error.message
+        : null;
+
+  return (
+    <div className="space-y-4 px-4 pb-4 lg:px-6">
+      <DefinitionList items={terms} />
+
+      {rfq.documents.length > 0 && (
+        <section aria-label="Attachments" className="rounded-xl border border-border px-4 py-3">
+          <p className="text-sm font-medium text-foreground">
+            {formatCountLabel(rfq.documents.length)}{" "}
+            {rfq.documents.length === 1 ? "attachment" : "attachments"}
+          </p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">
+            Attached files are private. Downloading them needs an authorized link, which this view
+            does not issue.
+          </p>
+        </section>
+      )}
+
+      {isBuyer && (
+        <BuyerControls
+          rfq={rfq}
+          onOpen={() =>
+            openRfq.mutate(
+              { rfqId: rfq.id, idempotencyKey: openAttempt.getIdempotencyKey() },
+              {
+                onSuccess: (result) => {
+                  if (result.success) openAttempt.resetIdempotencyKey();
+                },
+              },
+            )
+          }
+          onClose={() =>
+            closeRfq.mutate(
+              { rfqId: rfq.id, idempotencyKey: closeAttempt.getIdempotencyKey() },
+              {
+                onSuccess: (result) => {
+                  if (result.success) closeAttempt.resetIdempotencyKey();
+                },
+              },
+            )
+          }
+          isBusy={openRfq.isPending || closeRfq.isPending}
+          errorMessage={errorMessage}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function RfqDetail({ rfqId }: { rfqId: string }) {
   const rfqQuery = useRfqQuery(rfqId);
   const openRfq = useOpenRfq();
   const closeRfq = useCloseRfq();
-  // Both routes REQUIRE an `Idempotency-Key`. Separate holders, because opening and closing are
-  // different attempts and a shared key would make the second a replay of the first. Resettable
-  // rather than one-shot: this component stays mounted across both, so a single key would dedupe
-  // the close into silence after an open.
   const openAttempt = useResettableAttemptIdempotencyKey();
   const closeAttempt = useResettableAttemptIdempotencyKey();
 
@@ -85,95 +230,11 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
 
   const { rfq } = viewState;
   const isBuyer = rfq.callerRelation === "buyer";
-
-  const terms: DefinitionListItem[] = [
-    { term: "State", value: RFQ_STATE_LABELS[rfq.state] },
-    { term: "Who can see it", value: RFQ_VISIBILITY_LABELS[rfq.visibility] },
-    { term: "Quotes due", value: formatOptionalIsoInstantLabel(rfq.responseDeadlineAt) },
-    {
-      term: "Delivery window",
-      value:
-        rfq.desiredDeliveryStartsAt === null && rfq.desiredDeliveryEndsAt === null
-          ? null
-          : `${formatOptionalIsoInstantLabel(rfq.desiredDeliveryStartsAt) ?? "any time"} → ${
-              formatOptionalIsoInstantLabel(rfq.desiredDeliveryEndsAt) ?? "open"
-            }`,
-    },
-    {
-      term: "Destination",
-      // COUNTRY AND CITY ONLY. The street lines are encrypted and are not on this read at all — a
-      // provider quoting a lane needs a city, not a door, and this is the read every invited provider
-      // sees.
-      value:
-        rfq.destinationCountryCode === null
-          ? null
-          : `${rfq.destinationLocality ?? ""} ${countryLabelFromCode(rfq.destinationCountryCode)}`.trim(),
-    },
-    { term: "Settlement currency", value: rfq.settlementCurrency },
-    { term: "Opened", value: formatOptionalIsoInstantLabel(rfq.openedAt) },
-    { term: "Closed", value: formatOptionalIsoInstantLabel(rfq.closedAt) },
-    { term: "Awarded", value: formatOptionalIsoInstantLabel(rfq.awardedAt) },
-  ];
-
-  const openResult = openRfq.data;
-  const closeResult = closeRfq.data;
+  const terms = buildRfqTerms(rfq);
 
   return (
     <div className="pb-10">
-      <header className="px-4 pt-4 lg:px-6">
-        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
-          {isBuyer ? "Your request" : "Request you can quote"}
-        </p>
-        <h1 className="text-xl font-medium text-foreground lg:text-2xl">{rfq.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{RFQ_STATE_LABELS[rfq.state]}</p>
-
-        {rfq.description !== null && (
-          <p className="mt-2 text-sm leading-5 text-foreground">{rfq.description}</p>
-        )}
-
-        {/* BUYER ONLY, and this is the one place the distinction is safe to make: `callerRelation` is on
-            this read. The tab below is available to both sides because the comparison ENDPOINT filters by
-            caller — but a provider whose only row is its own has nothing to compare, so a full-page
-            comparison link would promise something the read cannot deliver. */}
-        {isBuyer && (
-          <Link
-            href={`/store/rfqs/${rfq.id}/compare`}
-            className="mt-1 inline-block text-xs font-medium text-primary underline"
-          >
-            Compare the quotes on this request
-          </Link>
-        )}
-
-        {/* A PROVIDER IS TOLD ITS OWN STANDING and nothing about anyone else's. `matched_provider` means
-            they were not invited by name — they can see it because the buyer opened it to the market,
-            which is worth knowing before spending time on a quote. */}
-        {!isBuyer && (
-          <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
-            {rfq.callerRelation === "invited_provider"
-              ? "The buyer invited your organization to quote on this."
-              : "Your organization matched this request. The buyer did not invite you by name."}
-          </p>
-        )}
-
-        {/* THE ANSWER TO THIS REQUEST, and until now there was none — this page has always described
-            itself as one "you can answer" while offering no way to.
-
-            SHOWN TO BOTH PROVIDER RELATIONS. `matched_provider` is not a lesser standing: the buyer
-            opened the request to the market, and the backend gates the write on the organization
-            being an active provider rather than on having been invited by name.
-
-            THE LABEL DOES NOT CLAIM TO KNOW WHETHER A QUOTE EXISTS. This read carries no quote, and
-            fetching one here to pick a verb would be a second request for a word. The composer knows
-            and says so on arrival. */}
-        {!isBuyer && (
-          <Link
-            href={`/studio/rfqs/${rfq.id}/quote`}
-            className="mt-3 inline-block rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Quote this request
-          </Link>
-        )}
-      </header>
+      <RfqDetailHeader rfq={rfq} isBuyer={isBuyer} />
 
       <TabStrip
         ariaLabel="Request sections"
@@ -189,62 +250,15 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
             id: "terms",
             label: "Terms",
             panel: (
-              <div className="space-y-4 px-4 pb-4 lg:px-6">
-                <DefinitionList items={terms} />
-
-                {rfq.documents.length > 0 && (
-                  <section
-                    aria-label="Attachments"
-                    className="rounded-xl border border-border px-4 py-3"
-                  >
-                    <p className="text-sm font-medium text-foreground">
-                      {formatCountLabel(rfq.documents.length)}{" "}
-                      {rfq.documents.length === 1 ? "attachment" : "attachments"}
-                    </p>
-                    {/* NO LINKS. `encryptedDocumentId` is a pointer to a private object and this read
-                        mints no authorized URL, so the honest render is that a document exists. A
-                        fabricated href would 404 or, worse, look like a permissions bug. */}
-                    <p className="mt-1 text-xs leading-4 text-muted-foreground">
-                      Attached files are private. Downloading them needs an authorized link, which
-                      this view does not issue.
-                    </p>
-                  </section>
-                )}
-
-                {isBuyer && (
-                  <BuyerControls
-                    rfq={rfq}
-                    onOpen={() =>
-                      openRfq.mutate(
-                        { rfqId: rfq.id, idempotencyKey: openAttempt.getIdempotencyKey() },
-                        {
-                          onSuccess: (result) => {
-                            if (result.success) openAttempt.resetIdempotencyKey();
-                          },
-                        },
-                      )
-                    }
-                    onClose={() =>
-                      closeRfq.mutate(
-                        { rfqId: rfq.id, idempotencyKey: closeAttempt.getIdempotencyKey() },
-                        {
-                          onSuccess: (result) => {
-                            if (result.success) closeAttempt.resetIdempotencyKey();
-                          },
-                        },
-                      )
-                    }
-                    isBusy={openRfq.isPending || closeRfq.isPending}
-                    errorMessage={
-                      openResult !== undefined && !openResult.success
-                        ? openResult.error.message
-                        : closeResult !== undefined && !closeResult.success
-                          ? closeResult.error.message
-                          : null
-                    }
-                  />
-                )}
-              </div>
+              <RfqTermsTabContent
+                rfq={rfq}
+                terms={terms}
+                isBuyer={isBuyer}
+                openRfq={openRfq}
+                closeRfq={closeRfq}
+                openAttempt={openAttempt}
+                closeAttempt={closeAttempt}
+              />
             ),
           },
           // THE QUOTES TAB EXISTS FOR BOTH SIDES, unlike the invitation tab, because the ENDPOINT filters
@@ -546,42 +560,50 @@ function InviteProvidersControl({ rfq }: { rfq: RfqDetailValue }) {
               {directoryQuery.data.error.message}
             </output>
           )}
-          {directoryQuery.data?.success === true && (
-            <ul className="mt-2 space-y-1">
-              {directoryQuery.data.data.items
-                // `acceptingRequests` is part of the eligibility gate, so a provider who has
-                // paused is filtered out here rather than refused on send.
-                .filter((provider) => provider.acceptingRequests)
-                .map((provider) => {
-                  const isInvited = alreadyInvitedIds.has(provider.organizationId);
-                  const isSelected = selectedOrganizationIds.includes(provider.organizationId);
-                  return (
-                    <li key={provider.organizationId}>
-                      <button
-                        type="button"
-                        disabled={isInvited}
-                        aria-pressed={isSelected}
-                        onClick={() =>
-                          setSelectedOrganizationIds((previous) =>
-                            previous.includes(provider.organizationId)
-                              ? previous.filter((id) => id !== provider.organizationId)
-                              : [...previous, provider.organizationId],
-                          )
-                        }
-                        className={`w-full cursor-pointer rounded-lg px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
-                          isSelected ? "bg-muted" : "hover:bg-muted/60"
-                        }`}
-                      >
-                        {provider.displayName}
-                        {isInvited && (
-                          <span className="text-xs text-muted-foreground"> · already invited</span>
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-            </ul>
-          )}
+          {directoryQuery.data?.success === true &&
+            (() => {
+              const selectedOrganizationIdsSet = new Set(selectedOrganizationIds);
+              return (
+                <ul className="mt-2 space-y-1">
+                  {directoryQuery.data.data.items
+                    // `acceptingRequests` is part of the eligibility gate, so a provider who has
+                    // paused is filtered out here rather than refused on send.
+                    .filter((provider) => provider.acceptingRequests)
+                    .map((provider) => {
+                      const isInvited = alreadyInvitedIds.has(provider.organizationId);
+                      const isSelected = selectedOrganizationIdsSet.has(provider.organizationId);
+                      return (
+                        <li key={provider.organizationId}>
+                          <button
+                            type="button"
+                            disabled={isInvited}
+                            aria-pressed={isSelected}
+                            onClick={() =>
+                              setSelectedOrganizationIds((previous) => {
+                                const previousSet = new Set(previous);
+                                return previousSet.has(provider.organizationId)
+                                  ? previous.filter((id) => id !== provider.organizationId)
+                                  : [...previous, provider.organizationId];
+                              })
+                            }
+                            className={`w-full cursor-pointer rounded-lg px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
+                              isSelected ? "bg-muted" : "hover:bg-muted/60"
+                            }`}
+                          >
+                            {provider.displayName}
+                            {isInvited && (
+                              <span className="text-xs text-muted-foreground">
+                                {" "}
+                                · already invited
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                </ul>
+              );
+            })()}
 
           <div className="mt-3 flex flex-wrap gap-2">
             <button

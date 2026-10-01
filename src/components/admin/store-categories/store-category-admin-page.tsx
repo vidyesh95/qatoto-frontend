@@ -3,7 +3,7 @@
 // capability check reads `@/hooks/rnd/platform-roles`.
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { AdminImagePicker } from "@/components/admin/shared/admin-image-picker";
 import {
@@ -35,6 +35,7 @@ import {
   toCategorySlug,
   type AdminStoreCategory,
   type CommerceCategoryRequest,
+  type CommerceCategoryState,
   type DecideStoreCategoryRequestInput,
 } from "@/lib/store/admin-categories.schemas";
 
@@ -379,7 +380,7 @@ function CreateCategoryForm({
 }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [hasEditedSlug, setHasEditedSlug] = useState(false);
+  const hasEditedSlugRef = useRef(false);
   const [parentCategoryId, setParentCategoryId] = useState("");
   const [searchSynonyms, setSearchSynonyms] = useState("");
   const [state, setState] = useState<"draft" | "active">("draft");
@@ -400,7 +401,7 @@ function CreateCategoryForm({
           onChange={(changeEvent) => {
             setName(changeEvent.target.value);
             // Follows the name until the admin takes the slug over, then never again.
-            if (!hasEditedSlug) setSlug(toCategorySlug(changeEvent.target.value));
+            if (!hasEditedSlugRef.current) setSlug(toCategorySlug(changeEvent.target.value));
           }}
           maxLength={120}
           className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
@@ -412,7 +413,7 @@ function CreateCategoryForm({
         <input
           value={slug}
           onChange={(changeEvent) => {
-            setHasEditedSlug(true);
+            hasEditedSlugRef.current = true;
             setSlug(changeEvent.target.value);
           }}
           maxLength={100}
@@ -503,7 +504,7 @@ function CreateCategoryForm({
           });
           setName("");
           setSlug("");
-          setHasEditedSlug(false);
+          hasEditedSlugRef.current = false;
           setParentCategoryId("");
           setSearchSynonyms("");
           setState("draft");
@@ -525,6 +526,288 @@ function CreateCategoryForm({
  * rows, with nothing saying which one it belonged to. Reorder is the exception and stays on
  * the page, because it sends the whole permutation and its failure really is the list's.
  */
+function CategoryRowEditForm({
+  category,
+  parentOptions,
+  isBusy,
+  isPending,
+  onSave,
+}: {
+  readonly category: AdminStoreCategory;
+  readonly parentOptions: readonly AdminStoreCategory[];
+  readonly isBusy: boolean;
+  readonly isPending: boolean;
+  readonly onSave: (patch: {
+    name: string;
+    parentCategoryId: string | null;
+    searchSynonyms: string[];
+  }) => void;
+}) {
+  const [draftName, setDraftName] = useState(() => category.name);
+  const [draftParentCategoryId, setDraftParentCategoryId] = useState(
+    () => category.parentCategoryId ?? "",
+  );
+  const [draftSynonyms, setDraftSynonyms] = useState(() => category.searchSynonyms.join(", "));
+
+  return (
+    <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Name</span>
+        <input
+          value={draftName}
+          onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
+          maxLength={120}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+      </label>
+
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Parent</span>
+        <select
+          value={draftParentCategoryId}
+          onChange={(changeEvent) => setDraftParentCategoryId(changeEvent.target.value)}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        >
+          <option value="">No parent — a top-level category</option>
+          {parentOptions
+            .filter((option) => option.id !== category.id)
+            .map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+        </select>
+      </label>
+
+      <label className="block space-y-1 text-xs">
+        <span className="font-medium">Search synonyms (comma separated)</span>
+        <input
+          value={draftSynonyms}
+          onChange={(changeEvent) => setDraftSynonyms(changeEvent.target.value)}
+          maxLength={2048}
+          className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
+        />
+      </label>
+
+      <p className="text-xs text-muted-foreground">
+        The slug is permanent and is not editable — a category that needs a different slug is a new
+        category.
+      </p>
+
+      <button
+        type="button"
+        disabled={isBusy || draftName.trim().length === 0}
+        onClick={() => {
+          onSave({
+            name: draftName.trim(),
+            parentCategoryId: draftParentCategoryId === "" ? null : draftParentCategoryId,
+            searchSynonyms: draftSynonyms
+              .split(",")
+              .map((synonym) => synonym.trim())
+              .filter((synonym) => synonym.length > 0),
+          });
+        }}
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isPending ? "Saving…" : "Save changes"}
+      </button>
+    </div>
+  );
+}
+
+function CategoryRowReplaceImageForm({
+  categoryId,
+  isPending,
+  onReplaceImage,
+}: {
+  readonly categoryId: string;
+  readonly isPending: boolean;
+  readonly onReplaceImage: (file: File) => void;
+}) {
+  const [replacementFile, setReplacementFile] = useState<File | null>(null);
+
+  return (
+    <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
+      <AdminImagePicker
+        inputId={`replace-image-${categoryId}`}
+        isDisabled={isPending}
+        selectedFile={replacementFile}
+        onFileSelected={setReplacementFile}
+        previewAspectClassName="aspect-square"
+      />
+      <button
+        type="button"
+        disabled={replacementFile === null || isPending}
+        onClick={() => {
+          if (replacementFile === null) return;
+          onReplaceImage(replacementFile);
+          setReplacementFile(null);
+        }}
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isPending ? "Uploading…" : "Replace image"}
+      </button>
+    </div>
+  );
+}
+
+function CategoryRowControls({
+  category,
+  displayIndex,
+  siblingCount,
+  isReordering,
+  onMove,
+  isBusy,
+  isProtected,
+  isEditing,
+  setIsEditing,
+  isReplacingImage,
+  setIsReplacingImage,
+  isEditingAttributes,
+  setIsEditingAttributes,
+  onStateChange,
+  onRetire,
+}: {
+  readonly category: AdminStoreCategory;
+  readonly displayIndex: number;
+  readonly siblingCount: number;
+  readonly isReordering: boolean;
+  readonly onMove: ((categoryId: string, targetIndex: number) => void) | null;
+  readonly isBusy: boolean;
+  readonly isProtected: boolean;
+  readonly isEditing: boolean;
+  readonly setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  readonly isReplacingImage: boolean;
+  readonly setIsReplacingImage: React.Dispatch<React.SetStateAction<boolean>>;
+  readonly isEditingAttributes: boolean;
+  readonly setIsEditingAttributes: React.Dispatch<React.SetStateAction<boolean>>;
+  readonly onStateChange: (state: CommerceCategoryState) => void;
+  readonly onRetire: () => void;
+}) {
+  const [isConfirmingRetire, setIsConfirmingRetire] = useState(false);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {onMove !== null && (
+        <>
+          <button
+            type="button"
+            disabled={isReordering || displayIndex === 0}
+            onClick={() => onMove(category.id, displayIndex - 1)}
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Move up
+          </button>
+          <button
+            type="button"
+            disabled={isReordering || displayIndex === siblingCount - 1}
+            onClick={() => onMove(category.id, displayIndex + 1)}
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Move down
+          </button>
+          <label className="flex items-center gap-1 text-xs text-muted-foreground">
+            Show as
+            <select
+              value={displayIndex}
+              disabled={isReordering}
+              onChange={(changeEvent) => onMove(category.id, Number(changeEvent.target.value))}
+              className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
+            >
+              {Array.from({ length: siblingCount }, (_unused, index) => (
+                <option key={index} value={index}>
+                  {toOrdinalLabel(index)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
+
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => setIsEditing((wasEditing) => !wasEditing)}
+        className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isEditing ? "Cancel edit" : "Edit"}
+      </button>
+
+      <label className="flex items-center gap-1 text-xs text-muted-foreground">
+        State
+        <select
+          value={category.state}
+          disabled={isBusy}
+          onChange={(changeEvent) => {
+            const parsedState = CommerceCategoryStateSchema.safeParse(changeEvent.target.value);
+            if (!parsedState.success) return;
+            onStateChange(parsedState.data);
+          }}
+          className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
+        >
+          <option value="draft">draft</option>
+          <option value="active">active</option>
+          <option value="retired">retired</option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => setIsReplacingImage((wasReplacing) => !wasReplacing)}
+        className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isReplacingImage ? "Cancel image" : "Replace image"}
+      </button>
+
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => setIsEditingAttributes((wasEditing) => !wasEditing)}
+        className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isEditingAttributes ? "Hide fields" : "Fields"}
+      </button>
+
+      {isProtected ? (
+        <span className="text-xs text-muted-foreground">
+          Misc can&apos;t be retired — listings wait here during review.
+        </span>
+      ) : isConfirmingRetire ? (
+        <>
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={() => {
+              onRetire();
+              setIsConfirmingRetire(false);
+            }}
+            className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Confirm retire
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsConfirmingRetire(false)}
+            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
+          >
+            Keep it
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          disabled={isBusy || category.state === "retired"}
+          onClick={() => setIsConfirmingRetire(true)}
+          className="cursor-pointer rounded-full border border-destructive px-3 py-1 text-xs text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Retire
+        </button>
+      )}
+    </div>
+  );
+}
+
 function CategoryRow({
   category,
   displayIndex,
@@ -550,14 +833,7 @@ function CategoryRow({
   const retireCategory = useRetireStoreCategoryMutation();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [draftName, setDraftName] = useState(category.name);
-  const [draftParentCategoryId, setDraftParentCategoryId] = useState(
-    category.parentCategoryId ?? "",
-  );
-  const [draftSynonyms, setDraftSynonyms] = useState(() => category.searchSynonyms.join(", "));
   const [isReplacingImage, setIsReplacingImage] = useState(false);
-  const [replacementFile, setReplacementFile] = useState<File | null>(null);
-  const [isConfirmingRetire, setIsConfirmingRetire] = useState(false);
   const [isEditingAttributes, setIsEditingAttributes] = useState(false);
 
   const rowError = [updateCategory.error, replaceImage.error, retireCategory.error].find(
@@ -565,8 +841,6 @@ function CategoryRow({
   );
 
   const isBusy = updateCategory.isPending || replaceImage.isPending || retireCategory.isPending;
-  // `misc` is the parking bay for listings awaiting a verdict. The server refuses to retire
-  // it; disabling here saves the round trip and says why.
   const isProtected = category.id === MISC_CATEGORY_ID;
 
   return (
@@ -604,8 +878,6 @@ function CategoryRow({
             {isOnHomeRail && (
               <span className="rounded-full bg-primary-imprint/15 px-2 py-0.5">On store home</span>
             )}
-            {/* Both counts are what the retire guard checks, so showing them is showing the
-                reason a retire will or will not work — before it is attempted. */}
             <span className="text-muted-foreground">
               {String(category.productCount)} listings · {String(category.childCount)}{" "}
               sub-categories
@@ -617,233 +889,57 @@ function CategoryRow({
       {rowError && <MutationErrorNotice error={rowError.apiError} />}
 
       {canManage && (
-        <div className="flex flex-wrap items-center gap-2">
-          {onMove !== null && (
-            <>
-              <button
-                type="button"
-                disabled={isReordering || displayIndex === 0}
-                onClick={() => onMove(category.id, displayIndex - 1)}
-                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Move up
-              </button>
-              <button
-                type="button"
-                disabled={isReordering || displayIndex === siblingCount - 1}
-                onClick={() => onMove(category.id, displayIndex + 1)}
-                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Move down
-              </button>
-              <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                Show as
-                <select
-                  value={displayIndex}
-                  disabled={isReordering}
-                  onChange={(changeEvent) => onMove(category.id, Number(changeEvent.target.value))}
-                  className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
-                >
-                  {Array.from({ length: siblingCount }, (_unused, index) => (
-                    <option key={index} value={index}>
-                      {toOrdinalLabel(index)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setIsEditing((wasEditing) => !wasEditing)}
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isEditing ? "Cancel edit" : "Edit"}
-          </button>
-
-          <label className="flex items-center gap-1 text-xs text-muted-foreground">
-            State
-            <select
-              value={category.state}
-              disabled={isBusy}
-              onChange={(changeEvent) => {
-                // Parsed, not asserted. The select can only offer the three enum values, but
-                // proving that here is what keeps a future fourth `<option>` from shipping a
-                // 422 instead of a compile error.
-                const parsedState = CommerceCategoryStateSchema.safeParse(changeEvent.target.value);
-                if (!parsedState.success) return;
-                updateCategory.mutate({
-                  categoryId: category.id,
-                  patch: { state: parsedState.data },
-                });
-              }}
-              className="rounded-lg border border-outline-variant/60 px-2 py-1 text-xs"
-            >
-              <option value="draft">draft</option>
-              <option value="active">active</option>
-              <option value="retired">retired</option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setIsReplacingImage((wasReplacing) => !wasReplacing)}
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isReplacingImage ? "Cancel image" : "Replace image"}
-          </button>
-
-          {/* STORE §20. The fourth toggle on this row, same trio as the three above it. */}
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setIsEditingAttributes((wasEditing) => !wasEditing)}
-            className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isEditingAttributes ? "Hide fields" : "Fields"}
-          </button>
-
-          {/* TWO-STEP CONFIRM, not a `window.confirm` — oxlint's `no-alert` forbids that, and
-              a browser dialog blocks the whole tab anyway. */}
-          {isProtected ? (
-            <span className="text-xs text-muted-foreground">
-              Misc can&apos;t be retired — listings wait here during review.
-            </span>
-          ) : isConfirmingRetire ? (
-            <>
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => {
-                  retireCategory.mutate(category.id);
-                  setIsConfirmingRetire(false);
-                }}
-                className="cursor-pointer rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Confirm retire
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsConfirmingRetire(false)}
-                className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1 text-xs"
-              >
-                Keep it
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              disabled={isBusy || category.state === "retired"}
-              onClick={() => setIsConfirmingRetire(true)}
-              className="cursor-pointer rounded-full border border-destructive px-3 py-1 text-xs text-destructive disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Retire
-            </button>
-          )}
-        </div>
+        <CategoryRowControls
+          category={category}
+          displayIndex={displayIndex}
+          siblingCount={siblingCount}
+          isReordering={isReordering}
+          onMove={onMove}
+          isBusy={isBusy}
+          isProtected={isProtected}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          isReplacingImage={isReplacingImage}
+          setIsReplacingImage={setIsReplacingImage}
+          isEditingAttributes={isEditingAttributes}
+          setIsEditingAttributes={setIsEditingAttributes}
+          onStateChange={(state) => {
+            updateCategory.mutate({
+              categoryId: category.id,
+              patch: { state },
+            });
+          }}
+          onRetire={() => retireCategory.mutate(category.id)}
+        />
       )}
 
       {canManage && isEditing && (
-        <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">Name</span>
-            <input
-              value={draftName}
-              onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
-              maxLength={120}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-          </label>
-
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">Parent</span>
-            <select
-              value={draftParentCategoryId}
-              onChange={(changeEvent) => setDraftParentCategoryId(changeEvent.target.value)}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            >
-              <option value="">No parent — a top-level category</option>
-              {parentOptions
-                .filter((option) => option.id !== category.id)
-                .map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-
-          <label className="block space-y-1 text-xs">
-            <span className="font-medium">Search synonyms (comma separated)</span>
-            <input
-              value={draftSynonyms}
-              onChange={(changeEvent) => setDraftSynonyms(changeEvent.target.value)}
-              maxLength={2048}
-              className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
-            />
-          </label>
-
-          <p className="text-xs text-muted-foreground">
-            The slug is permanent and is not editable — a category that needs a different slug is a
-            new category.
-          </p>
-
-          <button
-            type="button"
-            disabled={isBusy || draftName.trim().length === 0}
-            onClick={() => {
-              updateCategory.mutate({
-                categoryId: category.id,
-                patch: {
-                  name: draftName.trim(),
-                  parentCategoryId: draftParentCategoryId === "" ? null : draftParentCategoryId,
-                  searchSynonyms: draftSynonyms
-                    .split(",")
-                    .map((synonym) => synonym.trim())
-                    .filter((synonym) => synonym.length > 0),
-                },
-              });
-              setIsEditing(false);
-            }}
-            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {updateCategory.isPending ? "Saving…" : "Save changes"}
-          </button>
-        </div>
+        <CategoryRowEditForm
+          category={category}
+          parentOptions={parentOptions}
+          isBusy={isBusy}
+          isPending={updateCategory.isPending}
+          onSave={(patch) => {
+            updateCategory.mutate({
+              categoryId: category.id,
+              patch,
+            });
+            setIsEditing(false);
+          }}
+        />
       )}
 
       {canManage && isReplacingImage && (
-        <div className="space-y-2 rounded-xl border border-outline-variant/60 p-3">
-          <AdminImagePicker
-            inputId={`replace-image-${category.id}`}
-            isDisabled={replaceImage.isPending}
-            selectedFile={replacementFile}
-            onFileSelected={setReplacementFile}
-            previewAspectClassName="aspect-square"
-          />
-          <button
-            type="button"
-            disabled={replacementFile === null || replaceImage.isPending}
-            onClick={() => {
-              if (replacementFile === null) return;
-              replaceImage.mutate({ categoryId: category.id, imageFile: replacementFile });
-              setReplacementFile(null);
-              setIsReplacingImage(false);
-            }}
-            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {replaceImage.isPending ? "Uploading…" : "Replace image"}
-          </button>
-        </div>
+        <CategoryRowReplaceImageForm
+          categoryId={category.id}
+          isPending={replaceImage.isPending}
+          onReplaceImage={(file) => {
+            replaceImage.mutate({ categoryId: category.id, imageFile: file });
+            setIsReplacingImage(false);
+          }}
+        />
       )}
 
-      {/*
-        Mounted only while open, so the resolved-attribute read fires when an admin asks for it
-        rather than once per row on every page load.
-      */}
       {canManage && isEditingAttributes && <CategoryAttributesPanel category={category} />}
     </div>
   );
@@ -862,7 +958,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
 
   const [label, setLabel] = useState("");
   const [attributeKey, setAttributeKey] = useState("");
-  const [hasEditedKey, setHasEditedKey] = useState(false);
+  const hasEditedKeyRef = useRef(false);
   const [groupLabel, setGroupLabel] = useState("");
   const [valueKind, setValueKind] = useState<CategoryAttributeValueKind>("enum");
   const [unitLabel, setUnitLabel] = useState("");
@@ -996,7 +1092,8 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
               setLabel(changeEvent.target.value);
               // Follows the label until the admin takes the key over, then never again — the same
               // latch the slug field uses on the create-category form.
-              if (!hasEditedKey) setAttributeKey(toAttributeKey(changeEvent.target.value));
+              if (!hasEditedKeyRef.current)
+                setAttributeKey(toAttributeKey(changeEvent.target.value));
             }}
             maxLength={120}
             placeholder="Wood type"
@@ -1009,7 +1106,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
           <input
             value={attributeKey}
             onChange={(changeEvent) => {
-              setHasEditedKey(true);
+              hasEditedKeyRef.current = true;
               setAttributeKey(changeEvent.target.value);
             }}
             maxLength={64}
@@ -1121,7 +1218,7 @@ function CategoryAttributesPanel({ category }: { category: AdminStoreCategory })
             });
             setLabel("");
             setAttributeKey("");
-            setHasEditedKey(false);
+            hasEditedKeyRef.current = false;
             setGroupLabel("");
             setUnitLabel("");
             setNumericScale("0");
@@ -1225,10 +1322,12 @@ function PendingRequestCard({
 }) {
   const decideRequest = useDecideStoreCategoryRequestMutation();
 
-  const [name, setName] = useState(request.proposedName);
+  const [name, setName] = useState(() => request.proposedName);
   const [slug, setSlug] = useState(() => toCategorySlug(request.proposedName));
-  const [hasEditedSlug, setHasEditedSlug] = useState(false);
-  const [parentCategoryId, setParentCategoryId] = useState(request.proposedParentCategoryId ?? "");
+  const hasEditedSlugRef = useRef(false);
+  const [parentCategoryId, setParentCategoryId] = useState(
+    () => request.proposedParentCategoryId ?? "",
+  );
   const [note, setNote] = useState("");
   /**
    * Per-listing overrides, keyed by product id. A missing key — the default for every
@@ -1300,7 +1399,7 @@ function PendingRequestCard({
               value={name}
               onChange={(changeEvent) => {
                 setName(changeEvent.target.value);
-                if (!hasEditedSlug) setSlug(toCategorySlug(changeEvent.target.value));
+                if (!hasEditedSlugRef.current) setSlug(toCategorySlug(changeEvent.target.value));
               }}
               maxLength={120}
               className="w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-sm"
@@ -1312,7 +1411,7 @@ function PendingRequestCard({
             <input
               value={slug}
               onChange={(changeEvent) => {
-                setHasEditedSlug(true);
+                hasEditedSlugRef.current = true;
                 setSlug(changeEvent.target.value);
               }}
               maxLength={100}

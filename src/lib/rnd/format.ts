@@ -13,6 +13,9 @@
 // render can never disagree and no hydration mismatch is possible. Do not
 // introduce `Date.now()`, `new Date()` or a locale read into this file.
 
+import { COMPENSATION_KIND_LABELS } from "@/lib/rnd/labels";
+import type { CompensationKind } from "@/lib/rnd/shared.schemas";
+
 const MONTH_ABBREVIATIONS = [
   "Jan",
   "Feb",
@@ -252,4 +255,37 @@ export function formatEquityBasisPointsRange(
     formatEquityFromBasisPoints(equityBasisPointsMin),
     equityBasisPointsMax === null ? null : formatEquityFromBasisPoints(equityBasisPointsMax),
   );
+}
+
+/** "Salary + Equity" — a one-line summary of which kinds an offer blends. */
+export function summarizeCompensationKinds(
+  strands: readonly { readonly kind: CompensationKind }[],
+): string {
+  return strands.map((strand) => COMPENSATION_KIND_LABELS[strand.kind]).join(" + ");
+}
+
+/**
+ * The host, for the label beside a link.
+ *
+ * Falls back to the raw string rather than throwing: the server only ever stores a parsed,
+ * normalized URL, so an unparseable one here means something upstream changed — and showing
+ * it plainly is more honest than rendering nothing where a destination belongs.
+ */
+export function describeLinkDestination(rawUrl: string): string {
+  try {
+    return new URL(rawUrl).host;
+  } catch {
+    return rawUrl;
+  }
+}
+
+/**
+ * Money, from the decimal string the wire carries.
+ */
+export function formatOutcomeAmount(amountInCents: string, currencyCode: string): string {
+  try {
+    return formatMoneyFromCents(BigInt(amountInCents), currencyCode);
+  } catch {
+    return `${currencyCode} ${amountInCents}`;
+  }
 }

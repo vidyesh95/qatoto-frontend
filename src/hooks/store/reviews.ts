@@ -119,9 +119,13 @@ export function useEditOwnReview(): UseMutationResult<
     readonly idempotencyKey: string;
   }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reviewId, input, idempotencyKey }) =>
       editOwnReview(reviewId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (_data, { reviewId }) => {
+      void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
+    },
   });
 }
 
@@ -130,11 +134,15 @@ export function useAttachReviewPhoto(): UseMutationResult<
   Error,
   { readonly reviewId: string; readonly imageFile: File; readonly idempotencyKey: string }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reviewId, imageFile, idempotencyKey }) =>
       attachReviewPhoto(reviewId, imageFile, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
+    onSuccess: (_data, { reviewId }) => {
+      void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
+    },
   });
 }
 
@@ -147,9 +155,13 @@ export function useAttachReviewVideo(): UseMutationResult<
     readonly idempotencyKey: string;
   }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reviewId, input, idempotencyKey }) =>
       attachReviewVideo(reviewId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (_data, { reviewId }) => {
+      void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
+    },
   });
 }
 
@@ -158,11 +170,15 @@ export function useDetachReviewMedia(): UseMutationResult<
   Error,
   { readonly reviewId: string; readonly mediaId: string; readonly idempotencyKey: string }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reviewId, mediaId, idempotencyKey }) =>
       detachReviewMedia(reviewId, mediaId, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
+    onSuccess: (_data, { reviewId }) => {
+      void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
+    },
   });
 }
 

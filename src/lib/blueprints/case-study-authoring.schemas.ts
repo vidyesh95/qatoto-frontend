@@ -106,6 +106,24 @@ export const CASE_STUDY_STATEMENT_IDS_BY_RELATIONSHIP: Record<
   public_sources: ["figures_in_linked_sources", "says_only_what_sources_say"],
 };
 
+/** Why Send is unavailable because of the answer or the statements, in words, or `null`. */
+export function describeCaseStudyStatementGap(
+  authorRelationship: CaseStudyAuthorRelationship | "",
+  acceptedStatementIds: readonly CaseStudyStatementId[],
+): string | null {
+  if (authorRelationship === "") return "Answer How you know this before you send.";
+
+  const acceptedStatementIdsSet = new Set(acceptedStatementIds);
+  const untickedStatementIds = CASE_STUDY_STATEMENT_IDS_BY_RELATIONSHIP[authorRelationship].filter(
+    (statementId) => !acceptedStatementIdsSet.has(statementId),
+  );
+  if (untickedStatementIds.length === 0) return null;
+
+  return `Tick ${untickedStatementIds.length === 1 ? "the last statement" : "both statements"} below: ${untickedStatementIds
+    .map((statementId) => CASE_STUDY_STATEMENTS[statementId].label)
+    .join("; ")}.`;
+}
+
 /** Upper bounds the form shows as soft counts, mirrored by the backend when it lands. */
 export const CASE_STUDY_TITLE_MAXIMUM_CHARACTERS = 140;
 export const CASE_STUDY_ONE_LINE_ACTION_MAXIMUM_CHARACTERS = 140;
@@ -342,6 +360,7 @@ export const CaseStudySubmissionDraftSchema = z
 
       const requiredStatementIds =
         CASE_STUDY_STATEMENT_IDS_BY_RELATIONSHIP[refinementInputs.data.authorRelationship];
+      const requiredStatementIdsSet = new Set<string>(requiredStatementIds);
       const acceptedStatementIds = new Set(refinementInputs.data.acceptedStatementIds);
       const missingStatementIds = requiredStatementIds.filter(
         (statementId) => !acceptedStatementIds.has(statementId),
@@ -358,7 +377,7 @@ export const CaseStudySubmissionDraftSchema = z
 
       // A tick carried over from the other answer is a statement about a different claim.
       const hasStatementForOtherRelationship = refinementInputs.data.acceptedStatementIds.some(
-        (statementId) => !requiredStatementIds.includes(statementId),
+        (statementId) => !requiredStatementIdsSet.has(statementId),
       );
       if (hasStatementForOtherRelationship) {
         context.addIssue({

@@ -10,10 +10,7 @@ import CommodityDirectory from "@/components/home/research-and-development/secti
 import FeasibilityReadoutSection from "@/components/home/research-and-development/sections/feasibility-readout";
 import LocalizationLeaderboard from "@/components/home/research-and-development/sections/localization-leaderboard";
 import MarketResearchOverview from "@/components/home/research-and-development/sections/market-research-overview";
-import MarketResearchTabs, {
-  MARKET_RESEARCH_TABS,
-  type MarketResearchTab,
-} from "@/components/home/research-and-development/sections/market-research-tabs";
+import MarketResearchTabs from "@/components/home/research-and-development/sections/market-research-tabs";
 import OpportunityScatter from "@/components/home/research-and-development/sections/opportunity-scatter";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -27,7 +24,12 @@ import {
   listDemandSignals,
   listMarketInsights,
 } from "@/lib/rnd/discovery.api";
-import type { DemandSignal, MarketInsight } from "@/lib/rnd/discovery.schemas";
+import {
+  MARKET_RESEARCH_TABS,
+  type DemandSignal,
+  type MarketInsight,
+  type MarketResearchTab,
+} from "@/lib/rnd/discovery.schemas";
 import {
   listImportCommodities,
   listImportCommodityKinds,
@@ -35,7 +37,10 @@ import {
   listLocalizationAssessmentGrid,
   listLocalizationAssessments,
 } from "@/lib/rnd/import-intelligence.api";
-import { IMPORT_COMMODITY_KINDS } from "@/lib/rnd/import-intelligence.schemas";
+import {
+  IMPORT_COMMODITY_KINDS,
+  type ImportCommodityKindOption,
+} from "@/lib/rnd/import-intelligence.schemas";
 import { callerRequestOptions } from "@/lib/server-http";
 import { toListViewState, type ListViewState } from "@/lib/view-state";
 
@@ -76,17 +81,237 @@ const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
  * are cheap, the country selector has to work on every tab, and branching the fetch on the tab
  * would make the KPI row disagree with itself between tabs.
  */
-export default async function MarketResearchPage({
+type ImportReportersResult = Awaited<ReturnType<typeof listImportReporters>>;
+type LocalizationAssessmentsResult = Awaited<ReturnType<typeof listLocalizationAssessments>>;
+type ImportCommoditiesResult = Awaited<ReturnType<typeof listImportCommodities>>;
+type LocalizationAssessmentGridResult = Awaited<ReturnType<typeof listLocalizationAssessmentGrid>>;
+type FeasibilityReadoutResult = Awaited<ReturnType<typeof getFeasibilityReadout>>;
+type MarketInsightsResult = Awaited<ReturnType<typeof listMarketInsights>>;
+type DemandSignalsResult = Awaited<ReturnType<typeof listDemandSignals>>;
+
+type ImportReporterItem = Extract<ImportReportersResult, { success: true }>["data"][number];
+type LocalizationAssessmentItem = Extract<
+  LocalizationAssessmentsResult,
+  { success: true }
+>["data"]["rows"][number];
+type DemandSignalItem = Extract<DemandSignalsResult, { success: true }>["data"]["rows"][number];
+type FeasibilityReadoutData = Extract<FeasibilityReadoutResult, { success: true }>["data"];
+type LocalizationAssessmentGridCellItem = Extract<
+  LocalizationAssessmentGridResult,
+  { success: true }
+>["data"][number];
+
+function MarketResearchLeaderboardSection({
+  assessmentsResult,
+  commodityKinds,
   searchParams,
 }: {
-  searchParams: Promise<RawSearchParams>;
+  assessmentsResult: LocalizationAssessmentsResult;
+  commodityKinds: readonly ImportCommodityKindOption[];
+  searchParams: RawSearchParams;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  const state = toListViewState(assessmentsResult);
+  switch (state.status) {
+    case "error":
+      return (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the feasibility ranking." />
+        </div>
+      );
+    case "empty":
+    case "ready":
+      return (
+        <LocalizationLeaderboard
+          assessments={state.status === "ready" ? state.rows : []}
+          pagination={assessmentsResult.success ? assessmentsResult.data.pagination : null}
+          commodityKinds={commodityKinds}
+          searchParams={searchParams}
+        />
+      );
+    default: {
+      const exhaustiveCheck: never = state;
+      return exhaustiveCheck;
+    }
+  }
+}
 
-  const activeTab: MarketResearchTab =
-    readEnumParam(resolvedSearchParams, "tab", MARKET_RESEARCH_TABS) ?? "overview";
+function MarketResearchCatalogueSection({
+  commoditiesResult,
+  commodityKinds,
+  searchParams,
+}: {
+  commoditiesResult: ImportCommoditiesResult;
+  commodityKinds: readonly ImportCommodityKindOption[];
+  searchParams: RawSearchParams;
+}) {
+  const state = toListViewState(commoditiesResult);
+  switch (state.status) {
+    case "error":
+      return (
+        <div className="px-4 lg:px-6">
+          <RndErrorPanel message="Couldn't load the commodity catalogue." />
+        </div>
+      );
+    case "empty":
+    case "ready":
+      return (
+        <CommodityDirectory
+          commodities={state.status === "ready" ? state.rows : []}
+          pagination={commoditiesResult.success ? commoditiesResult.data.pagination : null}
+          commodityKinds={commodityKinds}
+          searchParams={searchParams}
+        />
+      );
+    default: {
+      const exhaustiveCheck: never = state;
+      return exhaustiveCheck;
+    }
+  }
+}
 
+function MarketResearchOverviewTab({
+  reporters,
+  reporterCountryCode,
+  assessments,
+  demandSignals,
+  catalogueTotal,
+  rankedTotal,
+  feasibilityReadout,
+  pickerAssessments,
+  assessmentGridCells,
+  commodityCategoryByHsCode,
+  searchParams,
+}: {
+  reporters: readonly ImportReporterItem[];
+  reporterCountryCode: string | undefined;
+  assessments: readonly LocalizationAssessmentItem[];
+  demandSignals: readonly DemandSignalItem[];
+  catalogueTotal: number;
+  rankedTotal: number;
+  feasibilityReadout: FeasibilityReadoutData | null;
+  pickerAssessments: readonly LocalizationAssessmentItem[];
+  assessmentGridCells: readonly LocalizationAssessmentGridCellItem[];
+  commodityCategoryByHsCode: Map<string, string>;
+  searchParams: RawSearchParams;
+}) {
+  return (
+    <div className="space-y-8">
+      <MarketResearchOverview
+        reporters={reporters}
+        selectedCountryCode={reporterCountryCode}
+        assessments={assessments}
+        demandSignals={demandSignals}
+        totalCommodityCount={catalogueTotal}
+        searchParams={searchParams}
+      />
+
+      {feasibilityReadout !== null && (
+        <div className="px-4 lg:px-6">
+          <FeasibilityReadoutSection readout={feasibilityReadout} />
+        </div>
+      )}
+
+      <div className="px-4 lg:px-6">
+        {pickerAssessments.length === 0 ? (
+          <RndStatusPanel message="Nothing has been scored for this country yet." />
+        ) : (
+          <OpportunityScatter
+            assessments={pickerAssessments}
+            reporterCountryCode={reporterCountryCode}
+            scoredCommodityCount={assessmentGridCells.reduce(
+              (running, cell) => running + cell.commodityCount,
+              0,
+            )}
+          />
+        )}
+      </div>
+
+      <div className="px-4 lg:px-6">
+        <SignalAgreementBand
+          demandSignals={demandSignals}
+          assessments={assessments}
+          commodityCategoryByHsCode={commodityCategoryByHsCode}
+        />
+      </div>
+
+      <div className="px-4 lg:px-6">
+        <RuledOutPanel
+          catalogueTotal={catalogueTotal}
+          rankedTotal={rankedTotal}
+          hasDemandRun={demandSignals.length > 0}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MarketResearchDemandTab({
+  insightsResult,
+  demandSignalsResult,
+}: {
+  insightsResult: MarketInsightsResult;
+  demandSignalsResult: DemandSignalsResult;
+}) {
+  return (
+    <div className="space-y-8 px-4 lg:px-6">
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium text-foreground">Market insights</h2>
+        {renderInsights(toListViewState(insightsResult))}
+      </section>
+      {renderDemandSignals(toListViewState(demandSignalsResult))}
+    </div>
+  );
+}
+
+function MarketResearchImportSubstitutionTab({
+  reporters,
+  reporterCountryCode,
+  assessments,
+  demandSignals,
+  catalogueTotal,
+  searchParams,
+  assessmentsResult,
+  commoditiesResult,
+  commodityKinds,
+}: {
+  reporters: readonly ImportReporterItem[];
+  reporterCountryCode: string | undefined;
+  assessments: readonly LocalizationAssessmentItem[];
+  demandSignals: readonly DemandSignalItem[];
+  catalogueTotal: number;
+  searchParams: RawSearchParams;
+  assessmentsResult: LocalizationAssessmentsResult;
+  commoditiesResult: ImportCommoditiesResult;
+  commodityKinds: readonly ImportCommodityKindOption[];
+}) {
+  return (
+    <div className="space-y-8">
+      <MarketResearchOverview
+        reporters={reporters}
+        selectedCountryCode={reporterCountryCode}
+        assessments={assessments}
+        demandSignals={demandSignals}
+        totalCommodityCount={catalogueTotal}
+        searchParams={searchParams}
+      />
+      <MarketResearchLeaderboardSection
+        assessmentsResult={assessmentsResult}
+        commodityKinds={commodityKinds}
+        searchParams={searchParams}
+      />
+      <MarketResearchCatalogueSection
+        commoditiesResult={commoditiesResult}
+        commodityKinds={commodityKinds}
+        searchParams={searchParams}
+      />
+    </div>
+  );
+}
+
+async function loadMarketResearchData(
+  resolvedSearchParams: RawSearchParams,
+  requestOptions: Awaited<ReturnType<typeof callerRequestOptions>>,
+) {
   const reporterCountryCode = readPatternParam(
     resolvedSearchParams,
     "reporterCountryCode",
@@ -117,21 +342,10 @@ export default async function MarketResearchPage({
       { limit: LEADERBOARD_LIMIT, reporterCountryCode, commodityKind },
       requestOptions,
     ),
-    // The PICKER's own read: manufactured kinds only, and a full page of them.
-    //
-    // ⚠️ A SEPARATE READ FROM THE LEADERBOARD ABOVE, ON PURPOSE. The leaderboard is the
-    // ranking as it stands, petroleum and unwrought gold included, because that is what the
-    // ranking says. The chart is a "what should I build" surface and must not open with five
-    // answers that are not manufacturing, so it asks the backend to drop fuel, gems, ores and
-    // crops. Filtering the leaderboard's page client-side instead would return 33 rows and
-    // call them a top-50.
     listLocalizationAssessments(
       { limit: PICKER_LIMIT, reporterCountryCode, commodityKind, manufacturedOnly: true },
       requestOptions,
     ),
-    // The SAME filters as the leaderboard above, and that is load-bearing: the scatter's
-    // quadrant counts and the ranked list beneath it must describe one population, or the
-    // chart says 5,469 while the list says something else and neither is wrong on its face.
     listLocalizationAssessmentGrid({ reporterCountryCode, commodityKind }, requestOptions),
     listImportCommodities(
       {
@@ -142,8 +356,6 @@ export default async function MarketResearchPage({
       requestOptions,
     ),
     listImportCommodityKinds(requestOptions),
-    // Per-country only: the readout has no "all countries" form, so with no country picked
-    // there is nothing to ask for and nothing renders.
     reporterCountryCode === undefined
       ? Promise.resolve(null)
       : getFeasibilityReadout(reporterCountryCode, requestOptions),
@@ -159,73 +371,105 @@ export default async function MarketResearchPage({
     : [];
   const demandSignals = demandSignalsResult.success ? demandSignalsResult.data.rows : [];
   const commodities = commoditiesResult.success ? commoditiesResult.data.rows : [];
-  // A failed or absent readout renders nothing, like every other secondary read here — and a
-  // frontend deployed ahead of the backend gets a 404 and shows no section rather than an error.
   const feasibilityReadout =
     feasibilityReadoutResult !== null && feasibilityReadoutResult.success
       ? feasibilityReadoutResult.data
       : null;
 
-  // The agreement band's join key. Built from the catalogue page the surface already has —
-  // the assessment rows carry an `hsCode` but not a category, and inventing a second read to
-  // fetch one would buy a join the copy already says is approximate.
   const commodityCategoryByHsCode = new Map(
     commodities.map((commodity) => [commodity.hsCode, commodity.researchCategorySlug]),
   );
 
   const catalogueTotal = commoditiesResult.success ? commoditiesResult.data.pagination.total : 0;
   const rankedTotal = assessmentsResult.success ? assessmentsResult.data.pagination.total : 0;
-  function renderLeaderboard() {
-    const state = toListViewState(assessmentsResult);
-    switch (state.status) {
-      case "error":
-        return (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the feasibility ranking." />
-          </div>
-        );
-      case "empty":
-      case "ready":
-        return (
-          <LocalizationLeaderboard
-            assessments={state.status === "ready" ? state.rows : []}
-            pagination={assessmentsResult.success ? assessmentsResult.data.pagination : null}
-            commodityKinds={commodityKinds}
-            searchParams={resolvedSearchParams}
-          />
-        );
-      default: {
-        const exhaustiveCheck: never = state;
-        return exhaustiveCheck;
-      }
-    }
-  }
 
-  function renderCatalogue() {
-    const state = toListViewState(commoditiesResult);
-    switch (state.status) {
-      case "error":
-        return (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the commodity catalogue." />
-          </div>
-        );
-      case "empty":
-      case "ready":
-        return (
-          <CommodityDirectory
-            commodities={state.status === "ready" ? state.rows : []}
-            pagination={commoditiesResult.success ? commoditiesResult.data.pagination : null}
-            commodityKinds={commodityKinds}
-            searchParams={resolvedSearchParams}
-          />
-        );
-      default: {
-        const exhaustiveCheck: never = state;
-        return exhaustiveCheck;
-      }
+  return {
+    reporterCountryCode,
+    insightsResult,
+    demandSignalsResult,
+    assessmentsResult,
+    commoditiesResult,
+    reporters,
+    commodityKinds,
+    assessments,
+    assessmentGridCells,
+    pickerAssessments,
+    demandSignals,
+    feasibilityReadout,
+    commodityCategoryByHsCode,
+    catalogueTotal,
+    rankedTotal,
+  };
+}
+
+function MarketResearchActiveTabContent({
+  activeTab,
+  searchParams,
+  data,
+}: {
+  activeTab: MarketResearchTab;
+  searchParams: RawSearchParams;
+  data: Awaited<ReturnType<typeof loadMarketResearchData>>;
+}) {
+  switch (activeTab) {
+    case "overview":
+      return (
+        <MarketResearchOverviewTab
+          reporters={data.reporters}
+          reporterCountryCode={data.reporterCountryCode}
+          assessments={data.assessments}
+          demandSignals={data.demandSignals}
+          catalogueTotal={data.catalogueTotal}
+          rankedTotal={data.rankedTotal}
+          feasibilityReadout={data.feasibilityReadout}
+          pickerAssessments={data.pickerAssessments}
+          assessmentGridCells={data.assessmentGridCells}
+          commodityCategoryByHsCode={data.commodityCategoryByHsCode}
+          searchParams={searchParams}
+        />
+      );
+    case "demand":
+      return (
+        <MarketResearchDemandTab
+          insightsResult={data.insightsResult}
+          demandSignalsResult={data.demandSignalsResult}
+        />
+      );
+    case "import-substitution":
+      return (
+        <MarketResearchImportSubstitutionTab
+          reporters={data.reporters}
+          reporterCountryCode={data.reporterCountryCode}
+          assessments={data.assessments}
+          demandSignals={data.demandSignals}
+          catalogueTotal={data.catalogueTotal}
+          searchParams={searchParams}
+          assessmentsResult={data.assessmentsResult}
+          commoditiesResult={data.commoditiesResult}
+          commodityKinds={data.commodityKinds}
+        />
+      );
+    default: {
+      const exhaustiveCheck: never = activeTab;
+      return exhaustiveCheck;
     }
   }
+}
+
+export default async function MarketResearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>;
+}) {
+  const [resolvedSearchParams, requestOptions] = await Promise.all([
+    searchParams,
+    callerRequestOptions(),
+  ]);
+
+  const activeTab: MarketResearchTab =
+    readEnumParam(resolvedSearchParams, "tab", MARKET_RESEARCH_TABS) ?? "overview";
+
+  const data = await loadMarketResearchData(resolvedSearchParams, requestOptions);
 
   return (
     <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
@@ -242,80 +486,11 @@ export default async function MarketResearchPage({
 
       <MarketResearchTabs activeTab={activeTab} searchParams={resolvedSearchParams} />
 
-      {activeTab === "overview" ? (
-        <div className="space-y-8">
-          <MarketResearchOverview
-            reporters={reporters}
-            selectedCountryCode={reporterCountryCode}
-            assessments={assessments}
-            demandSignals={demandSignals}
-            totalCommodityCount={catalogueTotal}
-            searchParams={resolvedSearchParams}
-          />
-
-          {feasibilityReadout !== null && (
-            <div className="px-4 lg:px-6">
-              <FeasibilityReadoutSection readout={feasibilityReadout} />
-            </div>
-          )}
-
-          <div className="px-4 lg:px-6">
-            {pickerAssessments.length === 0 ? (
-              <RndStatusPanel message="Nothing has been scored for this country yet." />
-            ) : (
-              <OpportunityScatter
-                assessments={pickerAssessments}
-                reporterCountryCode={reporterCountryCode}
-                scoredCommodityCount={assessmentGridCells.reduce(
-                  (running, cell) => running + cell.commodityCount,
-                  0,
-                )}
-              />
-            )}
-          </div>
-
-          <div className="px-4 lg:px-6">
-            <SignalAgreementBand
-              demandSignals={demandSignals}
-              assessments={assessments}
-              commodityCategoryByHsCode={commodityCategoryByHsCode}
-            />
-          </div>
-
-          <div className="px-4 lg:px-6">
-            <RuledOutPanel
-              catalogueTotal={catalogueTotal}
-              rankedTotal={rankedTotal}
-              hasDemandRun={demandSignals.length > 0}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {activeTab === "demand" ? (
-        <div className="space-y-8 px-4 lg:px-6">
-          <section className="space-y-4">
-            <h2 className="text-sm font-medium text-foreground">Market insights</h2>
-            {renderInsights(toListViewState(insightsResult))}
-          </section>
-          {renderDemandSignals(toListViewState(demandSignalsResult))}
-        </div>
-      ) : null}
-
-      {activeTab === "import-substitution" ? (
-        <div className="space-y-8">
-          <MarketResearchOverview
-            reporters={reporters}
-            selectedCountryCode={reporterCountryCode}
-            assessments={assessments}
-            demandSignals={demandSignals}
-            totalCommodityCount={catalogueTotal}
-            searchParams={resolvedSearchParams}
-          />
-          {renderLeaderboard()}
-          {renderCatalogue()}
-        </div>
-      ) : null}
+      <MarketResearchActiveTabContent
+        activeTab={activeTab}
+        searchParams={resolvedSearchParams}
+        data={data}
+      />
     </div>
   );
 }

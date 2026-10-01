@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { computeBarChartScale, PLOT_WIDTH_UNITS, type BarChartScale } from "@/lib/charts/bar-scale";
+import { AccessibleChartTable } from "./accessible-chart-table";
 
 // The frame half of the repo's charting: margins, plot rect, value axis, gridlines, band labels
 // and the accessible table. `bar-series.tsx` draws the rects; `bar-scale.ts` does the arithmetic.
@@ -175,31 +176,12 @@ export function ChartFrame({
         </ul>
       )}
 
-      <table className="sr-only">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{bandColumnLabel}</th>
-            {valueColumnLabels.map((columnLabel) => (
-              <th key={columnLabel} scope="col">
-                {columnLabel}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {tableRows.map((row) => (
-            <tr key={row.key}>
-              <th scope="row">{row.label}</th>
-              {row.cells.map((cell, cellIndex) => (
-                <td key={`${row.key}-${valueColumnLabels[cellIndex] ?? String(cellIndex)}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <AccessibleChartTable
+        caption={caption}
+        rowHeaderColumnLabel={bandColumnLabel}
+        valueColumnLabels={valueColumnLabels}
+        tableRows={tableRows}
+      />
     </figure>
   );
 }

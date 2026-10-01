@@ -122,8 +122,10 @@ export default function CompareProductsSheet({
     ]),
   };
 
+  const selectedProductIdsSet = new Set(selectedProductIds);
+
   const selectedColumns: readonly CompareColumn[] = companions
-    .filter((companion) => selectedProductIds.includes(companion.id))
+    .filter((companion) => selectedProductIdsSet.has(companion.id))
     .map((companion) => ({
       id: companion.id,
       title: companion.title,
@@ -252,7 +254,7 @@ export default function CompareProductsSheet({
       ) : (
         <ul className="px-4 pb-6">
           {companions.map((companion) => {
-            const isSelected = selectedProductIds.includes(companion.id);
+            const isSelected = selectedProductIdsSet.has(companion.id);
             const isAtCap = !isSelected && selectedProductIds.length >= MAXIMUM_COMPARE_COLUMNS - 1;
             return (
               <li

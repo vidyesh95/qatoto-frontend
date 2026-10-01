@@ -60,6 +60,7 @@
     "oxlint": "^1.86.0",
     "oxlint-tailwindcss": "^1.14.0",
     "oxlint-tsgolint": "^7.0.2003",
+    "postcss": "^8.5.28",
     "react-doctor": "^0.9.14",
     "react-scan": "^0.5.7",
     "tailwindcss": "^4.3.3",
