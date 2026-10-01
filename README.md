@@ -21,10 +21,16 @@
     - [Engineers, Designers & Technical Specialists](#2-engineers-designers--technical-specialists)
     - [Software Engineers & Digital Builders](#3-software-engineers--digital-builders)
     - [Researchers, Biologists & Chemical Engineers](#4-researchers-biologists--chemical-engineers)
-    - [Visionaries & Domain Problem Solvers](#5-visionaries--domain-problem-solvers)
-    - [Backers, Angels & Investors](#6-backers-angels--investors)
-    - [Makers, Creators & Sellers](#7-makers-creators--sellers)
-    - [Contract Manufacturers, Suppliers & ODMs](#8-contract-manufacturers-suppliers--odms-original-design-manufacturers)
+    - [Civil, Structural & Environmental Engineers](#5-civil-structural--environmental-engineers)
+    - [Farmers, Agriculturalists & Food Producers](#6-farmers-agriculturalists--food-producers)
+    - [Industrial Enterprises, Factory Operators & Plant Managers](#7-industrial-enterprises-factory-operators--plant-managers)
+    - [Healthcare Practitioners & Clinical Workers](#8-healthcare-practitioners--clinical-workers)
+    - [Hardware Makers & Industrial Designers](#9-hardware-makers--industrial-designers)
+    - [Visionaries & Domain Problem Solvers](#10-visionaries--domain-problem-solvers)
+    - [Venture Capitalists & Long-Term Institutional Investors](#11-venture-capitalists--long-term-institutional-investors)
+    - [Angel Investors & Short-Term Milestone Backers](#12-angel-investors--short-term-milestone-backers)
+    - [Makers, Creators & Sellers](#13-makers-creators--sellers)
+    - [Contract Manufacturers, Suppliers & ODMs](#14-contract-manufacturers-suppliers--odms-original-design-manufacturers)
 - [How the Platform Works (The 5-Stage Pipeline)](#how-the-platform-works-the-5-stage-pipeline)
 - [Key Features](#key-features)
 - [How to Start a New Project](#how-to-start-a-new-project)
@@ -91,38 +97,124 @@ Qatoto unites diverse problem solvers on a single shared ledger, pairing the dis
 
 - **Need**: You have a physical product concept and the drive to build, but lack seed capital, co-founders, or manufacturing expertise.
 - **Value**: Validate consumer demand via civic problem mapping, find verified engineering talent, secure milestone-based funding, and receive automated build tracking without needing prior supply chain knowledge.
+- **What You Build**: Connected hardware devices, consumer appliances, diagnostic monitors, clean-tech hardware, and localized utility modules.
+- **Platform Capabilities**: Multi-step Idea Wizard (`/research-and-development/new`), 3-pillar feasibility score readouts, automated Slicing Pie equity formation, and verified ODM matchmaking.
 
 ### 2. Engineers, Designers & Technical Specialists
 
 - **Need**: You want to contribute your engineering, CAD, or mechanical design skills to high-impact physical builds without getting exploited by empty founder equity promises.
 - **Value**: Join vetted teams, negotiate pre-locked Fair Market Rates, earn mathematically guaranteed equity via the Slicing Pie dynamic equity protocol, and build a public portfolio of cryptographically verified effort.
+- **What You Build**: Enclosures, mechanical linkages, precision robotics, structural frames, and custom PCB assemblies.
+- **Platform Capabilities**: Upload and version CAD files, document exploded assemblies in Blueprints, and log verified engineering effort backed by forensic physical receipts.
 
 ### 3. Software Engineers & Digital Builders
 
 - **Need**: You want to build software, AI models, and firmware that solve urgent, real-world problems facing everyday people, but face opaque sweat-equity negotiations and disconnected project management.
 - **Value**: Plug your existing workflow directly into Qatoto via **GitHub, Linear, and Jira**. Have your work objectively evaluated via **Abstract Syntax Tree (AST)** diff complexity analysis and temporal checks, earning mathematically verified dynamic equity slices.
+- **What You Build**: Distributed web platforms, civic tech systems, AI algorithms, data ingestion pipelines, embedded firmware, IoT device drivers, web applications, and developer tooling.
+- **Deep Integration with Your Tooling**:
+    - The **Proof of Effort** engine authenticates directly with **GitHub, Linear, and Jira**.
+    - **AST Diff Analysis**: Evaluates substantive code modifications, architectural refactors, and logic enhancements while ignoring useless whitespace or copy-pasted dependencies.
+    - **Commit Signature & Temporal Anomaly Checks**: Validates cryptographic commit authorship and flags unnatural timestamp bursts.
+    - **Deterministic Dynamic Equity**: Every verified pull request, closed issue, and hours spent directly earns mathematically guaranteed equity slices via the Slicing Pie ledger.
 
 ### 4. Researchers, Biologists & Chemical Engineers
 
 - **Need**: Scientific breakthroughs (in clean water, biotechnology, green chemistry, and diagnostics) often stay locked in academic papers because researchers lack software engineers, operational co-founders, or commercialization pathways.
 - **Value**: Form open **Research Programmes** (`/research-and-development/programs`), organize hypotheses into interactive scientific branch trees (`branch-tree-layout.ts`), publish `informal_paper` tracks, submit lab datasets, and verify wet-bench experiments using forensic physical receipts to take science from the lab to deployed products.
+- **What You Build**: Novel electrochemical water filters, biochemical assays, agricultural biostimulants, biodegradable polymers, clean energy catalysts, diagnostic testing kits, and long-horizon life sciences.
+- **Dedicated Scientific Infrastructure**:
+    - **Open Research Programmes (`/research-and-development/programs`)**: Participate in deep-tech, long-horizon initiatives (e.g. clean water, longevity, energy transformation).
+    - **Scientific Branch Maps**: Visual branch trees (`branch-tree-layout.ts`) that organize research into `active`, `emerging`, `contested`, and `missing` gaps—preventing duplicated effort and highlighting unaddressed scientific questions.
+    - **Paper & Hypothesis Publication**: Publish `informal_paper` and `idea` tracks directly to the community with transparent peer feedback and moderator review.
+    - **Multi-Modal Contribution Types**: Contribute non-code research assets—including `data`, `material`, `equipment`, and `expertise`—alongside code.
+    - **Forensic Physical Receipts**: Validate wet-lab synthesis, material tests, and laboratory assays through tamper-checked forensic photo and documentation uploads.
 
-### 5. Visionaries & Domain Problem Solvers
+### 5. Civil, Structural & Environmental Engineers
+
+- **Need**: Municipal and rural infrastructure suffers from localized failures (unpaved access roads, broken culverts, water main bursts, flood zones), but traditional engineering tenders are slow, bureaucratic, and detached from community ground realities.
+- **Value**: Discover localized, geo-spatial infrastructural distress signals on Civic Pulse; publish open civil blueprints, structural teardowns, and modular construction guides; and coordinate open infrastructure builds with community grant bodies.
+- **What You Build**: Modular rural bridges, decentralized stormwater drainage, solar-powered water filtration stations, seismic-resilient low-cost housing, and recycled road aggregate formulations.
+- **Platform Capabilities**:
+    - **Civic Pulse Geospatial Problem Mapping**: Direct access to density clusters of municipal and rural infrastructure failures.
+    - **Forensic Site Receipts**: Verify physical site inspections, soil tests, and construction milestones via EXIF-stripped site photos, surveyor notes, and CAD/BIM revisions.
+    - **Open Infrastructure Blueprints**: Share construction schematics, assembly guides, and bills of materials on `/blueprints`.
+
+### 6. Farmers, Agriculturalists & Food Producers
+
+- **Need**: Smallholder and commercial farmers face crippling post-harvest crop spoilage, expensive imported machinery, unpredictable irrigation, soil degradation, and lack of affordable cold-storage.
+- **Value**: Direct channel to report localized farming challenges on Civic Pulse; co-create solutions with engineers and chemical researchers; and access affordable, locally manufactured farming equipment through import substitution.
+- **What You Build & Deploy**: Decentralized solar cold-storage lockers, smart drip-irrigation controllers, bio-fertilizers, pest-resistant crop enclosures, and low-cost grain dryers.
+- **Platform Capabilities**:
+    - **Grassroots Problem Reporting**: Flag crop disease outbreaks, water shortages, or storage failures directly on the problem map.
+    - **Import Substitution Directory**: Access domestic manufacturers producing agricultural hardware (pumps, refrigeration, tillers) identified via UN Comtrade HS code intelligence.
+    - **Field Pilot Testing**: Partner with hardware and biotech teams to pilot and test prototypes directly on working farmland.
+
+### 7. Industrial Enterprises, Factory Operators & Plant Managers
+
+- **Need**: Manufacturing plants struggle with supply chain disruptions, foreign exchange shortages for imported spare parts, idle production capacity, and lack of vetted domestic product designs.
+- **Value**: Gain visibility into domestic demand through Import Substitution intelligence across 5,668 HS commodity codes, monetize idle tooling/machinery, and receive pre-vetted, production-ready BOMs and CAD files.
+- **What You Build & Supply**: CNC-machined components, sheet metal chassis, injection mold tooling, wire harnesses, casting, and precision industrial assemblies.
+- **Platform Capabilities**:
+    - **Import Intelligence Directory (`/research-and-development/market-research?tab=import-substitution`)**: Discover high-volume imported goods ripe for domestic manufacturing.
+    - **Direct ODM Directory**: List production capabilities, minimum order quantities (MOQs), and component catalogs for hardware builders.
+    - **Structured BOM Ingestion**: Read exact integer-priced BOMs and CAD specifications directly from teams ready to produce.
+
+### 8. Healthcare Practitioners & Clinical Workers
+
+- **Need**: Clinics and remote healthcare workers struggle with broken diagnostic equipment, vaccine cold-chain failures, lack of sterilized point-of-care tools, and high costs of proprietary medical hardware.
+- **Value**: Report frontline healthcare bottlenecks on Civic Pulse, test accessible diagnostic prototypes with biomedical engineers, and source open-hardware medical devices with documented sterilization and assembly standards.
+- **What You Build & Deploy**: Portable centrifuge units, solar vaccine coolers, UV-C sterilizers, non-invasive vital monitors, and localized telehealth kiosks.
+- **Platform Capabilities**:
+    - **Healthcare Domain Mapping**: Filter problem clusters by `health_care` to prioritize life-saving equipment gaps.
+    - **Clinical Research Tracks**: Review and contribute to informal papers on biomedical prototypes in Research Programmes.
+
+### 9. Hardware Makers & Industrial Designers
+
+- **Need**: You have physical prototyping capabilities and CAD fluency, but struggle with component sourcing, tooling costs, and reaching paying customers.
+- **Value**: Publish teardowns and exploded assemblies in the Blueprints Hub, collaborate with verified contract manufacturers, and distribute units directly through the store.
+- **What You Build**: Consumer robotics, smart home automation, wearable devices, modular electronics, and educational maker kits.
+- **Platform Support**:
+    - **Blueprints Hub (`/blueprints`)**: Interactive 3D exploded view engine (Three.js / React Three Fiber) for sharing teardowns, open hardware schematics, and design decisions.
+    - **BOM & Component Costing**: Integer-precision Bill of Materials tracking, connecting directly with verified ODMs and component distributors.
+    - **Manufacturing Case Studies**: Reusable lessons across tooling, quality control, supply chains, and unit economics.
+
+### 10. Visionaries & Domain Problem Solvers
 
 - **Need**: You observe pressing challenges in everyday civic life (contaminated water, grid failures, food spoilage) and want to build a real solution, but struggle to coordinate multi-disciplinary teams across software, wet-lab science, and hardware.
 - **Value**: Identify high-density problem clusters via **Civic Pulse**, assemble cross-disciplinary teams, validate regional purchasing power and feasibility, and lead end-to-end execution on a single transparent ledger.
+- **What You Build**: Cross-disciplinary ventures that solve grassroots civic problems and elevate public well-being.
+- **Platform Support**:
+    - Translate localized community needs from the Civic Pulse map into actionable product roadmaps.
+    - Recruit and lead balanced teams that unite software engineers, laboratory researchers, and operational specialists.
+    - Manage milestone fundraising, dynamic cap tables, and product launches without administrative gridlock.
 
-### 6. Backers, Angels & Investors
+### 11. Venture Capitalists & Long-Term Institutional Investors
 
-- **Need**: Hardware and deep-tech startups frequently fail due to opacity, missed milestones, or premature scaling.
-- **Value**: Gain radical visibility through the Daily Update Protocol. Inspect ground-truth engineering diffs, video logs, and hash-chained governance ledgers rather than relying on curated quarterly pitch decks.
+- **Need**: Hardware, deep-tech, and scientific startups carry high technological risk and long gestation cycles. Traditional pitch decks and quarterly board updates hide team friction, cap-table debt, and engineering roadblocks until capital is already burned.
+- **Value**: Continuous ground-truth diligence through the Daily Update Protocol. Access the immutable, SHA-256 hash-chained governance ledger; observe real-time team velocity and AST code/lab progress; and participate in structured funding rounds where dynamic Slicing Pie equity cleanly "bakes" into formal cap-table instruments upon institutional pricing.
+- **What You Evaluate & Fund**: Deep-tech research branches, long-horizon biological/chemical innovations, scalable hardware platforms, and civic infrastructure networks.
+- **Platform Capabilities**:
+    - **Long-Horizon Branch Tracking**: Evaluate progress on open Research Programmes (`/research-and-development/programs`) and monitor active vs. contested scientific hypotheses.
+    - **Cap-Table Health & Pie Baking**: Inspect nightly cap-table snapshots, verified member rates, and deterministic equity allocations before leading a priced round.
+    - **Continuous Portfolio Surveillance**: Real-time visibility into post-investment execution with tamper-evident audit trails, eliminating surprise write-downs.
 
-### 7. Makers, Creators & Sellers
+### 12. Angel Investors & Short-Term Milestone Backers
+
+- **Need**: Early-stage hardware and civic tech projects often stall at the initial prototype stage. Angels and micro-backers risk putting checks into ideas that never transition to physical builds, with zero visibility into how initial capital is deployed.
+- **Value**: Milestone-based capital commitment. Funds and pledges attach directly to verifiable deliverables (e.g. PCB prototype working, wet-lab assay validated, initial pilot batch produced), unlocking as ground-truth Proof of Effort verifies milestone completion.
+- **What You Evaluate & Back**: Working prototype demonstrations, early civic problem solutions, pre-sales on the Blueprints Hub, and discrete sprint deliverables.
+- **Platform Capabilities**:
+    - **Milestone-Tied Commitment Rails**: Back specific milestones with planned payouts rather than handing over unmonitored lump sums.
+    - **Proof of Effort Daily Logs**: Stream daily video walk-throughs and engineering diffs as they happen.
+    - **Dispute Transparency**: Visibility into the 24-hour team consensus window ensuring funds only reward verified progress.
+
+### 13. Makers, Creators & Sellers
 
 - **Need**: Distributing hardware prototypes, gathering community feedback, and converting early builds into retail sales.
 - **Value**: Publish teardowns and showcases in the **Blueprints Hub**, manage video updates in **Qatoto Studio** (mirroring YouTube Studio), and sell products with single and B2B volume pricing in the **Qatoto Store**.
 
-### 8. Contract Manufacturers, Suppliers & ODMs (Original Design Manufacturers)
+### 14. Contract Manufacturers, Suppliers & ODMs (Original Design Manufacturers)
 
 - **Need**: Vetting customer designs and receiving clean, unambiguous technical specifications to provide accurate production quotes.
 - **Value**: Access structured Bills of Materials (BOM), CAD files, and clear component specifications directly from teams ready for manufacturing runs.
