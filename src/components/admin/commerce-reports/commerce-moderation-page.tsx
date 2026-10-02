@@ -1,4 +1,5 @@
-// TRANSPORT: client-query — the report queue, the action log, the decision and the restore all call
+// TRANSPORT: client-query — the report queue, the action log, the withdrawn-answer list, the decision
+// and the restore all call
 // hooks in `@/hooks/store/admin-content-reports`. The capability check reads
 // `@/hooks/rnd/platform-roles`.
 "use client";
@@ -25,14 +26,18 @@ import { useState } from "react";
 
 import CommerceModerationActionLog from "@/components/admin/commerce-reports/commerce-moderation-action-log";
 import CommerceReportQueue from "@/components/admin/commerce-reports/commerce-report-queue";
+import CommerceWithdrawnAnswerLog from "@/components/admin/commerce-reports/commerce-withdrawn-answer-log";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import {
   COMMERCE_CONTENT_TARGET_KINDS,
   COMMERCE_CONTENT_TARGET_KIND_NOUNS,
   COMMERCE_REPORT_STATUSES,
   COMMERCE_REPORT_STATUS_LABELS,
+  WITHDRAWN_ANSWER_STATE_FILTERS,
+  WITHDRAWN_ANSWER_STATE_FILTER_LABELS,
   type CommerceContentTargetKind,
   type CommerceReportStatus,
+  type WithdrawnAnswerStateFilter,
 } from "@/lib/store/content-reports.schemas";
 
 const QUIET_BUTTON_CLASS =
@@ -41,10 +46,9 @@ const QUIET_BUTTON_CLASS =
 /**
  * Which half of the console is on screen.
  *
- * A union rather than a boolean, because a third tab is a plausible future (disputes have their own
- * `/commerce/admin` pair) and `isShowingLog` would then have to become one anyway.
+ * A union rather than a boolean, which the third tab — withdrawn answers — has now cashed in.
  */
-type ModerationTab = "reports" | "log";
+type ModerationTab = "reports" | "log" | "withdrawn";
 
 /**
  * ⚠️ **`restricted` IS A VIEW STATE AND IT WINS OVER `loading`.** "Nothing to show because you may
@@ -66,6 +70,8 @@ export default function CommerceModerationPage() {
   const [targetKindFilter, setTargetKindFilter] = useState<CommerceContentTargetKind | "all">(
     "all",
   );
+  const [withdrawnStateFilter, setWithdrawnStateFilter] =
+    useState<WithdrawnAnswerStateFilter>("still_withdrawn");
 
   const staffContextQuery = useOwnStaffContextQuery();
 
@@ -95,6 +101,8 @@ export default function CommerceModerationPage() {
         setStatusFilter,
         targetKindFilter,
         setTargetKindFilter,
+        withdrawnStateFilter,
+        setWithdrawnStateFilter,
       })}
     </div>
   );
@@ -107,6 +115,8 @@ type ConsoleControls = {
   readonly setStatusFilter: (status: CommerceReportStatus) => void;
   readonly targetKindFilter: CommerceContentTargetKind | "all";
   readonly setTargetKindFilter: (targetKind: CommerceContentTargetKind | "all") => void;
+  readonly withdrawnStateFilter: WithdrawnAnswerStateFilter;
+  readonly setWithdrawnStateFilter: (state: WithdrawnAnswerStateFilter) => void;
 };
 
 function renderConsole(state: ModerationConsoleState, controls: ConsoleControls) {
@@ -143,6 +153,8 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
     setStatusFilter,
     targetKindFilter,
     setTargetKindFilter,
+    withdrawnStateFilter,
+    setWithdrawnStateFilter,
   } = controls;
 
   return (
@@ -170,6 +182,17 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
         >
           Moderation log
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("withdrawn")}
+          className={
+            activeTab === "withdrawn"
+              ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
+              : QUIET_BUTTON_CLASS
+          }
+        >
+          Withdrawn answers
+        </button>
       </div>
 
       {activeTab === "reports" && (
@@ -191,42 +214,64 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
         </div>
       )}
 
+      {activeTab === "withdrawn" && (
+        <div className="flex flex-wrap gap-2">
+          {WITHDRAWN_ANSWER_STATE_FILTERS.map((state) => (
+            <button
+              key={state}
+              type="button"
+              onClick={() => setWithdrawnStateFilter(state)}
+              className={
+                state === withdrawnStateFilter
+                  ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
+                  : QUIET_BUTTON_CLASS
+              }
+            >
+              {WITHDRAWN_ANSWER_STATE_FILTER_LABELS[state]}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/*
-        THE KIND FILTER SERVES BOTH TABS — it is the one query parameter the moderation-action
-        route actually reads.
+        THE KIND FILTER SERVES THE FIRST TWO TABS — it is the one query parameter the
+        moderation-action route actually reads. The withdrawn tab has no kind filter, because every
+        row on it is an answer.
 
         ⚠️ **THERE IS NO STATUS FILTER ON THE LOG TAB AND THAT IS DELIBERATE.** The backend shares
         one query schema between the two reads, so `?status=` PARSES there and is then never read
         by `listModerationActions`. A status control on the log would change the query key,
         refetch, and return byte-identical rows — a filter that looks like it works and does not.
       */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setTargetKindFilter("all")}
-          className={
-            targetKindFilter === "all"
-              ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
-              : QUIET_BUTTON_CLASS
-          }
-        >
-          Everything
-        </button>
-        {COMMERCE_CONTENT_TARGET_KINDS.map((targetKind) => (
+      {activeTab !== "withdrawn" && (
+        <div className="flex flex-wrap gap-2">
           <button
-            key={targetKind}
             type="button"
-            onClick={() => setTargetKindFilter(targetKind)}
+            onClick={() => setTargetKindFilter("all")}
             className={
-              targetKind === targetKindFilter
+              targetKindFilter === "all"
                 ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
                 : QUIET_BUTTON_CLASS
             }
           >
-            {COMMERCE_CONTENT_TARGET_KIND_NOUNS[targetKind]}
+            Everything
           </button>
-        ))}
-      </div>
+          {COMMERCE_CONTENT_TARGET_KINDS.map((targetKind) => (
+            <button
+              key={targetKind}
+              type="button"
+              onClick={() => setTargetKindFilter(targetKind)}
+              className={
+                targetKind === targetKindFilter
+                  ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
+                  : QUIET_BUTTON_CLASS
+              }
+            >
+              {COMMERCE_CONTENT_TARGET_KIND_NOUNS[targetKind]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/*
         KEYED BY THE FILTERS so changing one REMOUNTS the list rather than reusing one accumulator
@@ -234,15 +279,38 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
         scoped to the query that issued it; carrying one across a filter change is a 422, not a
         reset.
       */}
-      {activeTab === "reports" ? (
-        <CommerceReportQueue
-          key={`${statusFilter}:${targetKindFilter}`}
-          status={statusFilter}
-          targetKind={targetKindFilter}
-        />
-      ) : (
-        <CommerceModerationActionLog key={targetKindFilter} targetKind={targetKindFilter} />
-      )}
+      {renderActiveTab(controls)}
     </>
   );
+}
+
+function renderActiveTab(controls: ConsoleControls) {
+  switch (controls.activeTab) {
+    case "reports":
+      return (
+        <CommerceReportQueue
+          key={`${controls.statusFilter}:${controls.targetKindFilter}`}
+          status={controls.statusFilter}
+          targetKind={controls.targetKindFilter}
+        />
+      );
+    case "log":
+      return (
+        <CommerceModerationActionLog
+          key={controls.targetKindFilter}
+          targetKind={controls.targetKindFilter}
+        />
+      );
+    case "withdrawn":
+      return (
+        <CommerceWithdrawnAnswerLog
+          key={controls.withdrawnStateFilter}
+          state={controls.withdrawnStateFilter}
+        />
+      );
+    default: {
+      const exhaustiveCheck: never = controls.activeTab;
+      return exhaustiveCheck;
+    }
+  }
 }

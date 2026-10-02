@@ -1,5 +1,5 @@
-// TRANSPORT: client-query — the STAFF half of commerce content reporting: the two `/commerce/admin`
-// reads, the decision, and the restore. All four gated by `moderate_commerce`.
+// TRANSPORT: client-query — the STAFF half of commerce content reporting: the three `/commerce/admin`
+// reads, the decision, and the restore. All five gated by `moderate_commerce`.
 //
 // SEPARATE FILE FROM `content-reports.api.ts` — see that file's header for the reason.
 //
@@ -32,6 +32,7 @@ import {
   CommerceContentReportSchema,
   CommerceModerationActionPageSchema,
   CommerceModerationActionSchema,
+  WithdrawnProductAnswerPageSchema,
   type CommerceContentReport,
   type CommerceContentReportPage,
   type CommerceModerationAction,
@@ -39,7 +40,9 @@ import {
   type DecideCommerceReportInput,
   type ListCommerceModerationActionsFilter,
   type ListCommerceReportsFilter,
+  type ListWithdrawnAnswersFilter,
   type RestoreCommerceContentInput,
+  type WithdrawnProductAnswerPage,
 } from "@/lib/store/content-reports.schemas";
 
 /**
@@ -84,6 +87,21 @@ export function listCommerceModerationActions(
 }
 
 /**
+ * One page of withdrawn product answers, NEWEST FIRST — the next page is "Load older".
+ *
+ * ⚠️ **THE ONLY WAY TO FIND A WITHDRAWN ANSWER.** A withdrawal writes no moderation action, so the
+ * log above never lists one; the backend reads the `product_answer_withdrawn` audit events instead.
+ * Restoring one goes through `restoreCommerceContent` like any other target.
+ */
+export function listWithdrawnProductAnswers(
+  filter: ListWithdrawnAnswersFilter,
+  options?: RequestOptions,
+): Promise<ActionResponse<WithdrawnProductAnswerPage>> {
+  const path = `/commerce/admin/withdrawn-answers${buildQueryString({ ...filter })}`;
+  return getJson(path, WithdrawnProductAnswerPageSchema, options);
+}
+
+/**
  * Upholds a report or throws it out. **Requires an `Idempotency-Key` — 400 without one.**
  *
  * ⚠️ **THE KEY MUST BE MINTED PER ATTEMPT, PER CONTROL, AND THIS IS THE MOST DAMAGING MISTAKE
@@ -95,6 +113,9 @@ export function listCommerceModerationActions(
  * the update predicate is the target plus `status = 'open'`. So rows leave `open` and arrive in
  * `actioned`/`dismissed` together and the action log grows too. Invalidating one filter's key
  * leaves two lists wrong; the hook invalidates the root.
+ *
+ * A dismissal lifts only a moderation hold on a question or answer: one its author withdrew stays
+ * withdrawn.
  *
  * ⚠️ **`dismissed` ON A PRODUCT SETS `moderationState = "approved"` OUTRIGHT** — not "back to
  * whatever it was". Throwing out a spam report against a `draft` or `pending_review` listing
@@ -125,7 +146,8 @@ export function decideCommerceContentReport(
  * something in it rather than letting the server refuse an empty one.
  *
  * Restoring something already visible is not an error; it records an action and changes nothing.
- * The console says so rather than trying to derive current visibility, which no read reports.
+ * The console says so rather than trying to derive current visibility, which only the
+ * withdrawn-answers read reports.
  */
 export function restoreCommerceContent(
   input: RestoreCommerceContentInput,

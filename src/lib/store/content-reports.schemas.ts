@@ -19,6 +19,10 @@
 // `src/db/schema/store.ts` is the authority, never a doc.
 
 import { z } from "zod";
+import {
+  ORGANIZATION_MEMBER_ROLES,
+  type OrganizationMemberRole,
+} from "@/lib/store/organizations.schemas";
 import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
 /**
@@ -231,6 +235,80 @@ export interface ListCommerceModerationActionsFilter {
   readonly cursor?: string;
 }
 
+// --- Withdrawn answers ------------------------------------------------------
+//
+// `GET /commerce/admin/withdrawn-answers`. A WITHDRAWAL IS NOT A MODERATION EVENT, so it writes no
+// moderation action and the log tab cannot show one. The backend reads the
+// `product_answer_withdrawn` events off the answering organizations' audit chains instead. One row
+// per EVENT: an answer withdrawn, restored and withdrawn again is two rows sharing one current state.
+
+/** `commerce_ugc_visibility_state`, verbatim. */
+export const COMMERCE_UGC_VISIBILITY_STATES = [
+  "visible",
+  "hidden_pending_review",
+  "hidden_by_moderator",
+  "removed_by_author",
+] as const;
+
+export type CommerceUgcVisibilityState = (typeof COMMERCE_UGC_VISIBILITY_STATES)[number];
+
+export const PRODUCT_ANSWER_AUTHOR_KINDS = ["seller", "verified_buyer"] as const;
+
+export type ProductAnswerAuthorKind = (typeof PRODUCT_ANSWER_AUTHOR_KINDS)[number];
+
+/** Who pressed withdraw: the person who wrote it, or a teammate at the answering organization. */
+export const ANSWER_WITHDRAWER_KINDS = ["author", "organization_member"] as const;
+
+export type AnswerWithdrawerKind = (typeof ANSWER_WITHDRAWER_KINDS)[number];
+
+/**
+ * The read's `state` filter. `still_withdrawn` (the default) is what can be restored; `all` keeps
+ * the answers since restored or hidden, for the history.
+ */
+export const WITHDRAWN_ANSWER_STATE_FILTERS = ["still_withdrawn", "all"] as const;
+
+export type WithdrawnAnswerStateFilter = (typeof WITHDRAWN_ANSWER_STATE_FILTERS)[number];
+
+/**
+ * One withdrawal.
+ *
+ * ⚠️ **`answerBodyText` IS THE WITHDRAWN TEXT** — text its author took off the product page. It is
+ * here because whether to restore is a judgment about what the answer said, and the route is
+ * `moderate_commerce`-gated in the service. It must never reach a public surface.
+ *
+ * `withdrawnBy` is `null` when the backend could not read the audit payload; the row is still a
+ * withdrawal and still restorable. `actorMemberRoleSnapshot` is `null` when the actor was not a
+ * member of the answering organization at the time.
+ */
+export const WithdrawnProductAnswerSchema = z.object({
+  auditEntryId: z.string(),
+  withdrawnAt: IsoDateTimeSchema,
+  withdrawnBy: z.enum(ANSWER_WITHDRAWER_KINDS).nullable(),
+  actorUserId: z.string().nullable(),
+  actorMemberRoleSnapshot: z.enum(ORGANIZATION_MEMBER_ROLES).nullable(),
+  answerId: z.string(),
+  answerBodyText: z.string(),
+  authorKind: z.enum(PRODUCT_ANSWER_AUTHOR_KINDS),
+  answeringOrganizationId: z.string(),
+  currentVisibilityState: z.enum(COMMERCE_UGC_VISIBILITY_STATES),
+  questionId: z.string(),
+  questionBodyText: z.string(),
+  productId: z.string(),
+  productTitle: z.string(),
+  productPublicSlug: z.string().nullable(),
+});
+
+export type WithdrawnProductAnswer = z.infer<typeof WithdrawnProductAnswerSchema>;
+
+export const WithdrawnProductAnswerPageSchema = cursorPageOf(WithdrawnProductAnswerSchema);
+
+export type WithdrawnProductAnswerPage = z.infer<typeof WithdrawnProductAnswerPageSchema>;
+
+export interface ListWithdrawnAnswersFilter {
+  readonly state: WithdrawnAnswerStateFilter;
+  readonly cursor?: string;
+}
+
 // --- Display maps -----------------------------------------------------------
 //
 // These live here rather than in `labels.ts`, which that file reserves for enums crossing more
@@ -292,4 +370,38 @@ export const COMMERCE_MODERATION_ACTION_SOURCE_LABELS: Record<
 > = {
   moderator: "By a moderator",
   automatic: "Automatic, after several reports",
+};
+
+export const WITHDRAWN_ANSWER_STATE_FILTER_LABELS: Record<WithdrawnAnswerStateFilter, string> = {
+  still_withdrawn: "Still withdrawn",
+  all: "All withdrawals",
+};
+
+/** The answer's state NOW, worded for the moderator deciding whether to restore it. */
+export const COMMERCE_UGC_VISIBILITY_STATE_LABELS: Record<CommerceUgcVisibilityState, string> = {
+  visible: "Back up",
+  hidden_pending_review: "Hidden by several reports",
+  hidden_by_moderator: "Hidden by a moderator",
+  removed_by_author: "Still withdrawn",
+};
+
+export const PRODUCT_ANSWER_AUTHOR_KIND_LABELS: Record<ProductAnswerAuthorKind, string> = {
+  seller: "Seller answer",
+  verified_buyer: "Verified buyer answer",
+};
+
+export const ANSWER_WITHDRAWER_KIND_LABELS: Record<AnswerWithdrawerKind, string> = {
+  author: "Withdrawn by its author",
+  organization_member: "Withdrawn by a teammate at the answering company",
+};
+
+export const ORGANIZATION_MEMBER_ROLE_LABELS: Record<OrganizationMemberRole, string> = {
+  owner: "Owner",
+  administrator: "Administrator",
+  buyer: "Buyer",
+  seller: "Seller",
+  provider_operator: "Provider operator",
+  finance: "Finance",
+  support: "Support",
+  viewer: "Viewer",
 };

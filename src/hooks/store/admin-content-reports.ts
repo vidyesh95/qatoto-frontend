@@ -1,6 +1,6 @@
 "use client";
 
-// TRANSPORT: client-query — the staff commerce-moderation console: two keyset reads and two writes.
+// TRANSPORT: client-query — the staff commerce-moderation console: three keyset reads and two writes.
 //
 // ⚠️ **`useKeysetList` HAS NO `enabled`, SO THE CAPABILITY GATE IS "DO NOT MOUNT".** The component
 // renders the tab subtree only once `moderate_commerce` is confirmed. Passing a `fetchPage` that
@@ -22,6 +22,7 @@ import {
   decideCommerceContentReport,
   listCommerceContentReports,
   listCommerceModerationActions,
+  listWithdrawnProductAnswers,
   restoreCommerceContent,
 } from "@/lib/store/admin-content-reports.api";
 import type {
@@ -31,6 +32,8 @@ import type {
   CommerceReportStatus,
   DecideCommerceReportInput,
   RestoreCommerceContentInput,
+  WithdrawnAnswerStateFilter,
+  WithdrawnProductAnswer,
 } from "@/lib/store/content-reports.schemas";
 
 /**
@@ -48,6 +51,8 @@ export const commerceModerationKeys = {
     ["store", "admin", "commerce-moderation", "reports", status, targetKind] as const,
   actionLog: (targetKind: CommerceContentTargetKind | "all") =>
     ["store", "admin", "commerce-moderation", "actions", targetKind] as const,
+  withdrawnAnswers: (state: WithdrawnAnswerStateFilter) =>
+    ["store", "admin", "commerce-moderation", "withdrawn-answers", state] as const,
 };
 
 /**
@@ -107,9 +112,33 @@ export function useCommerceModerationActionLog(
 }
 
 /**
+ * Withdrawn product answers, NEWEST FIRST.
+ *
+ * Under the same root key as the other two, so a restore from this tab — which invalidates the
+ * root — drops the row out of `still_withdrawn` and adds a `content_restored` row to the log.
+ */
+export function useWithdrawnProductAnswerLog(
+  state: WithdrawnAnswerStateFilter,
+): KeysetListResult<WithdrawnProductAnswer> {
+  return useKeysetList<WithdrawnProductAnswer>({
+    queryKey: commerceModerationKeys.withdrawnAnswers(state),
+    initialPage: null,
+    fetchPage: async (token) =>
+      toCursorKeysetPage(
+        mapItemsToRows(
+          await listWithdrawnProductAnswers({
+            state,
+            ...(typeof token === "string" ? { cursor: token } : {}),
+          }),
+        ),
+      ),
+  });
+}
+
+/**
  * `{ items, page }` -> `{ rows, nextCursor }`, the one adaptation both reads need.
  *
- * A local helper rather than two copies: the two routes answer the same envelope and a divergence
+ * A local helper rather than three copies: the routes answer the same envelope and a divergence
  * between the copies would surface as one tab silently stopping at page one.
  */
 function mapItemsToRows<TRow>(
