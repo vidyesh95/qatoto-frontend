@@ -187,7 +187,7 @@ export const ASSISTANT_DESTINATIONS: Record<AssistantDestinationKey, AssistantDe
   watch_history: {
     label: "History",
     href: "/history",
-    description: "Videos the viewer watched recently.",
+    description: "Videos the viewer already watched. Not where to find a video they have not seen.",
   },
   messages: { label: "Messages", href: "/messages", description: "The viewer's conversations." },
   creator_studio: {
