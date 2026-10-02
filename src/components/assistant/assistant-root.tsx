@@ -10,7 +10,10 @@
 //  - The mascot BOX: a fixed DOM element the controller moves over the drawing by transform. It
 //    holds the real `<button>` that opens the panel and the speech bubble's live region, so
 //    keyboard and screen-reader users reach the same two things a pointer does.
-//  - `AssistantPanel`, opened from that button: the conversation and everything around it.
+//  - `AssistantPanel`, opened from that button: the saved chats, the one on screen, and settings.
+//
+// WHICH CHAT IS ON SCREEN LIVES HERE, not in the panel, so closing the panel and opening it again
+// lands on the same chat. It is not saved: a fresh page load opens the most recent chat.
 //
 // THE BUTTON IS ALSO THE DRAG HANDLE. A press that moves more than DRAG_THRESHOLD_PX picks the
 // mascot up; letting go glides it to the dock on the nearer side and saves that side in the
@@ -24,7 +27,10 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { usePathname } from "next/navigation";
 
-import AssistantPanel, { ASSISTANT_PANEL_ID } from "@/components/assistant/assistant-panel";
+import AssistantPanel, {
+  ASSISTANT_PANEL_ID,
+  type AssistantConversationSelection,
+} from "@/components/assistant/assistant-panel";
 import type { MascotController } from "@/components/assistant/mascot-controller";
 import MascotStage, { type MascotStageStatus } from "@/components/assistant/mascot-stage";
 import { resolveSignalReaction } from "@/components/assistant/mascot-state";
@@ -66,6 +72,12 @@ export default function AssistantRoot() {
   const [stageStatus, setStageStatus] = useState<MascotStageStatus>({ status: "loading" });
   const [speechBubble, setSpeechBubble] = useState<SpeechBubble>({ status: "hidden" });
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [conversationSelection, setConversationSelection] =
+    useState<AssistantConversationSelection>({ kind: "unset" });
+  // The id a new chat gets when nothing is chosen and nothing is saved. Made once, here, so it is
+  // the same id on every render; this component only ever renders in the browser.
+  const [fallbackDraftConversationId] = useState(() => crypto.randomUUID());
+  const [panelOpenedAtMs, setPanelOpenedAtMs] = useState(0);
   const pathname = usePathname();
   const { preferences, setPreference } = useBrowserPreferences();
   const dockSide = preferences.assistantDockSide;
@@ -154,8 +166,10 @@ export default function AssistantRoot() {
       shouldSuppressNextClickRef.current = false;
       return;
     }
-    if (!isPanelOpen)
+    if (!isPanelOpen) {
       controllerRef.current?.showInteractionMood("joy", PANEL_OPEN_MOOD_DURATION_MS);
+      setPanelOpenedAtMs(Date.now());
+    }
     setIsPanelOpen(!isPanelOpen);
   };
 
@@ -316,6 +330,10 @@ export default function AssistantRoot() {
           pathname={pathname}
           dockSide={dockSide}
           memoryNotes={memoryNotes}
+          conversationSelection={conversationSelection}
+          fallbackDraftConversationId={fallbackDraftConversationId}
+          panelOpenedAtMs={panelOpenedAtMs}
+          onConversationSelectionChange={setConversationSelection}
           onClose={handlePanelClose}
           onMood={handleMood}
           onPointAt={handlePointAt}

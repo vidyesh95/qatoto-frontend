@@ -36,6 +36,16 @@ interface BrowserPreferencesContextValue {
     key: PreferenceKey,
     value: BrowserPreferences[PreferenceKey],
   ) => void;
+  /**
+   * Sets one preference FROM ITS CURRENT STORED VALUE, and says whether storage took the write.
+   * For values another tab may be writing too (the assistant's saved chats): see below.
+   */
+  readonly updatePreference: <PreferenceKey extends keyof BrowserPreferences>(
+    key: PreferenceKey,
+    updateValue: (
+      currentValue: BrowserPreferences[PreferenceKey],
+    ) => BrowserPreferences[PreferenceKey],
+  ) => boolean;
   /** Erases the stored blob and returns every preference to its default, for this browser. */
   readonly clearPreferences: () => void;
 }
@@ -69,6 +79,29 @@ export function BrowserPreferencesProvider({ children }: { children: ReactNode }
     [],
   );
 
+  // THE UPDATER RUNS AGAINST A FRESH READ, NOT AGAINST WHAT THIS TAB LAST RENDERED.
+  // `getBrowserPreferencesSnapshot` calls `localStorage.getItem` every time, so a chat another tab
+  // saved a moment ago is in `currentValue` even if this tab's `storage` event has not been handled
+  // yet. Read, update and write happen in one synchronous run with no `await` between them. What
+  // remains is two tabs writing in the same instant; localStorage has no lock across tabs, and that
+  // window is accepted rather than papered over.
+  const updatePreference = useCallback(
+    <PreferenceKey extends keyof BrowserPreferences>(
+      key: PreferenceKey,
+      updateValue: (
+        currentValue: BrowserPreferences[PreferenceKey],
+      ) => BrowserPreferences[PreferenceKey],
+    ): boolean => {
+      const currentPreferences = getBrowserPreferencesSnapshot();
+      const nextPreferences = {
+        ...currentPreferences,
+        [key]: updateValue(currentPreferences[key]),
+      };
+      return writeStoredBrowserPreferences(nextPreferences);
+    },
+    [],
+  );
+
   // THE STORAGE REMOVAL AND THE SNAPSHOT RESET ARE ONE ACTION, not two a caller could get half of.
   // "Your data & privacy" offers this as an erasure; leaving the adopted values in memory would
   // mean the panels still show a country the device no longer remembers, and the next
@@ -78,7 +111,9 @@ export function BrowserPreferencesProvider({ children }: { children: ReactNode }
   }, []);
 
   return (
-    <BrowserPreferencesContext.Provider value={{ preferences, setPreference, clearPreferences }}>
+    <BrowserPreferencesContext.Provider
+      value={{ preferences, setPreference, updatePreference, clearPreferences }}
+    >
       {children}
     </BrowserPreferencesContext.Provider>
   );

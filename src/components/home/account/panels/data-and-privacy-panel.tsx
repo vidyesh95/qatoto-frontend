@@ -144,11 +144,13 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-medium text-secondary-foreground">Data on this device</h3>
           <p className="text-sm text-muted-foreground">
-            Your language, browse country, AI assist preference, where the assistant sits and the
-            notes you asked it to remember live in this browser. None of them is stored by us; the
-            notes travel with a question only for a Premium AI account whose browser cannot run the
-            assistant itself. Clearing them affects this browser only — your account is untouched,
-            and other devices keep their own settings.
+            Your language, browse country, AI assist preference, where the assistant sits, the notes
+            you asked it to remember and your assistant chats live in this browser. None of them is
+            stored by us. A Gemini Nano chat never leaves this device; the notes and a chat&apos;s
+            recent messages travel with a question only in a chat answered by Google&apos;s Gemini
+            in the cloud, for a Premium AI account. Clearing them deletes your saved chats and
+            affects this browser only — your account is untouched, and other devices keep their own
+            settings.
           </p>
           {renderClearDeviceDataAction()}
         </section>

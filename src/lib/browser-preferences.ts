@@ -35,6 +35,11 @@
 
 import { z } from "zod";
 
+import {
+  ASSISTANT_MODEL_ROUTES,
+  type AssistantModelRoute,
+} from "@/lib/assistant/assistant-conversation.schemas";
+
 /**
  * Default browse market when nobody has chosen one.
  *
@@ -66,6 +71,33 @@ export type MascotSpeed = (typeof MASCOT_SPEEDS)[number];
 export const ASSISTANT_MEMORY_NOTE_LIMIT = 20;
 export const ASSISTANT_MEMORY_NOTE_MAXIMUM_LENGTH = 200;
 
+/**
+ * Which model a new assistant chat starts with. `null` means "pick for me": Gemini Nano when this
+ * browser has or can download it, otherwise the cloud for Premium AI.
+ */
+export type AssistantPreferredModel = AssistantModelRoute | null;
+
+/**
+ * THE ASSISTANT'S SAVED CHATS, STORED HERE BUT NOT VALIDATED HERE.
+ *
+ * They live in this one key (see `assistant-conversation.schemas.ts` for why not a second one), and
+ * this blob is parsed on EVERY app load, on every page, for every visitor. Measured with the
+ * worst-case blob from `scripts/build-assistant-worst-case-preferences.mjs` at 6x CPU throttle
+ * (2026-10-02, dev build): validating 10 full chats with Zod took 20 to 22 ms of a 21 ms parse,
+ * against a budget of one 16 ms frame, while `JSON.parse` of the same 216 KB took 0.6 ms.
+ *
+ * So the load path only checks that the field is an array, and the chats inside stay `unknown`
+ * until the assistant panel reads them through `readAssistantConversations`, which validates each
+ * one and caches the result per stored array. A visitor who never opens the panel never pays for
+ * it. Re-measured that way, the whole load parse of the worst-case blob is 9 ms.
+ *
+ * ONE CASE STAYS OVER BUDGET, AND IT IS ACCEPTED: `--escape-heavy`, every character a quote, a
+ * backslash or a control character (648 KB once escaped), still takes 22 ms, because 12.7 ms of it
+ * is `JSON.parse` decoding those escapes. Storing the chats as a nested string would escape them
+ * twice and make that worse, not better. Ordinary text is the 9 ms case.
+ */
+export type StoredAssistantConversations = readonly unknown[];
+
 /** Every browser-local preference, as one value. */
 export interface BrowserPreferences {
   readonly language: string;
@@ -75,6 +107,8 @@ export interface BrowserPreferences {
   readonly assistantMascotSize: MascotSize;
   readonly assistantMascotSpeed: MascotSpeed;
   readonly assistantMemoryNotes: readonly string[];
+  readonly assistantConversations: StoredAssistantConversations;
+  readonly assistantPreferredModel: AssistantPreferredModel;
 }
 
 /**
@@ -91,6 +125,8 @@ export const DEFAULT_BROWSER_PREFERENCES: BrowserPreferences = {
   assistantMascotSize: "medium",
   assistantMascotSpeed: "normal",
   assistantMemoryNotes: [],
+  assistantConversations: [],
+  assistantPreferredModel: null,
 };
 
 /**
@@ -113,6 +149,9 @@ const StoredBrowserPreferencesSchema = z
     assistantMemoryNotes: z
       .array(z.string().trim().min(1).max(ASSISTANT_MEMORY_NOTE_MAXIMUM_LENGTH))
       .max(ASSISTANT_MEMORY_NOTE_LIMIT),
+    // Only the array is checked on load; each chat is validated when the panel reads it (above).
+    assistantConversations: z.array(z.unknown()).catch([]),
+    assistantPreferredModel: z.enum(ASSISTANT_MODEL_ROUTES).nullable(),
   })
   .partial();
 
@@ -211,18 +250,28 @@ export function subscribeToBrowserPreferences(onStoreChange: () => void): () => 
   };
 }
 
-/** Writes the whole object back. A failed write is silent for the same reason a failed read is. */
-export function writeStoredBrowserPreferences(preferences: BrowserPreferences): void {
-  if (typeof window === "undefined") return;
+/**
+ * Writes the whole object back, and says whether storage took it.
+ *
+ * Most callers ignore the answer: a preference that could not be saved still applies for this
+ * page's lifetime, which is all a language or a corner ever needed. A SAVED CHAT is different. The
+ * panel tells the viewer it is kept in this browser, so a write the quota refused must be said out
+ * loud ("Couldn't save this chat in this browser"), not swallowed.
+ */
+export function writeStoredBrowserPreferences(preferences: BrowserPreferences): boolean {
+  if (typeof window === "undefined") return false;
   const serializedPreferences = JSON.stringify(preferences);
   try {
     window.localStorage.setItem(BROWSER_PREFERENCES_STORAGE_KEY, serializedPreferences);
     rememberPreferencesSnapshot(serializedPreferences, preferences);
+    notifyBrowserPreferencesListeners();
+    return true;
   } catch {
     // Storage disabled or over quota. The preference still applies for this page's lifetime.
     rememberPreferencesSnapshot(cachedRawStoredValue ?? null, preferences);
+    notifyBrowserPreferencesListeners();
+    return false;
   }
-  notifyBrowserPreferencesListeners();
 }
 
 /**

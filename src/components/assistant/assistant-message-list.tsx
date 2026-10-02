@@ -8,6 +8,12 @@
 // search, so three links are not mistaken for the model's own knowledge), and a note it could
 // remember if the viewer says so. Nothing here navigates, searches or saves on its own.
 //
+// Answers this browser could not keep say so under the answer, once each: the panel promises chats
+// are saved here, so a refused write is told, not swallowed.
+//
+// Which model answered is said ONCE, by the chat's header, not under every answer: a chat's model
+// is locked by its first answer, so every answer in it came from the same one.
+//
 // Streaming text is NOT in a live region — a screen reader would announce every word. The panel
 // owns one polite region that receives each finished reply once.
 
@@ -15,9 +21,14 @@ import Link from "next/link";
 
 import type {
   AssistantMessage,
+  AssistantSaveProblem,
   AssistantSearchState,
 } from "@/components/assistant/use-assistant-brain";
 import { ASSISTANT_CHIP_CLASS_NAME } from "@/components/assistant/assistant-panel-sections";
+import {
+  ASSISTANT_CONVERSATION_LIMIT,
+  ASSISTANT_CONVERSATION_MESSAGE_LIMIT,
+} from "@/lib/assistant/assistant-conversation.schemas";
 import { ASSISTANT_DESTINATIONS } from "@/lib/assistant/assistant-destinations";
 import { ASSISTANT_SEARCH_SCOPE_LABELS } from "@/lib/assistant/assistant-search";
 
@@ -35,7 +46,7 @@ export default function AssistantMessageList({
   return (
     <ol className="space-y-3">
       {messages.map((message) => (
-        <li key={message.messageId}>
+        <li key={message.messageKey}>
           <AssistantMessageItem
             message={message}
             memoryNotes={memoryNotes}
@@ -97,13 +108,11 @@ function AssistantMessageItem({
           <p className="text-sm leading-5 font-medium break-words whitespace-pre-wrap text-foreground">
             {message.reply.reply}
           </p>
-          {/* Where THIS answer came from. The route can change mid-conversation (a download
-              finishes, a session ends), so each answer keeps its own origin. */}
-          <p className="text-xs leading-4 text-muted-foreground">
-            {message.answeredBy === "on_device"
-              ? "Answered on this device by Gemini Nano"
-              : "Answered by Google Gemini via Qatoto"}
-          </p>
+          {message.saveProblem !== null && (
+            <p className="text-xs leading-4 text-destructive">
+              {describeSaveProblem(message.saveProblem)}
+            </p>
+          )}
           {destination !== null && (
             <Link
               href={destination.href}
@@ -131,6 +140,23 @@ function AssistantMessageItem({
     }
     default: {
       const exhaustiveCheck: never = message;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+function describeSaveProblem(saveProblem: AssistantSaveProblem): string {
+  switch (saveProblem) {
+    case "storage_refused":
+      return "Couldn't save this chat in this browser. Storage is full or blocked.";
+    case "list_full":
+      return `Not saved: ${ASSISTANT_CONVERSATION_LIMIT} chats are already saved in this browser. Delete one to keep new ones.`;
+    case "conversation_full":
+      return `Not saved: this chat already holds ${ASSISTANT_CONVERSATION_MESSAGE_LIMIT} messages.`;
+    case "model_mismatch":
+      return "Not saved: this chat answers with the other model.";
+    default: {
+      const exhaustiveCheck: never = saveProblem;
       return exhaustiveCheck;
     }
   }

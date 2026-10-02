@@ -801,7 +801,7 @@ done
 It currently prints nothing. An uncalled hook is UNVERIFIED CODE — wire it to a control or
 delete it, never leave it.
 
-## AI Assist Mode — the mascot assistant (built; uncommitted as of 2026-10-02)
+## AI Assist Mode — the mascot assistant (built; chat rail and saved chats uncommitted as of 2026-10-02)
 
 The account menu's AI Assist toggle (`isAiAssistModeOn`, in the one browser-preferences blob)
 mounts an animated character that reacts to what the viewer does and answers questions. The
@@ -833,28 +833,51 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   Both prompts (`src/lib/assistant/assistant-prompt.ts` here, `assistant.prompt.ts` in the backend)
   carry the same rules plus "you cannot act" — the model must never claim it opened, searched or
   saved anything. Change them together.
-- **Which model answers is one union.** `assistant-brain-state.ts`: Chrome's on-device Gemini Nano
-  when `LanguageModel` reports it ready (nothing leaves the device, replies stream; free for
-  everyone, signed in or not); otherwise the cloud route for **PREMIUM AI accounts only**
-  (Gemini, synchronous, server-written prompt, stateless, two limiters + `requireIdentifiedUser`
-    - an active `assistant_cloud_entitlement` grant, read via `GET /assistant/cloud-access`);
-      otherwise `no_chat` — the composer is NOT rendered and the model strip says why, while the
-      mascot, Places, memory and appearance keep working. Premium AI is staff-granted at
-      `/admin/premium-ai` (`grant_ai_assistant_cloud`, admin only); there is no billing, so no copy may
-      read as an offer to buy it. **Apple's and Samsung's on-device models have no web API** (Apple's
-      Foundation Models framework is Swift-only; Galaxy AI is a browser feature), so there is no third
-      route. **Anyone can switch AI Assist on:** signed out, through the navbar's "AI Assist" button
-      or the sidebar's "AI Assist" row (the one `NavActionItem` in `sidebar.tsx`), both opening
-      `ai-assist-sheet.tsx`; signed in, also through the account menu. **The model
-      download starts only from the panel's button** — Chrome requires the click, and
-      `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
-      `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
-      vocabulary has changed between Chrome versions.
+- **The viewer picks the model, per chat, and the first answer locks it.** `assistant-brain-state.ts`
+  turns two inputs into two picker OPTIONS: Chrome's on-device Gemini Nano (nothing leaves the
+  device, replies stream; free for everyone, signed in or not) and the cloud route for **PREMIUM AI
+  accounts only** (Gemini, synchronous, server-written prompt, stateless, two limiters +
+  `requireIdentifiedUser` + an active `assistant_cloud_entitlement` grant, read via
+  `GET /assistant/cloud-access`). `assistant-model-picker.tsx` lists both; one that cannot answer
+  here stays listed, disabled, with its reason. A new chat starts on `assistantPreferredModel`, else
+  Nano when present or downloadable, else the cloud. `selectConversationChatState` resolves the
+  active chat to ONE state (`ready`, `awaiting_download_click`, `needs_download`,
+  `locked_unavailable`, `unselected_unavailable`, `full`, `list_full`, `checking`), and only `ready`
+  renders a composer. ⚠️ **THERE IS NO UNLOCK.** Moving a Nano chat to the cloud would send a
+  history the viewer was told never leaves the device; the way on is "New chat with …". A locked
+  model that is not available here makes the chat read-only. Premium AI is staff-granted at
+  `/admin/premium-ai` (`grant_ai_assistant_cloud`, admin only); there is no billing, so no copy may
+  read as an offer to buy it. **Apple's and Samsung's on-device models have no web API** (Apple's
+  Foundation Models framework is Swift-only; Galaxy AI is a browser feature), so there is no third
+  route. **Anyone can switch AI Assist on:** signed out, through the navbar's "AI Assist" button
+  or the sidebar's "AI Assist" row (the one `NavActionItem` in `sidebar.tsx`), both opening
+  `ai-assist-sheet.tsx`; signed in, also through the account menu. **The model
+  download starts only from the panel's button** — Chrome requires the click, and
+  `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
+  `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
+  vocabulary has changed between Chrome versions.
 - **The model chooses, the viewer acts.** A reply is `AssistantReplySchema`: an expression, a
   `destinationKey` (a key, never a URL — `assistant-destinations.ts` owns the hrefs and the backend
   keeps a copy of the keys), an optional `search` the panel runs through the existing public search
   wrappers, an optional `rememberNote` the viewer must click to save, and `reply` LAST so it can
   stream. Nothing navigates, searches or saves on its own.
+- **Chats live in the one key too, and are validated only when the panel reads them.**
+  `assistantConversations` (≤ 10 chats × 20 messages, `assistant-conversation.schemas.ts`) and
+  `assistantPreferredModel` are fields of `qatoto.browser-preferences`. ⚠️ **No IndexedDB and no
+  second key**, for the privacy-policy reason below, and because `setPreference` rewrites the whole
+  typed object, so a chat stored outside it would be wiped by the next preference write. The blob is
+  parsed on every app load, so the field is `unknown[]` there and `readAssistantConversations`
+  validates it in the panel, cached per stored array: measured at 6x CPU throttle with
+  `node scripts/build-assistant-worst-case-preferences.mjs`, eager validation cost 21 to 22 ms
+  against a 16 ms budget and deferred costs 9 ms (the script's header has the procedure and the
+  one accepted over-budget case). Rules: **only answered pairs are saved** (a pending or failed turn
+  never survives a reload); a new chat is a draft id until its first answer, so it never counts
+  against the limit; **nothing is evicted** at 10, New chat becomes a sentence; chat writes go
+  through `updatePreference`, which applies its updater to a FRESH read of storage so another tab's
+  chat is carried through; a write the quota refuses is said once per chat, never swallowed. Searches
+  are never saved: a saved answer's search re-runs once per panel mount, for the ACTIVE chat only.
+  The chats belong to the browser, not the account, and the privacy policy says signing out does not
+  remove them.
 - **Memory and appearance live in the one key.** `assistantMemoryNotes` (≤ 20 × 200 chars),
   `assistantDockSide`, `assistantMascotSize` and `assistantMascotSpeed` are fields of
   `qatoto.browser-preferences`; the privacy policy and the data panel say so, and "clear device

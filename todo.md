@@ -1407,6 +1407,53 @@ AI Assist sheet; switching it On shows the mascot with no account.
 - To re-cut the art, edit `SHEET_GROUPS` in `scripts/build-mascot-figure-atlas.mjs` (one region and
   figure count per group) and re-run it. It stops if a group yields a different count.
 
+#### 22.3 Part 2: the deterministic router
+
+Part 1 (built 2026-10-02, uncommitted) gave the panel a chat rail, saved chats in the one key, a
+per-chat model picker locked by the first answer, and Memory and Appearance as settings panes.
+AGENTS.md §AI Assist Mode holds its rules. Part 2 is what makes the assistant useful without any
+model at all:
+
+- `src/lib/assistant/assistant-router.ts`, PURE and synchronous, no network: a synonym table and
+  verb patterns ("open", "go to", "take me to", "find X in the store / videos / programmes") over
+  `ASSISTANT_DESTINATIONS`. It runs on submit BEFORE any model; no match falls through to the
+  chat's model.
+- Search intents go to real pages: `/search?query=` (the navbar form's own field name) and
+  `/store/search?query=` (`readSingleParam(searchParams, "query")` in `store-search-page.tsx`).
+- ONE action card component for router matches AND model `destinationKey` replies: "Open Your
+  orders" with a Go button and a quiet "Matched from your words. No model used." Nothing navigates
+  without the tap, so both prompts' "you cannot act" stays true.
+- Ambiguous input renders two or three choices; no match with no model renders "No chat model in
+  this browser, so only places and searches work here" plus up to three closest places.
+- **The composer then renders in every state that can take text**, including `unselected_unavailable`
+  (no model): the router is the one part that works for everyone. Part 1 deliberately did not,
+  because a composer with no router and no model sends nowhere.
+- Router turns are saved as `answeredBy: "router"`, which widens `ASSISTANT_MODEL_ROUTES` handling
+  in `assistant-conversation.schemas.ts`. ⚠️ A router turn must NOT set `lockedModel`: it used no
+  model, so a draft whose first turn was routed is still unlocked.
+- Places in the new-chat empty state become the router's suggestions, so they also teach what it
+  understands.
+
+#### 22.4 Chat rail: what was verified, and what was not
+
+Verified 2026-10-02 in Chrome against a scripted stand-in for `LanguageModel`: save on answer,
+close and reopen, reload, two chats with separate sessions (rebuilt with the chat's turns on
+switching back), lock after the first reply, picker menu with the cloud disabled and its reason,
+Escape closing the menu and not the panel, failed reply not saved, delete through the inline
+confirm with focus on Keep, fallback to the most recent chat, 10-chat and 20-message limits from the
+worst-case seed, searches re-run for the active chat only (0 on open, 1 on showing it, 0 on
+switching back), a second tab's chat surviving an interleaved save, a refused write shown once,
+phone width with touch (rail swap, delete always visible), and `locked_unavailable` (the stand-in
+dropped on reload).
+
+NOT verified, to run in your own Chrome:
+
+1. Real Gemini Nano: two chats, switch between them mid-answer, then ask in each.
+2. A Premium AI account: pick Google Gemini on a new chat, answer, sign out (the chat goes
+   read-only with "Sign in to carry on with this chat"), sign back in (it answers again).
+3. "Clear device data" in Your data & privacy, then reopen the panel: no chats.
+4. Two real tabs, both asking at once.
+
 ---
 
 ## Decided: AI Assist Mode scope

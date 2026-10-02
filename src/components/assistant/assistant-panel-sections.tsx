@@ -1,78 +1,104 @@
 // TRANSPORT: props-only — renders state and authored constants.
 "use client";
 
-// THE PANEL'S STANDING SECTIONS: which model answers, where things are, what it remembers, and
-// how the mascot looks and moves.
+// THE PANEL'S STANDING SECTIONS: what a chat needs before it can answer, where things are, what it
+// remembers, and how the mascot looks and moves.
 //
-// WHICH MODEL ANSWERS is said once, by the model strip at the top of the panel
-// (`describeAssistantModel`). `BrainNotice` only carries what the strip cannot: the download button
-// and its progress, and the sign-in / finish-sign-up links. It repeats none of the strip's words.
+// WHICH MODEL ANSWERS is said once, by the model strip at the top of the chat pane
+// (`describeChatStateLine`). `ChatStateNotice` only carries what the strip cannot: the download
+// button and its progress, the sign-in link, and the new-chat way out of a chat that cannot go on.
+// It repeats none of the strip's words.
 //
 // THE DOWNLOAD COPY STATES ONLY WHAT IS TRUE. Chrome documents the disk it needs (about 22 GB free)
 // and does not report the download's own size, so no size is printed: a wrong number is worse than
 // none. The progress bar is real — it is Chrome's own `downloadprogress` — or, when Chrome started
-// the download somewhere this page cannot monitor, an indeterminate bar that says so.
+// the download somewhere this page cannot monitor, an indeterminate bar that says so. The download
+// runs in Chrome, not on this page, so nothing here waits on it and the panel stays usable.
+//
+// PLACES ARE THE EMPTY STATE OF A NEW CHAT, and Memory and Appearance are settings panes the rail
+// opens. None of them is behind a disclosure any more: each now has a place of its own.
 
 import Link from "next/link";
 
-import type { AssistantBrainState } from "@/components/assistant/assistant-brain-state";
+import type { ConversationChatState } from "@/components/assistant/assistant-brain-state";
 import MascotAppearanceControls from "@/components/assistant/mascot-appearance-controls";
 import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
 import { ROADMAP_AUDIENCES, type CapabilityRoute } from "@/lib/roadmap/site-capabilities";
 
-const QUIET_LINK_CLASS_NAME =
-  "underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
-const QUIET_BUTTON_CLASS_NAME =
-  "cursor-pointer rounded-full px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
+const FOCUS_RING_CLASS_NAME =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
+const QUIET_LINK_CLASS_NAME = `underline underline-offset-2 ${FOCUS_RING_CLASS_NAME}`;
+const QUIET_BUTTON_CLASS_NAME = `cursor-pointer rounded-full px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted ${FOCUS_RING_CLASS_NAME}`;
+const PRIMARY_BUTTON_CLASS_NAME = `cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep ${FOCUS_RING_CLASS_NAME}`;
 
-export function BrainNotice({
-  brainState,
+export function ChatStateNotice({
+  chatState,
+  canStartNewChat,
   onDownloadClick,
+  onStartNewChat,
 }: {
-  readonly brainState: AssistantBrainState;
+  readonly chatState: ConversationChatState;
+  /** False at the chat limit: a new chat then could never be saved, so it is not offered here. */
+  readonly canStartNewChat: boolean;
   readonly onDownloadClick: () => void;
+  readonly onStartNewChat: () => void;
 }) {
-  switch (brainState.status) {
+  switch (chatState.status) {
     case "checking":
-    case "on_device_ready":
-    case "cloud_ready":
+    case "ready":
+    case "list_full":
       return null;
-    case "on_device_downloadable":
+    case "awaiting_download_click":
       return (
-        <div className="space-y-2 rounded-xl border border-border px-3 py-3">
+        <div className="space-y-2 rounded-xl bg-muted px-3 py-3">
           <p className="text-xs leading-4 text-muted-foreground">
-            This browser can run the assistant on your device, so your questions never leave it.
-            Chrome downloads the model once and needs about 22 GB of free disk space for it.
+            Chrome downloads Gemini Nano once and runs it on this device, so your questions never
+            leave it. It needs about 22 GB of free disk space. You can keep using the page while it
+            downloads.
           </p>
-          <button
-            type="button"
-            onClick={onDownloadClick}
-            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
-          >
-            Download on-device model
+          <button type="button" onClick={onDownloadClick} className={PRIMARY_BUTTON_CLASS_NAME}>
+            Download Gemini Nano
           </button>
         </div>
       );
-    case "on_device_downloading":
+    case "needs_download":
       return (
-        <div className="space-y-2 rounded-xl border border-border px-3 py-3">
+        <div className="space-y-2 rounded-xl bg-muted px-3 py-3">
           <p className="text-xs leading-4 text-muted-foreground">
-            {brainState.progressPercent === null
-              ? "Chrome is downloading the on-device model. This page cannot see its progress."
-              : `Chrome is downloading the on-device model: ${brainState.progressPercent}%.`}
+            {chatState.progressPercent === null
+              ? "Chrome is downloading Gemini Nano. This page cannot see its progress."
+              : `Chrome is downloading Gemini Nano: ${chatState.progressPercent}%.`}
           </p>
           <progress
             className="h-1.5 w-full accent-primary-imprint"
             max={100}
-            {...(brainState.progressPercent === null ? {} : { value: brainState.progressPercent })}
-            aria-label="On-device model download"
+            {...(chatState.progressPercent === null ? {} : { value: chatState.progressPercent })}
+            aria-label="Gemini Nano download"
           />
         </div>
       );
-    case "no_chat":
+    case "locked_unavailable":
+      return (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {canStartNewChat && (
+            <button type="button" onClick={onStartNewChat} className={PRIMARY_BUTTON_CLASS_NAME}>
+              New chat
+            </button>
+          )}
+          {chatState.reason === "signed_out" && (
+            <p className="text-xs leading-4 text-muted-foreground">
+              <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
+                Sign in
+              </Link>{" "}
+              to carry on with this chat.
+            </p>
+          )}
+        </div>
+      );
+    case "unselected_unavailable":
       // Only a signed-out viewer has something to do: sign in, in case their account has Premium
       // AI. Everyone else is told why by the model strip; there is nothing to click.
-      return brainState.reason === "signed_out" ? (
+      return chatState.otherReason === "signed_out" ? (
         <p className="text-xs leading-4 text-muted-foreground">
           Have Premium AI?{" "}
           <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
@@ -81,8 +107,14 @@ export function BrainNotice({
           to chat. The places below work either way.
         </p>
       ) : null;
+    case "full":
+      return canStartNewChat ? (
+        <button type="button" onClick={onStartNewChat} className={PRIMARY_BUTTON_CLASS_NAME}>
+          New chat
+        </button>
+      ) : null;
     default: {
-      const exhaustiveCheck: never = brainState;
+      const exhaustiveCheck: never = chatState;
       return exhaustiveCheck;
     }
   }
@@ -109,20 +141,23 @@ const DESTINATION_GROUPS: readonly DestinationGroup[] = ROADMAP_AUDIENCES.map((a
   };
 }).filter((destinationGroup) => destinationGroup.routes.length > 0);
 
-export const ASSISTANT_CHIP_CLASS_NAME =
-  "inline-block rounded-full border border-border bg-background/70 px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint";
+export const ASSISTANT_CHIP_CLASS_NAME = `inline-block rounded-full border border-border bg-background/70 px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted ${FOCUS_RING_CLASS_NAME}`;
 
+/** A new chat's empty state: every place on Qatoto, grouped by what the viewer came to do. */
 export function PlacesSection({ onNavigate }: { readonly onNavigate: () => void }) {
   return (
-    <details className="group/places">
-      <summary className="cursor-pointer text-xs leading-4 font-medium text-foreground">
-        Places, by what you came to do
-      </summary>
+    <section aria-labelledby="assistant-places-heading" className="space-y-3">
+      <h3
+        id="assistant-places-heading"
+        className="text-xs leading-4 font-medium tracking-eyebrow text-muted-foreground uppercase"
+      >
+        Places
+      </h3>
       {DESTINATION_GROUPS.map((destinationGroup) => (
-        <section key={destinationGroup.audienceId} className="mt-3">
-          <h3 className="text-xs leading-4 font-medium text-muted-foreground">
+        <section key={destinationGroup.audienceId}>
+          <h4 className="text-xs leading-4 font-medium text-foreground">
             {destinationGroup.headline}
-          </h3>
+          </h4>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {destinationGroup.routes.map((route) => (
               <li key={route.href}>
@@ -134,7 +169,7 @@ export function PlacesSection({ onNavigate }: { readonly onNavigate: () => void 
           </ul>
         </section>
       ))}
-    </details>
+    </section>
   );
 }
 
@@ -148,19 +183,21 @@ export function MemorySection({
   readonly onClearNotes: () => void;
 }) {
   return (
-    <details>
-      <summary className="cursor-pointer text-xs leading-4 font-medium text-foreground">
-        What it remembers ({memoryNotes.length})
-      </summary>
-      <p className="mt-2 text-xs leading-4 text-muted-foreground">
-        Notes you saved, kept in this browser only. The assistant reads them with each question.
+    <div className="space-y-2">
+      <p className="text-xs leading-4 text-muted-foreground">
+        Notes you saved, kept in this browser only. The assistant reads them with each question, in
+        every chat.
       </p>
-      {memoryNotes.length > 0 && (
+      {memoryNotes.length === 0 ? (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Nothing saved. When an answer offers to remember something, tap Remember.
+        </p>
+      ) : (
         <>
-          <ul className="mt-2 divide-y divide-border">
+          <ul className="divide-y divide-border">
             {memoryNotes.map((memoryNote, noteIndex) => (
               <li key={`${noteIndex}-${memoryNote}`} className="flex items-start gap-2 py-1.5">
-                <span className="min-w-0 flex-1 text-xs leading-4 break-words text-foreground">
+                <span className="min-w-0 flex-1 text-sm leading-5 break-words text-foreground">
                   {memoryNote}
                 </span>
                 <button
@@ -173,16 +210,12 @@ export function MemorySection({
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            onClick={onClearNotes}
-            className={`mt-1 ${QUIET_BUTTON_CLASS_NAME}`}
-          >
+          <button type="button" onClick={onClearNotes} className={QUIET_BUTTON_CLASS_NAME}>
             Forget everything
           </button>
         </>
       )}
-    </details>
+    </div>
   );
 }
 
@@ -208,26 +241,21 @@ export function AppearanceSection({
   const otherDockSide: MascotDockSide = dockSide === "right" ? "left" : "right";
 
   return (
-    <details>
-      <summary className="cursor-pointer text-xs leading-4 font-medium text-foreground">
-        How it looks and moves
-      </summary>
-      <div className="mt-2 space-y-3">
-        <MascotAppearanceControls
-          idPrefix="assistant-panel"
-          mascotSize={mascotSize}
-          mascotSpeed={mascotSpeed}
-          onMascotSizeChange={onMascotSizeChange}
-          onMascotSpeedChange={onMascotSpeedChange}
-        />
-        <button
-          type="button"
-          onClick={() => onDockSideChange(otherDockSide)}
-          className="cursor-pointer text-xs leading-4 font-medium text-foreground underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
-        >
-          Move to the {otherDockSide} corner
-        </button>
-      </div>
-    </details>
+    <div className="space-y-3">
+      <MascotAppearanceControls
+        idPrefix="assistant-panel"
+        mascotSize={mascotSize}
+        mascotSpeed={mascotSpeed}
+        onMascotSizeChange={onMascotSizeChange}
+        onMascotSpeedChange={onMascotSpeedChange}
+      />
+      <button
+        type="button"
+        onClick={() => onDockSideChange(otherDockSide)}
+        className={`cursor-pointer text-xs leading-4 font-medium text-foreground underline underline-offset-2 ${FOCUS_RING_CLASS_NAME}`}
+      >
+        Move to the {otherDockSide} corner
+      </button>
+    </div>
   );
 }

@@ -32,7 +32,7 @@ import {
 } from "@/lib/site";
 import { PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL } from "@/lib/privacy-request";
 
-const PRIVACY_POLICY_LAST_UPDATED_LABEL = "28 September 2026";
+const PRIVACY_POLICY_LAST_UPDATED_LABEL = "2 October 2026";
 
 export default function PrivacyPolicy() {
   return (
@@ -193,16 +193,17 @@ export default function PrivacyPolicy() {
           <dt>The AI Assistant</dt>
           <dd>
             AI Assist Mode is off unless you turn it on, and you can turn it on without an account.
-            When your browser can run Google&apos;s Gemini Nano model itself (current desktop
-            Chrome), your questions are answered on your device and nothing you type leaves it. When
-            it cannot, chat is available only to accounts with Premium AI, which Qatoto turns on per
-            account; for those, your conversation so far, the page you are on and any notes you
-            asked the assistant to remember are sent to us and to Google&apos;s Gemini model to
-            produce a reply. We do not store those messages, and the notes stay in your browser,
-            where the &ldquo;Your data &amp; privacy&rdquo; panel can erase them. We do record
-            whether your account has Premium AI, when it was turned on or off, and which staff
-            member did it. The assistant can be wrong, and nothing it says changes your account, an
-            order or a payment.
+            Each chat is answered by one model, which you choose when the chat starts and which
+            stays the same for that chat. Google&apos;s Gemini Nano runs inside your browser
+            (current desktop Chrome): a chat it answers never leaves your device, including when the
+            chat is saved. Google&apos;s Gemini in the cloud is available only to accounts with
+            Premium AI, which Qatoto turns on per account; in a chat it answers, that chat&apos;s
+            recent messages, the page you are on and any notes you asked the assistant to remember
+            are sent to us and to Google&apos;s Gemini model with each question to produce a reply.
+            We do not store those messages. Your chats and notes stay in your browser, where the
+            &ldquo;Your data &amp; privacy&rdquo; panel can erase them. We do record whether your
+            account has Premium AI, when it was turned on or off, and which staff member did it. The
+            assistant can be wrong, and nothing it says changes your account, an order or a payment.
           </dd>
         </div>
         <div>
@@ -249,9 +250,13 @@ export default function PrivacyPolicy() {
             would ask you to sign in again. We also keep a single entry in your browser's local
             storage, under the name <code>qatoto.browser-preferences</code>, holding your language,
             your browse country, whether AI assist is on, where the assistant sits and its size and
-            speed, and the notes you asked it to remember. We never store that entry; the notes
-            alone are sent with a question when your browser cannot run the assistant itself, as
-            described above. We run no analytics or advertising scripts.
+            speed, the notes you asked it to remember, and your assistant chats (up to 10, each kept
+            until you delete it). Those chats belong to this browser, not to your account: signing
+            out does not remove them, and anyone who uses this browser can open them. Deleting a
+            chat removes it, and clearing device data removes them all. We never store that entry;
+            the notes and a chat&apos;s recent messages are sent with a question only in a chat
+            answered by Google&apos;s Gemini in the cloud, as described above. We run no analytics
+            or advertising scripts.
             <br />
             <br />
             Some pages load content from other companies, and when they do, your browser contacts
