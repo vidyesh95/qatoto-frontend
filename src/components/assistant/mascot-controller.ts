@@ -38,15 +38,20 @@ import {
 } from "@/components/assistant/mascot-state";
 import { createPerchTracker, type PerchReading } from "@/components/assistant/perch-tracker";
 import {
-  MASCOT_DISPLAY_SCALE_DESKTOP,
-  MASCOT_DISPLAY_SCALE_MOBILE,
   readMascotFrameHoldMs,
   resolveMascotFigureKey,
   resolveMascotPointingKey,
   type MascotAtlas,
 } from "@/lib/assistant/mascot-atlas.schemas";
 import { selectPointingDirection, type MascotExpression } from "@/lib/assistant/mascot-expressions";
-import type { MascotDockSide } from "@/lib/browser-preferences";
+import {
+  MASCOT_DISPLAY_SCALE_BY_SIZE,
+  MASCOT_DOCK_BOTTOM_OFFSET_DESKTOP_PX,
+  MASCOT_DOCK_BOTTOM_OFFSET_MOBILE_PX,
+  MASCOT_MOBILE_BREAKPOINT_PX,
+  MASCOT_SPEED_MULTIPLIER,
+} from "@/lib/assistant/mascot-display";
+import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
 
 type PixiModule = typeof PixiNamespace;
 
@@ -60,6 +65,8 @@ export interface MascotController {
   /** Call after a route change: a perch removed by navigation fires no event of its own. */
   readonly markLayoutDirty: () => void;
   readonly setDockSide: (dockSide: MascotDockSide) => void;
+  /** The viewer's size and speed choices. Applied from the next frame, no remount. */
+  readonly setAppearance: (appearance: { size: MascotSize; speed: MascotSpeed }) => void;
   /** Pointer drag, in viewport pixels. `endDrag` returns the side it will dock on. */
   readonly beginDrag: (pointerX: number, pointerY: number) => void;
   readonly dragTo: (pointerX: number, pointerY: number) => void;
@@ -67,16 +74,12 @@ export interface MascotController {
   readonly destroy: () => void;
 }
 
-/** Matches `(home)`'s 80px mobile bottom nav plus a gap; md and up has no bottom nav. */
-const DOCK_BOTTOM_OFFSET_MOBILE_PX = 96;
-const DOCK_BOTTOM_OFFSET_DESKTOP_PX = 24;
 const DOCK_SIDE_OFFSET_MOBILE_PX = 12;
 const DOCK_SIDE_OFFSET_DESKTOP_PX = 24;
-const MOBILE_BREAKPOINT_PX = 768;
 const VIEWPORT_MARGIN_PX = 8;
 /** The figure's base disc overlaps the perch's top edge by this much, so it reads as standing on it. */
 const PERCH_SINK_PX = 4;
-/** Exponential-approach time constant for a trip between dock and perch. */
+/** Exponential-approach time constant for a trip between dock and perch, at Normal speed. */
 const TRAVEL_TIME_CONSTANT_MS = 140;
 const ARRIVAL_DISTANCE_PX = 1;
 const REDUCED_MOTION_FADE_IN_MS = 200;
@@ -136,6 +139,8 @@ export async function createMascotController({
   canvasHost,
   mascotBox,
   initialDockSide,
+  initialSize,
+  initialSpeed,
 }: {
   readonly pixi: PixiModule;
   readonly atlas: MascotAtlas;
@@ -143,6 +148,8 @@ export async function createMascotController({
   /** The fixed DOM box over the mascot: open button and speech bubble. Moved by transform. */
   readonly mascotBox: HTMLElement;
   readonly initialDockSide: MascotDockSide;
+  readonly initialSize: MascotSize;
+  readonly initialSpeed: MascotSpeed;
 }): Promise<MascotController> {
   const application = new pixi.Application();
   try {
@@ -209,10 +216,12 @@ export async function createMascotController({
   let viewportWidth = window.innerWidth;
   let viewportHeight = window.innerHeight;
   let isViewportDirty = false;
+  let mascotSize = initialSize;
+  let speedMultiplier = MASCOT_SPEED_MULTIPLIER[initialSpeed];
   const selectDisplayScale = () =>
-    viewportWidth < MOBILE_BREAKPOINT_PX
-      ? MASCOT_DISPLAY_SCALE_MOBILE
-      : MASCOT_DISPLAY_SCALE_DESKTOP;
+    viewportWidth < MASCOT_MOBILE_BREAKPOINT_PX
+      ? MASCOT_DISPLAY_SCALE_BY_SIZE[mascotSize].mobile
+      : MASCOT_DISPLAY_SCALE_BY_SIZE[mascotSize].desktop;
   let mascotScale = selectDisplayScale();
   let dockSide = initialDockSide;
 
@@ -231,7 +240,7 @@ export async function createMascotController({
   const readBoxHeight = () => atlas.frameHeightPx * mascotScale;
 
   const computeDockPoint = (): ViewportPoint => {
-    const isMobileViewport = viewportWidth < MOBILE_BREAKPOINT_PX;
+    const isMobileViewport = viewportWidth < MASCOT_MOBILE_BREAKPOINT_PX;
     const sideOffsetPx = isMobileViewport
       ? DOCK_SIDE_OFFSET_MOBILE_PX
       : DOCK_SIDE_OFFSET_DESKTOP_PX;
@@ -243,7 +252,9 @@ export async function createMascotController({
           : viewportWidth - sideOffsetPx - halfBoxWidth,
       y:
         viewportHeight -
-        (isMobileViewport ? DOCK_BOTTOM_OFFSET_MOBILE_PX : DOCK_BOTTOM_OFFSET_DESKTOP_PX),
+        (isMobileViewport
+          ? MASCOT_DOCK_BOTTOM_OFFSET_MOBILE_PX
+          : MASCOT_DOCK_BOTTOM_OFFSET_DESKTOP_PX),
     };
   };
   const mascotPosition: ViewportPoint = computeDockPoint();
@@ -298,7 +309,7 @@ export async function createMascotController({
       shownFrameStartedMs = nowMs;
       showPose(animationTextures[0] ?? incomingSprite.texture, nowMs);
     } else if (!isReducedMotion && animationTextures.length > 1) {
-      const frameHoldMs = readMascotFrameHoldMs(atlas, shownAnimationKey);
+      const frameHoldMs = readMascotFrameHoldMs(atlas, shownAnimationKey) / speedMultiplier;
       if (nowMs - shownFrameStartedMs >= frameHoldMs) {
         shownFrameIndex = (shownFrameIndex + 1) % animationTextures.length;
         shownFrameStartedMs = nowMs;
@@ -310,7 +321,7 @@ export async function createMascotController({
       // A fast animation (dancing) must not spend its whole hold fading.
       const crossfadeMs = Math.min(
         POSE_CROSSFADE_MS,
-        readMascotFrameHoldMs(atlas, shownAnimationKey) / 2,
+        readMascotFrameHoldMs(atlas, shownAnimationKey) / speedMultiplier / 2,
       );
       const crossfadeProgress = Math.min(1, (nowMs - crossfadeStartedMs) / crossfadeMs);
       incomingSprite.alpha = crossfadeProgress;
@@ -358,7 +369,8 @@ export async function createMascotController({
         placement = arriveAt(destinationPerchId);
         pointing = pointingOnArrival(destinationPerchId, nowMs);
       } else {
-        const approachFraction = 1 - Math.exp(-ticker.deltaMS / TRAVEL_TIME_CONSTANT_MS);
+        const approachFraction =
+          1 - Math.exp(-ticker.deltaMS / (TRAVEL_TIME_CONSTANT_MS / speedMultiplier));
         mascotPosition.x += (destination.x - mascotPosition.x) * approachFraction;
         mascotPosition.y += (destination.y - mascotPosition.y) * approachFraction;
         const remainingDistance = Math.hypot(
@@ -398,7 +410,7 @@ export async function createMascotController({
     const isFloating = placement.mode === "docked" || placement.mode === "travelling";
     const bobOffsetPx =
       isFloating && !isReducedMotion
-        ? Math.sin((nowMs / BOB_PERIOD_MS) * Math.PI * 2) * BOB_AMPLITUDE_PX
+        ? Math.sin(((nowMs * speedMultiplier) / BOB_PERIOD_MS) * Math.PI * 2) * BOB_AMPLITUDE_PX
         : 0;
     mascotContainer.scale.set(mascotScale);
     mascotContainer.position.set(mascotPosition.x, mascotPosition.y + bobOffsetPx);
@@ -490,6 +502,12 @@ export async function createMascotController({
     },
     setDockSide: (nextDockSide) => {
       dockSide = nextDockSide;
+    },
+    setAppearance: ({ size, speed }) => {
+      mascotSize = size;
+      speedMultiplier = MASCOT_SPEED_MULTIPLIER[speed];
+      // The next frame re-reads the scale, resizes the box and re-clamps to the viewport.
+      isViewportDirty = true;
     },
     beginDrag: (pointerX, pointerY) => {
       // Holding the mascot takes it off any perch: the viewer has said where they want it.

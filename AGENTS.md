@@ -844,9 +844,13 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   keeps a copy of the keys), an optional `search` the panel runs through the existing public search
   wrappers, an optional `rememberNote` the viewer must click to save, and `reply` LAST so it can
   stream. Nothing navigates, searches or saves on its own.
-- **Memory and dock side live in the one key.** `assistantMemoryNotes` (≤ 20 × 200 chars) and
-  `assistantDockSide` are fields of `qatoto.browser-preferences`; the privacy policy and the data
-  panel say so, and "clear device data" erases them. No second key, no backend table.
+- **Memory and appearance live in the one key.** `assistantMemoryNotes` (≤ 20 × 200 chars),
+  `assistantDockSide`, `assistantMascotSize` and `assistantMascotSpeed` are fields of
+  `qatoto.browser-preferences`; the privacy policy and the data panel say so, and "clear device
+  data" erases them. No second key, no backend table. Size and speed become numbers in ONE place,
+  `src/lib/assistant/mascot-display.ts`, which also computes the panel's bottom offset so a bigger
+  mascot pushes the panel up. Speed scales pose holds, travel and bob, never how long it points or
+  reacts.
 - **Art is an atlas swap.** Whole-figure animations `figure/<expression>` played in sheet order
   at `meta.frameHoldMs` per frame and crossfaded by opacity, plus optional pointing poses
   `figure/point_<direction>`; `figure/neutral` is required. The contract is in

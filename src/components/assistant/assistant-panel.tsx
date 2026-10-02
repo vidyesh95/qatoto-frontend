@@ -19,6 +19,7 @@ import {
   useEffectEvent,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -27,6 +28,7 @@ import Image from "next/image";
 
 import AssistantMessageList from "@/components/assistant/assistant-message-list";
 import {
+  AppearanceSection,
   BrainNotice,
   MemorySection,
   PlacesSection,
@@ -35,7 +37,8 @@ import { selectAssistantChatRoute } from "@/components/assistant/assistant-brain
 import { useAssistantBrain } from "@/components/assistant/use-assistant-brain";
 import { ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH } from "@/lib/assistant/assistant-reply.schemas";
 import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
-import type { MascotDockSide } from "@/lib/browser-preferences";
+import { computeAssistantPanelBottomPx } from "@/lib/assistant/mascot-display";
+import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
 
 export const ASSISTANT_PANEL_ID = "qatoto-assistant-panel";
 
@@ -57,6 +60,10 @@ export default function AssistantPanel({
   onRemoveNote,
   onClearNotes,
   onDockSideChange,
+  mascotSize,
+  mascotSpeed,
+  onMascotSizeChange,
+  onMascotSpeedChange,
 }: {
   readonly pathname: string;
   readonly dockSide: MascotDockSide;
@@ -69,6 +76,10 @@ export default function AssistantPanel({
   readonly onRemoveNote: (noteIndex: number) => void;
   readonly onClearNotes: () => void;
   readonly onDockSideChange: (dockSide: MascotDockSide) => void;
+  readonly mascotSize: MascotSize;
+  readonly mascotSpeed: MascotSpeed;
+  readonly onMascotSizeChange: (mascotSize: MascotSize) => void;
+  readonly onMascotSpeedChange: (mascotSpeed: MascotSpeed) => void;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -147,14 +158,22 @@ export default function AssistantPanel({
     submitDraft();
   };
 
-  const otherDockSide: MascotDockSide = dockSide === "right" ? "left" : "right";
+  // The panel sits above the docked mascot, so a bigger mascot pushes it up. CSS variables let one
+  // class serve both the phone offset and the desktop one. Its height is capped so its top stays
+  // 4.5rem below the viewport's top, clear of the 56px navbar that paints above it.
+  const panelBottomPx = computeAssistantPanelBottomPx(mascotSize);
+  const panelBottomStyle: CSSProperties & Record<`--${string}`, string> = {
+    "--assistant-panel-bottom": `${panelBottomPx.mobile}px`,
+    "--assistant-panel-bottom-desktop": `${panelBottomPx.desktop}px`,
+  };
 
   return (
     <section
       ref={panelRef}
       id={ASSISTANT_PANEL_ID}
+      style={panelBottomStyle}
       aria-labelledby={`${ASSISTANT_PANEL_ID}-heading`}
-      className={`fixed inset-x-3 bottom-60 z-40 flex max-h-[60dvh] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-52 md:max-h-[70dvh] md:w-96 ${
+      className={`fixed inset-x-3 bottom-(--assistant-panel-bottom) z-40 flex max-h-[min(60dvh,calc(100dvh_-_var(--assistant-panel-bottom)_-_4.5rem))] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-(--assistant-panel-bottom-desktop) md:max-h-[min(70dvh,calc(100dvh_-_var(--assistant-panel-bottom-desktop)_-_4.5rem))] md:w-96 ${
         dockSide === "right" ? "md:right-6" : "md:left-6"
       }`}
     >
@@ -217,13 +236,14 @@ export default function AssistantPanel({
             onRemoveNote={onRemoveNote}
             onClearNotes={onClearNotes}
           />
-          <button
-            type="button"
-            onClick={() => onDockSideChange(otherDockSide)}
-            className="cursor-pointer text-xs leading-4 font-medium text-foreground underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
-          >
-            Move to the {otherDockSide} corner
-          </button>
+          <AppearanceSection
+            mascotSize={mascotSize}
+            mascotSpeed={mascotSpeed}
+            dockSide={dockSide}
+            onMascotSizeChange={onMascotSizeChange}
+            onMascotSpeedChange={onMascotSpeedChange}
+            onDockSideChange={onDockSideChange}
+          />
         </div>
       </div>
 

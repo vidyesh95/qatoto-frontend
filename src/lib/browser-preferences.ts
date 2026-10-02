@@ -21,8 +21,8 @@
 // has not changed is the reason: these are device preferences, not account state, and each
 // panel's own copy already promises it ("Setting applies to this browser only").
 //
-// AI ASSIST ADDED TWO MORE: which corner the mascot docks in, and the short notes the viewer asked
-// the assistant to remember. Both fold into this one blob rather than a second key, because the
+// AI ASSIST ADDED MORE: which corner the mascot docks in, how large and how lively it is, and the
+// short notes the viewer asked the assistant to remember. Both fold into this one blob rather than a second key, because the
 // privacy policy tells readers there is one key and the data panel erases exactly that one.
 //
 // NONE OF THEM IS A TRUST BOUNDARY, and `countryCode` is the one worth saying twice:
@@ -52,6 +52,12 @@ export const BROWSER_PREFERENCES_STORAGE_KEY = "qatoto.browser-preferences";
 export const MASCOT_DOCK_SIDES = ["left", "right"] as const;
 export type MascotDockSide = (typeof MASCOT_DOCK_SIDES)[number];
 
+/** How large and how lively the viewer wants the mascot. `mascot-display.ts` maps them to numbers. */
+export const MASCOT_SIZES = ["small", "medium", "large"] as const;
+export type MascotSize = (typeof MASCOT_SIZES)[number];
+export const MASCOT_SPEEDS = ["slow", "normal", "fast"] as const;
+export type MascotSpeed = (typeof MASCOT_SPEEDS)[number];
+
 /**
  * The AI assistant's "memory": short notes the viewer chose to save, sent to the assistant as
  * context. They live here, in the one key, because AGENTS.md allows no second storage key — and that
@@ -66,6 +72,8 @@ export interface BrowserPreferences {
   readonly countryCode: string;
   readonly isAiAssistModeOn: boolean;
   readonly assistantDockSide: MascotDockSide;
+  readonly assistantMascotSize: MascotSize;
+  readonly assistantMascotSpeed: MascotSpeed;
   readonly assistantMemoryNotes: readonly string[];
 }
 
@@ -80,6 +88,8 @@ export const DEFAULT_BROWSER_PREFERENCES: BrowserPreferences = {
   countryCode: DEFAULT_COUNTRY_CODE,
   isAiAssistModeOn: false,
   assistantDockSide: "right",
+  assistantMascotSize: "medium",
+  assistantMascotSpeed: "normal",
   assistantMemoryNotes: [],
 };
 
@@ -98,6 +108,8 @@ const StoredBrowserPreferencesSchema = z
     countryCode: z.string(),
     isAiAssistModeOn: z.boolean(),
     assistantDockSide: z.enum(MASCOT_DOCK_SIDES),
+    assistantMascotSize: z.enum(MASCOT_SIZES),
+    assistantMascotSpeed: z.enum(MASCOT_SPEEDS),
     assistantMemoryNotes: z
       .array(z.string().trim().min(1).max(ASSISTANT_MEMORY_NOTE_MAXIMUM_LENGTH))
       .max(ASSISTANT_MEMORY_NOTE_LIMIT),

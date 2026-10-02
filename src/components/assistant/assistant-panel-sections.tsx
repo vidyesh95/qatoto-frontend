@@ -1,7 +1,8 @@
 // TRANSPORT: props-only — renders state and authored constants.
 "use client";
 
-// THE PANEL'S STANDING SECTIONS: which model answers, where things are, and what it remembers.
+// THE PANEL'S STANDING SECTIONS: which model answers, where things are, what it remembers, and
+// how the mascot looks and moves.
 //
 // `BrainNotice` is the one place the panel says where a question will go, and it says it before the
 // question is asked. On-device needs no notice beyond the header badge (nothing leaves the
@@ -12,9 +13,20 @@
 // none. The progress bar is real — it is Chrome's own `downloadprogress` — or, when Chrome started
 // the download somewhere this page cannot monitor, an indeterminate bar that says so.
 
+import { useSyncExternalStore } from "react";
+
+import Image from "next/image";
 import Link from "next/link";
 
 import type { AssistantBrainState } from "@/components/assistant/assistant-brain-state";
+import { MASCOT_SIZE_LABELS, MASCOT_SPEED_LABELS } from "@/lib/assistant/mascot-display";
+import {
+  MASCOT_SIZES,
+  MASCOT_SPEEDS,
+  type MascotDockSide,
+  type MascotSize,
+  type MascotSpeed,
+} from "@/lib/browser-preferences";
 import { ROADMAP_AUDIENCES, type CapabilityRoute } from "@/lib/roadmap/site-capabilities";
 
 const QUIET_LINK_CLASS_NAME =
@@ -215,4 +227,148 @@ export function MemorySection({
       )}
     </details>
   );
+}
+
+/**
+ * Three choices, one picked. Real radio inputs inside pill labels, so arrow keys move between them
+ * and a screen reader announces "radio group, Medium, selected". The picked pill carries a check
+ * glyph AND a fill: state is never carried by colour alone (docs/Design.md §6).
+ */
+function PillRadioGroup<Value extends string>({
+  legend,
+  groupName,
+  values,
+  labels,
+  selectedValue,
+  onSelect,
+  note,
+}: {
+  readonly legend: string;
+  readonly groupName: string;
+  readonly values: readonly Value[];
+  readonly labels: Record<Value, string>;
+  readonly selectedValue: Value;
+  readonly onSelect: (value: Value) => void;
+  readonly note?: string | null;
+}) {
+  return (
+    <fieldset>
+      <legend className="text-xs leading-4 font-medium text-muted-foreground">{legend}</legend>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {values.map((value) => {
+          const isSelected = value === selectedValue;
+          return (
+            <label
+              key={value}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-border bg-background/70 px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted has-checked:border-primary-imprint/60 has-checked:bg-secondary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary-imprint"
+            >
+              <input
+                type="radio"
+                name={groupName}
+                value={value}
+                checked={isSelected}
+                onChange={() => onSelect(value)}
+                className="sr-only"
+              />
+              {isSelected && (
+                <Image
+                  src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                  alt=""
+                  width={14}
+                  height={14}
+                />
+              )}
+              {labels[value]}
+            </label>
+          );
+        })}
+      </div>
+      {note !== null && note !== undefined && (
+        <p className="mt-1.5 text-xs leading-4 text-muted-foreground">{note}</p>
+      )}
+    </fieldset>
+  );
+}
+
+/**
+ * How the mascot looks and moves, for this browser: size, speed and which corner it rests in.
+ * Speed changes how lively it is, not how long it points or reacts, so a message stays readable.
+ */
+export function AppearanceSection({
+  mascotSize,
+  mascotSpeed,
+  dockSide,
+  onMascotSizeChange,
+  onMascotSpeedChange,
+  onDockSideChange,
+}: {
+  readonly mascotSize: MascotSize;
+  readonly mascotSpeed: MascotSpeed;
+  readonly dockSide: MascotDockSide;
+  readonly onMascotSizeChange: (mascotSize: MascotSize) => void;
+  readonly onMascotSpeedChange: (mascotSpeed: MascotSpeed) => void;
+  readonly onDockSideChange: (dockSide: MascotDockSide) => void;
+}) {
+  const isReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    readIsReducedMotion,
+    readIsReducedMotionOnServer,
+  );
+  const otherDockSide: MascotDockSide = dockSide === "right" ? "left" : "right";
+
+  return (
+    <details>
+      <summary className="cursor-pointer text-xs leading-4 font-medium text-foreground">
+        How it looks and moves
+      </summary>
+      <div className="mt-2 space-y-3">
+        <PillRadioGroup
+          legend="Size"
+          groupName="assistant-mascot-size"
+          values={MASCOT_SIZES}
+          labels={MASCOT_SIZE_LABELS}
+          selectedValue={mascotSize}
+          onSelect={onMascotSizeChange}
+        />
+        <PillRadioGroup
+          legend="Speed"
+          groupName="assistant-mascot-speed"
+          values={MASCOT_SPEEDS}
+          labels={MASCOT_SPEED_LABELS}
+          selectedValue={mascotSpeed}
+          onSelect={onMascotSpeedChange}
+          note={
+            isReducedMotion
+              ? "Your device asks for reduced motion, so it holds still at any speed."
+              : null
+          }
+        />
+        <button
+          type="button"
+          onClick={() => onDockSideChange(otherDockSide)}
+          className="cursor-pointer text-xs leading-4 font-medium text-foreground underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+        >
+          Move to the {otherDockSide} corner
+        </button>
+      </div>
+    </details>
+  );
+}
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(onChange: () => void): () => void {
+  const reducedMotionQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+  reducedMotionQuery.addEventListener("change", onChange);
+  return () => {
+    reducedMotionQuery.removeEventListener("change", onChange);
+  };
+}
+
+function readIsReducedMotion(): boolean {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function readIsReducedMotionOnServer(): boolean {
+  return false;
 }

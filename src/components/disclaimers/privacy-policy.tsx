@@ -245,10 +245,10 @@ export default function PrivacyPolicy() {
             The only cookies we set are the ones that keep you signed in — without them every page
             would ask you to sign in again. We also keep a single entry in your browser's local
             storage, under the name <code>qatoto.browser-preferences</code>, holding your language,
-            your browse country, whether AI assist is on, which corner the assistant sits in and the
-            notes you asked it to remember. We never store that entry; the notes alone are sent with
-            a question when your browser cannot run the assistant itself, as described above. We run
-            no analytics or advertising scripts.
+            your browse country, whether AI assist is on, where the assistant sits and its size and
+            speed, and the notes you asked it to remember. We never store that entry; the notes
+            alone are sent with a question when your browser cannot run the assistant itself, as
+            described above. We run no analytics or advertising scripts.
             <br />
             <br />
             Some pages load content from other companies, and when they do, your browser contacts

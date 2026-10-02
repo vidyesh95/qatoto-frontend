@@ -30,13 +30,18 @@ import MascotStage, { type MascotStageStatus } from "@/components/assistant/masc
 import { resolveSignalReaction } from "@/components/assistant/mascot-state";
 import { subscribeToAssistantSignals } from "@/lib/assistant/assistant-signals";
 import {
-  MASCOT_DISPLAY_SCALE_DESKTOP,
   MASCOT_FRAME_HEIGHT_PX,
   MASCOT_FRAME_WIDTH_PX,
   MASCOT_STATIC_FALLBACK_URL,
 } from "@/lib/assistant/mascot-atlas.schemas";
+import { MASCOT_DISPLAY_SCALE_BY_SIZE } from "@/lib/assistant/mascot-display";
 import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
-import { ASSISTANT_MEMORY_NOTE_LIMIT, type MascotDockSide } from "@/lib/browser-preferences";
+import {
+  ASSISTANT_MEMORY_NOTE_LIMIT,
+  type MascotDockSide,
+  type MascotSize,
+  type MascotSpeed,
+} from "@/lib/browser-preferences";
 import { useBrowserPreferences } from "@/state/browser-preferences-context";
 
 type SpeechBubble =
@@ -53,9 +58,6 @@ interface MascotDragGesture {
 const SPEECH_BUBBLE_DURATION_MS = 6_000;
 const PANEL_OPEN_MOOD_DURATION_MS = 2_000;
 const DRAG_THRESHOLD_PX = 6;
-/** The box before the canvas measures it, and the size of the no-WebGL still. */
-const FALLBACK_BOX_WIDTH_PX = Math.round(MASCOT_FRAME_WIDTH_PX * MASCOT_DISPLAY_SCALE_DESKTOP);
-const FALLBACK_BOX_HEIGHT_PX = Math.round(MASCOT_FRAME_HEIGHT_PX * MASCOT_DISPLAY_SCALE_DESKTOP);
 
 export default function AssistantRoot() {
   const mascotBoxRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,15 @@ export default function AssistantRoot() {
   const pathname = usePathname();
   const { preferences, setPreference } = useBrowserPreferences();
   const dockSide = preferences.assistantDockSide;
+  const mascotSize = preferences.assistantMascotSize;
+  const mascotSpeed = preferences.assistantMascotSpeed;
+  // The box before the canvas measures it, and the size of the no-WebGL still.
+  const fallbackBoxWidthPx = Math.round(
+    MASCOT_FRAME_WIDTH_PX * MASCOT_DISPLAY_SCALE_BY_SIZE[mascotSize].desktop,
+  );
+  const fallbackBoxHeightPx = Math.round(
+    MASCOT_FRAME_HEIGHT_PX * MASCOT_DISPLAY_SCALE_BY_SIZE[mascotSize].desktop,
+  );
   const memoryNotes = preferences.assistantMemoryNotes;
   const dragGestureRef = useRef<MascotDragGesture | null>(null);
   const shouldSuppressNextClickRef = useRef(false);
@@ -75,6 +86,10 @@ export default function AssistantRoot() {
   useEffect(() => {
     controllerRef.current?.setDockSide(dockSide);
   }, [dockSide]);
+
+  useEffect(() => {
+    controllerRef.current?.setAppearance({ size: mascotSize, speed: mascotSpeed });
+  }, [mascotSize, mascotSpeed]);
 
   useEffect(
     () =>
@@ -203,6 +218,14 @@ export default function AssistantRoot() {
     setPreference("assistantDockSide", nextDockSide);
   };
 
+  const handleMascotSizeChange = (nextMascotSize: MascotSize) => {
+    setPreference("assistantMascotSize", nextMascotSize);
+  };
+
+  const handleMascotSpeedChange = (nextMascotSpeed: MascotSpeed) => {
+    setPreference("assistantMascotSpeed", nextMascotSpeed);
+  };
+
   const isMascotShown = stageStatus.status !== "loading";
 
   return (
@@ -211,6 +234,8 @@ export default function AssistantRoot() {
         mascotBoxRef={mascotBoxRef}
         controllerRef={controllerRef}
         initialDockSide={dockSide}
+        initialSize={mascotSize}
+        initialSpeed={mascotSpeed}
         onStatusChange={setStageStatus}
       />
 
@@ -219,7 +244,7 @@ export default function AssistantRoot() {
       <div
         ref={mascotBoxRef}
         data-bubble-side={dockSide}
-        style={{ width: FALLBACK_BOX_WIDTH_PX, height: FALLBACK_BOX_HEIGHT_PX }}
+        style={{ width: fallbackBoxWidthPx, height: fallbackBoxHeightPx }}
         className={`group pointer-events-none fixed z-40 ${
           stageStatus.status !== "unavailable"
             ? "top-0 left-0"
@@ -234,8 +259,8 @@ export default function AssistantRoot() {
           <img
             src={MASCOT_STATIC_FALLBACK_URL}
             alt=""
-            width={FALLBACK_BOX_WIDTH_PX}
-            height={FALLBACK_BOX_HEIGHT_PX}
+            width={fallbackBoxWidthPx}
+            height={fallbackBoxHeightPx}
             className="size-full"
           />
         )}
@@ -283,6 +308,10 @@ export default function AssistantRoot() {
           onRemoveNote={handleRemoveNote}
           onClearNotes={handleClearNotes}
           onDockSideChange={handleDockSideChange}
+          mascotSize={mascotSize}
+          mascotSpeed={mascotSpeed}
+          onMascotSizeChange={handleMascotSizeChange}
+          onMascotSpeedChange={handleMascotSpeedChange}
         />
       )}
     </>
