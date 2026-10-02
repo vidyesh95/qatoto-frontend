@@ -48,7 +48,7 @@ and `git log` are the record of what was built and why.
 
 **AI Assist Mode:**
 
-- **Mascot assistant** — **Part 1 BUILT 2026-10-02 (uncommitted).** The account-menu toggle now mounts a PixiJS sprite mascot with expressions, perching and purchase reactions, and a links-only panel. Questions are not answered yet: on-device chat (Part 2), the cloud fallback (Part 3) and the rest (Part 4) are open. See §22.
+- **Mascot assistant** — **BUILT 2026-10-02 (uncommitted, frontend + backend).** Character, perches, on-device chat, cloud fallback, search, memory, drag. What is left is listed in §22.
 
 **Legal & Compliance:**
 
@@ -1322,70 +1322,44 @@ All 4 parts shipped:
 
 ---
 
-### 22. AI Assist Mode — the mascot assistant (Parts 2–4 open)
+### 22. AI Assist Mode — what is left
 
-Part 1 is built: `src/components/assistant/` (mounted by `assistant-gate.tsx` in `app/layout.tsx`),
-`src/lib/assistant/`, placeholder art in `public/assistant/mascot/placeholder/` from
-`scripts/build-mascot-placeholder-atlas.mjs`. AGENTS.md §AI Assist Mode holds the rules. What
-follows is not built.
+Built 2026-10-02 and uncommitted in both repos: the opera character (`public/assistant/mascot/opera/`),
+on-device chat through Chrome's Prompt API, `POST /assistant/replies` in qatoto-backend, search,
+browser-local memory, drag-to-dock and four perches. AGENTS.md §AI Assist Mode holds the rules.
 
-#### 22.2 On-device chat (Chrome Prompt API, Gemini Nano)
+#### 22.1 Not verified end to end
 
-- `src/lib/assistant/on-device-brain.ts`: feature-detect `LanguageModel` on `globalThis` through a
-  narrow runtime-checked interface (no `any`, no `as`). `availability()` lifts into
-  `AssistantBrainState`: `checking | on_device_ready | on_device_downloadable |
-on_device_downloading{progressPercent} | cloud_ready | sign_in_required | unavailable`, rendered by
-  an exhaustive switch.
-- **Turning AI Assist on never starts a download.** On `"downloadable"` the panel shows a
-  "Download on-device model" button (the API requires that user gesture) and says what is true:
-  runs on this device, needs about 22 GB free disk, download size set by Chrome. Never print a
-  download size: the API does not report one. `LanguageModel.create({ monitor })` and the
-  `downloadprogress` event's `loaded` (0..1) drive a real `<progress>`. Signed-in viewers chat via
-  the cloud (22.3) meanwhile; the mascot shows `thinking`.
-- Desktop Chrome only (Windows, macOS 13+, Linux, ChromeOS Plus). Not in workers, no tool use.
-  Android, iOS and other browsers go to the cloud path.
-- **Navigation by KEY, never href.** `src/lib/assistant/assistant-destinations.ts` (no directive):
-  `ASSISTANT_DESTINATION_KEYS` in snake_case (`open_cart`, `browse_store`, `find_factories`,
-  `explore_blueprints`, `research_programs`, …) and `Record<key, { label; href }>` taken from
-  `ROADMAP_AUDIENCES`, so every href is a working route (same drift-check grep as
-  `site-capabilities.ts`). The model sees keys plus one-line descriptions and returns
-  `destinationKey` under `responseConstraint` (`enum` + nullable); output re-parsed with
-  `z.enum(ASSISTANT_DESTINATION_KEYS).nullable()`, unknown dropped. Rendered as a link chip the
-  viewer clicks, never auto-navigation.
-- Session system prompt = destination list + current pathname. Recreate the session on context
-  overflow, `destroy()` on unmount. Replies are plain text. History in memory only — the one-key
-  storage rule means no persistence without folding into `qatoto.browser-preferences`.
+- A real signed-in cloud conversation in the browser. The route answered 401 signed out, and the
+  service answered four live questions through Gemini from a one-off script; the panel's cloud
+  path was not exercised with a session.
+- Real Gemini Nano. The test Chrome reported `unavailable`; the on-device path was exercised with a
+  scripted stand-in for `LanguageModel` (download progress, streamed constrained JSON, session
+  rebuild after a note changed). Check `responseConstraint` against a real model, especially the
+  `anyOf` nulls `z.toJSONSchema` emits.
+- The checkout, payment, add-to-cart and submission perches through their real flows (each needs a
+  signed-in session); the perch mechanics were verified by driving the controller directly.
+- `prefers-reduced-motion` (the DevTools tool used cannot emulate it).
 
-#### 22.3 Cloud fallback (backend + frontend)
+#### 22.2 Art
 
-- Backend `src/modules/assistant/`: `POST /assistant/replies` behind `requireAuth` +
-  `requireIdentifiedUser` + a new `assistantReplyLimiter` (per user, plus a daily cap, modelled on
-  `dailyLogSubmitLimiter`). Body `z.strictObject({ messages: max 12 × { role, text ≤ 1000 },
-pathname ≤ 200 })`. **The server owns the system prompt**, so the route cannot be used as a free
-  general LLM proxy. Calls `generateOnce` (`src/modules/rnd/gemini-transport.ts`) with a
-  `responseSchema` matching 22.2's shape; the backend keeps its own copy of the key tuple and a key
-  the frontend does not know is dropped, so drift fails safe. New config: `ASSISTANT_GEMINI_MODEL`
-  (default the Flash-Lite model `GEMINI_MODEL` already defaults to), `ASSISTANT_GEMINI_TIMEOUT_MS`
-  (~15 s), `ASSISTANT_MAX_OUTPUT_TOKENS`. Synchronous 200, stateless, no table. Register at all six
-  points (app.ts, rate-limit.ts, `rate-limit-coverage.test.ts` MOUNTED_ROUTERS, openapi-rnd.ts,
-  openapi-rnd-bodies.ts; precedent commit 0cc7ab1).
-- Frontend `src/lib/assistant/cloud-brain.api.ts` via `sendJson` (`src/lib/http.ts`), Zod-parsed,
-  tagged result; 429 and 503 rendered as values.
-- Signed-out viewers without on-device support get `sign_in_required`, not a cloud call.
-- Privacy policy and the data panel must say: assistant messages go to Google Gemini through
-  Qatoto when on-device is unavailable, and Qatoto does not store them. Ship that copy with the
-  route, not after.
+- The sheet's figures are ~65×95 px, so they are soft on a 2x screen. A sheet rendered at 3–4x
+  needs no code change: re-run `scripts/build-mascot-figure-atlas.mjs`.
+- The source PNGs sit in `public/dummy/`, so they ship publicly (3 MB). Move them outside `public/`
+  and point the script at the new path when convenient.
+- No `sleepy` or `bored` art exists, so the old idle-doze behaviour was dropped rather than shown
+  as a neutral face.
 
-#### 22.4 Later
+---
 
-- Tool calls into `GET /store/search`, `/feed/search`, `/research-programs?q=`.
-- "Second brain" memory — needs a storage decision against the one-key rule first.
-- Streaming (`:streamGenerateContent`); the transport is non-streaming today.
-- The commissioned art set (asset contract and the pre-rendered-3D route are in the placeholder
-  script's header). Rive or VRM/three-vrm only if pre-rendered sprites fall short past ~30
-  expressions.
-- Draggable dock; more perches (add-to-cart, studio publish success). A perch is one
-  `data-assistant-perch` attribute plus a signal and a row in `resolveSignalReaction`.
+## Decided: AI Assist Mode scope
+
+- **Cloud replies do not stream.** Declined 2026-10-02: Flash-Lite answers in ~1 s, and streaming
+  would need a `streamGenerateContent` transport, an SSE route and a stream parser.
+- **Assistant memory does not sync across devices.** Declined 2026-10-02: notes stay in the one
+  browser-preferences key. Syncing would need a table, export and deletion wiring, and privacy copy.
+- **No case-study perch.** That authoring flow is a rehearsal (AGENTS.md), so there is nothing real
+  to celebrate.
 
 ---
 

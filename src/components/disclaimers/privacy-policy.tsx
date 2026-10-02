@@ -190,6 +190,19 @@ export default function PrivacyPolicy() {
           </dd>
         </div>
         <div>
+          <dt>The AI Assistant</dt>
+          <dd>
+            AI Assist Mode is off unless you turn it on. When it is on and your browser can run
+            Google&apos;s Gemini Nano model itself (current desktop Chrome), your questions are
+            answered on your device and nothing you type leaves it. When your browser cannot, and
+            you are signed in, your conversation so far, the page you are on and any notes you asked
+            the assistant to remember are sent to us and to Google&apos;s Gemini model to produce a
+            reply. We do not store those messages, and the notes stay in your browser, where the
+            &ldquo;Your data &amp; privacy&rdquo; panel can erase them. The assistant can be wrong,
+            and nothing it says changes your account, an order or a payment.
+          </dd>
+        </div>
+        <div>
           <dt>Sharing of Information</dt>
           <dd>
             We share your information with the service providers who run Qatoto for us, and only for
@@ -197,10 +210,11 @@ export default function PrivacyPolicy() {
             runs our servers; Aiven, which hosts our database; Cloudinary, which stores and serves
             images; Backblaze, which stores research-paper files and the data exports you request;
             Brevo, which sends our email; and Google, whose Gemini model transcribes daily updates
-            as described above. If you sign in with Google or GitHub, or connect a GitHub repository
-            to a project, that provider exchanges information with us to make it work. When you
-            report a problem, the place you describe is sent to OpenStreetMap's Nominatim service to
-            find its country and region. When you pay for an order, the seller's payment provider
+            and answers questions you ask the AI assistant when your browser cannot, both as
+            described above. If you sign in with Google or GitHub, or connect a GitHub repository to
+            a project, that provider exchanges information with us to make it work. When you report
+            a problem, the place you describe is sent to OpenStreetMap's Nominatim service to find
+            its country and region. When you pay for an order, the seller's payment provider
             receives what it needs to take the payment.
             <br />
             <br />
@@ -231,8 +245,10 @@ export default function PrivacyPolicy() {
             The only cookies we set are the ones that keep you signed in — without them every page
             would ask you to sign in again. We also keep a single entry in your browser's local
             storage, under the name <code>qatoto.browser-preferences</code>, holding your language,
-            your browse country and whether AI assist is on. That entry never leaves your browser
-            and is never sent to us. We run no analytics or advertising scripts.
+            your browse country, whether AI assist is on, which corner the assistant sits in and the
+            notes you asked it to remember. We never store that entry; the notes alone are sent with
+            a question when your browser cannot run the assistant itself, as described above. We run
+            no analytics or advertising scripts.
             <br />
             <br />
             Some pages load content from other companies, and when they do, your browser contacts

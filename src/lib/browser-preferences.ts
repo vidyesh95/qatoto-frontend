@@ -1,6 +1,6 @@
 // TRANSPORT: props-only — reads and writes `window.localStorage`, never the network.
 //
-// THE THREE BROWSER-LOCAL PREFERENCES, AND WHY THEY ARE BROWSER-LOCAL.
+// THE BROWSER-LOCAL PREFERENCES, AND WHY THEY ARE BROWSER-LOCAL.
 //
 // Language, browse country and AI assist mode were `useState` in
 // `components/home/account/menus/account-menu.tsx` until this file existed, which meant closing the
@@ -18,10 +18,14 @@
 // THEY ARE STORED ON THE DEVICE AND SYNCED NOWHERE, and the backend is not getting an endpoint for
 // them. The list of `/users` writes that used to sit here has grown — deletion requests, exports and
 // `/users/me/channel-profile` have all joined it since — so naming it was always going to rot. What
-// has not changed is the reason: these three are device preferences, not account state, and each
+// has not changed is the reason: these are device preferences, not account state, and each
 // panel's own copy already promises it ("Setting applies to this browser only").
 //
-// NEITHER OF THE THREE IS A TRUST BOUNDARY, and `countryCode` is the one worth saying twice:
+// AI ASSIST ADDED TWO MORE: which corner the mascot docks in, and the short notes the viewer asked
+// the assistant to remember. Both fold into this one blob rather than a second key, because the
+// privacy policy tells readers there is one key and the data panel erases exactly that one.
+//
+// NONE OF THEM IS A TRUST BOUNDARY, and `countryCode` is the one worth saying twice:
 // CLAUDE.md names the browse-country selector as a DISPLAY PREFERENCE ONLY. The backend must never
 // take a client-claimed country for tax, pricing, geo-restriction or fraud — it re-derives that
 // from IP, verified account region and payment country.
@@ -44,11 +48,25 @@ export const DEFAULT_COUNTRY_CODE = "US";
 /** The single key. One read, one write, one parse — not three keys racing each other. */
 export const BROWSER_PREFERENCES_STORAGE_KEY = "qatoto.browser-preferences";
 
+/** Which bottom corner the AI Assist mascot rests in. The viewer drags it to change this. */
+export const MASCOT_DOCK_SIDES = ["left", "right"] as const;
+export type MascotDockSide = (typeof MASCOT_DOCK_SIDES)[number];
+
+/**
+ * The AI assistant's "memory": short notes the viewer chose to save, sent to the assistant as
+ * context. They live here, in the one key, because AGENTS.md allows no second storage key — and that
+ * puts them under the "clear device data" erasure the privacy panel already offers.
+ */
+export const ASSISTANT_MEMORY_NOTE_LIMIT = 20;
+export const ASSISTANT_MEMORY_NOTE_MAXIMUM_LENGTH = 200;
+
 /** Every browser-local preference, as one value. */
 export interface BrowserPreferences {
   readonly language: string;
   readonly countryCode: string;
   readonly isAiAssistModeOn: boolean;
+  readonly assistantDockSide: MascotDockSide;
+  readonly assistantMemoryNotes: readonly string[];
 }
 
 /**
@@ -61,6 +79,8 @@ export const DEFAULT_BROWSER_PREFERENCES: BrowserPreferences = {
   language: "English",
   countryCode: DEFAULT_COUNTRY_CODE,
   isAiAssistModeOn: false,
+  assistantDockSide: "right",
+  assistantMemoryNotes: [],
 };
 
 /**
@@ -77,6 +97,10 @@ const StoredBrowserPreferencesSchema = z
     language: z.string(),
     countryCode: z.string(),
     isAiAssistModeOn: z.boolean(),
+    assistantDockSide: z.enum(MASCOT_DOCK_SIDES),
+    assistantMemoryNotes: z
+      .array(z.string().trim().min(1).max(ASSISTANT_MEMORY_NOTE_MAXIMUM_LENGTH))
+      .max(ASSISTANT_MEMORY_NOTE_LIMIT),
   })
   .partial();
 

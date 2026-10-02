@@ -31,6 +31,7 @@ import {
   describeLaunchStatementGap,
   type ShowcaseSubmissionReceipt,
 } from "@/lib/blueprints/showcase-authoring.schemas";
+import { emitAssistantSignal } from "@/lib/assistant/assistant-signals";
 import { ApiRequestError } from "@/lib/http";
 import { checkImageFile } from "@/lib/image-file-check";
 import type {
@@ -298,6 +299,8 @@ export function useShowcaseLaunchComposerState() {
         onSuccess: (receipt) => {
           resetIdempotencyKey();
           setViewState({ status: "submitted", receipt });
+          // A fact for the AI Assist mascot, if it is on: posted for review, not published.
+          emitAssistantSignal({ kind: "submission_received", surface: "showcase" });
         },
       },
     );

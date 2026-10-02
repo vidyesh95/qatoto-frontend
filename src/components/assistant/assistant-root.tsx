@@ -1,4 +1,5 @@
-// TRANSPORT: props-only — no API calls; listens to in-memory assistant signals.
+// TRANSPORT: client-query — the panel it opens asks POST /assistant/replies on the cloud route;
+// this file itself listens to in-memory assistant signals and writes browser preferences.
 "use client";
 
 // AI ASSIST MODE, MOUNTED. Only `assistant-gate.tsx` imports this, and only lazily, so nothing here
@@ -9,12 +10,17 @@
 //  - The mascot BOX: a fixed DOM element the controller moves over the drawing by transform. It
 //    holds the real `<button>` that opens the panel and the speech bubble's live region, so
 //    keyboard and screen-reader users reach the same two things a pointer does.
-//  - `AssistantPanel`, opened from that button.
+//  - `AssistantPanel`, opened from that button: the conversation and everything around it.
+//
+// THE BUTTON IS ALSO THE DRAG HANDLE. A press that moves more than DRAG_THRESHOLD_PX picks the
+// mascot up; letting go glides it to the dock on the nearer side and saves that side in the
+// browser-preferences blob. A press that does not move is an ordinary click. Keyboard users get the
+// same choice from a button in the panel, because dragging is not something a keyboard can do.
 //
 // The live region is mounted ALWAYS, and only its text changes. A polite region that is inserted
 // together with its text is not reliably announced; one that already exists is, once.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { usePathname } from "next/navigation";
 
@@ -24,16 +30,28 @@ import MascotStage, { type MascotStageStatus } from "@/components/assistant/masc
 import { resolveSignalReaction } from "@/components/assistant/mascot-state";
 import { subscribeToAssistantSignals } from "@/lib/assistant/assistant-signals";
 import {
-  MASCOT_FRAME_SIZE_PX,
+  MASCOT_FRAME_HEIGHT_PX,
+  MASCOT_FRAME_WIDTH_PX,
   MASCOT_STATIC_FALLBACK_URL,
 } from "@/lib/assistant/mascot-atlas.schemas";
+import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
+import { ASSISTANT_MEMORY_NOTE_LIMIT, type MascotDockSide } from "@/lib/browser-preferences";
+import { useBrowserPreferences } from "@/state/browser-preferences-context";
 
 type SpeechBubble =
   | { readonly status: "hidden" }
   | { readonly status: "shown"; readonly text: string; readonly shownAtMs: number };
 
+interface MascotDragGesture {
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly startY: number;
+  isDragging: boolean;
+}
+
 const SPEECH_BUBBLE_DURATION_MS = 6_000;
 const PANEL_OPEN_MOOD_DURATION_MS = 2_000;
+const DRAG_THRESHOLD_PX = 6;
 
 export default function AssistantRoot() {
   const mascotBoxRef = useRef<HTMLDivElement>(null);
@@ -43,6 +61,16 @@ export default function AssistantRoot() {
   const [speechBubble, setSpeechBubble] = useState<SpeechBubble>({ status: "hidden" });
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const pathname = usePathname();
+  const { preferences, setPreference } = useBrowserPreferences();
+  const dockSide = preferences.assistantDockSide;
+  const memoryNotes = preferences.assistantMemoryNotes;
+  const dragGestureRef = useRef<MascotDragGesture | null>(null);
+  const shouldSuppressNextClickRef = useRef(false);
+
+  // The side can change from the panel's button or from another tab's write to the same blob.
+  useEffect(() => {
+    controllerRef.current?.setDockSide(dockSide);
+  }, [dockSide]);
 
   useEffect(
     () =>
@@ -88,13 +116,83 @@ export default function AssistantRoot() {
   }, [isPanelOpen]);
 
   const handleOpenButtonClick = () => {
+    if (shouldSuppressNextClickRef.current) {
+      shouldSuppressNextClickRef.current = false;
+      return;
+    }
     if (!isPanelOpen)
-      controllerRef.current?.showInteractionMood("joy", null, PANEL_OPEN_MOOD_DURATION_MS);
+      controllerRef.current?.showInteractionMood("joy", PANEL_OPEN_MOOD_DURATION_MS);
     setIsPanelOpen(!isPanelOpen);
+  };
+
+  const handleOpenButtonPointerDown = (pointerEvent: PointerEvent<HTMLButtonElement>) => {
+    if (pointerEvent.button !== 0 || controllerRef.current === null) return;
+    dragGestureRef.current = {
+      pointerId: pointerEvent.pointerId,
+      startX: pointerEvent.clientX,
+      startY: pointerEvent.clientY,
+      isDragging: false,
+    };
+    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
+  };
+
+  const handleOpenButtonPointerMove = (pointerEvent: PointerEvent<HTMLButtonElement>) => {
+    const dragGesture = dragGestureRef.current;
+    const controller = controllerRef.current;
+    if (dragGesture === null || controller === null) return;
+    if (dragGesture.pointerId !== pointerEvent.pointerId) return;
+    if (!dragGesture.isDragging) {
+      const movedDistancePx = Math.hypot(
+        pointerEvent.clientX - dragGesture.startX,
+        pointerEvent.clientY - dragGesture.startY,
+      );
+      if (movedDistancePx < DRAG_THRESHOLD_PX) return;
+      dragGesture.isDragging = true;
+      controller.beginDrag(dragGesture.startX, dragGesture.startY);
+    }
+    controller.dragTo(pointerEvent.clientX, pointerEvent.clientY);
+  };
+
+  const handleOpenButtonPointerEnd = (pointerEvent: PointerEvent<HTMLButtonElement>) => {
+    const dragGesture = dragGestureRef.current;
+    if (dragGesture === null || dragGesture.pointerId !== pointerEvent.pointerId) return;
+    dragGestureRef.current = null;
+    if (!dragGesture.isDragging || controllerRef.current === null) return;
+    // The browser still fires a click after a drag ends on the same element; that is not a click.
+    shouldSuppressNextClickRef.current = true;
+    const nextDockSide = controllerRef.current.endDrag();
+    if (nextDockSide !== dockSide) setPreference("assistantDockSide", nextDockSide);
   };
 
   const handlePanelClose = () => {
     setIsPanelOpen(false);
+  };
+
+  const handleMood = (expression: MascotExpression, holdMs: number) => {
+    controllerRef.current?.showInteractionMood(expression, holdMs);
+  };
+
+  const handleSaveNote = (memoryNote: string) => {
+    if (memoryNotes.includes(memoryNote)) return;
+    setPreference(
+      "assistantMemoryNotes",
+      [...memoryNotes, memoryNote].slice(-ASSISTANT_MEMORY_NOTE_LIMIT),
+    );
+  };
+
+  const handleRemoveNote = (noteIndex: number) => {
+    setPreference(
+      "assistantMemoryNotes",
+      memoryNotes.filter((_memoryNote, candidateIndex) => candidateIndex !== noteIndex),
+    );
+  };
+
+  const handleClearNotes = () => {
+    setPreference("assistantMemoryNotes", []);
+  };
+
+  const handleDockSideChange = (nextDockSide: MascotDockSide) => {
+    setPreference("assistantDockSide", nextDockSide);
   };
 
   const isMascotShown = stageStatus.status !== "loading";
@@ -104,6 +202,7 @@ export default function AssistantRoot() {
       <MascotStage
         mascotBoxRef={mascotBoxRef}
         controllerRef={controllerRef}
+        initialDockSide={dockSide}
         onStatusChange={setStageStatus}
       />
 
@@ -111,12 +210,14 @@ export default function AssistantRoot() {
           no controller, so the static fallback sits in the dock corner by CSS instead. */}
       <div
         ref={mascotBoxRef}
-        data-bubble-side="right"
-        style={{ width: MASCOT_FRAME_SIZE_PX, height: MASCOT_FRAME_SIZE_PX }}
+        data-bubble-side={dockSide}
+        style={{ width: MASCOT_FRAME_WIDTH_PX, height: MASCOT_FRAME_HEIGHT_PX }}
         className={`group pointer-events-none fixed z-40 ${
-          stageStatus.status === "unavailable"
-            ? "right-3 bottom-24 md:right-6 md:bottom-6"
-            : "top-0 left-0"
+          stageStatus.status !== "unavailable"
+            ? "top-0 left-0"
+            : dockSide === "right"
+              ? "right-3 bottom-24 md:right-6 md:bottom-6"
+              : "bottom-24 left-3 md:bottom-6 md:left-6"
         }`}
       >
         {stageStatus.status === "unavailable" && (
@@ -125,8 +226,8 @@ export default function AssistantRoot() {
           <img
             src={MASCOT_STATIC_FALLBACK_URL}
             alt=""
-            width={MASCOT_FRAME_SIZE_PX}
-            height={MASCOT_FRAME_SIZE_PX}
+            width={MASCOT_FRAME_WIDTH_PX}
+            height={MASCOT_FRAME_HEIGHT_PX}
             className="size-full"
           />
         )}
@@ -136,10 +237,14 @@ export default function AssistantRoot() {
             ref={openButtonRef}
             type="button"
             onClick={handleOpenButtonClick}
+            onPointerDown={handleOpenButtonPointerDown}
+            onPointerMove={handleOpenButtonPointerMove}
+            onPointerUp={handleOpenButtonPointerEnd}
+            onPointerCancel={handleOpenButtonPointerEnd}
             aria-label={isPanelOpen ? "Close Qatoto assistant" : "Open Qatoto assistant"}
             aria-expanded={isPanelOpen}
             aria-controls={ASSISTANT_PANEL_ID}
-            className="pointer-events-auto absolute inset-0 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+            className="pointer-events-auto absolute inset-0 cursor-pointer touch-none rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           />
         )}
 
@@ -158,7 +263,19 @@ export default function AssistantRoot() {
         </div>
       </div>
 
-      {isPanelOpen && <AssistantPanel onClose={handlePanelClose} />}
+      {isPanelOpen && (
+        <AssistantPanel
+          pathname={pathname}
+          dockSide={dockSide}
+          memoryNotes={memoryNotes}
+          onClose={handlePanelClose}
+          onMood={handleMood}
+          onSaveNote={handleSaveNote}
+          onRemoveNote={handleRemoveNote}
+          onClearNotes={handleClearNotes}
+          onDockSideChange={handleDockSideChange}
+        />
+      )}
     </>
   );
 }

@@ -801,10 +801,11 @@ done
 It currently prints nothing. An uncalled hook is UNVERIFIED CODE — wire it to a control or
 delete it, never leave it.
 
-## AI Assist Mode — the mascot assistant (Part 1 of 4 built)
+## AI Assist Mode — the mascot assistant (built; uncommitted as of 2026-10-02)
 
 The account menu's AI Assist toggle (`isAiAssistModeOn`, in the one browser-preferences blob)
-mounts a sprite mascot. `todo.md` §22 holds Parts 2–4 (on-device chat, cloud fallback, later).
+mounts an animated character that reacts to what the viewer does and answers questions. The
+cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistant/`).
 
 - **Mount.** `src/components/assistant/assistant-gate.tsx` sits beside `{children}` in
   `app/layout.tsx`. It renders `null` on the server and while Off, then `React.lazy`-loads
@@ -813,21 +814,43 @@ mounts a sprite mascot. `todo.md` §22 holds Parts 2–4 (on-device chat, cloud 
   visitor pays for a feature most never switch on. Switching Off unmounts the root, and its cleanup
   destroys the WebGL context.
 - **Signals, not imports.** A surface that wants a reaction calls `emitAssistantSignal`
-  (`src/lib/assistant/assistant-signals.ts`) with a FACT (`order_placed`, `payment_settled`).
-  `resolveSignalReaction` in `mascot-state.ts` decides the face, the perch and the words. Never
-  import assistant components from a product surface.
+  (`src/lib/assistant/assistant-signals.ts`) with a FACT: `order_placed`, `payment_settled`,
+  `cart_item_added`, `submission_received`. `resolveSignalReaction` in `mascot-state.ts` decides
+  the expression, the perch and the words. Never import assistant components from a product
+  surface.
 - **Perches are an attribute.** `data-assistant-perch="<id>"` on any element, server components
-  included. The tracker (`perch-tracker.ts`) does at most one `getBoundingClientRect` per frame,
-  inside the Pixi ticker, and only when a scroll/resize/observer marked it dirty. Do not add
-  per-event layout reads or per-frame React state.
-- **The money rule applies to the mascot.** `order_placed` is `pending_payment`, so its bubble says
-  "placed", never "paid". `payment_settled` fires only on an OBSERVED transition into `settled` in
-  `order-payment-panel.tsx`, never for an order that loads already settled.
-- **No new storage key.** Anything the assistant remembers lives in memory or folds into the
-  `qatoto.browser-preferences` blob, per the rule above.
-- **Art is an atlas swap.** The contract (three layers, shared feet-centre anchor, required
-  `body/float_idle`, `body/sit`, `face/neutral`, fallback chains for everything else) is in
-  `scripts/build-mascot-placeholder-atlas.mjs`'s header and parsed by `mascot-atlas.schemas.ts`.
+  included; ids come from `mascot-state.ts` (`CHECKOUT_CONFIRMED_PERCH_ID`,
+  `SUBMISSION_RECEIPT_PERCH_ID`, `buildAddToCartPerchId`). The tracker (`perch-tracker.ts`) takes
+  the first RENDERED match (the product page renders its buy buttons twice), does at most one
+  `getBoundingClientRect` per frame inside the Pixi ticker, and only when a scroll/resize/observer
+  marked it dirty. A perch scrolled out of view sends the mascot home. Do not add per-event layout
+  reads or per-frame React state.
+- **The copy rules apply to the mascot and the model.** `order_placed` is `pending_payment`, so it
+  says "placed", never "paid"; `payment_settled` fires only on an OBSERVED transition into
+  `settled` in `order-payment-panel.tsx`; a submission is "sent for review", never "published".
+  Both prompts (`src/lib/assistant/assistant-prompt.ts` here, `assistant.prompt.ts` in the backend)
+  carry the same rules plus "you cannot act" — the model must never claim it opened, searched or
+  saved anything. Change them together.
+- **Which model answers is one union.** `assistant-brain-state.ts`: Chrome's on-device Gemini Nano
+  when `LanguageModel` reports it ready (nothing leaves the device, replies stream); otherwise the
+  cloud route for SIGNED-IN viewers only (Gemini Flash-Lite, synchronous, server-written prompt,
+  stateless, two limiters + `requireIdentifiedUser`); otherwise a sign-in prompt. **The model
+  download starts only from the panel's button** — Chrome requires the click, and
+  `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
+  `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
+  vocabulary has changed between Chrome versions.
+- **The model chooses, the viewer acts.** A reply is `AssistantReplySchema`: an expression, a
+  `destinationKey` (a key, never a URL — `assistant-destinations.ts` owns the hrefs and the backend
+  keeps a copy of the keys), an optional `search` the panel runs through the existing public search
+  wrappers, an optional `rememberNote` the viewer must click to save, and `reply` LAST so it can
+  stream. Nothing navigates, searches or saves on its own.
+- **Memory and dock side live in the one key.** `assistantMemoryNotes` (≤ 20 × 200 chars) and
+  `assistantDockSide` are fields of `qatoto.browser-preferences`; the privacy policy and the data
+  panel say so, and "clear device data" erases them. No second key, no backend table.
+- **Art is an atlas swap.** Whole-figure animations `figure/<expression>`, required
+  `figure/neutral`, optional `meta.frameHoldMs`; poses crossfade by opacity. The contract is in
+  `scripts/build-mascot-figure-atlas.mjs`'s header (which builds `public/assistant/mascot/opera/`
+  from `public/dummy/mascot_sheet.png` + `mascot.png`) and is parsed by `mascot-atlas.schemas.ts`.
   `docs/Design.md` §7 records why this one surface may choreograph.
 
 ## Things to know

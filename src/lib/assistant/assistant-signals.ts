@@ -18,7 +18,9 @@
 
 export type AssistantSignal =
   | { readonly kind: "order_placed"; readonly orderCount: number }
-  | { readonly kind: "payment_settled" };
+  | { readonly kind: "payment_settled" }
+  | { readonly kind: "cart_item_added"; readonly productId: string }
+  | { readonly kind: "submission_received"; readonly surface: "teardown" | "showcase" };
 
 type AssistantSignalListener = (signal: AssistantSignal) => void;
 

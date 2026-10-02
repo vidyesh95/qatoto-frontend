@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { SUBMISSION_RECEIPT_PERCH_ID } from "@/components/assistant/mascot-state";
 import { MutationAcceptedNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import type { TeardownSubmissionReceipt } from "@/lib/blueprints/authoring.schemas";
 import { formatIsoInstantLabel } from "@/lib/store/format";
@@ -33,7 +34,7 @@ export default function SubmissionReceipt({
   readonly onStartAnother: () => void;
 }) {
   return (
-    <div className="max-w-2xl">
+    <div data-assistant-perch={SUBMISSION_RECEIPT_PERCH_ID} className="max-w-2xl">
       <h1 className="text-xl font-medium text-foreground lg:text-2xl">Submitted for review</h1>
 
       <div className="mt-4">

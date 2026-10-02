@@ -21,6 +21,7 @@ import {
   type MascotController,
 } from "@/components/assistant/mascot-controller";
 import { MASCOT_ATLAS_JSON_URL, parseMascotAtlas } from "@/lib/assistant/mascot-atlas.schemas";
+import type { MascotDockSide } from "@/lib/browser-preferences";
 
 export type MascotStageStatus =
   | { readonly status: "loading" }
@@ -30,9 +31,12 @@ export type MascotStageStatus =
 export default function MascotStage({
   mascotBoxRef,
   controllerRef,
+  initialDockSide,
   onStatusChange,
 }: {
   readonly mascotBoxRef: RefObject<HTMLDivElement | null>;
+  /** Read once, at mount. Later changes go through `controller.setDockSide`. */
+  readonly initialDockSide: MascotDockSide;
   /** Filled while the stage is ready, emptied on unmount. The root drives the mascot through it. */
   readonly controllerRef: RefObject<MascotController | null>;
   readonly onStatusChange: (stageStatus: MascotStageStatus) => void;
@@ -41,6 +45,7 @@ export default function MascotStage({
   const reportStatus = useEffectEvent((stageStatus: MascotStageStatus) => {
     onStatusChange(stageStatus);
   });
+  const readInitialDockSide = useEffectEvent(() => initialDockSide);
 
   useEffect(() => {
     const canvasHost = canvasHostRef.current;
@@ -67,6 +72,7 @@ export default function MascotStage({
           atlas: atlasResult.data,
           canvasHost,
           mascotBox,
+          initialDockSide: readInitialDockSide(),
         });
         if (isCancelled) {
           createdController.destroy();

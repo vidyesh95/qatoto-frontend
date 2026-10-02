@@ -26,10 +26,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { buildAddToCartPerchId } from "@/components/assistant/mascot-state";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useCartQuery, useSetCartItem } from "@/hooks/store/cart";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
+import { emitAssistantSignal } from "@/lib/assistant/assistant-signals";
 import type { CommerceCart } from "@/lib/store/cart.schemas";
 import { formatCountLabel } from "@/lib/store/format";
 import { SELLING_STATE_LABELS, type ProductSellingState } from "@/lib/store/organizations.schemas";
@@ -101,6 +103,8 @@ function NotSellingPanel({ sellingState, requestQuoteHref }: NotSellingPanelProp
 
 interface BuyActionControlsProps {
   requestQuoteHref: string;
+  /** Where the AI Assist mascot stands after an add; inert when AI Assist is off. */
+  addToCartPerchId: string;
   onAddToCart: () => void;
   onBuyNow: () => void;
   canAddToCart: boolean;
@@ -109,6 +113,7 @@ interface BuyActionControlsProps {
 
 function BuyActionControls({
   requestQuoteHref,
+  addToCartPerchId,
   onAddToCart,
   onBuyNow,
   canAddToCart,
@@ -124,6 +129,7 @@ function BuyActionControls({
       </Link>
       <button
         type="button"
+        data-assistant-perch={addToCartPerchId}
         onClick={onAddToCart}
         disabled={!canAddToCart}
         className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-primary-imprint outline -outline-offset-1 outline-outline-strong disabled:opacity-40"
@@ -220,14 +226,22 @@ export default function BuyActionButtons({
   const handleAddToCartClick = () => {
     if (cart === null) return;
     const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
-    setCartItem.mutate({
-      productId,
-      input: {
-        quantity: existingQuantity + quantity,
-        ...(variantId === null ? {} : { variantId }),
-        isSample: false,
+    setCartItem.mutate(
+      {
+        productId,
+        input: {
+          quantity: existingQuantity + quantity,
+          ...(variantId === null ? {} : { variantId }),
+          isSample: false,
+        },
       },
-    });
+      {
+        onSuccess: (result) => {
+          // Only once the server has the line: the AI Assist mascot says "added", never before.
+          if (result.success) emitAssistantSignal({ kind: "cart_item_added", productId });
+        },
+      },
+    );
   };
 
   const handleBuyNowClick = () => {
@@ -267,6 +281,7 @@ export default function BuyActionButtons({
     <div className="w-full">
       <BuyActionControls
         requestQuoteHref={requestQuoteHref}
+        addToCartPerchId={buildAddToCartPerchId(productId)}
         onAddToCart={handleAddToCartClick}
         onBuyNow={handleBuyNowClick}
         canAddToCart={canAddToCart}

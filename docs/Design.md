@@ -530,7 +530,7 @@ glance, it is too decorated. Both failures look like good design in isolation.
 ## 7. The Assistant Mascot Is the One Choreographed Surface
 
 AI Assist Mode (account menu, default Off) puts an animated character on screen: it floats in a
-dock corner, travels to and sits on a component, and changes expression. That is choreography,
+dock corner, travels to and stands on a component, and changes expression. That is choreography,
 which section 1 rules out, so it is written down here as a single, bounded carve-out rather than
 left as a quiet violation.
 
@@ -542,9 +542,13 @@ left as a quiet violation.
 - **Character art is content, not chrome**, the way a product photo is. Its colours sit outside
   the One Hue Rule and the hardcoded-hex rule, and live only in the atlas image. The moment a
   colour leaves the atlas (a bubble, a panel, a focus ring) it is chrome again and uses tokens.
-- **Reduced motion still wins.** Under `prefers-reduced-motion: reduce` there is no bobbing and
-  no travel (the mascot fades in at its destination) and each expression is one still frame.
-  Expressions still change, because the change carries meaning.
+- **Poses change by opacity.** The character is a set of rendered poses, not a rigged figure, so a
+  new pose fades in over the old one rather than snapping, which is the motion this document
+  already allows. Travel between the dock and a perch, and the viewer dragging it, are the only
+  movement, and both belong to this surface alone.
+- **Reduced motion still wins.** Under `prefers-reduced-motion: reduce` there is no bobbing, no
+  travel (the mascot fades in at its destination) and no crossfade; each expression is one still
+  frame. Expressions still change, because the change carries meaning.
 - **Its words follow the copy rules.** No exclamation marks and no em dashes in its bubble, and the
   money rule holds: an order placed is not a payment, so only a provider-confirmed settlement may
   be described as one.

@@ -4,56 +4,56 @@
 // THE MASCOT'S RENDER LOOP, AND THE ONLY CODE THAT TOUCHES PIXI.
 //
 // It is plain imperative code rather than a component because everything in it happens per frame:
-// where the perch is, where the mascot is, which face it wears. A React commit per frame would be
+// where the perch is, where the mascot is, which pose it shows. A React commit per frame would be
 // the cost this design exists to avoid, so React hands this a canvas host and the mascot's DOM box
-// once, and from then on talks to it through four methods.
+// once, and from then on talks to it through a handful of methods.
 //
 // Pixi is passed IN as the module namespace, never imported as a value. `mascot-stage.tsx` loads it
 // with `await import("pixi.js")` inside an effect (the teardown engine's precedent), which is what
 // keeps every Pixi byte out of the page until AI Assist Mode is switched on.
 //
 // FRAME ORDER IS READS, THEN WRITES. The perch tracker does its one layout read, the viewport size
-// is read if a resize dirtied it, and only then does anything get written: the Pixi container (a
-// canvas draw, not DOM) and at most one `transform` on the DOM box that holds the open button and
-// speech bubble — and that only when the position actually moved.
+// is read if a resize dirtied it, and only then does anything get written: the Pixi sprites (a canvas
+// draw, not DOM) and at most one `transform` on the DOM box that holds the open button and speech
+// bubble — and that only when the position actually moved.
 //
-// `ticker.maxFPS = 30` and AnimatedSprite `autoUpdate: false`. Left on `autoUpdate`, Pixi's sprites
-// tick from the SHARED ticker, which is uncapped and would keep running after this app's ticker is
-// stopped for a hidden tab.
+// POSES CROSSFADE. The atlas's frames are separate poses, not motion steps, so a flip-book would
+// jitter. Two sprites trade places: the incoming pose fades in over the outgoing one by opacity,
+// which is the one kind of motion `docs/Design.md` allows everywhere. Reduced motion shows frame 0
+// of each expression and swaps without a fade.
 
 import type * as PixiNamespace from "pixi.js";
 
 import {
+  AMBIENT_MASCOT_MOOD,
   canMoodReplace,
-  selectAmbientMood,
-  selectPoseForPlacement,
   type MascotMood,
   type MascotPlacement,
   type MascotReaction,
 } from "@/components/assistant/mascot-state";
 import { createPerchTracker, type PerchReading } from "@/components/assistant/perch-tracker";
 import {
-  MASCOT_FRAME_SIZE_PX,
-  resolveMascotBodyKey,
-  resolveMascotEffectKey,
-  resolveMascotFaceKey,
+  readMascotFrameHoldMs,
+  resolveMascotFigureKey,
   type MascotAtlas,
 } from "@/lib/assistant/mascot-atlas.schemas";
-import type { MascotEffect, MascotExpression } from "@/lib/assistant/mascot-expressions";
+import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
+import type { MascotDockSide } from "@/lib/browser-preferences";
 
 type PixiModule = typeof PixiNamespace;
 
 export interface MascotController {
-  /** A signal reaction: change face, optionally go and sit on a perch. */
+  /** A signal reaction: change expression, optionally go and stand on a perch. */
   readonly react: (reaction: MascotReaction) => void;
-  /** A short face change for something the viewer did to the mascot itself. */
-  readonly showInteractionMood: (
-    expression: MascotExpression,
-    effect: MascotEffect | null,
-    holdMs: number,
-  ) => void;
+  /** A short expression for something the viewer did, such as asking a question. */
+  readonly showInteractionMood: (expression: MascotExpression, holdMs: number) => void;
   /** Call after a route change: a perch removed by navigation fires no event of its own. */
   readonly markLayoutDirty: () => void;
+  readonly setDockSide: (dockSide: MascotDockSide) => void;
+  /** Pointer drag, in viewport pixels. `endDrag` returns the side it will dock on. */
+  readonly beginDrag: (pointerX: number, pointerY: number) => void;
+  readonly dragTo: (pointerX: number, pointerY: number) => void;
+  readonly endDrag: () => MascotDockSide;
   readonly destroy: () => void;
 }
 
@@ -63,19 +63,17 @@ const DOCK_BOTTOM_OFFSET_DESKTOP_PX = 24;
 const DOCK_SIDE_OFFSET_MOBILE_PX = 12;
 const DOCK_SIDE_OFFSET_DESKTOP_PX = 24;
 const MOBILE_BREAKPOINT_PX = 768;
-const MOBILE_SCALE = 0.8;
+const MOBILE_SCALE = 0.85;
 const VIEWPORT_MARGIN_PX = 8;
-/** The sit pose's seat is drawn a few pixels above the frame's bottom edge. */
-const SIT_SINK_PX = 6;
+/** The figure's base disc overlaps the perch's top edge by this much, so it reads as standing on it. */
+const PERCH_SINK_PX = 4;
 /** Exponential-approach time constant for a trip between dock and perch. */
 const TRAVEL_TIME_CONSTANT_MS = 140;
 const ARRIVAL_DISTANCE_PX = 1;
 const REDUCED_MOTION_FADE_IN_MS = 200;
-const BOB_AMPLITUDE_PX = 3;
-const BOB_PERIOD_MS = 2_400;
-const BODY_ANIMATION_SPEED = 0.05;
-const FACE_ANIMATION_SPEED = 0.05;
-const EFFECT_ANIMATION_SPEED = 0.12;
+const BOB_AMPLITUDE_PX = 2;
+const BOB_PERIOD_MS = 2_800;
+const POSE_CROSSFADE_MS = 240;
 const MAXIMUM_FRAMES_PER_SECOND = 30;
 
 interface ViewportPoint {
@@ -99,7 +97,7 @@ function selectPerchAnchor(
     case "unchanged":
       return previousPerchAnchor;
     case "anchor":
-      return clampToViewport(perchReading.anchorX, perchReading.anchorY);
+      return clampToViewport(perchReading.anchorX, perchReading.anchorY + PERCH_SINK_PX);
     case "none":
     case "hidden":
     case "lost":
@@ -116,12 +114,14 @@ export async function createMascotController({
   atlas,
   canvasHost,
   mascotBox,
+  initialDockSide,
 }: {
   readonly pixi: PixiModule;
   readonly atlas: MascotAtlas;
   readonly canvasHost: HTMLElement;
   /** The fixed DOM box over the mascot: open button and speech bubble. Moved by transform. */
   readonly mascotBox: HTMLElement;
+  readonly initialDockSide: MascotDockSide;
 }): Promise<MascotController> {
   const application = new pixi.Application();
   try {
@@ -164,25 +164,20 @@ export async function createMascotController({
   application.ticker.maxFPS = MAXIMUM_FRAMES_PER_SECOND;
   canvasHost.appendChild(application.canvas);
 
-  const createLayerSprite = (animationKey: string, animationSpeed: number) => {
-    const layerSprite = new pixi.AnimatedSprite({
-      textures: readAnimationTextures(animationKey),
-      autoUpdate: false,
-      animationSpeed,
-    });
-    layerSprite.anchor.set(0.5, 1);
-    return layerSprite;
+  const initialAnimationKey = resolveMascotFigureKey(atlas, AMBIENT_MASCOT_MOOD.expression);
+  const initialTexture = readAnimationTextures(initialAnimationKey)[0] ?? pixi.Texture.EMPTY;
+  const createFigureSprite = () => {
+    const figureSprite = new pixi.Sprite(initialTexture);
+    figureSprite.anchor.set(0.5, 1);
+    return figureSprite;
   };
-
-  const initialBodyKey = resolveMascotBodyKey(atlas, "float_idle");
-  const initialFaceKey = resolveMascotFaceKey(atlas, "neutral");
-  const bodySprite = createLayerSprite(initialBodyKey, BODY_ANIMATION_SPEED);
-  const faceSprite = createLayerSprite(initialFaceKey, FACE_ANIMATION_SPEED);
-  const effectSprite = createLayerSprite(initialBodyKey, EFFECT_ANIMATION_SPEED);
-  effectSprite.visible = false;
+  // `incomingSprite` is the pose on screen; `outgoingSprite` only shows during a crossfade.
+  const outgoingSprite = createFigureSprite();
+  outgoingSprite.visible = false;
+  const incomingSprite = createFigureSprite();
 
   const mascotContainer = new pixi.Container();
-  mascotContainer.addChild(bodySprite, faceSprite, effectSprite);
+  mascotContainer.addChild(outgoingSprite, incomingSprite);
   application.stage.addChild(mascotContainer);
 
   // ---- state, all of it plain variables read and written by the tick ----
@@ -194,19 +189,32 @@ export async function createMascotController({
   let viewportHeight = window.innerHeight;
   let isViewportDirty = false;
   let mascotScale = viewportWidth < MOBILE_BREAKPOINT_PX ? MOBILE_SCALE : 1;
-  let lastActivityMs = performance.now();
+  let dockSide = initialDockSide;
 
   let placement: MascotPlacement = { mode: "docked" };
-  let mood: MascotMood = selectAmbientMood(0);
+  let mood: MascotMood = AMBIENT_MASCOT_MOOD;
   let perchAnchor: ViewportPoint | null = null;
+  let dragPointerOffset: ViewportPoint = { x: 0, y: 0 };
+
+  let shownAnimationKey = initialAnimationKey;
+  let shownFrameIndex = 0;
+  let shownFrameStartedMs = performance.now();
+  let crossfadeStartedMs: number | null = null;
+
+  const readBoxWidth = () => atlas.frameWidthPx * mascotScale;
+  const readBoxHeight = () => atlas.frameHeightPx * mascotScale;
+
   const computeDockPoint = (): ViewportPoint => {
     const isMobileViewport = viewportWidth < MOBILE_BREAKPOINT_PX;
-    const halfBoxWidth = (MASCOT_FRAME_SIZE_PX * mascotScale) / 2;
+    const sideOffsetPx = isMobileViewport
+      ? DOCK_SIDE_OFFSET_MOBILE_PX
+      : DOCK_SIDE_OFFSET_DESKTOP_PX;
+    const halfBoxWidth = readBoxWidth() / 2;
     return {
       x:
-        viewportWidth -
-        (isMobileViewport ? DOCK_SIDE_OFFSET_MOBILE_PX : DOCK_SIDE_OFFSET_DESKTOP_PX) -
-        halfBoxWidth,
+        dockSide === "left"
+          ? sideOffsetPx + halfBoxWidth
+          : viewportWidth - sideOffsetPx - halfBoxWidth,
       y:
         viewportHeight -
         (isMobileViewport ? DOCK_BOTTOM_OFFSET_MOBILE_PX : DOCK_BOTTOM_OFFSET_DESKTOP_PX),
@@ -214,48 +222,71 @@ export async function createMascotController({
   };
   const mascotPosition: ViewportPoint = computeDockPoint();
 
-  let shownBodyKey = initialBodyKey;
-  let shownFaceKey = initialFaceKey;
-  let shownEffectKey: string | null = null;
   let lastWrittenBoxLeft = Number.NaN;
   let lastWrittenBoxTop = Number.NaN;
-  let lastWrittenBoxSize = Number.NaN;
+  let lastWrittenBoxWidth = Number.NaN;
   let lastWrittenBubbleSide = "";
 
-  // ---- sprite helpers ----
+  const clampToViewport = (anchorX: number, anchorY: number): ViewportPoint => ({
+    x: Math.min(
+      Math.max(anchorX, readBoxWidth() / 2 + VIEWPORT_MARGIN_PX),
+      viewportWidth - readBoxWidth() / 2 - VIEWPORT_MARGIN_PX,
+    ),
+    y: Math.min(
+      Math.max(anchorY, readBoxHeight() + VIEWPORT_MARGIN_PX),
+      viewportHeight - VIEWPORT_MARGIN_PX,
+    ),
+  });
 
-  const startOrFreeze = (layerSprite: PixiNamespace.AnimatedSprite) => {
-    // Reduced motion keeps every expression, one still frame each. Frame 0 is the resting frame
-    // by contract (eyes open, effect at rest).
-    if (isReducedMotion) layerSprite.gotoAndStop(0);
-    else layerSprite.play();
+  // ---- pose clock ----
+
+  const showPose = (nextTexture: PixiNamespace.Texture, nowMs: number) => {
+    if (isReducedMotion) {
+      incomingSprite.texture = nextTexture;
+      incomingSprite.alpha = 1;
+      outgoingSprite.visible = false;
+      crossfadeStartedMs = null;
+      return;
+    }
+    outgoingSprite.texture = incomingSprite.texture;
+    outgoingSprite.alpha = 1;
+    outgoingSprite.visible = true;
+    incomingSprite.texture = nextTexture;
+    incomingSprite.alpha = 0;
+    crossfadeStartedMs = nowMs;
   };
 
-  const showLayerAnimation = (
-    layerSprite: PixiNamespace.AnimatedSprite,
-    shownKey: string,
-    nextKey: string,
-  ): string => {
-    if (shownKey === nextKey) return shownKey;
-    layerSprite.textures = readAnimationTextures(nextKey);
-    startOrFreeze(layerSprite);
-    return nextKey;
-  };
+  const advancePoseClock = (nowMs: number) => {
+    const wantedAnimationKey = resolveMascotFigureKey(atlas, mood.expression);
+    const animationTextures = readAnimationTextures(wantedAnimationKey);
+    if (wantedAnimationKey !== shownAnimationKey) {
+      shownAnimationKey = wantedAnimationKey;
+      shownFrameIndex = 0;
+      shownFrameStartedMs = nowMs;
+      showPose(animationTextures[0] ?? incomingSprite.texture, nowMs);
+    } else if (!isReducedMotion && animationTextures.length > 1) {
+      const frameHoldMs = readMascotFrameHoldMs(atlas, shownAnimationKey);
+      if (nowMs - shownFrameStartedMs >= frameHoldMs) {
+        shownFrameIndex = (shownFrameIndex + 1) % animationTextures.length;
+        shownFrameStartedMs = nowMs;
+        showPose(animationTextures[shownFrameIndex] ?? incomingSprite.texture, nowMs);
+      }
+    }
 
-  for (const layerSprite of [bodySprite, faceSprite]) startOrFreeze(layerSprite);
-
-  const clampToViewport = (anchorX: number, anchorY: number): ViewportPoint => {
-    const boxSize = MASCOT_FRAME_SIZE_PX * mascotScale;
-    return {
-      x: Math.min(
-        Math.max(anchorX, boxSize / 2 + VIEWPORT_MARGIN_PX),
-        viewportWidth - boxSize / 2 - VIEWPORT_MARGIN_PX,
-      ),
-      y: Math.min(
-        Math.max(anchorY + SIT_SINK_PX, boxSize + VIEWPORT_MARGIN_PX),
-        viewportHeight - VIEWPORT_MARGIN_PX,
-      ),
-    };
+    if (crossfadeStartedMs !== null) {
+      // A fast animation (dancing) must not spend its whole hold fading.
+      const crossfadeMs = Math.min(
+        POSE_CROSSFADE_MS,
+        readMascotFrameHoldMs(atlas, shownAnimationKey) / 2,
+      );
+      const crossfadeProgress = Math.min(1, (nowMs - crossfadeStartedMs) / crossfadeMs);
+      incomingSprite.alpha = crossfadeProgress;
+      outgoingSprite.alpha = 1 - crossfadeProgress;
+      if (crossfadeProgress >= 1) {
+        outgoingSprite.visible = false;
+        crossfadeStartedMs = null;
+      }
+    }
   };
 
   // ---- the frame ----
@@ -272,75 +303,50 @@ export async function createMascotController({
       mascotScale = viewportWidth < MOBILE_BREAKPOINT_PX ? MOBILE_SCALE : 1;
       perchTracker.markDirty();
     }
-
     perchAnchor = selectPerchAnchor(perchReading, perchAnchor, clampToViewport);
 
-    // PLACEMENT.
-    const destinationPerchId = perchAnchor === null ? null : perchTracker.targetPerchId();
-    const destination = perchAnchor ?? computeDockPoint();
-    const isFollowingCurrentSpot =
-      (placement.mode === "perched" && placement.perchId === destinationPerchId) ||
-      (placement.mode === "docked" && destinationPerchId === null);
+    // PLACEMENT. A dragged mascot is wherever the pointer put it; nothing else moves it.
+    if (placement.mode !== "dragged") {
+      const destinationPerchId = perchAnchor === null ? null : perchTracker.targetPerchId();
+      const destination = perchAnchor ?? computeDockPoint();
+      const isFollowingCurrentSpot =
+        (placement.mode === "perched" && placement.perchId === destinationPerchId) ||
+        (placement.mode === "docked" && destinationPerchId === null);
 
-    if (isFollowingCurrentSpot) {
-      // Sitting on a perch that scrolls, or docked in a window that resized: follow, no tween.
-      mascotPosition.x = destination.x;
-      mascotPosition.y = destination.y;
-    } else if (isReducedMotion) {
-      // Fade-jump: no travel, but arriving somewhere new is still legible.
-      mascotPosition.x = destination.x;
-      mascotPosition.y = destination.y;
-      mascotContainer.alpha = 0;
-      placement = arriveAt(destinationPerchId);
-    } else {
-      const approachFraction = 1 - Math.exp(-ticker.deltaMS / TRAVEL_TIME_CONSTANT_MS);
-      mascotPosition.x += (destination.x - mascotPosition.x) * approachFraction;
-      mascotPosition.y += (destination.y - mascotPosition.y) * approachFraction;
-      const remainingDistance = Math.hypot(
-        destination.x - mascotPosition.x,
-        destination.y - mascotPosition.y,
-      );
-      if (remainingDistance <= ARRIVAL_DISTANCE_PX) {
+      if (isFollowingCurrentSpot) {
+        // Standing on a perch that scrolls, or docked in a window that resized: follow, no tween.
         mascotPosition.x = destination.x;
         mascotPosition.y = destination.y;
+      } else if (isReducedMotion) {
+        // Fade-jump: no travel, but arriving somewhere new is still legible.
+        mascotPosition.x = destination.x;
+        mascotPosition.y = destination.y;
+        mascotContainer.alpha = 0;
         placement = arriveAt(destinationPerchId);
       } else {
-        placement = { mode: "travelling", toPerchId: destinationPerchId };
+        const approachFraction = 1 - Math.exp(-ticker.deltaMS / TRAVEL_TIME_CONSTANT_MS);
+        mascotPosition.x += (destination.x - mascotPosition.x) * approachFraction;
+        mascotPosition.y += (destination.y - mascotPosition.y) * approachFraction;
+        const remainingDistance = Math.hypot(
+          destination.x - mascotPosition.x,
+          destination.y - mascotPosition.y,
+        );
+        if (remainingDistance <= ARRIVAL_DISTANCE_PX) {
+          mascotPosition.x = destination.x;
+          mascotPosition.y = destination.y;
+          placement = arriveAt(destinationPerchId);
+        } else {
+          placement = { mode: "travelling", toPerchId: destinationPerchId };
+        }
       }
     }
 
     // MOOD.
-    if (mood.priority === "ambient" || (mood.expiresAtMs !== null && mood.expiresAtMs <= nowMs)) {
-      mood = selectAmbientMood(nowMs - lastActivityMs);
-    }
+    if (mood.expiresAtMs !== null && mood.expiresAtMs <= nowMs) mood = AMBIENT_MASCOT_MOOD;
 
     // WRITES, canvas first.
-    shownBodyKey = showLayerAnimation(
-      bodySprite,
-      shownBodyKey,
-      resolveMascotBodyKey(atlas, selectPoseForPlacement(placement)),
-    );
-    shownFaceKey = showLayerAnimation(
-      faceSprite,
-      shownFaceKey,
-      resolveMascotFaceKey(atlas, mood.expression),
-    );
-    const nextEffectKey = resolveMascotEffectKey(atlas, mood.effect);
-    if (nextEffectKey !== shownEffectKey) {
-      effectSprite.visible = nextEffectKey !== null;
-      if (nextEffectKey !== null) {
-        effectSprite.textures = readAnimationTextures(nextEffectKey);
-        startOrFreeze(effectSprite);
-      }
-      shownEffectKey = nextEffectKey;
-    }
-    if (!isReducedMotion) {
-      bodySprite.update(ticker);
-      faceSprite.update(ticker);
-      if (effectSprite.visible) effectSprite.update(ticker);
-    }
-
-    const isFloating = placement.mode !== "perched";
+    advancePoseClock(nowMs);
+    const isFloating = placement.mode === "docked" || placement.mode === "travelling";
     const bobOffsetPx =
       isFloating && !isReducedMotion
         ? Math.sin((nowMs / BOB_PERIOD_MS) * Math.PI * 2) * BOB_AMPLITUDE_PX
@@ -356,18 +362,19 @@ export async function createMascotController({
 
     // Then the DOM box, only when it moved. The bob is excluded: the button's box already covers
     // a few pixels of float, and a style write every frame for it would be pure waste.
-    const boxSize = MASCOT_FRAME_SIZE_PX * mascotScale;
-    const boxLeft = Math.round(mascotPosition.x - boxSize / 2);
-    const boxTop = Math.round(mascotPosition.y - boxSize);
+    const boxWidth = readBoxWidth();
+    const boxHeight = readBoxHeight();
+    const boxLeft = Math.round(mascotPosition.x - boxWidth / 2);
+    const boxTop = Math.round(mascotPosition.y - boxHeight);
     if (boxLeft !== lastWrittenBoxLeft || boxTop !== lastWrittenBoxTop) {
       mascotBox.style.transform = `translate3d(${boxLeft}px, ${boxTop}px, 0)`;
       lastWrittenBoxLeft = boxLeft;
       lastWrittenBoxTop = boxTop;
     }
-    if (boxSize !== lastWrittenBoxSize) {
-      mascotBox.style.width = `${boxSize}px`;
-      mascotBox.style.height = `${boxSize}px`;
-      lastWrittenBoxSize = boxSize;
+    if (boxWidth !== lastWrittenBoxWidth) {
+      mascotBox.style.width = `${boxWidth}px`;
+      mascotBox.style.height = `${boxHeight}px`;
+      lastWrittenBoxWidth = boxWidth;
     }
     // The bubble opens toward the middle of the screen so it never runs off the nearer edge.
     const bubbleSide = mascotPosition.x > viewportWidth / 2 ? "right" : "left";
@@ -384,9 +391,6 @@ export async function createMascotController({
   const handleViewportResize = () => {
     isViewportDirty = true;
   };
-  const handleViewerActivity = () => {
-    lastActivityMs = performance.now();
-  };
   const handleVisibilityChange = () => {
     if (document.visibilityState === "hidden") {
       application.ticker.stop();
@@ -397,15 +401,11 @@ export async function createMascotController({
   };
   const handleReducedMotionChange = (reducedMotionChange: MediaQueryListEvent) => {
     isReducedMotion = reducedMotionChange.matches;
-    for (const layerSprite of [bodySprite, faceSprite, effectSprite]) startOrFreeze(layerSprite);
+    // Re-enter the current expression at frame 0, the one reduced motion shows.
+    shownAnimationKey = "";
   };
 
-  const passiveListenerOptions = { passive: true };
-  window.addEventListener("resize", handleViewportResize, passiveListenerOptions);
-  window.addEventListener("pointerdown", handleViewerActivity, passiveListenerOptions);
-  window.addEventListener("pointermove", handleViewerActivity, passiveListenerOptions);
-  window.addEventListener("keydown", handleViewerActivity, passiveListenerOptions);
-  window.addEventListener("wheel", handleViewerActivity, passiveListenerOptions);
+  window.addEventListener("resize", handleViewportResize, { passive: true });
   document.addEventListener("visibilitychange", handleVisibilityChange);
   reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
 
@@ -416,29 +416,47 @@ export async function createMascotController({
   return {
     react: (reaction) => {
       const nowMs = performance.now();
-      lastActivityMs = nowMs;
       applyMood({
         expression: reaction.expression,
-        effect: reaction.effect,
         priority: "signal",
         expiresAtMs: nowMs + reaction.holdMs,
       });
-      if (reaction.perchId !== null) perchTracker.track(reaction.perchId, nowMs);
+      if (reaction.perchId !== null && placement.mode !== "dragged") {
+        perchTracker.track(reaction.perchId, nowMs);
+      }
     },
-    showInteractionMood: (expression, effect, holdMs) => {
-      const nowMs = performance.now();
-      lastActivityMs = nowMs;
-      applyMood({ expression, effect, priority: "interaction", expiresAtMs: nowMs + holdMs });
+    showInteractionMood: (expression, holdMs) => {
+      applyMood({ expression, priority: "interaction", expiresAtMs: performance.now() + holdMs });
     },
     markLayoutDirty: () => {
       perchTracker.markDirty();
     },
+    setDockSide: (nextDockSide) => {
+      dockSide = nextDockSide;
+    },
+    beginDrag: (pointerX, pointerY) => {
+      // Holding the mascot takes it off any perch: the viewer has said where they want it.
+      perchTracker.untrack();
+      perchAnchor = null;
+      dragPointerOffset = { x: mascotPosition.x - pointerX, y: mascotPosition.y - pointerY };
+      placement = { mode: "dragged" };
+    },
+    dragTo: (pointerX, pointerY) => {
+      const draggedPosition = clampToViewport(
+        pointerX + dragPointerOffset.x,
+        pointerY + dragPointerOffset.y,
+      );
+      mascotPosition.x = draggedPosition.x;
+      mascotPosition.y = draggedPosition.y;
+    },
+    endDrag: () => {
+      dockSide = mascotPosition.x < viewportWidth / 2 ? "left" : "right";
+      // Released anywhere, it glides to the dock on the nearer side.
+      placement = { mode: "travelling", toPerchId: null };
+      return dockSide;
+    },
     destroy: () => {
       window.removeEventListener("resize", handleViewportResize);
-      window.removeEventListener("pointerdown", handleViewerActivity);
-      window.removeEventListener("pointermove", handleViewerActivity);
-      window.removeEventListener("keydown", handleViewerActivity);
-      window.removeEventListener("wheel", handleViewerActivity);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       reducedMotionQuery.removeEventListener("change", handleReducedMotionChange);
       perchTracker.untrack();

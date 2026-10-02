@@ -124,9 +124,10 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
     icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     items: [
       "Your language, browse country, and AI assist preference",
-      "Stored in this browser only, and never sent to us",
+      "Where the AI assistant sits, and the notes you asked it to remember",
+      "Stored in this browser only. Assistant notes travel with a question when your browser cannot run the assistant itself, and we do not keep them",
     ],
     absentFromExport:
-      "Not in the download: these never leave this browser, so we have no copy to include. Clear them above.",
+      "Not in the download: we store none of these, so we have no copy to include. Clear them above.",
   },
 ];

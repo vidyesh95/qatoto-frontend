@@ -58,8 +58,20 @@ export interface PerchTracker {
   readonly targetPerchId: () => string | null;
 }
 
+/**
+ * The first RENDERED element carrying this perch id. Some surfaces render the same control twice
+ * for different breakpoints (the product page's buy buttons sit in a mobile bar AND the desktop
+ * column) and hide one with `display: none`; that one has no client rects and is skipped. This is a
+ * layout read, but it only runs while a perch is being acquired, never per frame once tracked.
+ */
 function findPerchElement(perchId: string): Element | null {
-  return document.querySelector(`[data-assistant-perch="${CSS.escape(perchId)}"]`);
+  const candidateElements = document.querySelectorAll(
+    `[data-assistant-perch="${CSS.escape(perchId)}"]`,
+  );
+  for (const candidateElement of candidateElements) {
+    if (candidateElement.getClientRects().length > 0) return candidateElement;
+  }
+  return null;
 }
 
 export function createPerchTracker(): PerchTracker {
@@ -130,7 +142,7 @@ export function createPerchTracker(): PerchTracker {
       case "idle":
         return { kind: "none" };
       case "acquiring": {
-        // A querySelector is not a layout read, so polling for the element is cheap.
+        // Polled each frame only for the two seconds a newly named perch may take to mount.
         const perchElement = findPerchElement(trackerState.perchId);
         if (perchElement === null) {
           if (nowMs < trackerState.deadlineMs) return { kind: "hidden" };

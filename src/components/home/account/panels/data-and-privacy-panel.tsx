@@ -144,9 +144,11 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-medium text-secondary-foreground">Data on this device</h3>
           <p className="text-sm text-muted-foreground">
-            Your language, browse country, and AI assist preference live in this browser and are
-            never sent to us. Clearing them affects this browser only — your account is untouched,
-            and other devices keep their own settings.
+            Your language, browse country, AI assist preference, where the assistant sits and the
+            notes you asked it to remember live in this browser. None of them is stored by us; the
+            notes travel with a question only when your browser cannot run the assistant itself.
+            Clearing them affects this browser only — your account is untouched, and other devices
+            keep their own settings.
           </p>
           {renderClearDeviceDataAction()}
         </section>

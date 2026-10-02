@@ -25,6 +25,7 @@ import {
   type TeardownWizardStepId,
   type TeardownWizardStepProps,
 } from "./wizard-shared";
+import { emitAssistantSignal } from "@/lib/assistant/assistant-signals";
 import { ApiRequestError } from "@/lib/http";
 import SubjectProvenanceStep from "./subject-provenance-step";
 import PartsStep from "./parts-step";
@@ -244,6 +245,8 @@ export function useTeardownWizardState() {
         onSuccess: (receipt) => {
           resetIdempotencyKey();
           setViewState({ status: "submitted", receipt });
+          // A fact for the AI Assist mascot, if it is on: sent for review, not published.
+          emitAssistantSignal({ kind: "submission_received", surface: "teardown" });
         },
       },
     );

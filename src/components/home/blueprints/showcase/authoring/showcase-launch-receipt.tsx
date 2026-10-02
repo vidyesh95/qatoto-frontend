@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { SUBMISSION_RECEIPT_PERCH_ID } from "@/components/assistant/mascot-state";
 import { AuthoringReceiptMeta } from "@/components/home/blueprints/shared/authoring-receipt-meta";
 import ShowcaseLaunchRowPreview from "@/components/home/blueprints/showcase/authoring/showcase-launch-row-preview";
 import { MutationAcceptedNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
@@ -26,7 +27,7 @@ export default function ShowcaseLaunchReceipt({
   readonly onPostAnother: () => void;
 }) {
   return (
-    <div className="max-w-2xl">
+    <div data-assistant-perch={SUBMISSION_RECEIPT_PERCH_ID} className="max-w-2xl">
       <h1 className="text-xl font-medium text-foreground lg:text-2xl">Posted for review</h1>
 
       <div className="mt-4">
