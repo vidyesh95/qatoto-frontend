@@ -4,29 +4,20 @@
 // THE PANEL'S STANDING SECTIONS: which model answers, where things are, what it remembers, and
 // how the mascot looks and moves.
 //
-// `BrainNotice` is the one place the panel says where a question will go, and it says it before the
-// question is asked. On-device needs no notice beyond the header badge (nothing leaves the
-// device); the cloud route says Gemini and Qatoto by name, because that is where the words go.
+// WHICH MODEL ANSWERS is said once, by the model strip at the top of the panel
+// (`describeAssistantModel`). `BrainNotice` only carries what the strip cannot: the download button
+// and its progress, and the sign-in / finish-sign-up links. It repeats none of the strip's words.
 //
 // THE DOWNLOAD COPY STATES ONLY WHAT IS TRUE. Chrome documents the disk it needs (about 22 GB free)
 // and does not report the download's own size, so no size is printed: a wrong number is worse than
 // none. The progress bar is real — it is Chrome's own `downloadprogress` — or, when Chrome started
 // the download somewhere this page cannot monitor, an indeterminate bar that says so.
 
-import { useSyncExternalStore } from "react";
-
-import Image from "next/image";
 import Link from "next/link";
 
 import type { AssistantBrainState } from "@/components/assistant/assistant-brain-state";
-import { MASCOT_SIZE_LABELS, MASCOT_SPEED_LABELS } from "@/lib/assistant/mascot-display";
-import {
-  MASCOT_SIZES,
-  MASCOT_SPEEDS,
-  type MascotDockSide,
-  type MascotSize,
-  type MascotSpeed,
-} from "@/lib/browser-preferences";
+import MascotAppearanceControls from "@/components/assistant/mascot-appearance-controls";
+import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
 import { ROADMAP_AUDIENCES, type CapabilityRoute } from "@/lib/roadmap/site-capabilities";
 
 const QUIET_LINK_CLASS_NAME =
@@ -43,8 +34,8 @@ export function BrainNotice({
 }) {
   switch (brainState.status) {
     case "checking":
-      return <p className="text-xs leading-4 text-muted-foreground">Checking this browser…</p>;
     case "on_device_ready":
+    case "cloud_ready":
       return null;
     case "on_device_downloadable":
       return (
@@ -80,13 +71,6 @@ export function BrainNotice({
           <CloudMeanwhileLine canChatViaCloud={brainState.canChatViaCloud} />
         </div>
       );
-    case "cloud_ready":
-      return (
-        <p className="text-xs leading-4 text-muted-foreground">
-          This browser cannot run the model itself, so your questions go to Google Gemini through
-          Qatoto. Qatoto does not keep them.
-        </p>
-      );
     case "finish_sign_up":
       return (
         <p className="text-xs leading-4 text-muted-foreground">
@@ -99,11 +83,10 @@ export function BrainNotice({
     case "sign_in_required":
       return (
         <p className="text-xs leading-4 text-muted-foreground">
-          This browser cannot run the assistant&apos;s model itself.{" "}
           <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
             Sign in
           </Link>{" "}
-          to ask through Qatoto instead. The places below work either way.
+          to ask questions. The places below work either way.
         </p>
       );
     default: {
@@ -113,20 +96,16 @@ export function BrainNotice({
   }
 }
 
+/** Only the signed-out case needs a line: the model strip already says the cloud is in use. */
 function CloudMeanwhileLine({ canChatViaCloud }: { readonly canChatViaCloud: boolean }) {
+  if (canChatViaCloud) return null;
   return (
     <p className="text-xs leading-4 text-muted-foreground">
-      {canChatViaCloud ? (
-        "Until it is ready, your questions go to Google Gemini through Qatoto, which does not keep them."
-      ) : (
-        <>
-          Until it is ready,{" "}
-          <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
-            sign in
-          </Link>{" "}
-          to ask through Qatoto instead.
-        </>
-      )}
+      Until it is ready,{" "}
+      <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
+        sign in
+      </Link>{" "}
+      to ask through Qatoto instead.
     </p>
   );
 }
@@ -230,69 +209,8 @@ export function MemorySection({
 }
 
 /**
- * Three choices, one picked. Real radio inputs inside pill labels, so arrow keys move between them
- * and a screen reader announces "radio group, Medium, selected". The picked pill carries a check
- * glyph AND a fill: state is never carried by colour alone (docs/Design.md §6).
- */
-function PillRadioGroup<Value extends string>({
-  legend,
-  groupName,
-  values,
-  labels,
-  selectedValue,
-  onSelect,
-  note,
-}: {
-  readonly legend: string;
-  readonly groupName: string;
-  readonly values: readonly Value[];
-  readonly labels: Record<Value, string>;
-  readonly selectedValue: Value;
-  readonly onSelect: (value: Value) => void;
-  readonly note?: string | null;
-}) {
-  return (
-    <fieldset>
-      <legend className="text-xs leading-4 font-medium text-muted-foreground">{legend}</legend>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {values.map((value) => {
-          const isSelected = value === selectedValue;
-          return (
-            <label
-              key={value}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-border bg-background/70 px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted has-checked:border-primary-imprint/60 has-checked:bg-secondary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary-imprint"
-            >
-              <input
-                type="radio"
-                name={groupName}
-                value={value}
-                checked={isSelected}
-                onChange={() => onSelect(value)}
-                className="sr-only"
-              />
-              {isSelected && (
-                <Image
-                  src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  alt=""
-                  width={14}
-                  height={14}
-                />
-              )}
-              {labels[value]}
-            </label>
-          );
-        })}
-      </div>
-      {note !== null && note !== undefined && (
-        <p className="mt-1.5 text-xs leading-4 text-muted-foreground">{note}</p>
-      )}
-    </fieldset>
-  );
-}
-
-/**
  * How the mascot looks and moves, for this browser: size, speed and which corner it rests in.
- * Speed changes how lively it is, not how long it points or reacts, so a message stays readable.
+ * The size and speed controls are shared with the account menu's AI Assist panel.
  */
 export function AppearanceSection({
   mascotSize,
@@ -309,11 +227,6 @@ export function AppearanceSection({
   readonly onMascotSpeedChange: (mascotSpeed: MascotSpeed) => void;
   readonly onDockSideChange: (dockSide: MascotDockSide) => void;
 }) {
-  const isReducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    readIsReducedMotion,
-    readIsReducedMotionOnServer,
-  );
   const otherDockSide: MascotDockSide = dockSide === "right" ? "left" : "right";
 
   return (
@@ -322,26 +235,12 @@ export function AppearanceSection({
         How it looks and moves
       </summary>
       <div className="mt-2 space-y-3">
-        <PillRadioGroup
-          legend="Size"
-          groupName="assistant-mascot-size"
-          values={MASCOT_SIZES}
-          labels={MASCOT_SIZE_LABELS}
-          selectedValue={mascotSize}
-          onSelect={onMascotSizeChange}
-        />
-        <PillRadioGroup
-          legend="Speed"
-          groupName="assistant-mascot-speed"
-          values={MASCOT_SPEEDS}
-          labels={MASCOT_SPEED_LABELS}
-          selectedValue={mascotSpeed}
-          onSelect={onMascotSpeedChange}
-          note={
-            isReducedMotion
-              ? "Your device asks for reduced motion, so it holds still at any speed."
-              : null
-          }
+        <MascotAppearanceControls
+          idPrefix="assistant-panel"
+          mascotSize={mascotSize}
+          mascotSpeed={mascotSpeed}
+          onMascotSizeChange={onMascotSizeChange}
+          onMascotSpeedChange={onMascotSpeedChange}
         />
         <button
           type="button"
@@ -353,22 +252,4 @@ export function AppearanceSection({
       </div>
     </details>
   );
-}
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeToReducedMotion(onChange: () => void): () => void {
-  const reducedMotionQuery = window.matchMedia(REDUCED_MOTION_QUERY);
-  reducedMotionQuery.addEventListener("change", onChange);
-  return () => {
-    reducedMotionQuery.removeEventListener("change", onChange);
-  };
-}
-
-function readIsReducedMotion(): boolean {
-  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
-}
-
-function readIsReducedMotionOnServer(): boolean {
-  return false;
 }

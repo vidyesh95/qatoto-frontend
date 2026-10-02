@@ -128,9 +128,24 @@ export default function AssistantRoot() {
       setIsPanelOpen(false);
       openButtonRef.current?.focus();
     };
+    // A press anywhere outside the panel closes it — except on the mascot itself, whose button
+    // already toggles the panel and starts a drag. Counting it as "outside" would close the panel
+    // on mousedown and reopen it on the click that follows. Focus is left where the viewer
+    // clicked; only Escape hands it back to the mascot. A tap fires a compatibility mousedown,
+    // so touch is covered too (the `use-video-card-menu-state.ts` precedent).
+    const handlePressOutside = (pressEvent: MouseEvent) => {
+      const pressedNode = pressEvent.target;
+      if (!(pressedNode instanceof Node)) return;
+      const panelElement = document.getElementById(ASSISTANT_PANEL_ID);
+      if (panelElement?.contains(pressedNode)) return;
+      if (mascotBoxRef.current?.contains(pressedNode)) return;
+      setIsPanelOpen(false);
+    };
     document.addEventListener("keydown", handleEscapeKeyDown);
+    document.addEventListener("mousedown", handlePressOutside);
     return () => {
       document.removeEventListener("keydown", handleEscapeKeyDown);
+      document.removeEventListener("mousedown", handlePressOutside);
     };
   }, [isPanelOpen]);
 

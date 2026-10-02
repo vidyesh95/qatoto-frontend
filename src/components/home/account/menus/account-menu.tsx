@@ -98,6 +98,10 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
           selected={preferences.isAiAssistModeOn}
           onSelect={(isAiAssistModeOn) => setPreference("isAiAssistModeOn", isAiAssistModeOn)}
           onBack={() => handleViewChange("main")}
+          mascotSize={preferences.assistantMascotSize}
+          mascotSpeed={preferences.assistantMascotSpeed}
+          onMascotSizeChange={(mascotSize) => setPreference("assistantMascotSize", mascotSize)}
+          onMascotSpeedChange={(mascotSpeed) => setPreference("assistantMascotSpeed", mascotSpeed)}
         />
       ) : view === "language" ? (
         <LanguagePanel

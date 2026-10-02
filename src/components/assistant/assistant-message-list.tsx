@@ -97,6 +97,13 @@ function AssistantMessageItem({
           <p className="text-sm leading-5 font-medium break-words whitespace-pre-wrap text-foreground">
             {message.reply.reply}
           </p>
+          {/* Where THIS answer came from. The route can change mid-conversation (a download
+              finishes, a session ends), so each answer keeps its own origin. */}
+          <p className="text-xs leading-4 text-muted-foreground">
+            {message.answeredBy === "on_device"
+              ? "Answered on this device by Gemini Nano"
+              : "Answered by Google Gemini via Qatoto"}
+          </p>
           {destination !== null && (
             <Link
               href={destination.href}

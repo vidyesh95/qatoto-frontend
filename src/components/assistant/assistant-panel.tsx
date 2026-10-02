@@ -33,7 +33,10 @@ import {
   MemorySection,
   PlacesSection,
 } from "@/components/assistant/assistant-panel-sections";
-import { selectAssistantChatRoute } from "@/components/assistant/assistant-brain-state";
+import {
+  describeAssistantModel,
+  selectAssistantChatRoute,
+} from "@/components/assistant/assistant-brain-state";
 import { useAssistantBrain } from "@/components/assistant/use-assistant-brain";
 import { ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH } from "@/lib/assistant/assistant-reply.schemas";
 import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
@@ -43,11 +46,6 @@ import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-pref
 export const ASSISTANT_PANEL_ID = "qatoto-assistant-panel";
 
 const POINT_AT_PANEL_MS = 1_500;
-
-const ROUTE_BADGE_LABELS = {
-  on_device: "On this device",
-  cloud: "Gemini via Qatoto",
-} as const;
 
 export default function AssistantPanel({
   pathname,
@@ -103,6 +101,7 @@ export default function AssistantPanel({
       onDestinationOffered: pointMascotAtPanel,
     });
   const chatRoute = selectAssistantChatRoute(brainState);
+  const modelDescription = describeAssistantModel(brainState);
   const canSend = chatRoute !== "none" && !isAwaitingReply && draftQuestion.trim().length > 0;
 
   const pointMascotAtPanelOnOpen = useEffectEvent(pointMascotAtPanel);
@@ -178,21 +177,14 @@ export default function AssistantPanel({
       }`}
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2
-            ref={headingRef}
-            id={`${ASSISTANT_PANEL_ID}-heading`}
-            tabIndex={-1}
-            className="text-sm font-medium text-foreground focus:outline-none"
-          >
-            Qatoto assistant
-          </h2>
-          {chatRoute !== "none" && (
-            <span className="rounded-full border border-border px-2 py-0.5 text-xs leading-4 text-muted-foreground">
-              {ROUTE_BADGE_LABELS[chatRoute]}
-            </span>
-          )}
-        </div>
+        <h2
+          ref={headingRef}
+          id={`${ASSISTANT_PANEL_ID}-heading`}
+          tabIndex={-1}
+          className="text-sm font-medium text-foreground focus:outline-none"
+        >
+          Qatoto assistant
+        </h2>
         <button
           type="button"
           onClick={onClose}
@@ -207,6 +199,13 @@ export default function AssistantPanel({
           />
         </button>
       </header>
+
+      {/* WHICH MODEL IS ANSWERING, always, before anything is typed. An <output> is a status live
+          region, so a change (the download finishing and Gemini Nano taking over) is announced. */}
+      <output className="block border-b border-border px-4 py-2 text-xs leading-4">
+        <span className="font-medium text-foreground">{modelDescription.heading}.</span>{" "}
+        <span className="text-muted-foreground">{modelDescription.detail}</span>
+      </output>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
         <BrainNotice brainState={brainState} onDownloadClick={startOnDeviceDownload} />

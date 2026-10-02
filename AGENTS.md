@@ -817,7 +817,9 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   (`src/lib/assistant/assistant-signals.ts`) with a FACT: `order_placed`, `payment_settled`,
   `cart_item_added`, `submission_received`. `resolveSignalReaction` in `mascot-state.ts` decides
   the expression, the perch and the words. Never import assistant components from a product
-  surface.
+  surface — with ONE exception: the account menu's AI Assist panel imports
+  `mascot-appearance-controls.tsx` (size and speed). It is the assistant's own settings, carries no
+  Pixi and no chat code, and is shared so the two places offering it cannot drift.
 - **Perches are an attribute.** `data-assistant-perch="<id>"` on any element, server components
   included; ids come from `mascot-state.ts` (`CHECKOUT_CONFIRMED_PERCH_ID`,
   `SUBMISSION_RECEIPT_PERCH_ID`, `buildAddToCartPerchId`). The tracker (`perch-tracker.ts`) takes

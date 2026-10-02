@@ -94,3 +94,62 @@ export function selectAssistantChatRoute(brainState: AssistantBrainState): Assis
     }
   }
 }
+
+export interface AssistantModelDescription {
+  /** The model by name, or that there is none yet. Shown first, at medium weight. */
+  readonly heading: string;
+  /** Where the words go, in one sentence. */
+  readonly detail: string;
+}
+
+/**
+ * WHICH MODEL IS ANSWERING, IN WORDS, for the strip at the top of the panel. A viewer should never
+ * have to guess whether what they type leaves their device, so every state names the model it will
+ * use — or says plainly that there is none yet and what would give them one.
+ */
+export function describeAssistantModel(brainState: AssistantBrainState): AssistantModelDescription {
+  switch (brainState.status) {
+    case "checking":
+      return {
+        heading: "Model: checking",
+        detail: "Finding out which model this browser can use…",
+      };
+    case "on_device_ready":
+      return {
+        heading: "Model: Gemini Nano, built into Chrome",
+        detail: "Runs on this device; nothing you type leaves it.",
+      };
+    case "cloud_ready":
+      return {
+        heading: "Model: Google Gemini, through Qatoto (cloud)",
+        detail: "Your questions are sent to Google Gemini. Qatoto does not keep them.",
+      };
+    case "on_device_downloadable":
+    case "on_device_downloading":
+      return brainState.canChatViaCloud
+        ? {
+            heading: "Model: Google Gemini, through Qatoto (cloud)",
+            detail:
+              "Until Chrome's built-in Gemini Nano is downloaded; then answers stay on this device.",
+          }
+        : {
+            heading: "No model yet",
+            detail:
+              "Download Chrome's built-in Gemini Nano below, or sign in to use Google Gemini through Qatoto.",
+          };
+    case "sign_in_required":
+      return {
+        heading: "No model available here",
+        detail: "Sign in to use Google Gemini through Qatoto.",
+      };
+    case "finish_sign_up":
+      return {
+        heading: "No model available",
+        detail: "Finish setting up your account to use Google Gemini through Qatoto.",
+      };
+    default: {
+      const exhaustiveCheck: never = brainState;
+      return exhaustiveCheck;
+    }
+  }
+}
