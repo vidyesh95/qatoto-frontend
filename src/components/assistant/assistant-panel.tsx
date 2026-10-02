@@ -102,7 +102,11 @@ export default function AssistantPanel({
     });
   const chatRoute = selectAssistantChatRoute(brainState);
   const modelDescription = describeAssistantModel(brainState);
-  const canSend = chatRoute !== "none" && !isAwaitingReply && draftQuestion.trim().length > 0;
+  // NO MODEL, NO COMPOSER. Without an on-device model or Premium AI there is nothing to send a
+  // question to, so the box is not drawn at all rather than drawn disabled; the model strip says
+  // why. The rest of the panel — Places, memory, appearance — works either way.
+  const isChatAvailable = chatRoute !== "none";
+  const canSend = isChatAvailable && !isAwaitingReply && draftQuestion.trim().length > 0;
 
   const pointMascotAtPanelOnOpen = useEffectEvent(pointMascotAtPanel);
   useEffect(() => {
@@ -210,18 +214,20 @@ export default function AssistantPanel({
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
         <BrainNotice brainState={brainState} onDownloadClick={startOnDeviceDownload} />
 
-        {messages.length === 0 ? (
-          <p className="text-xs leading-4 text-muted-foreground">
-            Ask where something is on Qatoto, or ask it to find a product, a video or a research
-            programme. It can be wrong, so check what it links to.
-          </p>
-        ) : (
+        {messages.length > 0 ? (
           <AssistantMessageList
             messages={messages}
             memoryNotes={memoryNotes}
             onSaveNote={onSaveNote}
             onNavigate={onClose}
           />
+        ) : (
+          isChatAvailable && (
+            <p className="text-xs leading-4 text-muted-foreground">
+              Ask where something is on Qatoto, or ask it to find a product, a video or a research
+              programme. It can be wrong, so check what it links to.
+            </p>
+          )
         )}
         <div ref={conversationEndRef} />
         <p className="sr-only" aria-live="polite">
@@ -246,34 +252,33 @@ export default function AssistantPanel({
         </div>
       </div>
 
-      <form
-        onSubmit={handleComposerSubmit}
-        className="flex items-end gap-2 border-t border-border px-3 py-3"
-      >
-        <label htmlFor={`${ASSISTANT_PANEL_ID}-question`} className="sr-only">
-          Ask the assistant
-        </label>
-        <textarea
-          id={`${ASSISTANT_PANEL_ID}-question`}
-          value={draftQuestion}
-          onChange={(changeEvent) => setDraftQuestion(changeEvent.target.value)}
-          onKeyDown={handleComposerKeyDown}
-          disabled={chatRoute === "none"}
-          maxLength={ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH}
-          rows={2}
-          placeholder={
-            chatRoute === "none" ? "Questions are not available here yet" : "Ask anything"
-          }
-          className="min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
-        />
-        <button
-          type="submit"
-          disabled={!canSend}
-          className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
+      {isChatAvailable && (
+        <form
+          onSubmit={handleComposerSubmit}
+          className="flex items-end gap-2 border-t border-border px-3 py-3"
         >
-          {isAwaitingReply ? "Asking…" : "Send"}
-        </button>
-      </form>
+          <label htmlFor={`${ASSISTANT_PANEL_ID}-question`} className="sr-only">
+            Ask the assistant
+          </label>
+          <textarea
+            id={`${ASSISTANT_PANEL_ID}-question`}
+            value={draftQuestion}
+            onChange={(changeEvent) => setDraftQuestion(changeEvent.target.value)}
+            onKeyDown={handleComposerKeyDown}
+            maxLength={ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH}
+            rows={2}
+            placeholder="Ask anything"
+            className="min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
+          />
+          <button
+            type="submit"
+            disabled={!canSend}
+            className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isAwaitingReply ? "Asking…" : "Send"}
+          </button>
+        </form>
+      )}
     </section>
   );
 }

@@ -411,6 +411,15 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         inactiveIcon: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
       {
+        // ADMIN ONLY (`grant_ai_assistant_cloud`), and the page says so, for the reason the
+        // Metrics row gives. Beside Staff because both decide what one account may do.
+        // `workspace_premium` has only its FILL0 committed, so one icon serves both states.
+        href: "/admin/premium-ai",
+        label: "Premium AI",
+        activeIcon: "/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
+      {
         href: "/admin/staff",
         label: "Staff",
         activeIcon: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

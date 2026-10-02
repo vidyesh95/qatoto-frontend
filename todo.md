@@ -1339,8 +1339,9 @@ three).
 
 Each step lists what should happen. Report any step that does not, with what you saw.
 
-**A. Cloud chat** — signed in, in a browser that cannot run the model (Safari, Firefox, or a Chrome
-whose `chrome://on-device-internals` shows no model):
+**A. Cloud chat** — signed in AS A PREMIUM AI ACCOUNT (grant it first, step F), in a browser that
+cannot run the model (Safari, Firefox, or a Chrome whose `chrome://on-device-internals` shows no
+model). Before 0213 is applied the route answers 403 to everyone, which is the expected state:
 
 1. Open the assistant. The line under its title reads "Model: Google Gemini, through Qatoto
    (cloud)" and the mascot points at the panel.
@@ -1384,6 +1385,21 @@ account to ask questions here."
 2. Under "Appearance", Size and Speed show the same choice as the assistant panel's "How it looks
    and moves". Changing one in the menu changes the mascot at once and shows in the panel.
 3. With AI Assist Mode Off, the line "Applies once AI Assist Mode is on." shows.
+
+**F. Premium AI** — needs migration `0213` applied to the shared database first (ask before
+applying), then an admin account:
+
+1. `/admin/premium-ai` lists no grants. Grant one by email: it appears with your name and date.
+   Granting the same email again shows "That account already has Premium AI." (409).
+2. Signed in as that account, in a browser without the on-device model: the assistant's model line
+   reads "Model: Google Gemini, through Qatoto (cloud)" and the composer is there.
+3. Signed in as an account WITHOUT a grant, same browser: "No chat model here", no composer,
+   Places / memory / appearance still work.
+4. Revoke the grant (Revoke → Confirm revoke). It leaves the list; the account in step 2, on its
+   next question or panel open, is back to "No chat model here".
+
+**G. Signed out**: the navbar's "AI Assist" button and the sidebar's "AI Assist" row both open the
+AI Assist sheet; switching it On shows the mascot with no account.
 
 #### 22.2 Art
 

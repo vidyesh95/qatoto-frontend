@@ -51,7 +51,6 @@ export function BrainNotice({
           >
             Download on-device model
           </button>
-          <CloudMeanwhileLine canChatViaCloud={brainState.canChatViaCloud} />
         </div>
       );
     case "on_device_downloading":
@@ -68,46 +67,25 @@ export function BrainNotice({
             {...(brainState.progressPercent === null ? {} : { value: brainState.progressPercent })}
             aria-label="On-device model download"
           />
-          <CloudMeanwhileLine canChatViaCloud={brainState.canChatViaCloud} />
         </div>
       );
-    case "finish_sign_up":
-      return (
+    case "no_chat":
+      // Only a signed-out viewer has something to do: sign in, in case their account has Premium
+      // AI. Everyone else is told why by the model strip; there is nothing to click.
+      return brainState.reason === "signed_out" ? (
         <p className="text-xs leading-4 text-muted-foreground">
-          Finish setting up your account to ask questions here.{" "}
-          <Link href="/sign-up" className={QUIET_LINK_CLASS_NAME}>
-            Finish signing up
-          </Link>
-        </p>
-      );
-    case "sign_in_required":
-      return (
-        <p className="text-xs leading-4 text-muted-foreground">
+          Have Premium AI?{" "}
           <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
             Sign in
           </Link>{" "}
-          to ask questions. The places below work either way.
+          to chat. The places below work either way.
         </p>
-      );
+      ) : null;
     default: {
       const exhaustiveCheck: never = brainState;
       return exhaustiveCheck;
     }
   }
-}
-
-/** Only the signed-out case needs a line: the model strip already says the cloud is in use. */
-function CloudMeanwhileLine({ canChatViaCloud }: { readonly canChatViaCloud: boolean }) {
-  if (canChatViaCloud) return null;
-  return (
-    <p className="text-xs leading-4 text-muted-foreground">
-      Until it is ready,{" "}
-      <Link href="/sign-in" className={QUIET_LINK_CLASS_NAME}>
-        sign in
-      </Link>{" "}
-      to ask through Qatoto instead.
-    </p>
-  );
 }
 
 interface DestinationGroup {

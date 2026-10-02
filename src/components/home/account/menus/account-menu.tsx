@@ -95,6 +95,8 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
     >
       {view === "ai-assist" ? (
         <AiAssistPanel
+          variant="menu"
+          idPrefix="account-menu"
           selected={preferences.isAiAssistModeOn}
           onSelect={(isAiAssistModeOn) => setPreference("isAiAssistModeOn", isAiAssistModeOn)}
           onBack={() => handleViewChange("main")}

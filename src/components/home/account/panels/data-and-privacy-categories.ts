@@ -25,6 +25,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Your name, email address, and profile photo",
       "Your handle and the location shown on your profile",
       "When you joined",
+      "Whether your account has Premium AI, and when it was turned on or off",
     ],
   },
   {
@@ -125,7 +126,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
     items: [
       "Your language, browse country, and AI assist preference",
       "Where the AI assistant sits, its size and speed, and the notes you asked it to remember",
-      "Stored in this browser only. Assistant notes travel with a question when your browser cannot run the assistant itself, and we do not keep them",
+      "Stored in this browser only. With Premium AI, assistant notes travel with a question when your browser cannot run the assistant itself, and we do not keep them",
     ],
     absentFromExport:
       "Not in the download: we store none of these, so we have no copy to include. Clear them above.",

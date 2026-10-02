@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode, memo, useMemo } from "react";
+import { ReactNode, memo, useMemo, useState } from "react";
 import Image from "next/image";
+import AiAssistSheet from "@/components/home/account/menus/ai-assist-sheet";
 import { useSidebar } from "@/state/sidebar-context";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
+import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas";
 
 /* ---------- Icon paths (outside component to prevent re-allocation) ---------- */
 const ICON_PATHS = {
@@ -245,6 +247,44 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
   );
 });
 
+/* ---------- Action Item Component ---------- */
+/**
+ * A sidebar row that opens the AI Assist sheet. Same shape and spacing as a link row, but a
+ * `<button>` with `aria-haspopup="dialog"`. The icon is the mascot's own still: `public/icons` has
+ * no AI glyph, and this is the character the switch turns on.
+ */
+const SidebarActionItem = memo(function SidebarActionItem({
+  linkText,
+  onSelect,
+}: {
+  linkText: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={onSelect}
+      className={joinClassNames(
+        BASE_ITEM_STYLE,
+        DEFAULT_ITEM_STYLE,
+        "w-full cursor-pointer text-left",
+      )}
+    >
+      <span className="flex size-6 shrink-0 items-center justify-center">
+        <Image
+          src={MASCOT_STATIC_FALLBACK_URL}
+          alt=""
+          width={20}
+          height={24}
+          className="h-6 w-auto"
+        />
+      </span>
+      <span className="truncate">{linkText}</span>
+    </button>
+  );
+});
+
 /* ---------- Collapsed Navigation Item Component ---------- */
 type CollapsedNavItemProps = {
   destinationPath: string;
@@ -331,7 +371,7 @@ const SidebarSection = memo(function SidebarSection({
 });
 
 /* ---------- Navigation Configuration ---------- */
-type NavItem = {
+type NavLinkItem = {
   path: string;
   label: string;
   iconKey: keyof typeof ICON_PATHS;
@@ -346,6 +386,19 @@ type NavItem = {
    */
   requiresSession?: true;
 };
+
+/**
+ * A row that OPENS something instead of going somewhere. Every other row here is a destination;
+ * this variant exists for exactly one: "AI Assist", which opens the AI Assist sheet so a SIGNED-OUT
+ * visitor can switch the assistant on (signed in, the account menu also carries it). Rendered as a
+ * `<button>`, never a link, because there is no URL to go to.
+ */
+type NavActionItem = {
+  action: "open_ai_assist";
+  label: string;
+};
+
+type NavItem = NavLinkItem | NavActionItem;
 
 type NavSection = {
   title?: string;
@@ -461,6 +514,9 @@ const NAVIGATION_CONFIG: NavSection[] = [
       // `/your-account` and `/settings`, two page trees that rendered near-copies of what that
       // menu already carried; the routes are gone and the menu is the one place they live.
       { path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" },
+      // The one action row in this file (see `NavActionItem`). Shown to everyone: switching the
+      // assistant on needs no account.
+      { action: "open_ai_assist", label: "AI Assist" },
     ],
     hasDivider: true,
   },
@@ -488,7 +544,7 @@ const FOOTER_LINKS_ROW2 = [
 ] as const;
 
 /* ---------- Collapsed Navigation Config ---------- */
-const COLLAPSED_NAV_CONFIG: NavItem[] = [
+const COLLAPSED_NAV_CONFIG: NavLinkItem[] = [
   { path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true },
   { path: ROUTES.home, label: "Home", iconKey: "home" },
   { path: ROUTES.blueprints, label: "Blueprints", iconKey: "architecture" },
@@ -506,11 +562,14 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
   const currentPathname = usePathname();
   const { isCollapsed } = useSidebar();
   const isSignedIn = useViewerSignedIn(isViewerSignedIn);
+  const [isAiAssistSheetOpen, setIsAiAssistSheetOpen] = useState(false);
 
   // Memoize rendered sections to prevent unnecessary re-renders
   const renderedSections = useMemo(() => {
     return NAVIGATION_CONFIG.map((section, sectionIndex) => {
-      const visibleItems = section.items.filter((item) => isSignedIn || !item.requiresSession);
+      const visibleItems = section.items.filter(
+        (item) => "action" in item || isSignedIn || !item.requiresSession,
+      );
 
       // A section can empty out entirely — render nothing rather than a heading and a divider
       // with no rows under them. None does today; the guard is here so adding one more
@@ -520,6 +579,15 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
       return (
         <SidebarSection key={sectionIndex} sectionTitle={section.title}>
           {visibleItems.map((item) => {
+            if ("action" in item) {
+              return (
+                <SidebarActionItem
+                  key={item.action}
+                  linkText={item.label}
+                  onSelect={() => setIsAiAssistSheetOpen(true)}
+                />
+              );
+            }
             const isActive = isRouteActive(currentPathname, item.path);
             return (
               <SidebarNavigationItem
@@ -609,6 +677,9 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
           <p className="pt-2 text-muted-foreground">© 2026 Qatoto</p>
         </footer>
       </div>
+      {isAiAssistSheetOpen && (
+        <AiAssistSheet idPrefix="sidebar" onClose={() => setIsAiAssistSheetOpen(false)} />
+      )}
     </aside>
   );
 }

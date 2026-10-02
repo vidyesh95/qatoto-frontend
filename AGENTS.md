@@ -834,13 +834,22 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   carry the same rules plus "you cannot act" — the model must never claim it opened, searched or
   saved anything. Change them together.
 - **Which model answers is one union.** `assistant-brain-state.ts`: Chrome's on-device Gemini Nano
-  when `LanguageModel` reports it ready (nothing leaves the device, replies stream); otherwise the
-  cloud route for SIGNED-IN viewers only (Gemini Flash-Lite, synchronous, server-written prompt,
-  stateless, two limiters + `requireIdentifiedUser`); otherwise a sign-in prompt. **The model
-  download starts only from the panel's button** — Chrome requires the click, and
-  `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
-  `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
-  vocabulary has changed between Chrome versions.
+  when `LanguageModel` reports it ready (nothing leaves the device, replies stream; free for
+  everyone, signed in or not); otherwise the cloud route for **PREMIUM AI accounts only**
+  (Gemini, synchronous, server-written prompt, stateless, two limiters + `requireIdentifiedUser`
+    - an active `assistant_cloud_entitlement` grant, read via `GET /assistant/cloud-access`);
+      otherwise `no_chat` — the composer is NOT rendered and the model strip says why, while the
+      mascot, Places, memory and appearance keep working. Premium AI is staff-granted at
+      `/admin/premium-ai` (`grant_ai_assistant_cloud`, admin only); there is no billing, so no copy may
+      read as an offer to buy it. **Apple's and Samsung's on-device models have no web API** (Apple's
+      Foundation Models framework is Swift-only; Galaxy AI is a browser feature), so there is no third
+      route. **Anyone can switch AI Assist on:** signed out, through the navbar's "AI Assist" button
+      or the sidebar's "AI Assist" row (the one `NavActionItem` in `sidebar.tsx`), both opening
+      `ai-assist-sheet.tsx`; signed in, also through the account menu. **The model
+      download starts only from the panel's button** — Chrome requires the click, and
+      `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
+      `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
+      vocabulary has changed between Chrome versions.
 - **The model chooses, the viewer acts.** A reply is `AssistantReplySchema`: an expression, a
   `destinationKey` (a key, never a URL — `assistant-destinations.ts` owns the hrefs and the backend
   keeps a copy of the keys), an optional `search` the panel runs through the existing public search

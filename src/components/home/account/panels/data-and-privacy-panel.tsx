@@ -146,9 +146,9 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <p className="text-sm text-muted-foreground">
             Your language, browse country, AI assist preference, where the assistant sits and the
             notes you asked it to remember live in this browser. None of them is stored by us; the
-            notes travel with a question only when your browser cannot run the assistant itself.
-            Clearing them affects this browser only — your account is untouched, and other devices
-            keep their own settings.
+            notes travel with a question only for a Premium AI account whose browser cannot run the
+            assistant itself. Clearing them affects this browser only — your account is untouched,
+            and other devices keep their own settings.
           </p>
           {renderClearDeviceDataAction()}
         </section>

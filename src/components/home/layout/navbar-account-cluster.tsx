@@ -19,11 +19,13 @@ import Image from "next/image";
 import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import AiAssistSheet from "@/components/home/account/menus/ai-assist-sheet";
 import SendFeedbackSheet from "@/components/home/shared/send-feedback-sheet";
 import CartNavButton from "@/components/home/layout/cart-nav-button";
 import NotificationBell from "@/components/home/layout/notification-bell";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
+import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas";
 
 export default function NavbarAccountCluster({
   isViewerSignedIn,
@@ -48,6 +50,9 @@ export default function NavbarAccountCluster({
   // is unmounted when it closes — a sheet owned by `AccountMenu` would be destroyed by the same
   // click that opened it.
   const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
+  // Signed out, there is no account menu to hold the AI Assist switch, so the navbar offers it
+  // directly. Signed in, the account menu is where it lives, as before.
+  const [isAiAssistSheetOpen, setIsAiAssistSheetOpen] = useState(false);
 
   return (
     <>
@@ -91,18 +96,42 @@ export default function NavbarAccountCluster({
           )}
         </>
       ) : (
-        <Link
-          href={"/sign-in"}
-          className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint"
-        >
-          <Image
-            src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-            alt={"Signin"}
-            width={24}
-            height={24}
-          />
-          Sign in
-        </Link>
+        <>
+          {/* The mascot's own still is the icon: `public/icons` has no AI glyph, and this is the
+              character the switch turns on. Text from `sm` up; on a phone the image and the
+              accessible name carry it, so the navbar keeps its room for search. */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="AI Assist"
+            onClick={() => setIsAiAssistSheetOpen(true)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+          >
+            <Image
+              src={MASCOT_STATIC_FALLBACK_URL}
+              alt=""
+              width={24}
+              height={29}
+              className="h-7 w-auto"
+            />
+            <span className="hidden sm:inline">AI Assist</span>
+          </button>
+          {isAiAssistSheetOpen && (
+            <AiAssistSheet idPrefix="navbar" onClose={() => setIsAiAssistSheetOpen(false)} />
+          )}
+          <Link
+            href={"/sign-in"}
+            className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint"
+          >
+            <Image
+              src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+              alt={"Signin"}
+              width={24}
+              height={24}
+            />
+            Sign in
+          </Link>
+        </>
       )}
     </>
   );

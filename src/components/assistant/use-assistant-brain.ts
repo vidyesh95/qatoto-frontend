@@ -22,8 +22,9 @@ import {
   selectAssistantBrainState,
   selectAssistantChatRoute,
   type AssistantBrainState,
-  type CloudRefusal,
+  type NoChatReason,
   type OnDeviceModelStatus,
+  type ViewerCloudAccess,
 } from "@/components/assistant/assistant-brain-state";
 import {
   buildAssistantSystemText,
@@ -37,7 +38,11 @@ import {
   type AssistantSearchScope,
 } from "@/lib/assistant/assistant-reply.schemas";
 import { runAssistantSearch, type AssistantSearchResult } from "@/lib/assistant/assistant-search";
-import { requestCloudReply } from "@/lib/assistant/cloud-brain.api";
+import {
+  getAssistantCloudAccess,
+  isPremiumRequiredError,
+  requestCloudReply,
+} from "@/lib/assistant/cloud-brain.api";
 import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
 import {
   createOnDeviceSession,
@@ -46,7 +51,7 @@ import {
   type OnDeviceSession,
 } from "@/lib/assistant/on-device-model";
 import { useSession } from "@/lib/auth-client";
-import type { ActionResponse } from "@/lib/http";
+import type { ActionResponse, ApiError } from "@/lib/http";
 
 export type AssistantSearchState =
   | { readonly status: "none" }
@@ -124,6 +129,39 @@ function describeCloudFailure(errorCode: string): string {
   }
 }
 
+/** The cloud route's refusals that end chat for this account, until it signs in again. */
+function readCloudRefusal(error: ApiError): NoChatReason | null {
+  if (error.code === "401") return "signed_out";
+  if (isPremiumRequiredError(error)) return "not_premium";
+  if (error.code === "403") return "anonymous";
+  return null;
+}
+
+function selectViewerCloudAccess({
+  isSessionPending,
+  signedInUserId,
+  cloudAccessRead,
+  cloudRefusalRecord,
+}: {
+  readonly isSessionPending: boolean;
+  readonly signedInUserId: string | null;
+  readonly cloudAccessRead: {
+    readonly userId: string;
+    readonly result: "premium" | "not_premium" | "signed_out";
+  } | null;
+  readonly cloudRefusalRecord: { readonly userId: string; readonly refusal: NoChatReason } | null;
+}): ViewerCloudAccess {
+  if (isSessionPending) return { status: "checking" };
+  if (signedInUserId === null) return { status: "signed_out" };
+  if (cloudRefusalRecord !== null && cloudRefusalRecord.userId === signedInUserId) {
+    return { status: cloudRefusalRecord.refusal };
+  }
+  if (cloudAccessRead === null || cloudAccessRead.userId !== signedInUserId) {
+    return { status: "checking" };
+  }
+  return { status: cloudAccessRead.result === "premium" ? "premium" : cloudAccessRead.result };
+}
+
 export function useAssistantBrain({
   pathname,
   memoryNotes,
@@ -142,12 +180,16 @@ export function useAssistantBrain({
   const [onDeviceModelStatus, setOnDeviceModelStatus] = useState<OnDeviceModelStatus>({
     status: "checking",
   });
-  // Keyed by the account it was given to, so signing in as someone else clears it by derivation
-  // rather than by an effect that resets state.
+  // Both keyed by the account they were read for, so signing in as someone else discards them by
+  // derivation rather than by an effect that resets state.
+  const [cloudAccessRead, setCloudAccessRead] = useState<{
+    readonly userId: string;
+    readonly result: "premium" | "not_premium" | "signed_out";
+  } | null>(null);
   const [cloudRefusalRecord, setCloudRefusalRecord] = useState<{
-    readonly userId: string | null;
-    readonly refusal: CloudRefusal;
-  }>({ userId: null, refusal: null });
+    readonly userId: string;
+    readonly refusal: NoChatReason;
+  } | null>(null);
   const [messages, setMessages] = useState<readonly AssistantMessage[]>([]);
   const [isAwaitingReply, setIsAwaitingReply] = useState(false);
 
@@ -157,14 +199,42 @@ export function useAssistantBrain({
   const nextMessageIdRef = useRef(1);
 
   const signedInUserId = authSession?.user.id ?? null;
-  const cloudRefusal =
-    cloudRefusalRecord.userId === signedInUserId ? cloudRefusalRecord.refusal : null;
+  const viewerCloudAccess = selectViewerCloudAccess({
+    isSessionPending,
+    signedInUserId: isSignedIn ? signedInUserId : null,
+    cloudAccessRead,
+    cloudRefusalRecord,
+  });
   const brainState: AssistantBrainState = selectAssistantBrainState({
     onDeviceModelStatus,
-    isSessionPending,
-    isSignedIn,
-    cloudRefusal,
+    viewerCloudAccess,
   });
+
+  // A signed-in viewer's Premium AI, read once per account while the panel is open. Signed out,
+  // nothing is asked: the cloud route is not theirs whatever the answer would be.
+  useEffect(() => {
+    if (signedInUserId === null) return undefined;
+    let isCancelled = false;
+    const readCloudAccess = async () => {
+      const cloudAccessResult = await getAssistantCloudAccess();
+      if (isCancelled) return;
+      setCloudAccessRead({
+        userId: signedInUserId,
+        result: cloudAccessResult.success
+          ? cloudAccessResult.data.hasCloudAccess
+            ? "premium"
+            : "not_premium"
+          : cloudAccessResult.error.code === "401"
+            ? "signed_out"
+            : // Unreachable or unreadable: the safe answer is "no cloud", never a guess of yes.
+              "not_premium",
+      });
+    };
+    void readCloudAccess();
+    return () => {
+      isCancelled = true;
+    };
+  }, [signedInUserId]);
 
   // Ask Chrome once, when the panel opens.
   useEffect(() => {
@@ -363,11 +433,11 @@ export function useAssistantBrain({
     setIsAwaitingReply(false);
     if (!replyResult.success) {
       if (replyResult.error.code === "aborted") return;
-      if (chatRoute === "cloud" && replyResult.error.code === "401") {
-        setCloudRefusalRecord({ userId: signedInUserId, refusal: "sign_in_required" });
-      }
-      if (chatRoute === "cloud" && replyResult.error.code === "403") {
-        setCloudRefusalRecord({ userId: signedInUserId, refusal: "finish_sign_up" });
+      if (chatRoute === "cloud" && signedInUserId !== null) {
+        const cloudRefusal = readCloudRefusal(replyResult.error);
+        if (cloudRefusal !== null) {
+          setCloudRefusalRecord({ userId: signedInUserId, refusal: cloudRefusal });
+        }
       }
       replaceAssistantMessage(pendingMessageId, {
         messageId: pendingMessageId,

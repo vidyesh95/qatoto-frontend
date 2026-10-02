@@ -2,13 +2,16 @@
 //
 // WHICH MODEL ANSWERS, AS ONE UNION.
 //
-// Two inputs decide it: what Chrome says about its on-device model, and whether the viewer is signed
-// in (the cloud route is for signed-in people only). They combine into exactly one of these states,
-// so the panel cannot show a download button and a sign-in prompt and a composer that sends nowhere
-// all at once (AGENTS.md Pattern 1).
+// Two inputs decide it: what Chrome says about its on-device model, and whether the viewer's
+// account holds Premium AI. They combine into exactly one of these states, so the panel cannot
+// show a download button and a composer that sends nowhere at the same time (AGENTS.md
+// Pattern 1).
 //
-// ON-DEVICE WINS WHEN IT IS READY, because nothing leaves the device. While it is merely available
-// to download, a signed-in viewer chats through the cloud and is offered the download beside it.
+// ON-DEVICE WINS WHEN IT IS READY, because nothing leaves the device, and it is free for everyone,
+// signed in or not. THE CLOUD (Google Gemini through Qatoto) IS PREMIUM AI ONLY: it spends Qatoto's
+// key. Everyone else without an on-device model gets `no_chat` — the mascot, Places, memory and
+// settings stay, the composer does not render. Apple's and Samsung's on-device models have no web
+// API, so there is no third route to fall back to.
 
 export type OnDeviceModelStatus =
   | { readonly status: "checking" }
@@ -17,8 +20,15 @@ export type OnDeviceModelStatus =
   | { readonly status: "downloading"; readonly progressPercent: number | null }
   | { readonly status: "unavailable" };
 
-/** A refusal the cloud route gave, which outranks what the session claims until the next sign-in. */
-export type CloudRefusal = "sign_in_required" | "finish_sign_up" | null;
+/** What the viewer's account allows on the cloud route. `anonymous` is a guest session. */
+export type ViewerCloudAccess =
+  | { readonly status: "checking" }
+  | { readonly status: "signed_out" }
+  | { readonly status: "anonymous" }
+  | { readonly status: "not_premium" }
+  | { readonly status: "premium" };
+
+export type NoChatReason = "signed_out" | "anonymous" | "not_premium";
 
 export type AssistantBrainState =
   | { readonly status: "checking" }
@@ -30,42 +40,44 @@ export type AssistantBrainState =
       readonly canChatViaCloud: boolean;
     }
   | { readonly status: "cloud_ready" }
-  | { readonly status: "finish_sign_up" }
-  | { readonly status: "sign_in_required" };
+  | { readonly status: "no_chat"; readonly reason: NoChatReason };
 
 export function selectAssistantBrainState({
   onDeviceModelStatus,
-  isSessionPending,
-  isSignedIn,
-  cloudRefusal,
+  viewerCloudAccess,
 }: {
   readonly onDeviceModelStatus: OnDeviceModelStatus;
-  readonly isSessionPending: boolean;
-  readonly isSignedIn: boolean;
-  readonly cloudRefusal: CloudRefusal;
+  readonly viewerCloudAccess: ViewerCloudAccess;
 }): AssistantBrainState {
-  const canChatViaCloud = isSignedIn && cloudRefusal === null;
+  const canChatViaCloud = viewerCloudAccess.status === "premium";
   switch (onDeviceModelStatus.status) {
     case "checking":
       return { status: "checking" };
     case "ready":
       return { status: "on_device_ready" };
     case "downloadable":
-      return isSessionPending
-        ? { status: "checking" }
-        : { status: "on_device_downloadable", canChatViaCloud };
+      return { status: "on_device_downloadable", canChatViaCloud };
     case "downloading":
-      return isSessionPending
-        ? { status: "checking" }
-        : {
-            status: "on_device_downloading",
-            progressPercent: onDeviceModelStatus.progressPercent,
-            canChatViaCloud,
-          };
+      return {
+        status: "on_device_downloading",
+        progressPercent: onDeviceModelStatus.progressPercent,
+        canChatViaCloud,
+      };
     case "unavailable":
-      if (isSessionPending) return { status: "checking" };
-      if (cloudRefusal !== null) return { status: cloudRefusal };
-      return isSignedIn ? { status: "cloud_ready" } : { status: "sign_in_required" };
+      switch (viewerCloudAccess.status) {
+        case "checking":
+          return { status: "checking" };
+        case "premium":
+          return { status: "cloud_ready" };
+        case "signed_out":
+        case "anonymous":
+        case "not_premium":
+          return { status: "no_chat", reason: viewerCloudAccess.status };
+        default: {
+          const exhaustiveCheck: never = viewerCloudAccess;
+          return exhaustiveCheck;
+        }
+      }
     default: {
       const exhaustiveCheck: never = onDeviceModelStatus;
       return exhaustiveCheck;
@@ -85,8 +97,7 @@ export function selectAssistantChatRoute(brainState: AssistantBrainState): Assis
     case "on_device_downloading":
       return brainState.canChatViaCloud ? "cloud" : "none";
     case "checking":
-    case "finish_sign_up":
-    case "sign_in_required":
+    case "no_chat":
       return "none";
     default: {
       const exhaustiveCheck: never = brainState;
@@ -122,7 +133,7 @@ export function describeAssistantModel(brainState: AssistantBrainState): Assista
     case "cloud_ready":
       return {
         heading: "Model: Google Gemini, through Qatoto (cloud)",
-        detail: "Your questions are sent to Google Gemini. Qatoto does not keep them.",
+        detail: "Premium AI: your questions are sent to Google Gemini. Qatoto does not keep them.",
       };
     case "on_device_downloadable":
     case "on_device_downloading":
@@ -130,25 +141,38 @@ export function describeAssistantModel(brainState: AssistantBrainState): Assista
         ? {
             heading: "Model: Google Gemini, through Qatoto (cloud)",
             detail:
-              "Until Chrome's built-in Gemini Nano is downloaded; then answers stay on this device.",
+              "Premium AI, until Chrome's built-in Gemini Nano is downloaded; then answers stay on this device.",
           }
         : {
             heading: "No model yet",
-            detail:
-              "Download Chrome's built-in Gemini Nano below, or sign in to use Google Gemini through Qatoto.",
+            detail: "Download Chrome's built-in Gemini Nano below to chat on this device.",
           };
-    case "sign_in_required":
+    case "no_chat":
       return {
-        heading: "No model available here",
-        detail: "Sign in to use Google Gemini through Qatoto.",
-      };
-    case "finish_sign_up":
-      return {
-        heading: "No model available",
-        detail: "Finish setting up your account to use Google Gemini through Qatoto.",
+        heading: "No chat model here",
+        detail: describeNoChatReason(brainState.reason),
       };
     default: {
       const exhaustiveCheck: never = brainState;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/**
+ * Why there is no chat, in the viewer's terms. Premium AI is granted by Qatoto per account and
+ * cannot be bought here, so no sentence may read as an offer to purchase it.
+ */
+function describeNoChatReason(reason: NoChatReason): string {
+  switch (reason) {
+    case "signed_out":
+      return "Chat runs on Chrome's built-in Gemini Nano on desktop, which this browser does not have. Premium AI accounts can also chat through Google Gemini after signing in.";
+    case "anonymous":
+      return "Chat runs on Chrome's built-in Gemini Nano on desktop, which this browser does not have.";
+    case "not_premium":
+      return "Chat runs on Chrome's built-in Gemini Nano on desktop, which this browser does not have. Cloud answers through Google Gemini are for Premium AI accounts, which Qatoto turns on.";
+    default: {
+      const exhaustiveCheck: never = reason;
       return exhaustiveCheck;
     }
   }
