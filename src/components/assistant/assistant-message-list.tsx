@@ -3,6 +3,10 @@
 
 // ONE CONVERSATION, RENDERED BY AN EXHAUSTIVE SWITCH.
 //
+// Six kinds of answer: pending, failed, a model's answer, a ROUTER match (a card, no model), and
+// the router-only reply for when nothing could answer ("only places and searches work here"),
+// which offers the places that share a word with the question.
+//
 // Each assistant entry is pending, answered or failed, never two at once. An answered reply shows
 // its text, then whatever it OFFERED: a link to one place, the results of one search (labelled as a
 // search, so three links are not mistaken for the model's own knowledge), and a note it could
@@ -24,6 +28,7 @@ import type {
   AssistantSaveProblem,
   AssistantSearchState,
 } from "@/components/assistant/use-assistant-brain";
+import AssistantActionCard from "@/components/assistant/assistant-action-card";
 import { ASSISTANT_CHIP_CLASS_NAME } from "@/components/assistant/assistant-panel-sections";
 import {
   ASSISTANT_CONVERSATION_LIMIT,
@@ -96,11 +101,44 @@ function AssistantMessageItem({
           {message.message}
         </p>
       );
+    case "routed":
+      return (
+        <div className="mr-8 space-y-2">
+          <AssistantActionCard
+            offer={message.routerMatch}
+            isFromRouter
+            onNavigate={onNavigate}
+          />
+          {message.saveProblem !== null && (
+            <p className="text-xs leading-4 text-destructive">
+              {describeSaveProblem(message.saveProblem)}
+            </p>
+          )}
+        </div>
+      );
+    case "unrouted":
+      return (
+        <div className="mr-8 space-y-2">
+          <p className="text-sm leading-5 font-medium text-muted-foreground">{message.message}</p>
+          {message.nearbyDestinationKeys.length > 0 && (
+            <ul className="flex flex-wrap gap-1.5" aria-label="Places that might help">
+              {message.nearbyDestinationKeys.map((destinationKey) => (
+                <li key={destinationKey}>
+                  <Link
+                    href={ASSISTANT_DESTINATIONS[destinationKey].href}
+                    onClick={onNavigate}
+                    className={ASSISTANT_CHIP_CLASS_NAME}
+                  >
+                    {ASSISTANT_DESTINATIONS[destinationKey].label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
     case "answered": {
-      const destination =
-        message.reply.destinationKey === null
-          ? null
-          : ASSISTANT_DESTINATIONS[message.reply.destinationKey];
+      const destinationKey = message.reply.destinationKey;
       const rememberNote = message.reply.rememberNote;
       const isNoteSaved = rememberNote !== null && memoryNotes.includes(rememberNote);
       return (
@@ -113,14 +151,12 @@ function AssistantMessageItem({
               {describeSaveProblem(message.saveProblem)}
             </p>
           )}
-          {destination !== null && (
-            <Link
-              href={destination.href}
-              onClick={onNavigate}
-              className={ASSISTANT_CHIP_CLASS_NAME}
-            >
-              Go to {destination.label}
-            </Link>
+          {destinationKey !== null && (
+            <AssistantActionCard
+              offer={{ kind: "destination", destinationKey }}
+              isFromRouter={false}
+              onNavigate={onNavigate}
+            />
           )}
           <SearchBlock searchState={message.search} onNavigate={onNavigate} />
           {rememberNote !== null &&
