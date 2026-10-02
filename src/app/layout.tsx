@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
+import AssistantGate from "@/components/assistant/assistant-gate";
 import { BrowserPreferencesProvider } from "@/state/browser-preferences-context";
 import { SITE_DESCRIPTION, SITE_SHARE_IMAGE, SITE_TITLE, SITE_URL } from "@/lib/site";
 import { StructuredData } from "@/lib/structured-data";
@@ -96,7 +97,12 @@ export default function RootLayout({
             logoUrl: `${SITE_URL}/og-image.png`,
           })}
         />
-        <BrowserPreferencesProvider>{children}</BrowserPreferencesProvider>
+        <BrowserPreferencesProvider>
+          {children}
+          {/* AI Assist Mode. A sibling of `{children}`, so it does not make them client either, and
+              it renders nothing — and loads nothing — until the preference is switched on. */}
+          <AssistantGate />
+        </BrowserPreferencesProvider>
       </body>
     </html>
   );

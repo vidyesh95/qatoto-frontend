@@ -801,6 +801,35 @@ done
 It currently prints nothing. An uncalled hook is UNVERIFIED CODE — wire it to a control or
 delete it, never leave it.
 
+## AI Assist Mode — the mascot assistant (Part 1 of 4 built)
+
+The account menu's AI Assist toggle (`isAiAssistModeOn`, in the one browser-preferences blob)
+mounts a sprite mascot. `todo.md` §22 holds Parts 2–4 (on-device chat, cloud fallback, later).
+
+- **Mount.** `src/components/assistant/assistant-gate.tsx` sits beside `{children}` in
+  `app/layout.tsx`. It renders `null` on the server and while Off, then `React.lazy`-loads
+  `assistant-root.tsx`. Pixi is loaded only by `await import("pixi.js")` inside
+  `mascot-stage.tsx`'s effect. **Never import `pixi.js` as a value anywhere else**, or every
+  visitor pays for a feature most never switch on. Switching Off unmounts the root, and its cleanup
+  destroys the WebGL context.
+- **Signals, not imports.** A surface that wants a reaction calls `emitAssistantSignal`
+  (`src/lib/assistant/assistant-signals.ts`) with a FACT (`order_placed`, `payment_settled`).
+  `resolveSignalReaction` in `mascot-state.ts` decides the face, the perch and the words. Never
+  import assistant components from a product surface.
+- **Perches are an attribute.** `data-assistant-perch="<id>"` on any element, server components
+  included. The tracker (`perch-tracker.ts`) does at most one `getBoundingClientRect` per frame,
+  inside the Pixi ticker, and only when a scroll/resize/observer marked it dirty. Do not add
+  per-event layout reads or per-frame React state.
+- **The money rule applies to the mascot.** `order_placed` is `pending_payment`, so its bubble says
+  "placed", never "paid". `payment_settled` fires only on an OBSERVED transition into `settled` in
+  `order-payment-panel.tsx`, never for an order that loads already settled.
+- **No new storage key.** Anything the assistant remembers lives in memory or folds into the
+  `qatoto.browser-preferences` blob, per the rule above.
+- **Art is an atlas swap.** The contract (three layers, shared feet-centre anchor, required
+  `body/float_idle`, `body/sit`, `face/neutral`, fallback chains for everything else) is in
+  `scripts/build-mascot-placeholder-atlas.mjs`'s header and parsed by `mascot-atlas.schemas.ts`.
+  `docs/Design.md` §7 records why this one surface may choreograph.
+
 ## Things to know
 
 - TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.

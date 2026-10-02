@@ -20,8 +20,10 @@ type AiAssistPanelProps = {
  * Presentational "AI Assist Mode" panel: header, subtitle, and the selectable
  * on/off options.
  *
- * Turning this on mounts a site-wide assistant that helps navigate Qatoto and
- * answers questions. Nothing here is a trust boundary — any answer or action
+ * Turning this on mounts the site-wide assistant (`src/components/assistant/`,
+ * via `assistant-gate.tsx` in the root layout): a character that reacts to
+ * what the viewer does and links them around Qatoto. It answers no questions
+ * yet, and the copy above says so. Nothing here is a trust boundary — any answer or action
  * the assistant produces must be re-validated and authorized by the Express
  * backend, not this browser-local flag.
  */
@@ -45,8 +47,9 @@ export function AiAssistPanel({ selected, onSelect, onBack }: AiAssistPanelProps
         <h2 className="text-xl font-medium text-secondary-foreground">AI Assist Mode</h2>
       </header>
       <p className="px-4 py-4 text-sm text-muted-foreground">
-        AI Assist Mode adds a site-wide assistant that helps you navigate Qatoto and answers your
-        questions. This setting applies to this browser only.
+        AI Assist Mode adds a character to the corner of the screen that reacts to what you do and
+        links you to the right part of Qatoto. It does not answer questions yet. This setting
+        applies to this browser only.
       </p>
       <ul>
         {AI_ASSIST_OPTIONS.map((option) => {

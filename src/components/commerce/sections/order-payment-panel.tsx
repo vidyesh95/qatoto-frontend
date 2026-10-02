@@ -32,7 +32,7 @@
 // decides — a `409` from a bad state is rendered rather than pre-empted, the same argument
 // `order-cancel-control.tsx` makes about its own state check being UX rather than authorization.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import {
@@ -42,6 +42,7 @@ import {
   usePaymentIntentQuery,
   useVerifyRazorpayPayment,
 } from "@/hooks/store/payments";
+import { emitAssistantSignal } from "@/lib/assistant/assistant-signals";
 import { newIdempotencyKey } from "@/lib/idempotency";
 import {
   loadRazorpayCheckout,
@@ -99,6 +100,26 @@ export default function OrderPaymentPanel({
 
   const intentResult = paymentIntentQuery.data;
   const intent = intentResult?.success === true ? intentResult.data : null;
+  const intentState = intent?.state ?? null;
+
+  /**
+   * THE ASSISTANT HEARS ONLY A SETTLEMENT IT WATCHED HAPPEN. The signal fires when the polled intent
+   * MOVES into `settled` while this panel is mounted — never for an order that loads already
+   * settled, which would celebrate the same payment on every visit. `settled` comes from the
+   * backend's poll of the provider, so it is the one state the mascot may describe as a payment.
+   */
+  const previousIntentStateRef = useRef<PaymentIntent["state"] | null>(null);
+  useEffect(() => {
+    const previousIntentState = previousIntentStateRef.current;
+    previousIntentStateRef.current = intentState;
+    if (
+      previousIntentState !== null &&
+      previousIntentState !== "settled" &&
+      intentState === "settled"
+    ) {
+      emitAssistantSignal({ kind: "payment_settled" });
+    }
+  }, [intentState]);
 
   return (
     <section aria-label="Payment" className="space-y-3 rounded-xl border border-border px-4 py-3">

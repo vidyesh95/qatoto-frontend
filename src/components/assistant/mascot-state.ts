@@ -1,0 +1,117 @@
+// TRANSPORT: props-only — pure state shapes and reaction tables. No React, no DOM, no Pixi.
+//
+// WHERE THE MASCOT IS, AND WHAT FACE IT IS WEARING, AS TWO SEPARATE CHANNELS.
+//
+// Placement and mood change for unrelated reasons — a scroll moves it, a purchase cheers it — so
+// they are two unions rather than one bag of flags. Neither is React state: both are read and
+// written every animation frame by `mascot-controller.ts`, and a React commit per frame is the cost
+// this feature exists to avoid. React only hears about the speech bubble, which changes rarely.
+
+import type { AssistantSignal } from "@/lib/assistant/assistant-signals";
+import type {
+  MascotEffect,
+  MascotExpression,
+  MascotPose,
+} from "@/lib/assistant/mascot-expressions";
+
+/**
+ * `travelling` carries the perch it is heading for, or `null` when it is heading home to the dock.
+ * A perched mascot follows its perch every frame without a tween; only a change of destination is
+ * animated.
+ */
+export type MascotPlacement =
+  | { readonly mode: "docked" }
+  | { readonly mode: "travelling"; readonly toPerchId: string | null }
+  | { readonly mode: "perched"; readonly perchId: string };
+
+export function selectPoseForPlacement(placement: MascotPlacement): MascotPose {
+  switch (placement.mode) {
+    case "docked":
+      return "float_idle";
+    case "travelling":
+      return "travel";
+    case "perched":
+      return "sit";
+    default: {
+      const exhaustiveCheck: never = placement;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/** Lowest first. A mood only replaces one of the same or lower priority, or one that has expired. */
+export const MASCOT_MOOD_PRIORITIES = ["ambient", "interaction", "signal"] as const;
+export type MascotMoodPriority = (typeof MASCOT_MOOD_PRIORITIES)[number];
+
+export interface MascotMood {
+  readonly expression: MascotExpression;
+  readonly effect: MascotEffect | null;
+  readonly priority: MascotMoodPriority;
+  /** `null` for an ambient mood, which lasts until something displaces it. */
+  readonly expiresAtMs: number | null;
+}
+
+export function canMoodReplace(incomingMood: MascotMood, currentMood: MascotMood, nowMs: number) {
+  if (currentMood.expiresAtMs !== null && currentMood.expiresAtMs <= nowMs) return true;
+  return (
+    MASCOT_MOOD_PRIORITIES.indexOf(incomingMood.priority) >=
+    MASCOT_MOOD_PRIORITIES.indexOf(currentMood.priority)
+  );
+}
+
+/** After a minute with no pointer or key input, the mascot dozes. Any input wakes it. */
+export const MASCOT_IDLE_BEFORE_SLEEP_MS = 60_000;
+
+export function selectAmbientMood(idleDurationMs: number): MascotMood {
+  return idleDurationMs >= MASCOT_IDLE_BEFORE_SLEEP_MS
+    ? { expression: "sleepy", effect: "zzz", priority: "ambient", expiresAtMs: null }
+    : { expression: "neutral", effect: null, priority: "ambient", expiresAtMs: null };
+}
+
+/** Perch ids, as written in `data-assistant-perch="<id>"`. One constant per perch in the app. */
+export const CHECKOUT_CONFIRMED_PERCH_ID = "checkout-confirmed";
+
+export interface MascotReaction {
+  readonly expression: MascotExpression;
+  readonly effect: MascotEffect | null;
+  readonly holdMs: number;
+  /** Where to go and sit, or `null` to react wherever it already is. */
+  readonly perchId: string | null;
+  readonly bubbleText: string;
+}
+
+const SIGNAL_REACTION_HOLD_MS = 6_000;
+
+/**
+ * THE COPY HERE IS HELD TO THE MONEY RULE. An order placed is `pending_payment`, which is not paid,
+ * so its line says the order exists and how it settles, never "paid" or "bought". Only
+ * `payment_settled` speaks of a payment, and it attributes the verdict to the provider that gave it.
+ * No exclamation marks and no em dashes: the mascot is cheerful in its face, not in its prose.
+ */
+export function resolveSignalReaction(signal: AssistantSignal): MascotReaction {
+  switch (signal.kind) {
+    case "order_placed":
+      return {
+        expression: "joy",
+        effect: "sparkles",
+        holdMs: SIGNAL_REACTION_HOLD_MS,
+        perchId: CHECKOUT_CONFIRMED_PERCH_ID,
+        bubbleText:
+          signal.orderCount === 1
+            ? "Order placed. You settle with the seller directly."
+            : "Orders placed. You settle with each seller directly.",
+      };
+    case "payment_settled":
+      return {
+        expression: "laughing",
+        effect: "hearts",
+        holdMs: SIGNAL_REACTION_HOLD_MS,
+        perchId: null,
+        bubbleText: "The payment provider confirmed this payment as settled.",
+      };
+    default: {
+      const exhaustiveCheck: never = signal;
+      return exhaustiveCheck;
+    }
+  }
+}

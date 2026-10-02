@@ -49,9 +49,11 @@ import {
   FreightLine,
   ManufacturingLine,
 } from "@/components/commerce/sections/arrival-window-component-lines";
+import { CHECKOUT_CONFIRMED_PERCH_ID } from "@/components/assistant/mascot-state";
 import BuyerWorkspaceNotice from "@/components/home/store/sections/buyer-workspace-notice";
 import StatusPanel from "@/components/home/shared/status-panel";
 import { useCartQuery, useConfirmCheckout, usePrepareCheckout } from "@/hooks/store/cart";
+import { emitAssistantSignal } from "@/lib/assistant/assistant-signals";
 import { newIdempotencyKey } from "@/lib/idempotency";
 import { ARRIVAL_WINDOW_COMPONENT_LABELS } from "@/lib/store/arrival-window.schemas";
 import type { CheckoutPrepare, ConfirmCheckout } from "@/lib/store/cart.schemas";
@@ -201,6 +203,9 @@ export default function CheckoutPage({
         onSuccess: (result) => {
           if (!result.success) return;
           setStep({ status: "confirmed", confirmation: result.data });
+          // Orders now exist in `pending_payment`. The signal says exactly that and no more; the
+          // mascot, if it is on, decides what to make of it (and says "placed", never "paid").
+          emitAssistantSignal({ kind: "order_placed", orderCount: result.data.orders.length });
         },
       },
     );
@@ -692,7 +697,10 @@ function DeliveryEstimateSection({ prepare }: { prepare: CheckoutPrepare }) {
 function ConfirmedStep({ confirmation }: { confirmation: ConfirmCheckout }) {
   return (
     <div className="px-4 pt-4 lg:px-6">
-      <div className="rounded-xl border border-outline-variant/60 px-4 py-4">
+      <div
+        data-assistant-perch={CHECKOUT_CONFIRMED_PERCH_ID}
+        className="rounded-xl border border-outline-variant/60 px-4 py-4"
+      >
         <h2 className="text-base font-medium text-foreground">
           {confirmation.orders.length === 1
             ? "Your order is placed"

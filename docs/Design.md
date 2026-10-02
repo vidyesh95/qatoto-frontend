@@ -192,7 +192,8 @@ record is wrong here, however well it is made.
 - Serif is reserved for editorial and long-form surfaces. Product chrome is sans, always.
 - Dark mode is a peer theme, not a toggle. Every token ships with its `.dark` counterpart
   and both are contrast-checked before merge.
-- Motion is confined to color and opacity. The system does not choreograph.
+- Motion is confined to color and opacity. The system does not choreograph, with one opt-in
+  exception: the AI Assist mascot (section 7).
 
 ## 2. Colors: The Material 3 Split
 
@@ -525,3 +526,27 @@ false affordance.
 **The audit test.** If a screen could be screenshotted into a pitch deck without looking out of
 place, it is too persuasive. If a skeptic cannot find the number they came for within one
 glance, it is too decorated. Both failures look like good design in isolation.
+
+## 7. The Assistant Mascot Is the One Choreographed Surface
+
+AI Assist Mode (account menu, default Off) puts an animated character on screen: it floats in a
+dock corner, travels to and sits on a component, and changes expression. That is choreography,
+which section 1 rules out, so it is written down here as a single, bounded carve-out rather than
+left as a quiet violation.
+
+- **Opt-in and default off.** A reader who never switches it on never sees it, and never
+  downloads it. It is a preference, not the product's voice.
+- **The character is ornament.** Its canvas is `aria-hidden` and takes no pointer events. Anything
+  a person can act on (the open button, the speech bubble) is real DOM that follows every rule
+  in this document.
+- **Character art is content, not chrome**, the way a product photo is. Its colours sit outside
+  the One Hue Rule and the hardcoded-hex rule, and live only in the atlas image. The moment a
+  colour leaves the atlas (a bubble, a panel, a focus ring) it is chrome again and uses tokens.
+- **Reduced motion still wins.** Under `prefers-reduced-motion: reduce` there is no bobbing and
+  no travel (the mascot fades in at its destination) and each expression is one still frame.
+  Expressions still change, because the change carries meaning.
+- **Its words follow the copy rules.** No exclamation marks and no em dashes in its bubble, and the
+  money rule holds: an order placed is not a payment, so only a provider-confirmed settlement may
+  be described as one.
+- **The exception does not spread.** No other surface may cite this section to animate layout,
+  position or scale.
