@@ -126,7 +126,7 @@ describe("selectConversationChatState", () => {
     ).toEqual({ status: "needs_download", progressPercent: 12 });
   });
 
-  it("makes a locked chat read-only when its model is gone, even if the other one works", () => {
+  it("keeps a locked chat off the other model when its own is gone", () => {
     expect(
       selectConversationChatState({
         savedConversation: { lockedModel: "cloud", isFull: false },

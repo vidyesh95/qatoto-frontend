@@ -13,9 +13,10 @@
 // free for everyone), then with the cloud for a Premium AI account. A pick that is not usable right
 // now (the cloud after signing out) falls back to that same order rather than stranding the chat.
 //
-// A CHAT'S FIRST ANSWER LOCKS ITS MODEL, AND THERE IS NO UNLOCK. Moving a Gemini Nano chat to the
+// A CHAT'S FIRST MODEL ANSWER LOCKS ITS MODEL, AND THERE IS NO UNLOCK. Moving a Gemini Nano chat to the
 // cloud would send a history the viewer was told never leaves the device. When the locked model is
-// not available here any more, the chat is read-only and the way on is a new chat.
+// not available here any more, no model answers in it (the router still takes places and searches)
+// and the way on is a new chat.
 //
 // THE CLOUD (Google Gemini through Qatoto) IS PREMIUM AI ONLY: it spends Qatoto's key. Apple's and
 // Samsung's on-device models have no web API, so there is no third model to list.
@@ -339,7 +340,7 @@ export function describeChatStateLine(chatState: ConversationChatState): string 
     case "locked_unavailable":
       return `This chat used ${ASSISTANT_MODEL_NAMES[chatState.lockedModel]}, which isn't available here.`;
     case "unselected_unavailable":
-      return describeNoChatLine(chatState.otherReason);
+      return `${describeNoChatLine(chatState.otherReason)} Places and searches still work.`;
     case "full":
       return `This chat has reached ${ASSISTANT_CONVERSATION_MESSAGE_LIMIT} messages. Start a new chat to continue.`;
     case "list_full":

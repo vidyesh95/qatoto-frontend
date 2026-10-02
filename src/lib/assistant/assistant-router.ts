@@ -106,13 +106,7 @@ export const ASSISTANT_DESTINATION_PHRASES: Record<AssistantDestinationKey, read
   ],
   problem_map: ["problems", "reported problems", "problem"],
   market_research: ["market research", "research papers", "papers", "prior art"],
-  research_programs: [
-    "research programs",
-    "programmes",
-    "programs",
-    "programme",
-    "program",
-  ],
+  research_programs: ["research programs", "programmes", "programs", "programme", "program"],
   team_building: ["open roles", "roles", "jobs", "join a team", "projects"],
   talent: ["freelancers", "hire", "hire someone", "people for hire", "specialists"],
   funding: ["fund a project", "invest", "investing", "back a project", "raise money", "projects"],
@@ -388,7 +382,9 @@ function matchDestination(words: readonly string[]): AssistantRouterMatch | null
 
 /** True when a destination phrase explains every content word: "find factories", not a search. */
 function isWhollyADestination(words: readonly string[]): boolean {
-  return scoreDestinations(words).some((destinationScore) => destinationScore.leftoverWordCount === 0);
+  return scoreDestinations(words).some(
+    (destinationScore) => destinationScore.leftoverWordCount === 0,
+  );
 }
 
 const SCOPE_WORDS: Record<AssistantSearchScope, ReadonlySet<string>> = {

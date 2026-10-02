@@ -175,7 +175,7 @@ export default function AssistantConversationRail({
                       {conversation.title}
                     </span>
                     <span className="block truncate text-xs leading-4 text-muted-foreground">
-                      {modelName === null ? timeLabel : `${modelName} · ${timeLabel}`}
+                      {`${modelName ?? "No model yet"} · ${timeLabel}`}
                     </span>
                   </button>
                   <button

@@ -41,6 +41,7 @@ import {
   ChatStateNotice,
   MemorySection,
   PlacesSection,
+  RouterExamples,
 } from "@/components/assistant/assistant-panel-sections";
 import {
   describeChatStateLine,
@@ -224,6 +225,7 @@ export default function AssistantPanel({
   const {
     modelAvailability,
     chatState,
+    canTakeQuestion,
     messages,
     isActiveConversationStorageRefused,
     isAwaitingReply,
@@ -245,10 +247,11 @@ export default function AssistantPanel({
     preferredModel,
     modelAvailability,
   });
-  // NO MODEL, NO COMPOSER. Without a model that can answer this chat there is nothing to send a
-  // question to, so the box is not drawn at all rather than drawn disabled; the model strip says
-  // why. Places, memory and appearance work either way.
-  const isComposerShown = chatState.status === "ready";
+  // THE COMPOSER NEEDS NO MODEL. The router answers places and searches in any browser, so the box
+  // is drawn whenever a question could be saved (`canTakeQuestion`: not a full chat, not a full
+  // list). What changes without a model is only the placeholder, and what the empty state says.
+  const isComposerShown = canTakeQuestion;
+  const isModelReady = chatState.status === "ready";
   const canSend = isComposerShown && !isAwaitingReply && draftQuestion.trim().length > 0;
 
   const pointMascotAtPanelOnOpen = useEffectEvent(pointMascotAtPanel);
@@ -545,10 +548,17 @@ export default function AssistantPanel({
                 ) : (
                   <>
                     {isComposerShown && (
-                      <p className="text-xs leading-4 text-muted-foreground">
-                        Ask where something is on Qatoto, or ask it to find a product, a video or a
-                        research programme. It can be wrong, so check what it links to.
-                      </p>
+                      <>
+                        <p className="text-xs leading-4 text-muted-foreground">
+                          {isModelReady
+                            ? "Ask where something is on Qatoto, or ask it to find a product, a video or a research programme. Places and searches open at once; anything else goes to the model, which can be wrong, so check what it links to."
+                            : "Ask for a place or a search. These work in any browser, with no model."}
+                        </p>
+                        <RouterExamples
+                          isDisabled={isAwaitingReply}
+                          onExampleClick={(exampleText) => void sendMessage(exampleText)}
+                        />
+                      </>
                     )}
                     <PlacesSection onNavigate={handleNavigate} />
                   </>
@@ -580,7 +590,9 @@ export default function AssistantPanel({
                     onKeyDown={handleComposerKeyDown}
                     maxLength={ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH}
                     rows={2}
-                    placeholder="Ask anything"
+                    placeholder={
+                      isModelReady ? "Ask anything" : "Go to a place or search, like “my orders”"
+                    }
                     className="min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
                   />
                   <button

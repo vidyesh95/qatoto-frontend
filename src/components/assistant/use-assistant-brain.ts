@@ -63,7 +63,10 @@ import {
   type AssistantReply,
   type AssistantSearchScope,
 } from "@/lib/assistant/assistant-reply.schemas";
-import { describeRouterMatchForHistory, routeAssistantRequest } from "@/lib/assistant/assistant-router";
+import {
+  describeRouterMatchForHistory,
+  routeAssistantRequest,
+} from "@/lib/assistant/assistant-router";
 import {
   ASSISTANT_SEARCH_SCOPE_LABELS,
   runAssistantSearch,
@@ -668,10 +671,7 @@ export function useAssistantBrain({
    * refused it) and renders from there, so this chat's unsaved turns go. Any earlier failure goes
    * with them: it was never saved, and left behind it would now sit after the answer it came before.
    */
-  const settleSavedPair = (
-    conversationId: string,
-    saveStatus: "saved" | "storage_refused",
-  ) => {
+  const settleSavedPair = (conversationId: string, saveStatus: "saved" | "storage_refused") => {
     updateUnsavedEntries(conversationId, () => []);
     if (saveStatus === "storage_refused") {
       setStorageRefusedConversationIds(

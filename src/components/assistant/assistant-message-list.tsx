@@ -104,11 +104,7 @@ function AssistantMessageItem({
     case "routed":
       return (
         <div className="mr-8 space-y-2">
-          <AssistantActionCard
-            offer={message.routerMatch}
-            isFromRouter
-            onNavigate={onNavigate}
-          />
+          <AssistantActionCard offer={message.routerMatch} isFromRouter onNavigate={onNavigate} />
           {message.saveProblem !== null && (
             <p className="text-xs leading-4 text-destructive">
               {describeSaveProblem(message.saveProblem)}

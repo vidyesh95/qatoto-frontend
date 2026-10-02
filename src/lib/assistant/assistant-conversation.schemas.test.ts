@@ -178,6 +178,95 @@ describe("appendAnsweredPair", () => {
   });
 });
 
+describe("appendAnsweredPair: router answers", () => {
+  const routerAnswer = {
+    kind: "router",
+    routerMatch: { kind: "destination", destinationKey: "your_orders" },
+  } as const;
+
+  it("saves a routed first turn UNLOCKED: it used no model", () => {
+    const appendResult = appendAnsweredPair([], {
+      conversationId: buildConversationId(0),
+      questionText: "my orders",
+      answer: routerAnswer,
+      nowMs: 5,
+    });
+    expect(appendResult.status).toBe("saved");
+    if (appendResult.status !== "saved") return;
+    expect(appendResult.conversations[0]?.lockedModel).toBeNull();
+    expect(appendResult.conversations[0]?.messages[1]).toEqual({
+      role: "assistant",
+      answeredBy: "router",
+      routerMatch: { kind: "destination", destinationKey: "your_orders" },
+    });
+  });
+
+  it("locks a routed chat to the first MODEL that answers it", () => {
+    const routedResult = appendAnsweredPair([], {
+      conversationId: buildConversationId(0),
+      questionText: "my orders",
+      answer: routerAnswer,
+      nowMs: 5,
+    });
+    if (routedResult.status !== "saved") throw new Error(routedResult.status);
+    const modelResult = appendAnsweredPair(routedResult.conversations, {
+      conversationId: buildConversationId(0),
+      questionText: "why is my order late",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "cloud" },
+      nowMs: 6,
+    });
+    expect(modelResult.status).toBe("saved");
+    if (modelResult.status !== "saved") return;
+    expect(modelResult.conversations[0]?.lockedModel).toBe("cloud");
+  });
+
+  it("adds a routed turn to a locked chat without a mismatch or a new lock", () => {
+    const appendResult = appendAnsweredPair([buildConversation(0)], {
+      conversationId: buildConversationId(0),
+      questionText: "find solar pumps",
+      answer: {
+        kind: "router",
+        routerMatch: { kind: "search", scope: "store", query: "solar pumps" },
+      },
+      nowMs: 7,
+    });
+    expect(appendResult.status).toBe("saved");
+    if (appendResult.status !== "saved") return;
+    expect(appendResult.conversations[0]?.lockedModel).toBe("on_device");
+    expect(appendResult.conversations[0]?.messages).toHaveLength(4);
+  });
+
+  it("still reads a chat saved before router answers existed", () => {
+    const partOneConversation = {
+      conversationId: buildConversationId(0),
+      title: "where is my cart",
+      createdAtMs: 1,
+      updatedAtMs: 1,
+      lockedModel: "on_device",
+      messages: [
+        { role: "user", text: "where is my cart" },
+        { role: "assistant", reply: SAMPLE_REPLY, answeredBy: "on_device" },
+      ],
+    };
+    expect(parseStoredConversations([partOneConversation])).toHaveLength(1);
+  });
+
+  it("refuses a saved router answer whose place does not exist", () => {
+    const conversationWithUnknownPlace = {
+      ...buildConversation(0),
+      messages: [
+        { role: "user", text: "somewhere" },
+        {
+          role: "assistant",
+          answeredBy: "router",
+          routerMatch: { kind: "destination", destinationKey: "not_a_place" },
+        },
+      ],
+    };
+    expect(parseStoredConversations([conversationWithUnknownPlace])).toHaveLength(0);
+  });
+});
+
 describe("deleteConversation", () => {
   it("removes only the chat with that id", () => {
     const remainingConversations = deleteConversation(

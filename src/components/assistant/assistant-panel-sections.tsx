@@ -143,6 +143,47 @@ const DESTINATION_GROUPS: readonly DestinationGroup[] = ROADMAP_AUDIENCES.map((a
 
 export const ASSISTANT_CHIP_CLASS_NAME = `inline-block rounded-full border border-border bg-background/70 px-3 py-1.5 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted ${FOCUS_RING_CLASS_NAME}`;
 
+/** Requests the router understands, sent as they are, so the empty state teaches it by example. */
+const ROUTER_EXAMPLE_REQUESTS: readonly string[] = [
+  "my orders",
+  "find solar pumps",
+  "request a quote",
+];
+
+/**
+ * Three requests the viewer can send with one tap. They are BUTTONS that send the text, not links:
+ * the point is to show what typing does, and the answer appears as the same card typing gives.
+ */
+export function RouterExamples({
+  isDisabled,
+  onExampleClick,
+}: {
+  readonly isDisabled: boolean;
+  readonly onExampleClick: (exampleText: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <h3 className="text-xs leading-4 font-medium tracking-eyebrow text-muted-foreground uppercase">
+        Try
+      </h3>
+      <ul className="flex flex-wrap gap-1.5">
+        {ROUTER_EXAMPLE_REQUESTS.map((exampleText) => (
+          <li key={exampleText}>
+            <button
+              type="button"
+              disabled={isDisabled}
+              onClick={() => onExampleClick(exampleText)}
+              className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${ASSISTANT_CHIP_CLASS_NAME}`}
+            >
+              {exampleText}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** A new chat's empty state: every place on Qatoto, grouped by what the viewer came to do. */
 export function PlacesSection({ onNavigate }: { readonly onNavigate: () => void }) {
   return (

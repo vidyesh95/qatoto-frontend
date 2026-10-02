@@ -806,7 +806,7 @@ done
 It currently prints nothing. An uncalled hook is UNVERIFIED CODE — wire it to a control or
 delete it, never leave it.
 
-## AI Assist Mode — the mascot assistant (built; chat rail and saved chats uncommitted as of 2026-10-02)
+## AI Assist Mode — the mascot assistant (built; chat rail, saved chats and router uncommitted as of 2026-10-02)
 
 The account menu's AI Assist toggle (`isAiAssistModeOn`, in the one browser-preferences blob)
 mounts an animated character that reacts to what the viewer does and answers questions. The
@@ -848,9 +848,10 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   Nano when present or downloadable, else the cloud. `selectConversationChatState` resolves the
   active chat to ONE state (`ready`, `awaiting_download_click`, `needs_download`,
   `locked_unavailable`, `unselected_unavailable`, `full`, `list_full`, `checking`), and only `ready`
-  renders a composer. ⚠️ **THERE IS NO UNLOCK.** Moving a Nano chat to the cloud would send a
+  sends a question to a model (the router, below, answers in every other state but the two full
+  ones). ⚠️ **THERE IS NO UNLOCK.** Moving a Nano chat to the cloud would send a
   history the viewer was told never leaves the device; the way on is "New chat with …". A locked
-  model that is not available here makes the chat read-only. Premium AI is staff-granted at
+  model that is not available here leaves the chat to the router: places and searches only. Premium AI is staff-granted at
   `/admin/premium-ai` (`grant_ai_assistant_cloud`, admin only); there is no billing, so no copy may
   read as an offer to buy it. **Apple's and Samsung's on-device models have no web API** (Apple's
   Foundation Models framework is Swift-only; Galaxy AI is a browser feature), so there is no third
@@ -861,6 +862,24 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
   `use-assistant-brain.ts` must keep `createOnDeviceSession` before any `await` in that handler.
   `LanguageModel` is read as `unknown` through type predicates in `on-device-model.ts`; its
   vocabulary has changed between Chrome versions.
+- **The router answers first, and needs no model.** `src/lib/assistant/assistant-router.ts` is pure
+  and synchronous: `routeAssistantRequest` turns "go to my orders", "find solar pumps" or "videos
+  about drones" into a place, a search or a "did you mean" choice from a table, with no network and
+  no download, before any model is asked. ⚠️ **ITS COVERAGE GATE IS THE POINT:** it answers only
+  when, after the wrapper ("go to", "show me") and the matched phrase, at most one content word is
+  left, and never when the request opens like a question ("what", "why", "is there"). Anything else
+  goes to the chat's model, or, with none, to a "only places and searches work here" reply naming
+  nearby places. `ASSISTANT_DESTINATION_PHRASES` is a `Record` over the destination keys, so a new
+  destination is a compile error until it says what people call it; a phrase listed under several
+  keys ("videos", "projects", "search") is a deliberate tie that becomes a choice. A match renders
+  as `assistant-action-card.tsx`, the SAME card a model's `destinationKey` renders as, with
+  "Matched from your words. No model used." A search card links to the real results page
+  (`/store/search?query=`, `/search?query=`, `/research-and-development/programs?q=`, built by
+  `buildRouterSearchHref`) and fetches nothing itself. Router turns are saved as the MATCH, not a
+  URL, and ⚠️ **never lock a chat's model**: a chat whose turns were all routed is
+  `lockedModel: null` ("No model yet" in the rail) until a model answers. The model receives a
+  routed turn in its history as "Offered a link to …". **Because the router needs no model, the
+  composer renders in every state except `full` and `list_full`.**
 - **The model chooses, the viewer acts.** A reply is `AssistantReplySchema`: an expression, a
   `destinationKey` (a key, never a URL — `assistant-destinations.ts` owns the hrefs and the backend
   keeps a copy of the keys), an optional `search` the panel runs through the existing public search
