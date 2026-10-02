@@ -17,35 +17,45 @@ function formatPillarPoints(pillar: { readonly points: number; readonly budget: 
   return `${String(pillar.points)} / ${String(pillar.budget)}`;
 }
 
+/** Tenths of a point as a one-decimal score: 569 → "56.9". */
+function formatScoreInTenths(scoreInTenths: number): string {
+  return (scoreInTenths / 10).toFixed(1);
+}
+
 function pluralize(count: number, singular: string, plural: string): string {
   return `${WHOLE_NUMBER_FORMATTER.format(count)} ${count === 1 ? singular : plural}`;
 }
 
 /**
- * One country's feasibility readout — the three pillars of docs/FEASIBILITY_MODEL.md, side by
+ * One country's feasibility readout — the four pillars of docs/FEASIBILITY_MODEL.md, side by
  * side and NEVER ADDED UP.
  *
  * ⚠️ NOT `feasibility-score-panel.tsx`. That panel is the import-substitution score for one HS6
  * commodity, whose five components a database CHECK sums to a total. Nothing here has a total:
  * need density is Qatoto's own reports, purchasing power the World Bank, manufacturing UN
- * Comtrade plus the supplier directory, and summing them is the cross-evidence join
+ * Comtrade plus the supplier directory, the regulatory framework World Bank B-READY, and summing
+ * them is the cross-evidence join
  * `R_AND_D_STRUCTURE.md` §7 forbids. So there is no total, no bar a reader could stack, no
  * colour per pillar, and no verdict word.
  *
  * ⚠️ AN ABSENT PILLAR RENDERS NOTHING — an empty cell, not a dash and not a zero. A null means
  * no source covers that cell, which is not a finding about the country (`docs/Design.md`, Stat
- * Readout). Purchasing power is country-level, so it is stated once above the table.
+ * Readout). Purchasing power and the regulatory framework are country-level, so each is stated
+ * once above the table. B-READY does not cover India or Kenya yet, so for them the regulatory
+ * block is simply absent.
  *
- * Each figure's source and date sit beside it, not in a footnote (§20): the three sources have
- * three different vintages, and one "as of" would hide two of them.
+ * Each figure's source and date sit beside it, not in a footnote (§20): the four sources have
+ * four different vintages, and one "as of" would hide three of them.
  */
 export default function FeasibilityReadoutSection({ readout }: { readout: FeasibilityReadout }) {
-  const { purchasingPower, domains } = readout;
+  const { purchasingPower, regulatoryFramework, domains } = readout;
   const firstNeedDensity = domains.find((row) => row.needDensity !== null)?.needDensity ?? null;
   const firstManufacturing =
     domains.find((row) => row.manufacturing !== null)?.manufacturing ?? null;
 
-  if (purchasingPower === null && domains.length === 0) return null;
+  if (purchasingPower === null && regulatoryFramework === null && domains.length === 0) {
+    return null;
+  }
 
   return (
     <section className="space-y-4">
@@ -54,8 +64,7 @@ export default function FeasibilityReadoutSection({ readout }: { readout: Feasib
           Feasibility in {readout.country.displayLabel}, by problem domain
         </h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Three separate readouts from three sources. They are never added together. Regulatory ease
-          is not measured yet.
+          Up to four separate readouts, each from its own source. They are never added together.
         </p>
       </div>
 
@@ -76,6 +85,28 @@ export default function FeasibilityReadoutSection({ readout }: { readout: Feasib
           <p className="text-xs text-muted-foreground">
             {purchasingPower.sourceName} · {purchasingPower.dataYear} data · retrieved{" "}
             {formatInstantAsDate(purchasingPower.sourceRetrievedAt)}
+          </p>
+        </div>
+      )}
+
+      {regulatoryFramework !== null && (
+        <div className="space-y-1">
+          <HairlineDefinitionRow
+            facts={[
+              {
+                label: FEASIBILITY_PILLAR_LABELS.regulatoryFramework,
+                value: formatPillarPoints(regulatoryFramework),
+              },
+              {
+                label: "B-READY score",
+                value: `${formatScoreInTenths(regulatoryFramework.scoreInTenths)} / 100`,
+              },
+            ]}
+          />
+          <p className="text-xs text-muted-foreground">
+            {regulatoryFramework.sourceName} · {regulatoryFramework.editionYear} edition · retrieved{" "}
+            {formatInstantAsDate(regulatoryFramework.sourceRetrievedAt)}. It scores regulation as
+            written, not how hard it is to operate in practice.
           </p>
         </div>
       )}

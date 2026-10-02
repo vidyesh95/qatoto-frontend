@@ -224,13 +224,15 @@ export const RESEARCH_CATEGORY_DOMAIN_LABELS: Record<ResearchCategoryDomain, str
 };
 
 /**
- * The feasibility readout's pillars. Three, not four: regulatory ease has no data source yet and
- * is stated as unmeasured once, in copy, rather than labelled as a column that is always empty.
+ * The feasibility readout's four pillars. The spec's "regulatory ease" is labelled "Regulatory
+ * framework" because that is what its source, B-READY Pillar 1, measures: regulation as written,
+ * not how easy it is to operate.
  */
 export const FEASIBILITY_PILLAR_LABELS = {
   needDensity: "Need density",
   purchasingPower: "Purchasing power",
   manufacturing: "Manufacturing",
+  regulatoryFramework: "Regulatory framework",
 } as const;
 
 export const RESEARCH_POST_TRACK_LABELS: Record<ResearchPostTrack, string> = {

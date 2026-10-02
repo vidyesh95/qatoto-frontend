@@ -1,7 +1,7 @@
 # Civic Pulse: Startup Feasibility & Market Opportunity Model
 
 > **Specification**: `docs/FEASIBILITY_MODEL.md`  
-> **Model Version**: `1` (`FEASIBILITY_READOUT_MODEL_VERSION` in the backend scorer)  
+> **Model Version**: `2` (`FEASIBILITY_READOUT_MODEL_VERSION` in the backend scorer)  
 > **Schema Authority**: `FeasibilityReadoutSchema` in `src/lib/rnd/discovery.schemas.ts`  
 > **Parent Document**: [docs/CIVIC_PULSE_PROBLEM_MAPPING.md](./CIVIC_PULSE_PROBLEM_MAPPING.md)
 
@@ -44,20 +44,38 @@
 > (nightly), `sync-world-bank-indicators` (weekly), migration 0212. Frontend:
 > `sections/feasibility-readout.tsx` on Market Research → Overview when a country is picked.
 >
-> | Pillar           | Budget | Source                                                           | Ladder (model 1)                                                                     |
-> | ---------------- | ------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-> | Need density     | 30     | Qatoto problem reports (active clusters, category has a domain)  | distinct reporters ≥1/5/25/100 → 5/10/15/20, plus active clusters ≥1/3/10 → 3/6/10   |
-> | Purchasing power | 25     | World Bank `NY.GDP.PCAP.PP.CD`, latest published year            | ≥$2k/5k/10k/20k/45k → 5/10/15/20/25                                                  |
-> | Manufacturing    | 25     | UN Comtrade annual exports + suppliers on a published substitute | exports ≥$1/10m/100m/1bn/10bn/100bn → 1/3/6/9/12/15, plus producers ≥1/5/20 → 4/7/10 |
-> | Regulatory ease  | 20     | **not built** — B-READY needs an admin CSV import first          | —                                                                                    |
+> | Pillar               | Budget | Source                                                           | Ladder (model 1)                                                                     |
+> | -------------------- | ------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+> | Need density         | 30     | Qatoto problem reports (active clusters, category has a domain)  | distinct reporters ≥1/5/25/100 → 5/10/15/20, plus active clusters ≥1/3/10 → 3/6/10   |
+> | Purchasing power     | 25     | World Bank `NY.GDP.PCAP.PP.CD`, latest published year            | ≥$2k/5k/10k/20k/45k → 5/10/15/20/25                                                  |
+> | Manufacturing        | 25     | UN Comtrade annual exports + suppliers on a published substitute | exports ≥$1/10m/100m/1bn/10bn/100bn → 1/3/6/9/12/15, plus producers ≥1/5/20 → 4/7/10 |
+> | Regulatory framework | 20     | World Bank B-READY Pillar 1 `IC.BRE.P1.RF`, newest edition (v2)  | `floor(scoreInTenths / 50)`, the spec's `20 × score / 100` in integers               |
 >
-> **Three stated departures from §3:**
+> ### ✅ Built 2026-10-02: the regulatory pillar, model version 2
+>
+> B-READY **is** on the World Bank Indicators API: WDI (source 2) serves 43 `IC.BRE.*` series. The
+> earlier plan for an admin CSV import rested on "B-READY has no API", which was checked live and
+> found false. The weekly `sync-world-bank-indicators` run now makes a second request and writes
+> `country_business_ready_score` (migration 0215, tenths of a point, `0..1000`).
+>
+> - **Coverage is the 2024 edition only:** 50 economies, 11 of the 18 seeded countries (BD, GH,
+>   ID, NP, PK, PE, PH, TZ, VN, CO, MX). India, Kenya, Nigeria and Brazil are first scored in
+>   the 2026 edition. Until then their pillar is null and renders nothing.
+> - **The 2025 edition is an Excel download only.** It adds just SN of ours and arrives when WDI
+>   ingests it. No import surface was built for it.
+>
+> **Four stated departures from §3:**
 >
 > - Need density drops the float formula and its `C_total` denominator, which lowered one
 >   country's score whenever another country reported more.
 > - Purchasing power drops `× log10(affected population)`, because no such figure exists.
 > - Manufacturing drops the tariff and logistics terms (§7 rules tariffs out; neither dataset is
 >   ingested).
+> - Regulatory drops `F_sector_liberalization` (no source exists for it), and reads B-READY Pillar 1
+>   alone. B-READY deliberately publishes no overall economy score, so `Score_B-READY` has no
+>   single published value, and averaging its three pillars would invent the composite it
+>   declined to publish. The pillar is named "Regulatory framework" rather than "ease", because
+>   Pillar 1 scores regulation as written, not operating friction.
 >
 > A sum INSIDE one pillar is allowed, since both halves share a source. A sum ACROSS pillars
 > exists nowhere: there is no total column, no CHECK that adds, and no total on the wire.
@@ -67,6 +85,7 @@
 > - Need density is null with no active cluster in that country and domain.
 > - Manufacturing is null when Comtrade has no lines for that country and domain.
 > - Purchasing power is null when the World Bank publishes no value.
+> - The regulatory framework is null when no B-READY edition on the API covers the economy.
 >
 > §5.1's confidence bands were NOT built. "Statistically verified market demand" is a claim
 > nothing here can back, and the raw reporter and place counts are shown instead.

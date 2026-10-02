@@ -240,15 +240,17 @@ export type DemandSignal = z.infer<typeof DemandSignalSchema>;
 // --- The feasibility readout -------------------------------------------------
 
 /**
- * `GET /discovery/feasibility-readouts?countryCode=` — one country's readout: THREE PILLARS,
+ * `GET /discovery/feasibility-readouts?countryCode=` — one country's readout: FOUR PILLARS,
  * each its own object with its own budget, source and date, and NO TOTAL anywhere on the wire
  * (docs/FEASIBILITY_MODEL.md's correction header). Need density is Qatoto's own reports,
- * purchasing power the World Bank, manufacturing UN Comtrade plus the supplier directory; adding
- * them would be the cross-evidence join `R_AND_D_STRUCTURE.md` §7 forbids.
+ * purchasing power the World Bank, manufacturing UN Comtrade plus the supplier directory, the
+ * regulatory framework World Bank B-READY; adding them would be the cross-evidence join
+ * `R_AND_D_STRUCTURE.md` §7 forbids.
  *
  * A pillar is `null` when there is no data for it — never 0 — and renders nothing.
- * Purchasing power is per COUNTRY, so it arrives once rather than on each domain row.
- * Regulatory ease is not on the wire yet: nothing measures it.
+ * Purchasing power and the regulatory framework are per COUNTRY, so each arrives once rather
+ * than on each domain row. The regulatory framework is null for every economy B-READY does not
+ * cover yet, which today includes India and Kenya.
  */
 export const NeedDensityReadoutSchema = z.object({
   points: z.number(),
@@ -264,6 +266,16 @@ export const PurchasingPowerReadoutSchema = z.object({
   budget: z.number(),
   valueInWholeInternationalDollars: z.number(),
   dataYear: z.number(),
+  sourceName: z.string(),
+  sourceRetrievedAt: z.string(),
+});
+
+/** B-READY Pillar 1, "Regulatory Framework". `scoreInTenths` 569 is a score of 56.9 out of 100. */
+export const RegulatoryFrameworkReadoutSchema = z.object({
+  points: z.number(),
+  budget: z.number(),
+  scoreInTenths: z.number(),
+  editionYear: z.number(),
   sourceName: z.string(),
   sourceRetrievedAt: z.string(),
 });
@@ -291,6 +303,7 @@ export const FeasibilityReadoutSchema = z.object({
   asOf: z.string(),
   modelVersion: z.number(),
   purchasingPower: PurchasingPowerReadoutSchema.nullable(),
+  regulatoryFramework: RegulatoryFrameworkReadoutSchema.nullable(),
   domains: z.array(FeasibilityDomainReadoutSchema),
 });
 export type FeasibilityReadout = z.infer<typeof FeasibilityReadoutSchema>;

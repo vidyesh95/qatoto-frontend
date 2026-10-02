@@ -38,7 +38,7 @@ and `git log` are the record of what was built and why.
 
 **R&D / Civic Pulse:**
 
-- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin (§19.1) with place-picker fallback UI and error handling (2026-09-29) and viewport-driven reads have since shipped, and so has the `domain` enum (2026-09-29, §19.2). 3 of 4 feasibility readout pillars shipped 2026-09-29 (§19.3; only regulatory ease remains open). One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin (§19.1) with place-picker fallback UI and error handling (2026-09-29) and viewport-driven reads have since shipped, and so has the `domain` enum (2026-09-29, §19.2). 3 of 4 feasibility readout pillars shipped 2026-09-29, and the 4th (regulatory framework, from World Bank B-READY) on 2026-10-02 (§19.3). One E2E assertion is flaky with the flag on and is left unchanged. See §19.
 - **Problem report photos** — **SHIPPED 2026-09-28.** Up to three per report, public on the cluster page, EXIF/GPS stripped. The 2-year retention purge runs (2026-09-28); the 90-days-after-resolution rule is built (2026-09-28, Part 8, migration 0206). See §19.5.
 - **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
   map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
@@ -921,10 +921,23 @@ no purchasing power, because the manual recompute ran after the failed sync. Sin
 overwrites its own `asOf`, those rows were deleted and recomputed. **Run the sync before the
 recompute**; the crons already order it that way (Monday 01:40 vs nightly 04:10).
 
+**BUILT 2026-10-02 (Part 3 of Civic Pulse F): the fourth pillar, "Regulatory framework".**
+
+- **No CSV import was built, because B-READY IS on the World Bank API.** "B-READY has no API" was
+  checked live and found false: WDI serves 43 `IC.BRE.*` series. The weekly
+  `sync-world-bank-indicators` run now also reads `IC.BRE.P1.RF` (B-READY Pillar 1, Regulatory
+  Framework) into `country_business_ready_score`. Migration 0215, model version 2.
+- **Why Pillar 1 and not an overall score:** B-READY publishes no overall score on purpose, and
+  averaging its three pillars would invent one.
+- **Scoring:** `floor(scoreInTenths / 50)`, the spec's linear `20 × score/100`.
+  `F_sector_liberalization` is dropped because it has no source.
+- **Coverage:** the 2024 edition only, so 11 of 18 seeded countries (BD GH ID NP PK PE PH TZ VN
+  CO MX). India, Kenya, Nigeria and Brazil arrive with the 2026 edition. The 2025 edition (adds
+  SN) is Excel-only until WDI ingests it.
+- **UI:** a country-level block on the readout, like purchasing power, absent when null.
+
 Still open:
 
-- **Regulatory ease** — the B-READY admin CSV import, then its column group. Not a column yet,
-  because nothing could write it.
 - **Comtrade beyond India** — the weekly plan is `["IN"]`, so manufacturing is India-only and
   every other country shows purchasing power alone. That is honest, not a bug.
 - **The readout on cluster pages** — needs `domain` on the nested `DiscoveryCategoryRef`.

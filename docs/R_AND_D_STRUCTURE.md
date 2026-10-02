@@ -825,9 +825,11 @@ commodities is the coarsest possible link.
 ### The feasibility readout (country × domain), added 2026-09-29
 
 When a country is picked, the overview also renders `sections/feasibility-readout.tsx` from
-`GET /discovery/feasibility-readouts`. It shows three pillars: need density (Qatoto reports),
-purchasing power (World Bank, stated once for the country) and manufacturing (Comtrade plus
-suppliers). They are keyed on the research category's moderator-assigned `domain`.
+`GET /discovery/feasibility-readouts`. It shows four pillars: need density (Qatoto reports),
+purchasing power (World Bank, stated once for the country), manufacturing (Comtrade plus
+suppliers) and, since 2026-10-02, the regulatory framework (World Bank B-READY Pillar 1, also
+stated once for the country). They are keyed on the research category's moderator-assigned
+`domain`.
 
 It obeys the rule above in its strongest form:
 
