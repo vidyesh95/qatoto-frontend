@@ -114,12 +114,11 @@ export function listWithdrawnProductAnswers(
  * `actioned`/`dismissed` together and the action log grows too. Invalidating one filter's key
  * leaves two lists wrong; the hook invalidates the root.
  *
- * A dismissal lifts only a moderation hold on a question or answer: one its author withdrew stays
- * withdrawn.
- *
- * ⚠️ **`dismissed` ON A PRODUCT SETS `moderationState = "approved"` OUTRIGHT** — not "back to
- * whatever it was". Throwing out a spam report against a `draft` or `pending_review` listing
- * PUBLISHES it. Nothing on the client can soften that; it is here so nobody discovers it live.
+ * ⚠️ **A DISMISSAL UNDOES ONLY THE AUTOMATIC HIDE**, the one an open report can still be standing
+ * behind. A question or answer its author withdrew stays withdrawn, one a moderator hid stays
+ * hidden, and a product is not touched at all — products never auto-hide. It used to write
+ * `approved` on a product, which made throwing out a spam report against an unreviewed listing
+ * PUBLISH it; that is fixed in the backend, and no copy here may say a dismissal approves.
  *
  * A `403 "A member of the reported organization cannot decide this report."` is a per-row refusal,
  * not a page-level one — surface it on the card rather than pre-hiding the control, because the
@@ -144,6 +143,8 @@ export function decideCommerceContentReport(
  * somebody already made — sometimes the threshold's rather than a person's — and an un-hide nobody
  * had to justify is one nobody can review. The control keeps its button disabled until the box has
  * something in it rather than letting the server refuse an empty one.
+ *
+ * On a product it approves only a `suspended` listing; a `pending` or `rejected` one is left alone.
  *
  * Restoring something already visible is not an error; it records an action and changes nothing.
  * The console says so rather than trying to derive current visibility, which only the

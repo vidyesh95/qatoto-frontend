@@ -302,10 +302,10 @@ function ReportCard({ report }: { readonly report: CommerceContentReport }) {
           )}
           {report.targetKind === "product" && (
             <p className="text-xs text-muted-foreground">
-              {/* Not a warning about a bug — the backend really does set `approved`, and a
-                  moderator dismissing a report against an unpublished listing is publishing it. */}
-              Dismissing approves this listing, including one that was still a draft or awaiting
-              review.
+              {/* A product never auto-hides, so a dismissal has nothing to undo and the backend
+                  leaves the listing's review state alone. Said because this line used to read
+                  "Dismissing approves this listing", which was true until that was fixed. */}
+              Dismissing closes the report and leaves this listing exactly as it is.
             </p>
           )}
         </div>
@@ -315,8 +315,9 @@ function ReportCard({ report }: { readonly report: CommerceContentReport }) {
         RESTORE IS OFFERED ON `actioned` AND NOWHERE ELSE, and the reasoning is worth keeping.
         Nothing in this payload says whether the target is currently hidden — there is no
         visibility field — so `actioned` is the closest honest proxy: that status is proof a hide
-        was performed. It is NOT offered on `dismissed`, because a dismissal already un-hides;
-        restoring there would write a permanent record of an un-hide that never happened.
+        was performed. It is NOT offered on `dismissed`: a dismissal hid nothing, and it already
+        lifted the one hide it may (the automatic one), so restoring there would write a permanent
+        record of an un-hide that never happened.
       */}
       {report.status === "actioned" && target.kind === "resolved" && !isOrganizationReport && (
         <div className="mt-3 space-y-2 border-t border-outline-variant/60 pt-3">
