@@ -546,6 +546,9 @@ left as a quiet violation.
   new pose fades in over the old one rather than snapping, which is the motion this document
   already allows. Travel between the dock and a perch, and the viewer dragging it, are the only
   movement, and both belong to this surface alone.
+- **Pointing is a pose, not a cursor.** The character points where it is going, at the thing it
+  has arrived on, and at the panel it wants read. It never replaces a link or a focus ring: what
+  it points at is still a real control the reader reaches on their own.
 - **Reduced motion still wins.** Under `prefers-reduced-motion: reduce` there is no bobbing, no
   travel (the mascot fades in at its destination) and no crossfade; each expression is one still
   frame. Expressions still change, because the change carries meaning.

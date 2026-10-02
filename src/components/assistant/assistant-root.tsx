@@ -172,6 +172,10 @@ export default function AssistantRoot() {
     controllerRef.current?.showInteractionMood(expression, holdMs);
   };
 
+  const handlePointAt = (targetX: number, targetY: number, holdMs: number) => {
+    controllerRef.current?.pointAt(targetX, targetY, holdMs);
+  };
+
   const handleSaveNote = (memoryNote: string) => {
     if (memoryNotes.includes(memoryNote)) return;
     setPreference(
@@ -270,6 +274,7 @@ export default function AssistantRoot() {
           memoryNotes={memoryNotes}
           onClose={handlePanelClose}
           onMood={handleMood}
+          onPointAt={handlePointAt}
           onSaveNote={handleSaveNote}
           onRemoveNote={handleRemoveNote}
           onClearNotes={handleClearNotes}

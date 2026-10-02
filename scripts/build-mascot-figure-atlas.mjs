@@ -6,34 +6,34 @@
 //
 // Run, then commit the output:   node scripts/build-mascot-figure-atlas.mjs
 //
-// SOURCES. `public/dummy/mascot_sheet.png` is a grid of full-body poses, ten labelled rows of one
-// emotion each, already on a transparent background. `public/dummy/mascot.png` is one larger, crisper
-// render of the same character, used as the resting frame because it is the frame people see most.
-// The sheet is not on a fixed grid, so figures are found by connected components of the alpha
-// channel rather than by slicing: anything at least FIGURE_MINIMUM_AREA_PX is a figure, and smaller
-// marks beside it (a "!", a "?", an anger vein) are merged into the figure they sit next to.
+// SOURCE. `art/mascot/sprite_sheet.png` — outside `public/` on purpose, so the 3 MB original is
+// never served. Labelled groups of full-body poses on a transparent background: a hero figure,
+// Neutral, Joy, Sad, Pouting, Surprised, Shy, Thinking, Dancing, Enlightened, and a row of eight
+// Direction Pointing poses. Within a group the poses are drawn IN ORDER, so they play as a
+// sequence.
+//
+// WHY A HAND-MEASURED LAYOUT MAP AND NOT CONNECTED COMPONENTS. On this sheet neighbouring figures
+// touch (three Pouting and three Thinking figures fuse into one blob) and several pointing figures
+// touch their label pills through faint pixels, so "one component = one figure" cuts wrongly.
+// Instead SHEET_GROUPS below gives each group its region, starting just under its label pill, and
+// how many figures it holds; the region is split at its emptiest columns. The script stops if a
+// group does not yield the expected count, rather than shipping a sliced figure.
 //
 // ─── THE ASSET CONTRACT, which any replacement atlas must follow ────────────────────────────────────
 //
-//  1. ONE LAYER OF WHOLE FIGURES. Each animation is `figure/<expression>`, with expression names
-//     from MASCOT_EXPRESSIONS (src/lib/assistant/mascot-expressions.ts). The character's face and
-//     body are drawn together; there is no separate face or effect layer.
-//  2. REQUIRED: `figure/neutral`. Every other expression is optional and falls back along
-//     MASCOT_EXPRESSION_FALLBACK to the nearest one the atlas draws.
+//  1. ONE LAYER OF WHOLE FIGURES. Expression animations are `figure/<expression>` (names from
+//     MASCOT_EXPRESSIONS, src/lib/assistant/mascot-expressions.ts); pointing poses are
+//     `figure/point_<direction>` (MASCOT_POINTING_DIRECTIONS). Face and body are drawn together.
+//  2. REQUIRED: `figure/neutral`. Every other expression falls back along
+//     MASCOT_EXPRESSION_FALLBACK; a missing pointing pose means the mascot simply does not point.
 //  3. EVERY FRAME IS THE SAME SIZE and shares ONE ANCHOR: feet centre, the bottom-middle of the
 //     frame. That line is what stands on a perch's top edge.
-//  4. `meta.scale` says how many stored pixels make one CSS pixel (1.5 here); the runtime lays a
-//     frame out at its stored size divided by that.
+//  4. `meta.scale` says how many stored pixels make one CSS pixel (ATLAS_SCALE here); the runtime
+//     lays a frame out at its stored size divided by that.
 //  5. FRAME 0 OF EVERY ANIMATION IS THE RESTING FRAME. Under prefers-reduced-motion the runtime
 //     shows only frame 0, with no crossfade.
-//  6. The frames of an animation are POSES, not motion steps. The runtime holds each one for
-//     `meta.frameHoldMs[<animation>]` (default 1600 ms) and crossfades to the next by opacity.
-//     A row that is genuinely sequential (dancing) sets a short hold.
-//
-// ─── RE-PICKING FRAMES ──────────────────────────────────────────────────────────────────────────────
-//
-// SHEET_ROWS below maps each sheet row to an expression and says which figures in it to use (by
-// left-to-right index, printed when this script runs). Edit, re-run, commit the three files.
+//  6. `meta.frameHoldMs[<animation>]` sets how long each frame holds (default 1600 ms); the runtime
+//     crossfades between frames by opacity, capped at half the hold.
 
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -42,205 +42,231 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sheetPath = path.join(repositoryRoot, "public/dummy/mascot_sheet.png");
-const restingFigurePath = path.join(repositoryRoot, "public/dummy/mascot.png");
+const sheetPath = path.join(repositoryRoot, "art/mascot/sprite_sheet.png");
 const outputDirectory = path.join(repositoryRoot, "public/assistant/mascot/opera");
 
-const SHEET_ROW_COUNT = 10;
-/** The label pills ("Joy (Happy)") sit left of this x and are never figures. */
-const SHEET_LABEL_COLUMN_WIDTH_PX = 120;
 const ALPHA_THRESHOLD = 40;
-const FIGURE_MINIMUM_AREA_PX = 1_500;
-const MARK_MINIMUM_AREA_PX = 12;
-const MARK_MERGE_DISTANCE_PX = 24;
 /**
- * The Enlightened glow and every figure's anti-aliased rim are alpha below ALPHA_THRESHOLD, so they
- * belong to no component. A crop takes that soft halo this far past the figure's box and fades it to
- * nothing at the crop edge, so a glow ends softly instead of as a square.
+ * The sheet's "transparent" background is not quite: it is alpha 1–2 over a grey-blue haze, and
+ * lossy WebP alpha amplifies that into a visible box behind every figure. Anything at or below this
+ * is treated as fully transparent, colour included.
  */
-const SOFT_HALO_MARGIN_PX = 12;
+const BACKGROUND_ALPHA_CEILING = 10;
+/** Anti-aliased rims and the Enlightened glow sit below the threshold; keep this much of them. */
+const SOFT_HALO_MARGIN_PX = 6;
 
 /**
- * Stored cell size (device pixels). With `"scale": "1.5"` that is a 96×116 CSS-pixel frame.
- *
- * 1.5 and not 2 on purpose: a sheet figure is only ~95 px tall, so storing it at 2x adds bytes and
- * no detail. The 2x build was 639 KB against a 512 KB budget for the same on-screen sharpness.
+ * Stored cell size (device pixels). With `"scale": "1.7"` that is a ~96×116 CSS-pixel frame, the
+ * size the runtime lays out. 1.7 because the tallest figures are ~191 px: they fit a 198 px cell
+ * at native size, so nothing on the sheet is resampled except the hero.
  */
-const ATLAS_SCALE = 1.5;
-const CELL_WIDTH_PX = 144;
-const CELL_HEIGHT_PX = 174;
-const CELL_FOOT_MARGIN_PX = 3;
-const SHEET_UPSCALE = ATLAS_SCALE;
+const ATLAS_SCALE = 1.7;
+const CELL_WIDTH_PX = 164;
+const CELL_HEIGHT_PX = 198;
+const CELL_FOOT_MARGIN_PX = 2;
 const ATLAS_COLUMN_COUNT = 16;
 
-/** Default number of poses taken from a row, spread evenly across it. */
-const DEFAULT_PICK_COUNT = 5;
-
 /**
- * Row index (top to bottom) → expression, and which figures to use. `picks: null` means
- * DEFAULT_PICK_COUNT spread evenly; an array lists left-to-right figure indices in play order.
+ * The sheet, group by group. Regions are inclusive pixel bounds measured on the 1536×1024 sheet,
+ * each starting just below its label pill. `expression` is the animation the group becomes;
+ * `pointingDirection` marks a single pointing pose; `role: "hero"` is the large unlabelled figure.
  */
-const SHEET_ROWS = [
-  { rowLabel: "Joy (Happy)", expression: "joy", picks: null },
-  { rowLabel: "Sad (Crying)", expression: "sad", picks: null },
-  { rowLabel: "Angry", expression: "angry", picks: null },
-  { rowLabel: "Pouting", expression: "pouting", picks: null },
-  { rowLabel: "Surprised", expression: "surprised", picks: null },
-  { rowLabel: "Shy / Bashful", expression: "embarrassed", picks: null },
-  { rowLabel: "Thinking", expression: "thinking", picks: null },
-  { rowLabel: "Dancing", expression: "excited", picks: [0, 1, 2, 3, 4, 5, 6, 7] },
-  { rowLabel: "Enlightened", expression: "enlightened", picks: null },
-  // Other Gestures are not an expression of their own: three of them give the resting animation
-  // some variety between returns to the crisp resting render.
-  { rowLabel: "Other Gestures", expression: null, picks: [3, 6, 13] },
+const SHEET_GROUPS = [
+  { name: "hero", role: "hero", region: { x0: 40, x1: 200, y0: 5, y1: 246 }, figureCount: 1 },
+  {
+    name: "neutral",
+    expression: "neutral",
+    region: { x0: 240, x1: 362, y0: 55, y1: 245 },
+    figureCount: 1,
+  },
+  { name: "joy", expression: "joy", region: { x0: 405, x1: 966, y0: 55, y1: 245 }, figureCount: 5 },
+  {
+    name: "sad",
+    expression: "sad",
+    region: { x0: 1000, x1: 1500, y0: 55, y1: 245 },
+    figureCount: 4,
+  },
+  {
+    name: "pouting",
+    expression: "pouting",
+    region: { x0: 20, x1: 475, y0: 299, y1: 500 },
+    figureCount: 4,
+  },
+  {
+    name: "surprised",
+    expression: "surprised",
+    region: { x0: 480, x1: 976, y0: 299, y1: 500 },
+    figureCount: 4,
+  },
+  {
+    name: "shy",
+    expression: "embarrassed",
+    region: { x0: 995, x1: 1505, y0: 299, y1: 500 },
+    figureCount: 4,
+  },
+  {
+    name: "thinking",
+    expression: "thinking",
+    region: { x0: 20, x1: 452, y0: 555, y1: 745 },
+    figureCount: 4,
+  },
+  {
+    name: "dancing",
+    expression: "excited",
+    region: { x0: 465, x1: 1045, y0: 546, y1: 745 },
+    figureCount: 5,
+  },
+  {
+    name: "enlightened",
+    expression: "enlightened",
+    region: { x0: 1055, x1: 1520, y0: 556, y1: 745 },
+    figureCount: 4,
+  },
+  { name: "point_left", pointingDirection: "left", region: { x0: 30, x1: 185, y0: 824, y1: 1015 } },
+  { name: "point_up", pointingDirection: "up", region: { x0: 245, x1: 400, y0: 824, y1: 1015 } },
+  {
+    name: "point_right",
+    pointingDirection: "right",
+    region: { x0: 440, x1: 600, y0: 824, y1: 1015 },
+  },
+  {
+    name: "point_down",
+    pointingDirection: "down",
+    region: { x0: 650, x1: 790, y0: 824, y1: 1015 },
+  },
+  {
+    name: "point_left_up",
+    pointingDirection: "left_up",
+    region: { x0: 830, x1: 975, y0: 824, y1: 1015 },
+  },
+  {
+    name: "point_right_up",
+    pointingDirection: "right_up",
+    region: { x0: 1015, x1: 1165, y0: 824, y1: 1015 },
+  },
+  {
+    name: "point_left_down",
+    pointingDirection: "left_down",
+    region: { x0: 1190, x1: 1345, y0: 824, y1: 1015 },
+  },
+  {
+    name: "point_right_down",
+    pointingDirection: "right_down",
+    region: { x0: 1370, x1: 1510, y0: 824, y1: 1015 },
+  },
 ];
 
+/** Poses are drawn in order, so they play as sequences; the holds are per animation. */
 const FRAME_HOLD_MS = {
   "figure/neutral": 2_400,
-  "figure/excited": 450,
+  "figure/joy": 450,
+  "figure/sad": 600,
+  "figure/pouting": 500,
+  "figure/surprised": 400,
+  "figure/embarrassed": 600,
+  "figure/thinking": 700,
+  "figure/excited": 280,
+  "figure/enlightened": 600,
 };
 
 // ─── reading the sheet ──────────────────────────────────────────────────────────────────────────────
 
-async function readRgba(imagePath) {
-  const { data, info } = await sharp(imagePath)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  return { pixels: data, width: info.width, height: info.height };
-}
+const { data: sheetPixels, info: sheetInfo } = await sharp(sheetPath)
+  .ensureAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true });
+const sheetWidth = sheetInfo.width;
 
-/** 4-connected components over the alpha mask. Returns the label image and each component's box. */
-function findComponents({ pixels, width, height }) {
-  const componentLabels = new Int32Array(width * height);
-  const components = [];
-  for (let startIndex = 0; startIndex < width * height; startIndex += 1) {
-    if (componentLabels[startIndex] !== 0 || pixels[startIndex * 4 + 3] <= ALPHA_THRESHOLD)
-      continue;
-    const componentId = components.length + 1;
-    const box = { componentId, minX: width, minY: height, maxX: 0, maxY: 0, area: 0 };
-    const pendingIndices = [startIndex];
-    componentLabels[startIndex] = componentId;
-    while (pendingIndices.length > 0) {
-      const pixelIndex = pendingIndices.pop();
-      const pixelX = pixelIndex % width;
-      const pixelY = Math.floor(pixelIndex / width);
-      box.area += 1;
-      box.minX = Math.min(box.minX, pixelX);
-      box.maxX = Math.max(box.maxX, pixelX);
-      box.minY = Math.min(box.minY, pixelY);
-      box.maxY = Math.max(box.maxY, pixelY);
-      const neighbourIndices = [
-        pixelX > 0 ? pixelIndex - 1 : -1,
-        pixelX < width - 1 ? pixelIndex + 1 : -1,
-        pixelY > 0 ? pixelIndex - width : -1,
-        pixelY < height - 1 ? pixelIndex + width : -1,
-      ];
-      for (const neighbourIndex of neighbourIndices) {
-        if (neighbourIndex < 0 || componentLabels[neighbourIndex] !== 0) continue;
-        if (pixels[neighbourIndex * 4 + 3] <= ALPHA_THRESHOLD) continue;
-        componentLabels[neighbourIndex] = componentId;
-        pendingIndices.push(neighbourIndex);
-      }
+const readAlpha = (pixelX, pixelY) => sheetPixels[(pixelY * sheetWidth + pixelX) * 4 + 3];
+
+/** The column, within ±searchRadius of `centerX`, with the fewest solid pixels in the region. */
+function findEmptiestColumn(region, centerX, searchRadius) {
+  let bestColumnX = Math.round(centerX);
+  let bestCoverage = Number.POSITIVE_INFINITY;
+  const firstColumnX = Math.round(centerX - searchRadius);
+  const lastColumnX = Math.round(centerX + searchRadius);
+  for (let columnX = firstColumnX; columnX <= lastColumnX; columnX += 1) {
+    let coverage = 0;
+    for (let pixelY = region.y0; pixelY <= region.y1; pixelY += 1) {
+      if (readAlpha(columnX, pixelY) > ALPHA_THRESHOLD) coverage += 1;
     }
-    components.push(box);
+    const isBetter =
+      coverage < bestCoverage ||
+      (coverage === bestCoverage && Math.abs(columnX - centerX) < Math.abs(bestColumnX - centerX));
+    if (isBetter) {
+      bestCoverage = coverage;
+      bestColumnX = columnX;
+    }
   }
-  return { componentLabels, components };
+  return bestColumnX;
 }
 
-function groupSheetFigures(sheet) {
-  const { componentLabels, components } = findComponents(sheet);
-  const rowHeightPx = sheet.height / SHEET_ROW_COUNT;
-  const figures = components
-    .filter((box) => box.area >= FIGURE_MINIMUM_AREA_PX && box.minX >= SHEET_LABEL_COLUMN_WIDTH_PX)
-    .map((box) => ({
-      footX: (box.minX + box.maxX) / 2,
-      footY: box.maxY,
-      rowIndex: Math.floor((box.minY + box.maxY) / 2 / rowHeightPx),
-      haloTopPx: 0,
-      haloBottomPx: sheet.height - 1,
-      componentIds: new Set([box.componentId]),
-      minX: box.minX,
-      minY: box.minY,
-      maxX: box.maxX,
-      maxY: box.maxY,
-    }));
-
-  const marks = components.filter(
-    (box) =>
-      box.area >= MARK_MINIMUM_AREA_PX &&
-      box.area < FIGURE_MINIMUM_AREA_PX &&
-      box.minX >= SHEET_LABEL_COLUMN_WIDTH_PX,
-  );
-  for (const mark of marks) {
-    const markCenterX = (mark.minX + mark.maxX) / 2;
-    const markCenterY = (mark.minY + mark.maxY) / 2;
-    const owner = figures.find(
-      (figure) =>
-        markCenterX >= figure.minX - MARK_MERGE_DISTANCE_PX &&
-        markCenterX <= figure.maxX + MARK_MERGE_DISTANCE_PX &&
-        markCenterY >= figure.minY - MARK_MERGE_DISTANCE_PX &&
-        markCenterY <= figure.maxY + MARK_MERGE_DISTANCE_PX,
+/** Splits a group's region into `figureCount` vertical slabs at its emptiest columns. */
+function splitIntoSlabs(region, figureCount) {
+  const slabWidth = (region.x1 - region.x0 + 1) / figureCount;
+  const cutColumns = [region.x0];
+  for (let boundaryIndex = 1; boundaryIndex < figureCount; boundaryIndex += 1) {
+    cutColumns.push(
+      findEmptiestColumn(region, region.x0 + boundaryIndex * slabWidth, slabWidth * 0.4),
     );
-    if (owner === undefined) continue;
-    owner.componentIds.add(mark.componentId);
-    owner.minX = Math.min(owner.minX, mark.minX);
-    owner.minY = Math.min(owner.minY, mark.minY);
-    owner.maxX = Math.max(owner.maxX, mark.maxX);
-    owner.maxY = Math.max(owner.maxY, mark.maxY);
   }
-
-  const figuresByRow = Array.from({ length: SHEET_ROW_COUNT }, () => []);
-  for (const figure of figures) figuresByRow[figure.rowIndex]?.push(figure);
-  for (const rowFigures of figuresByRow) rowFigures.sort((left, right) => left.minX - right.minX);
-
-  // A halo stops short of the neighbouring rows' figures: a base disc's rim from the row above
-  // otherwise prints as a faint line over every head in this row.
-  for (const [rowIndex, rowFigures] of figuresByRow.entries()) {
-    const rowAbove = figuresByRow[rowIndex - 1] ?? [];
-    const rowBelow = figuresByRow[rowIndex + 1] ?? [];
-    const haloTopPx =
-      rowAbove.length === 0 ? 0 : Math.max(...rowAbove.map((figure) => figure.maxY)) + 3;
-    const haloBottomPx =
-      rowBelow.length === 0
-        ? sheet.height - 1
-        : Math.min(...rowBelow.map((figure) => figure.minY)) - 3;
-    for (const figure of rowFigures) {
-      figure.haloTopPx = Math.min(haloTopPx, figure.minY);
-      figure.haloBottomPx = Math.max(haloBottomPx, figure.maxY);
-    }
-  }
-  return { componentLabels, figuresByRow };
+  cutColumns.push(region.x1 + 1);
+  return cutColumns.slice(0, -1).map((slabStartX, slabIndex) => ({
+    x0: slabStartX,
+    x1: cutColumns[slabIndex + 1] - 1,
+    y0: region.y0,
+    y1: region.y1,
+  }));
 }
 
-/** Copies only this figure's own components out of the sheet, so a neighbour never bleeds in. */
-function extractFigurePixels(sheet, componentLabels, figure) {
-  const cropMinX = Math.max(0, figure.minX - SOFT_HALO_MARGIN_PX);
-  // The halo never crosses into the row above or below: their figures' rims would print as lines.
-  const cropMinY = Math.max(figure.haloTopPx, figure.minY - SOFT_HALO_MARGIN_PX);
-  const cropMaxX = Math.min(sheet.width - 1, figure.maxX + SOFT_HALO_MARGIN_PX);
-  const cropMaxY = Math.min(figure.haloBottomPx, figure.maxY + SOFT_HALO_MARGIN_PX);
+/** The solid bbox inside a slab, or null if the slab is empty. */
+function findSolidBox(slab) {
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = -1;
+  let maxY = -1;
+  for (let pixelY = slab.y0; pixelY <= slab.y1; pixelY += 1) {
+    for (let pixelX = slab.x0; pixelX <= slab.x1; pixelX += 1) {
+      if (readAlpha(pixelX, pixelY) <= ALPHA_THRESHOLD) continue;
+      minX = Math.min(minX, pixelX);
+      maxX = Math.max(maxX, pixelX);
+      minY = Math.min(minY, pixelY);
+      maxY = Math.max(maxY, pixelY);
+    }
+  }
+  return maxX < 0 ? null : { minX, minY, maxX, maxY };
+}
+
+/**
+ * Copies one figure out of its slab: everything solid, plus the soft halo up to
+ * SOFT_HALO_MARGIN_PX beyond the solid box (still inside the slab), faded to nothing at the edge.
+ */
+function extractFigure(slab, solidBox) {
+  const cropMinX = Math.max(slab.x0, solidBox.minX - SOFT_HALO_MARGIN_PX);
+  const cropMaxX = Math.min(slab.x1, solidBox.maxX + SOFT_HALO_MARGIN_PX);
+  const cropMinY = Math.max(slab.y0, solidBox.minY - SOFT_HALO_MARGIN_PX);
+  const cropMaxY = Math.min(slab.y1, solidBox.maxY + SOFT_HALO_MARGIN_PX);
   const cropWidth = cropMaxX - cropMinX + 1;
   const cropHeight = cropMaxY - cropMinY + 1;
   const cropPixels = Buffer.alloc(cropWidth * cropHeight * 4);
   for (let cropY = 0; cropY < cropHeight; cropY += 1) {
     for (let cropX = 0; cropX < cropWidth; cropX += 1) {
-      const sheetIndex = (cropMinY + cropY) * sheet.width + cropMinX + cropX;
-      const sheetLabel = componentLabels[sheetIndex];
-      const isOwnComponent = figure.componentIds.has(sheetLabel);
-      const isSoftHalo = sheetLabel === 0 && sheet.pixels[sheetIndex * 4 + 3] > 0;
-      if (!isOwnComponent && !isSoftHalo) continue;
+      const sheetX = cropMinX + cropX;
+      const sheetY = cropMinY + cropY;
+      const sheetIndex = (sheetY * sheetWidth + sheetX) * 4;
       const cropIndex = (cropY * cropWidth + cropX) * 4;
-      sheet.pixels.copy(cropPixels, cropIndex, sheetIndex * 4, sheetIndex * 4 + 4);
-      if (isSoftHalo) {
-        const distanceToCropEdgePx = Math.min(
-          cropX,
-          cropY,
-          cropWidth - 1 - cropX,
-          cropHeight - 1 - cropY,
-        );
-        const edgeFade = Math.min(1, distanceToCropEdgePx / SOFT_HALO_MARGIN_PX);
-        cropPixels[cropIndex + 3] = Math.round(cropPixels[cropIndex + 3] * edgeFade);
+      if (sheetPixels[sheetIndex + 3] <= BACKGROUND_ALPHA_CEILING) continue;
+      sheetPixels.copy(cropPixels, cropIndex, sheetIndex, sheetIndex + 4);
+      const distanceOutsidePx = Math.max(
+        0,
+        solidBox.minX - sheetX,
+        sheetX - solidBox.maxX,
+        solidBox.minY - sheetY,
+        sheetY - solidBox.maxY,
+      );
+      if (distanceOutsidePx > 0) {
+        const fade = Math.max(0, 1 - distanceOutsidePx / SOFT_HALO_MARGIN_PX);
+        cropPixels[cropIndex + 3] = Math.round(cropPixels[cropIndex + 3] * fade);
       }
     }
   }
@@ -248,26 +274,40 @@ function extractFigurePixels(sheet, componentLabels, figure) {
     cropPixels,
     cropWidth,
     cropHeight,
-    footOffsetX: figure.footX - cropMinX,
-    footOffsetY: figure.footY - cropMinY,
+    solidHeight: solidBox.maxY - solidBox.minY + 1,
+    footOffsetX: (solidBox.minX + solidBox.maxX) / 2 - cropMinX,
+    footOffsetY: solidBox.maxY - cropMinY,
   };
 }
 
-/** Scales a crop and places it feet-centre in one cell. Returns the cell as a PNG buffer. */
-async function placeInCell({ cropPixels, cropWidth, cropHeight, footOffsetX, footOffsetY }, scale) {
-  const availableHeight = CELL_HEIGHT_PX - CELL_FOOT_MARGIN_PX;
-  const fittedScale = Math.min(scale, availableHeight / cropHeight, CELL_WIDTH_PX / cropWidth);
-  const scaledWidth = Math.max(1, Math.round(cropWidth * fittedScale));
-  const scaledHeight = Math.max(1, Math.round(cropHeight * fittedScale));
-  const scaledBuffer = await sharp(cropPixels, {
-    raw: { width: cropWidth, height: cropHeight, channels: 4 },
-  })
-    .resize(scaledWidth, scaledHeight, { kernel: "lanczos3" })
+/** Places a figure feet-centre in one cell at `scale`, clipping any halo that overhangs the cell. */
+async function placeInCell(figure, scale) {
+  const scaledWidth = Math.max(1, Math.round(figure.cropWidth * scale));
+  const scaledHeight = Math.max(1, Math.round(figure.cropHeight * scale));
+  const rawFigure = sharp(figure.cropPixels, {
+    raw: { width: figure.cropWidth, height: figure.cropHeight, channels: 4 },
+  });
+  const scaledBuffer =
+    scale === 1
+      ? await rawFigure.png().toBuffer()
+      : await rawFigure.resize(scaledWidth, scaledHeight, { kernel: "lanczos3" }).png().toBuffer();
+
+  const left = Math.round(CELL_WIDTH_PX / 2 - figure.footOffsetX * scale);
+  const top = Math.round(CELL_HEIGHT_PX - CELL_FOOT_MARGIN_PX - figure.footOffsetY * scale);
+  const visibleLeft = Math.max(0, left);
+  const visibleTop = Math.max(0, top);
+  const visibleRight = Math.min(CELL_WIDTH_PX, left + scaledWidth);
+  const visibleBottom = Math.min(CELL_HEIGHT_PX, top + scaledHeight);
+  const clippedBuffer = await sharp(scaledBuffer)
+    .extract({
+      left: visibleLeft - left,
+      top: visibleTop - top,
+      width: visibleRight - visibleLeft,
+      height: visibleBottom - visibleTop,
+    })
     .png()
     .toBuffer();
 
-  const left = Math.round(CELL_WIDTH_PX / 2 - footOffsetX * fittedScale);
-  const top = Math.round(CELL_HEIGHT_PX - CELL_FOOT_MARGIN_PX - footOffsetY * fittedScale);
   return sharp({
     create: {
       width: CELL_WIDTH_PX,
@@ -276,97 +316,58 @@ async function placeInCell({ cropPixels, cropWidth, cropHeight, footOffsetX, foo
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([
-      {
-        input: scaledBuffer,
-        left: Math.max(0, Math.min(left, CELL_WIDTH_PX - scaledWidth)),
-        top: Math.max(0, top),
-      },
-    ])
+    .composite([{ input: clippedBuffer, left: visibleLeft, top: visibleTop }])
     .png()
     .toBuffer();
 }
 
-function spreadPicks(figureCount, pickCount) {
-  if (figureCount <= pickCount) return Array.from({ length: figureCount }, (_, index) => index);
-  return Array.from({ length: pickCount }, (_, index) =>
-    Math.round((index * (figureCount - 1)) / (pickCount - 1)),
+// ─── building ───────────────────────────────────────────────────────────────────────────────────────
+
+/** Every figure, cut, per group. Stops the build if a group does not hold what the map says. */
+const figuresByGroup = new Map();
+const reportLines = [];
+for (const group of SHEET_GROUPS) {
+  const figureCount = group.figureCount ?? 1;
+  const figures = splitIntoSlabs(group.region, figureCount)
+    .map((slab) => ({ slab, solidBox: findSolidBox(slab) }))
+    .filter(({ solidBox }) => solidBox !== null)
+    .map(({ slab, solidBox }) => extractFigure(slab, solidBox));
+  if (figures.length !== figureCount) {
+    throw new Error(`${group.name}: expected ${figureCount} figures, found ${figures.length}.`);
+  }
+  figuresByGroup.set(group.name, figures);
+  reportLines.push(
+    `${group.name}: ${figures.map((figure) => `${figure.cropWidth}x${figure.cropHeight}`).join(" ")}`,
   );
 }
 
-// ─── building ───────────────────────────────────────────────────────────────────────────────────────
-
-const sheet = await readRgba(sheetPath);
-const { componentLabels, figuresByRow } = groupSheetFigures(sheet);
-
-const typicalFigureHeightPx = (() => {
-  const heights = figuresByRow
-    .flat()
-    .map((figure) => figure.footY - figure.minY + 1)
-    .toSorted((leftHeight, rightHeight) => leftHeight - rightHeight);
-  return heights[Math.floor(heights.length / 2)];
-})();
+const sheetFigureHeights = [...figuresByGroup.entries()]
+  .filter(([groupName]) => groupName !== "hero")
+  .flatMap(([, figures]) => figures.map((figure) => figure.solidHeight))
+  .toSorted((leftHeight, rightHeight) => leftHeight - rightHeight);
+const medianFigureHeight = sheetFigureHeights[Math.floor(sheetFigureHeights.length / 2)];
 
 /** [frameName, cellPngBuffer] in atlas order. */
 const frameCells = [];
 const animations = {};
-const reportLines = [];
 
-// The resting render: same on-screen height as a sheet figure, but from a 3x larger source.
-const restingFigure = await readRgba(restingFigurePath);
-const { components: restingComponents } = findComponents(restingFigure);
-const restingBody = restingComponents.reduce((largest, box) =>
-  box.area > largest.area ? box : largest,
-);
-const restingCrop = extractFigurePixels(
-  restingFigure,
-  findComponents(restingFigure).componentLabels,
-  {
-    componentIds: new Set([restingBody.componentId]),
-    minX: restingBody.minX,
-    minY: restingBody.minY,
-    maxX: restingBody.maxX,
-    maxY: restingBody.maxY,
-    footX: (restingBody.minX + restingBody.maxX) / 2,
-    footY: restingBody.maxY,
-    haloTopPx: 0,
-    haloBottomPx: restingFigure.height - 1,
-  },
-);
-// The resting render is drawn with a smaller head than the sheet's chibi poses, so at equal height it
-// reads as a smaller character. A little taller lines the heads up when frames crossfade.
-const RESTING_HEIGHT_FACTOR = 1.15;
-const restingScale =
-  (typicalFigureHeightPx * SHEET_UPSCALE * RESTING_HEIGHT_FACTOR) / restingCrop.cropHeight;
-frameCells.push(["figure/neutral/rest", await placeInCell(restingCrop, restingScale)]);
-
-const neutralGestureFrameNames = [];
-for (const [rowIndex, rowSpec] of SHEET_ROWS.entries()) {
-  const rowFigures = figuresByRow[rowIndex];
-  const pickedIndices = (
-    rowSpec.picks ?? spreadPicks(rowFigures.length, DEFAULT_PICK_COUNT)
-  ).filter((figureIndex) => figureIndex < rowFigures.length);
-  reportLines.push(
-    `row ${rowIndex} ${rowSpec.rowLabel}: ${rowFigures.length} figures, using [${pickedIndices.join(", ")}]`,
-  );
+for (const group of SHEET_GROUPS) {
   const frameNames = [];
-  for (const figureIndex of pickedIndices) {
-    const frameName = `figure/${rowSpec.expression ?? "gesture"}/${figureIndex}`;
-    const crop = extractFigurePixels(sheet, componentLabels, rowFigures[figureIndex]);
-    frameCells.push([frameName, await placeInCell(crop, SHEET_UPSCALE)]);
+  for (const [figureIndex, figure] of figuresByGroup.get(group.name).entries()) {
+    const frameName = `figure/${group.name}/${figureIndex}`;
+    // Only the hero is resampled: it is drawn larger than the rest and must stand at their height.
+    const scale = group.role === "hero" ? medianFigureHeight / figure.solidHeight : 1;
+    frameCells.push([frameName, await placeInCell(figure, scale)]);
     frameNames.push(frameName);
   }
-  if (rowSpec.expression === null) neutralGestureFrameNames.push(...frameNames);
-  else animations[`figure/${rowSpec.expression}`] = frameNames;
+  if (group.expression !== undefined) animations[`figure/${group.expression}`] = frameNames;
+  if (group.pointingDirection !== undefined) {
+    animations[`figure/point_${group.pointingDirection}`] = frameNames;
+  }
 }
 
-// Rest, gesture, rest, gesture: the character mostly stands still and now and then does something.
-animations["figure/neutral"] = neutralGestureFrameNames.flatMap((gestureFrameName) => [
-  "figure/neutral/rest",
-  gestureFrameName,
-]);
-if (animations["figure/neutral"].length === 0)
-  animations["figure/neutral"] = ["figure/neutral/rest"];
+// Resting: the Neutral pose first (frame 0 is what reduced motion shows), then the hero's welcome.
+animations["figure/neutral"] = [...animations["figure/neutral"], "figure/hero/0"];
 
 const atlasRowCount = Math.ceil(frameCells.length / ATLAS_COLUMN_COUNT);
 const atlasWidthPx = ATLAS_COLUMN_COUNT * CELL_WIDTH_PX;
@@ -397,7 +398,7 @@ const atlasBuffer = await sharp({
   },
 })
   .composite(composites)
-  .webp({ quality: 80, alphaQuality: 90, effort: 6 })
+  .webp({ quality: 82, alphaQuality: 90, effort: 6 })
   .toBuffer();
 await writeFile(path.join(outputDirectory, "atlas.webp"), atlasBuffer);
 
@@ -418,9 +419,8 @@ await writeFile(
   `${JSON.stringify(atlasJson, null, 2)}\n`,
 );
 
-const fallbackBuffer = await sharp(frameCells[0][1])
-  .webp({ quality: 90, alphaQuality: 100 })
-  .toBuffer();
+const neutralCell = frameCells.find(([frameName]) => frameName === "figure/neutral/0")?.[1];
+const fallbackBuffer = await sharp(neutralCell).webp({ quality: 90, alphaQuality: 100 }).toBuffer();
 await writeFile(path.join(outputDirectory, "fallback.webp"), fallbackBuffer);
 
 process.stdout.write(

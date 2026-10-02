@@ -847,11 +847,18 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
 - **Memory and dock side live in the one key.** `assistantMemoryNotes` (≤ 20 × 200 chars) and
   `assistantDockSide` are fields of `qatoto.browser-preferences`; the privacy policy and the data
   panel say so, and "clear device data" erases them. No second key, no backend table.
-- **Art is an atlas swap.** Whole-figure animations `figure/<expression>`, required
-  `figure/neutral`, optional `meta.frameHoldMs`; poses crossfade by opacity. The contract is in
-  `scripts/build-mascot-figure-atlas.mjs`'s header (which builds `public/assistant/mascot/opera/`
-  from `public/dummy/mascot_sheet.png` + `mascot.png`) and is parsed by `mascot-atlas.schemas.ts`.
-  `docs/Design.md` §7 records why this one surface may choreograph.
+- **Art is an atlas swap.** Whole-figure animations `figure/<expression>` played in sheet order
+  at `meta.frameHoldMs` per frame and crossfaded by opacity, plus optional pointing poses
+  `figure/point_<direction>`; `figure/neutral` is required. The contract is in
+  `scripts/build-mascot-figure-atlas.mjs`'s header, which cuts `art/mascot/sprite_sheet.png` (kept
+  OUT of `public/` so the original is never served) into `public/assistant/mascot/opera/` through
+  a hand-measured layout map — the sheet's figures touch, so connected components cannot separate
+  them. Parsed by `mascot-atlas.schemas.ts`. `docs/Design.md` §7 records why this one surface may
+  choreograph.
+- **Pointing is a channel over the mood** (`MascotPointing` in `mascot-state.ts`): it points where
+  it is travelling, down at a perch it has just reached (1.2 s), and at the panel when it opens or
+  a reply carries a link (`controller.pointAt`). An atlas without pointing poses simply never
+  points.
 
 ## Things to know
 

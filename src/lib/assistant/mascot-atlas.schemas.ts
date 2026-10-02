@@ -3,9 +3,11 @@
 // THE MASCOT ATLAS CONTRACT.
 //
 // The character is one PixiJS v8 spritesheet: `atlas.json` beside its image, in the TexturePacker
-// "hash" shape Pixi reads natively. Its `animations` are whole figures, one per expression:
+// "hash" shape Pixi reads natively. Its `animations` are whole figures, one per expression, plus
+// optional pointing poses:
 //
-//   figure/<expression>    e.g. figure/neutral, figure/joy, figure/excited
+//   figure/<expression>         e.g. figure/neutral, figure/joy, figure/excited
+//   figure/point_<direction>    e.g. figure/point_down, figure/point_left_up
 //
 // with names drawn from `mascot-expressions.ts`. Every frame is the SAME size and shares one anchor
 // (feet centre, bottom middle of the frame). The frames of an animation are POSES rather than motion
@@ -24,6 +26,7 @@ import {
   MASCOT_EXPRESSIONS,
   MASCOT_REQUIRED_EXPRESSION,
   type MascotExpression,
+  type MascotPointingDirection,
 } from "@/lib/assistant/mascot-expressions";
 
 /** Where the active art set lives. Swapping art sets is this one path. */
@@ -177,6 +180,15 @@ export function resolveMascotFigureKey(atlas: MascotAtlas, expression: MascotExp
     candidateExpression = MASCOT_EXPRESSION_FALLBACK[candidateExpression];
   }
   return buildFigureKey(MASCOT_REQUIRED_EXPRESSION);
+}
+
+/** The pointing pose, or null when this atlas draws none: the mascot then simply does not point. */
+export function resolveMascotPointingKey(
+  atlas: MascotAtlas,
+  direction: MascotPointingDirection,
+): string | null {
+  const pointingKey = `figure/point_${direction}`;
+  return atlas.animationKeys.has(pointingKey) ? pointingKey : null;
 }
 
 export function readMascotFrameHoldMs(atlas: MascotAtlas, animationKey: string): number {

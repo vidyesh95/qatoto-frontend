@@ -8,7 +8,7 @@
 // this feature exists to avoid. React only hears about the speech bubble, which changes rarely.
 
 import type { AssistantSignal } from "@/lib/assistant/assistant-signals";
-import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
+import type { MascotExpression, MascotPointingDirection } from "@/lib/assistant/mascot-expressions";
 
 /**
  * `travelling` carries the perch it is heading for, or `null` when it is heading home to the dock.
@@ -45,6 +45,16 @@ export function canMoodReplace(incomingMood: MascotMood, currentMood: MascotMood
     MASCOT_MOOD_PRIORITIES.indexOf(incomingMood.priority) >=
     MASCOT_MOOD_PRIORITIES.indexOf(currentMood.priority)
   );
+}
+
+/**
+ * A pointing pose laid OVER the mood while it lasts: the mascot points, then goes back to
+ * whatever it was feeling. `expiresAtMs: null` is "for as long as this lasts" — pointing the way
+ * while it travels, which ends when it arrives.
+ */
+export interface MascotPointing {
+  readonly direction: MascotPointingDirection;
+  readonly expiresAtMs: number | null;
 }
 
 /** Perch ids, as written in `data-assistant-perch="<id>"`. One constant or builder per perch. */

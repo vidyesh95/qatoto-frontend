@@ -128,10 +128,13 @@ export function useAssistantBrain({
   pathname,
   memoryNotes,
   onMood,
+  onDestinationOffered,
 }: {
   readonly pathname: string;
   readonly memoryNotes: readonly string[];
   readonly onMood: (expression: MascotExpression, holdMs: number) => void;
+  /** A reply carried a link: the mascot points at the panel it is in. */
+  readonly onDestinationOffered: () => void;
 }) {
   const { data: authSession, isPending: isSessionPending } = useSession();
   const isSignedIn = authSession !== null && authSession !== undefined;
@@ -396,6 +399,7 @@ export function useAssistantBrain({
     };
     replaceAssistantMessage(pendingMessageId, answeredMessage);
     onMood(replyResult.data.expression, REPLY_MOOD_HOLD_MS);
+    if (replyResult.data.destinationKey !== null) onDestinationOffered();
     await runReplySearch(pendingMessageId, answeredMessage);
   };
 

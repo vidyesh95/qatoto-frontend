@@ -14,7 +14,14 @@
 // what it remembers, the dock-side switch (the keyboard alternative to dragging), and the composer
 // pinned at the bottom.
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 
 import Image from "next/image";
 
@@ -32,6 +39,8 @@ import type { MascotDockSide } from "@/lib/browser-preferences";
 
 export const ASSISTANT_PANEL_ID = "qatoto-assistant-panel";
 
+const POINT_AT_PANEL_MS = 1_500;
+
 const ROUTE_BADGE_LABELS = {
   on_device: "On this device",
   cloud: "Gemini via Qatoto",
@@ -43,6 +52,7 @@ export default function AssistantPanel({
   memoryNotes,
   onClose,
   onMood,
+  onPointAt,
   onSaveNote,
   onRemoveNote,
   onClearNotes,
@@ -53,21 +63,41 @@ export default function AssistantPanel({
   readonly memoryNotes: readonly string[];
   readonly onClose: () => void;
   readonly onMood: (expression: MascotExpression, holdMs: number) => void;
+  /** Viewport coordinates the mascot should point toward, and for how long. */
+  readonly onPointAt: (targetX: number, targetY: number, holdMs: number) => void;
   readonly onSaveNote: (memoryNote: string) => void;
   readonly onRemoveNote: (noteIndex: number) => void;
   readonly onClearNotes: () => void;
   readonly onDockSideChange: (dockSide: MascotDockSide) => void;
 }) {
+  const panelRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const [draftQuestion, setDraftQuestion] = useState("");
+  /** One layout read, on open or when a reply carries a link — never per frame. */
+  const pointMascotAtPanel = () => {
+    const panelRect = panelRef.current?.getBoundingClientRect();
+    if (panelRect === undefined) return;
+    onPointAt(
+      panelRect.left + panelRect.width / 2,
+      panelRect.top + panelRect.height / 2,
+      POINT_AT_PANEL_MS,
+    );
+  };
   const { brainState, messages, isAwaitingReply, sendMessage, startOnDeviceDownload } =
-    useAssistantBrain({ pathname, memoryNotes, onMood });
+    useAssistantBrain({
+      pathname,
+      memoryNotes,
+      onMood,
+      onDestinationOffered: pointMascotAtPanel,
+    });
   const chatRoute = selectAssistantChatRoute(brainState);
   const canSend = chatRoute !== "none" && !isAwaitingReply && draftQuestion.trim().length > 0;
 
+  const pointMascotAtPanelOnOpen = useEffectEvent(pointMascotAtPanel);
   useEffect(() => {
     headingRef.current?.focus();
+    pointMascotAtPanelOnOpen();
   }, []);
 
   // Keep the newest turn in view as it streams. One scroll call, not a layout read per word.
@@ -121,6 +151,7 @@ export default function AssistantPanel({
 
   return (
     <section
+      ref={panelRef}
       id={ASSISTANT_PANEL_ID}
       aria-labelledby={`${ASSISTANT_PANEL_ID}-heading`}
       className={`fixed inset-x-3 bottom-52 z-40 flex max-h-[70dvh] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-44 md:w-96 ${

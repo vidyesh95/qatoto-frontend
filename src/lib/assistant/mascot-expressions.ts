@@ -84,3 +84,32 @@ export const MASCOT_EXPRESSION_FALLBACK: Record<MascotExpression, MascotExpressi
 
 /** The one expression every atlas must draw, so fallback resolution always ends on a drawn figure. */
 export const MASCOT_REQUIRED_EXPRESSION: MascotExpression = "neutral";
+
+/**
+ * The eight ways the mascot can point, a separate channel from its expression: it points at where
+ * it is going, at the perch it has just reached, and at the panel it wants the viewer to look at.
+ * An atlas draws them as `figure/point_<direction>`; one that does not simply never points.
+ */
+export const MASCOT_POINTING_DIRECTIONS = [
+  "right",
+  "right_up",
+  "up",
+  "left_up",
+  "left",
+  "left_down",
+  "down",
+  "right_down",
+] as const;
+
+export type MascotPointingDirection = (typeof MASCOT_POINTING_DIRECTIONS)[number];
+
+/**
+ * The direction of a vector in viewport pixels, in eight 45° sectors. Screen y grows DOWNWARD, so
+ * it is flipped before the angle is taken; the tuple above is in counter-clockwise order from
+ * "right", which is what makes the sector index a direct lookup.
+ */
+export function selectPointingDirection(deltaX: number, deltaY: number): MascotPointingDirection {
+  const angleDegrees = (Math.atan2(-deltaY, deltaX) * 180) / Math.PI;
+  const sectorIndex = Math.round((angleDegrees + 360) / 45) % MASCOT_POINTING_DIRECTIONS.length;
+  return MASCOT_POINTING_DIRECTIONS[sectorIndex] ?? "right";
+}

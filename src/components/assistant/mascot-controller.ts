@@ -17,10 +17,14 @@
 // draw, not DOM) and at most one `transform` on the DOM box that holds the open button and speech
 // bubble — and that only when the position actually moved.
 //
-// POSES CROSSFADE. The atlas's frames are separate poses, not motion steps, so a flip-book would
-// jitter. Two sprites trade places: the incoming pose fades in over the outgoing one by opacity,
+// POSES CROSSFADE. Each frame of an expression is a pose held for the atlas's `frameHoldMs`, and two
+// sprites trade places between them: the incoming pose fades in over the outgoing one by opacity,
 // which is the one kind of motion `docs/Design.md` allows everywhere. Reduced motion shows frame 0
 // of each expression and swaps without a fade.
+//
+// POINTING IS LAID OVER THE MOOD. On the way to a perch it points where it is going, on arrival it
+// points down at the perch for a moment, and `pointAt` lets the panel say "over here". When the
+// pointing ends, the mood (joy, thinking, …) is what shows again.
 
 import type * as PixiNamespace from "pixi.js";
 
@@ -29,15 +33,17 @@ import {
   canMoodReplace,
   type MascotMood,
   type MascotPlacement,
+  type MascotPointing,
   type MascotReaction,
 } from "@/components/assistant/mascot-state";
 import { createPerchTracker, type PerchReading } from "@/components/assistant/perch-tracker";
 import {
   readMascotFrameHoldMs,
   resolveMascotFigureKey,
+  resolveMascotPointingKey,
   type MascotAtlas,
 } from "@/lib/assistant/mascot-atlas.schemas";
-import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
+import { selectPointingDirection, type MascotExpression } from "@/lib/assistant/mascot-expressions";
 import type { MascotDockSide } from "@/lib/browser-preferences";
 
 type PixiModule = typeof PixiNamespace;
@@ -47,6 +53,8 @@ export interface MascotController {
   readonly react: (reaction: MascotReaction) => void;
   /** A short expression for something the viewer did, such as asking a question. */
   readonly showInteractionMood: (expression: MascotExpression, holdMs: number) => void;
+  /** Point toward a viewport point for a while ("it's over here"), then back to the mood. */
+  readonly pointAt: (targetX: number, targetY: number, holdMs: number) => void;
   /** Call after a route change: a perch removed by navigation fires no event of its own. */
   readonly markLayoutDirty: () => void;
   readonly setDockSide: (dockSide: MascotDockSide) => void;
@@ -75,6 +83,8 @@ const BOB_AMPLITUDE_PX = 2;
 const BOB_PERIOD_MS = 2_800;
 const POSE_CROSSFADE_MS = 240;
 const MAXIMUM_FRAMES_PER_SECOND = 30;
+/** On reaching a perch it points down at it this long before its reaction plays on. */
+const ARRIVAL_POINTING_MS = 1_200;
 
 interface ViewportPoint {
   x: number;
@@ -85,6 +95,16 @@ function arriveAt(destinationPerchId: string | null): MascotPlacement {
   return destinationPerchId === null
     ? { mode: "docked" }
     : { mode: "perched", perchId: destinationPerchId };
+}
+
+/** Reaching a perch: point down at it for a moment. Reaching home: stop pointing. */
+function pointingOnArrival(
+  destinationPerchId: string | null,
+  nowMs: number,
+): MascotPointing | null {
+  return destinationPerchId === null
+    ? null
+    : { direction: "down", expiresAtMs: nowMs + ARRIVAL_POINTING_MS };
 }
 
 /** The perch anchor after this frame's reading: kept, replaced, or gone (and the dock it is). */
@@ -193,6 +213,7 @@ export async function createMascotController({
 
   let placement: MascotPlacement = { mode: "docked" };
   let mood: MascotMood = AMBIENT_MASCOT_MOOD;
+  let pointing: MascotPointing | null = null;
   let perchAnchor: ViewportPoint | null = null;
   let dragPointerOffset: ViewportPoint = { x: 0, y: 0 };
 
@@ -256,8 +277,15 @@ export async function createMascotController({
     crossfadeStartedMs = nowMs;
   };
 
+  /** A pointing pose outranks the mood while it lasts; an atlas without one shows the mood. */
+  const selectWantedAnimationKey = (): string => {
+    const pointingKey =
+      pointing === null ? null : resolveMascotPointingKey(atlas, pointing.direction);
+    return pointingKey ?? resolveMascotFigureKey(atlas, mood.expression);
+  };
+
   const advancePoseClock = (nowMs: number) => {
-    const wantedAnimationKey = resolveMascotFigureKey(atlas, mood.expression);
+    const wantedAnimationKey = selectWantedAnimationKey();
     const animationTextures = readAnimationTextures(wantedAnimationKey);
     if (wantedAnimationKey !== shownAnimationKey) {
       shownAnimationKey = wantedAnimationKey;
@@ -323,6 +351,7 @@ export async function createMascotController({
         mascotPosition.y = destination.y;
         mascotContainer.alpha = 0;
         placement = arriveAt(destinationPerchId);
+        pointing = pointingOnArrival(destinationPerchId, nowMs);
       } else {
         const approachFraction = 1 - Math.exp(-ticker.deltaMS / TRAVEL_TIME_CONSTANT_MS);
         mascotPosition.x += (destination.x - mascotPosition.x) * approachFraction;
@@ -335,14 +364,29 @@ export async function createMascotController({
           mascotPosition.x = destination.x;
           mascotPosition.y = destination.y;
           placement = arriveAt(destinationPerchId);
+          pointing = pointingOnArrival(destinationPerchId, nowMs);
         } else {
           placement = { mode: "travelling", toPerchId: destinationPerchId };
+          // On the way to a perch it points where it is going. Home is not worth pointing at.
+          pointing =
+            destinationPerchId === null
+              ? null
+              : {
+                  direction: selectPointingDirection(
+                    destination.x - mascotPosition.x,
+                    destination.y - mascotPosition.y,
+                  ),
+                  expiresAtMs: null,
+                };
         }
       }
     }
 
-    // MOOD.
+    // MOOD, and the pointing laid over it.
     if (mood.expiresAtMs !== null && mood.expiresAtMs <= nowMs) mood = AMBIENT_MASCOT_MOOD;
+    if (pointing !== null && pointing.expiresAtMs !== null && pointing.expiresAtMs <= nowMs) {
+      pointing = null;
+    }
 
     // WRITES, canvas first.
     advancePoseClock(nowMs);
@@ -428,6 +472,14 @@ export async function createMascotController({
     showInteractionMood: (expression, holdMs) => {
       applyMood({ expression, priority: "interaction", expiresAtMs: performance.now() + holdMs });
     },
+    pointAt: (targetX, targetY, holdMs) => {
+      if (placement.mode === "dragged") return;
+      const mascotCenterY = mascotPosition.y - readBoxHeight() / 2;
+      pointing = {
+        direction: selectPointingDirection(targetX - mascotPosition.x, targetY - mascotCenterY),
+        expiresAtMs: performance.now() + holdMs,
+      };
+    },
     markLayoutDirty: () => {
       perchTracker.markDirty();
     },
@@ -440,6 +492,7 @@ export async function createMascotController({
       perchAnchor = null;
       dragPointerOffset = { x: mascotPosition.x - pointerX, y: mascotPosition.y - pointerY };
       placement = { mode: "dragged" };
+      pointing = null;
     },
     dragTo: (pointerX, pointerY) => {
       const draggedPosition = clampToViewport(
