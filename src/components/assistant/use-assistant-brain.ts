@@ -271,8 +271,12 @@ export function useAssistantBrain({
     };
   }, [isDownloadingWithoutProgress]);
 
+  // A FRESH controller per mount. Strict Mode mounts, cleans up and mounts again in development;
+  // reusing the ref's first controller handed every later call a signal that was already aborted,
+  // so `create()` rejected in 0 ms and the question sat on "Thinking…" forever.
   useEffect(() => {
-    const abortController = abortControllerRef.current;
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
     return () => {
       abortController.abort();
       sessionRef.current?.destroy();
