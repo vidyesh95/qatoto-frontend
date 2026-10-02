@@ -13,10 +13,11 @@
 //
 // COOKIES ARE STILL ESSENTIAL-ONLY, BUT "NO THIRD-PARTY SCRIPT" STOPPED BEING TRUE. This comment used
 // to say that the day any embedded third-party script shipped, the cookie section would become false
-// and a consent banner would be part of that change. Four have shipped without one: the YouTube
-// player, the Google Maps embed on /contact-us, OpenFreeMap tiles on the problem map and Razorpay
-// checkout. The section below now NAMES them instead of denying them, and it no longer says there
-// is nothing to ask consent for. Whether each needs click-to-load or a banner is open in `todo.md` §7.
+// and a consent banner would be part of that change. Three have shipped without one: the YouTube
+// player, OpenFreeMap tiles on the problem map and Razorpay checkout (the contact page map uses a
+// static preview linking out to Google Maps, loading no third-party scripts or cookies). The section
+// below now NAMES them instead of denying them, and it no longer says there is nothing to ask
+// consent for. Whether each needs click-to-load or a banner is open in `todo.md` §7.
 //
 // THE RECIPIENTS ARE NAMED, NOT CATEGORISED. "Service providers such as hosting and payment
 // processing" told a reader nothing they could act on. When a provider changes — the frontend is on
@@ -262,10 +263,10 @@ export default function PrivacyPolicy() {
             Some pages load content from other companies, and when they do, your browser contacts
             that company directly: it receives your IP address and browser details, and it may set
             its own cookies under its own policy. Those pages are video players, which load from
-            YouTube; the map on the contact page, which loads from Google Maps; the problem map,
-            whose map tiles load from OpenFreeMap; and order payment, which loads the payment
-            provider's checkout. Video stills on some pages also load straight from YouTube. Nothing
-            is loaded from these companies on pages that show none of their content.
+            YouTube; the problem map, whose map tiles load from OpenFreeMap; and order payment,
+            which loads the payment provider's checkout. Video stills on some pages also load
+            straight from YouTube. Nothing is loaded from these companies on pages that show none of
+            their content.
           </dd>
         </div>
         <div>

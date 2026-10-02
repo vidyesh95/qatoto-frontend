@@ -406,10 +406,11 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
       Vercel and must change in the same edit.
 3. **Cookie / Privacy Consent Banner**:
    Cookies are essential-only today, but the embedded-third-party trigger HAS ALREADY FIRED: the YouTube
-   player and stills, the Google Maps iframe on `/contact-us`, OpenFreeMap tiles on the problem map and
-   Razorpay checkout all load without consent. The privacy policy now discloses them rather than denying
-   them. Decide per embed between click-to-load (the blueprint player already works this way) and a
-   banner; the Maps iframe is the cheapest to replace with a static image and a link.
+   player and stills, OpenFreeMap tiles on the problem map and Razorpay checkout all load without consent.
+   ~~The Google Maps iframe on `/contact-us`~~ was **REPLACED 2026-10-02** with a high-resolution static
+   map preview linking directly to Google Maps in a new tab (Option A: 0 network calls, 0 cookies, zero
+   third-party scripts). The privacy policy was updated accordingly. Decide for remaining embeds (YouTube
+   player on `/watch`, OpenFreeMap tiles) between click-to-load and a consent banner.
 4. **Contact Mailbox Verification**:
    Verify monitoring for `support@qatoto.com`, `security@qatoto.com`, `careers@qatoto.com`, and `press@qatoto.com`.
 

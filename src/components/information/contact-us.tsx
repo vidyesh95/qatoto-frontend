@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import ContactMap from "@/components/information/contact-map";
 import { SUPPORT_CONTACT_EMAIL } from "@/lib/site";
 
 /**
@@ -26,7 +27,6 @@ const ADDRESS_LINES = [
 const MAP_SHORTLINK = "https://maps.app.goo.gl/cwJEWvvYBd4GuTiN7";
 const MAP_LAT = 19.2258515;
 const MAP_LNG = 72.8570855;
-const MAP_EMBED_SRC = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=17&output=embed`;
 
 const CARDS = [
   {
@@ -40,7 +40,7 @@ const CARDS = [
     icon: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     eyebrow: "Phone",
     title: "Call or message.",
-    body: "Reach us during Mumbai business hours (Mon–Fri, 10:00–19:00 IST). For investors and time-sensitive matters, phone is the fastest channel.",
+    body: "Reach us during Mumbai business hours (Mon–Fri, 07:00–16:00 IST). For investors and time-sensitive matters, phone is the fastest channel.",
     cta: { label: PHONE_DISPLAY, href: `tel:${PHONE_E164}` },
   },
   {
@@ -198,23 +198,13 @@ export default function ContactUs() {
                     Hours
                   </dt>
                   <dd className="mt-1 text-base font-semibold tracking-tight">
-                    Mon–Fri · 10:00–19:00 IST
+                    Mon–Fri · 07:00–16:00 IST
                   </dd>
                 </div>
               </dl>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-border bg-background shadow-sm">
-              <iframe
-                title="Qatoto head office on Google Maps"
-                src={MAP_EMBED_SRC}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                sandbox="allow-scripts allow-popups"
-                className="h-full min-h-80 w-full border-0"
-                allowFullScreen
-              />
-            </div>
+            <ContactMap mapShortlink={MAP_SHORTLINK} latitude={MAP_LAT} longitude={MAP_LNG} />
           </div>
         </div>
       </section>
