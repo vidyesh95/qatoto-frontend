@@ -368,7 +368,7 @@ export default function AssistantPanel({
       id={ASSISTANT_PANEL_ID}
       style={panelBottomStyle}
       aria-labelledby={`${ASSISTANT_PANEL_ID}-heading`}
-      className={`fixed inset-x-3 bottom-(--assistant-panel-bottom) z-40 flex h-[min(60dvh,calc(100dvh_-_var(--assistant-panel-bottom)_-_4.5rem))] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-(--assistant-panel-bottom-desktop) md:h-[min(70dvh,calc(100dvh_-_var(--assistant-panel-bottom-desktop)_-_4.5rem))] md:w-96 lg:h-[min(40rem,calc(100dvh_-_var(--assistant-panel-bottom-desktop)_-_4.5rem))] lg:w-160 ${
+      className={`fixed inset-x-3 bottom-(--assistant-panel-bottom) z-40 flex h-[min(60dvh,calc(100dvh-var(--assistant-panel-bottom)-4.5rem))] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-(--assistant-panel-bottom-desktop) md:h-[min(70dvh,calc(100dvh-var(--assistant-panel-bottom-desktop)-4.5rem))] md:w-96 lg:h-[min(40rem,calc(100dvh-var(--assistant-panel-bottom-desktop)-4.5rem))] lg:w-160 ${
         dockSide === "right" ? "md:right-6" : "md:left-6"
       }`}
     >

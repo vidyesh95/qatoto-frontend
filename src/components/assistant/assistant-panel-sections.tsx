@@ -238,7 +238,7 @@ export function MemorySection({
           <ul className="divide-y divide-border">
             {memoryNotes.map((memoryNote, noteIndex) => (
               <li key={`${noteIndex}-${memoryNote}`} className="flex items-start gap-2 py-1.5">
-                <span className="min-w-0 flex-1 text-sm leading-5 break-words text-foreground">
+                <span className="min-w-0 flex-1 text-sm leading-5 wrap-break-word text-foreground">
                   {memoryNote}
                 </span>
                 <button
