@@ -16,8 +16,13 @@
 // and a consent banner would be part of that change. Three have shipped without one: the YouTube
 // player, OpenFreeMap tiles on the problem map and Razorpay checkout (the contact page map uses a
 // static preview linking out to Google Maps, loading no third-party scripts or cookies). The section
-// below now NAMES them instead of denying them, and it no longer says there is nothing to ask
-// consent for. Whether each needs click-to-load or a banner is open in `todo.md` §7.
+// below NAMES them instead of denying them.
+//
+// YOUTUBE IS CLICK-TO-LOAD, WHICH IS WHY IT NEEDS NO BANNER (decided 2026-10-02, `todo.md` §7). Every
+// player loads its still from YouTube's image host but loads no player until the reader presses
+// play, so the press is the request for the player. Checkout loads only when the buyer presses pay. OpenFreeMap tiles load with the
+// map they draw and set no cookie. The `cookies-and-storage` id below is what the players' notice
+// links to; renaming it breaks that link.
 //
 // THE RECIPIENTS ARE NAMED, NOT CATEGORISED. "Service providers such as hosting and payment
 // processing" told a reader nothing they could act on. When a provider changes — the frontend is on
@@ -244,7 +249,7 @@ export default function PrivacyPolicy() {
             to a particular transfer.
           </dd>
         </div>
-        <div>
+        <div id="cookies-and-storage">
           <dt>Cookies and Storage on Your Device</dt>
           <dd>
             The only cookies we set are the ones that keep you signed in — without them every page
@@ -260,11 +265,14 @@ export default function PrivacyPolicy() {
             or advertising scripts.
             <br />
             <br />
-            Some pages load content from other companies, and when they do, your browser contacts
-            that company directly: it receives your IP address and browser details, and it may set
-            its own cookies under its own policy. Those pages are video players, which load from
-            YouTube; the problem map, whose map tiles load from OpenFreeMap; and order payment,
-            which loads the payment provider's checkout. Video stills on some pages also load
+            Some content comes from other companies, and when it loads, your browser contacts that
+            company directly: it receives your IP address and browser details, and it may store data
+            on your device under its own policy. Videos play from YouTube (Google). Video thumbnails
+            load directly from YouTube, which receives your IP address and browser details when they
+            do. The video player itself loads only when you press play, from{" "}
+            <code>youtube-nocookie.com</code>. The problem map&apos;s tiles load from OpenFreeMap
+            when the map is shown. Order payment loads the payment provider&apos;s checkout only
+            when you press pay. The preview of a YouTube link you paste while publishing also loads
             straight from YouTube. Nothing is loaded from these companies on pages that show none of
             their content.
           </dd>

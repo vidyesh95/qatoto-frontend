@@ -2,10 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { BLUEPRINT_MEDIA_COLUMN_CLASS } from "@/components/home/blueprints/media/media-column";
 import BlueprintYoutubePlayer from "@/components/home/blueprints/media/blueprint-youtube-player";
+import YoutubePlayNotice from "@/components/home/shared/youtube-play-notice";
 import { formatDurationLabel } from "@/lib/blueprints/format";
 import type { BlueprintVideo } from "@/lib/blueprints/schemas";
 
@@ -22,11 +23,12 @@ import type { BlueprintVideo } from "@/lib/blueprints/schemas";
  * playback progress to the backend for the watch history, which is a claim a blueprint page has no
  * business making. The reason is recorded again in `blueprint-youtube-player.tsx`.
  *
- * POSTER FIRST. Click-to-start means no third-party script and no YouTube cookie for a reader who
- * came for the schematic and never presses play. The player is not rendered at all until then.
+ * POSTER FIRST. Click-to-start means no player script and no YouTube cookie for a reader who came
+ * for the schematic and never presses play. The player is not rendered at all until then.
  *
- * `unoptimized` FOR AN https POSTER, mirroring `blueprints-hero-carousel.tsx:140`: a YouTube still
- * is already a finished ytimg URL, so re-optimising spends a transform on an image that has had one.
+ * THE STILL LOADS STRAIGHT FROM ITS HOST, `unoptimized`, as the watch player's does (2026-10-02,
+ * todo.md §7). That is also what keeps this block safe: `posterUrl` accepts ANY https host, and an
+ * optimized `next/image` on a host `remotePatterns` does not list throws and takes the page down.
  */
 export default function BlueprintVideoBlock({
   video,
@@ -55,6 +57,7 @@ export default function BlueprintVideoBlock({
   // no seek the only thing left to say is whether the poster has been clicked, and a two-arm union
   // carrying nothing is a shape that invites a payload back.
   const [isPlaying, setIsPlaying] = useState(false);
+  const noticeId = useId();
 
   // `null` whenever nobody measured a runtime, which is the ordinary case for a YouTube video —
   // oEmbed does not report one. `formatDurationLabel` returns `null` for `null`, so the badge
@@ -77,6 +80,7 @@ export default function BlueprintVideoBlock({
             type="button"
             onClick={() => setIsPlaying(true)}
             aria-label={`Play ${title.toLowerCase()}`}
+            aria-describedby={noticeId}
             className="group/play absolute inset-0 cursor-pointer"
           >
             <Image
@@ -86,7 +90,7 @@ export default function BlueprintVideoBlock({
               sizes="(min-width: 768px) 768px, 100vw"
               loading={shouldLoadPosterEagerly ? "eager" : "lazy"}
               fetchPriority={shouldLoadPosterEagerly ? "high" : "auto"}
-              unoptimized={video.posterUrl.startsWith("https://")}
+              unoptimized
               className="object-cover"
             />
             <span className="absolute inset-0 bg-black/20 transition-colors group-hover/play:bg-black/30" />
@@ -102,6 +106,7 @@ export default function BlueprintVideoBlock({
             )}
           </button>
         )}
+        {isPlaying ? null : <YoutubePlayNotice id={noticeId} />}
       </div>
     </section>
   );

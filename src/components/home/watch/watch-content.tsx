@@ -129,6 +129,7 @@ export default function WatchContent({
               videoSource={video.videoSource}
               youtubeVideoId={video.youtubeVideoId}
               label={video.title}
+              poster={video.thumbnailUrl ?? undefined}
               autoPlay
               startTimeSeconds={startTimeSeconds}
               videoId={video.videoId}

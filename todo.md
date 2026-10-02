@@ -412,8 +412,21 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
    player and stills, OpenFreeMap tiles on the problem map and Razorpay checkout all load without consent.
    ~~The Google Maps iframe on `/contact-us`~~ was **REPLACED 2026-10-02** with a high-resolution static
    map preview linking directly to Google Maps in a new tab (Option A: 0 network calls, 0 cookies, zero
-   third-party scripts). The privacy policy was updated accordingly. Decide for remaining embeds (YouTube
-   player on `/watch`, OpenFreeMap tiles) between click-to-load and a consent banner.
+   third-party scripts). The privacy policy was updated accordingly.
+    - **YouTube: DECIDED 2026-10-02, click-to-load for everyone, no banner.** `watch/video-player.tsx`
+      (`/watch` and pitch pages) and `blueprint-video-block.tsx` show a still loaded directly
+      from YouTube (user decision 2026-10-02: direct `ytimg` fetch accepted; only the player is
+      click-to-load) plus a one-line notice, and load no YouTube player until the viewer presses
+      play. The press starts playback with sound. Rejected: **geo-gating the notice** (a hand-kept
+      EU/EEA/UK list misses outermost regions like RE/GP/MQ, an unknown-country header has to fail
+      closed, and a CDN country header is forgeable once the site changes hosts) and **an "always
+      allow" preference** (it brings the ~1 MB player script back on load and needs its own
+      withdrawal control under Art. 7(3)). Also direct without a press: Studio's `video-preview-card.tsx`
+      iframe for a link the creator pasted. The policy names it.
+    - **OpenFreeMap: kept, named in the policy, no consent.** Tiles load only on map pages and set no
+      cookie. **Open:** check whether MapLibre writes its tile Cache API store (`maplibre-tiles`). If
+      it does, that is device storage outside `qatoto.browser-preferences`, and neither the policy's
+      "single entry" sentence nor "Clear data on this device" covers it.
 4. **Contact Mailbox Verification**:
    Verify monitoring for `support@qatoto.com`, `security@qatoto.com`, `careers@qatoto.com`, and `press@qatoto.com`.
 

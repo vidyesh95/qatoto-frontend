@@ -85,9 +85,9 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
 
       {/* THE VIDEO LEADS, because that is what a funder watches before reading anything —
           the whole reason this page exists in the Kickstarter shape rather than as a text
-          listing. `VideoPlayer` is the watch page's own player: youtube-nocookie, the IFrame
-          API, and its own "embedding is turned off" fallback, so none of that is re-solved
-          here.
+          listing. `VideoPlayer` is the watch page's own player: a poster that loads nothing
+          from YouTube until the funder presses play, then youtube-nocookie, the IFrame API, and
+          its own "embedding is turned off" fallback, so none of that is re-solved here.
 
           NULL COVERS TWO CASES AND RENDERS THE SAME FOR BOTH: no video was ever chosen, and
           the video is no longer publicly servable. A pitch whose video was taken down still
@@ -98,6 +98,7 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
             videoSource={pitch.pitchVideo.videoSource}
             youtubeVideoId={pitch.pitchVideo.youtubeVideoId}
             label={pitch.pitchVideo.title}
+            poster={pitch.pitchVideo.thumbnailUrl ?? undefined}
           />
           <p className="mt-2 text-xs text-muted-foreground">
             {pitch.pitchVideo.title} ·{" "}
