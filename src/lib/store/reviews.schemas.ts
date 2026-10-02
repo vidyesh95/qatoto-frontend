@@ -106,8 +106,10 @@ export const ReviewScoreEntrySchema = z.object({
  * It keeps `completionId` because it goes back to the organization that owns that completion; the
  * PUBLIC projection on the product page deliberately drops it.
  *
- * `visibility` can be `hidden` — a moderator acted. The author still sees the row, which is right:
- * it is theirs, and it still occupies their one review slot on that completion.
+ * `visibility` can be `hidden` — a moderator acted, or enough reports hid it automatically; the
+ * backend stores those apart (`hidden` / `hidden_pending_review`) but tells the author only
+ * `hidden`, so this stays a two-value enum. The author still sees the row, which is right: it is
+ * theirs, and it still occupies their one review slot on that completion.
  */
 export const AuthoredReviewSchema = z.object({
   id: z.string(),
