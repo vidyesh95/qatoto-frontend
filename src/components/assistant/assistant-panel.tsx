@@ -154,7 +154,7 @@ export default function AssistantPanel({
       ref={panelRef}
       id={ASSISTANT_PANEL_ID}
       aria-labelledby={`${ASSISTANT_PANEL_ID}-heading`}
-      className={`fixed inset-x-3 bottom-52 z-40 flex max-h-[70dvh] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-44 md:w-96 ${
+      className={`fixed inset-x-3 bottom-60 z-40 flex max-h-[60dvh] flex-col rounded-xl border border-border bg-background shadow-lg md:inset-x-auto md:bottom-52 md:max-h-[70dvh] md:w-96 ${
         dockSide === "right" ? "md:right-6" : "md:left-6"
       }`}
     >

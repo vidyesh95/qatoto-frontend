@@ -38,6 +38,8 @@ import {
 } from "@/components/assistant/mascot-state";
 import { createPerchTracker, type PerchReading } from "@/components/assistant/perch-tracker";
 import {
+  MASCOT_DISPLAY_SCALE_DESKTOP,
+  MASCOT_DISPLAY_SCALE_MOBILE,
   readMascotFrameHoldMs,
   resolveMascotFigureKey,
   resolveMascotPointingKey,
@@ -71,7 +73,6 @@ const DOCK_BOTTOM_OFFSET_DESKTOP_PX = 24;
 const DOCK_SIDE_OFFSET_MOBILE_PX = 12;
 const DOCK_SIDE_OFFSET_DESKTOP_PX = 24;
 const MOBILE_BREAKPOINT_PX = 768;
-const MOBILE_SCALE = 0.85;
 const VIEWPORT_MARGIN_PX = 8;
 /** The figure's base disc overlaps the perch's top edge by this much, so it reads as standing on it. */
 const PERCH_SINK_PX = 4;
@@ -208,7 +209,11 @@ export async function createMascotController({
   let viewportWidth = window.innerWidth;
   let viewportHeight = window.innerHeight;
   let isViewportDirty = false;
-  let mascotScale = viewportWidth < MOBILE_BREAKPOINT_PX ? MOBILE_SCALE : 1;
+  const selectDisplayScale = () =>
+    viewportWidth < MOBILE_BREAKPOINT_PX
+      ? MASCOT_DISPLAY_SCALE_MOBILE
+      : MASCOT_DISPLAY_SCALE_DESKTOP;
+  let mascotScale = selectDisplayScale();
   let dockSide = initialDockSide;
 
   let placement: MascotPlacement = { mode: "docked" };
@@ -328,7 +333,7 @@ export async function createMascotController({
       isViewportDirty = false;
       viewportWidth = window.innerWidth;
       viewportHeight = window.innerHeight;
-      mascotScale = viewportWidth < MOBILE_BREAKPOINT_PX ? MOBILE_SCALE : 1;
+      mascotScale = selectDisplayScale();
       perchTracker.markDirty();
     }
     perchAnchor = selectPerchAnchor(perchReading, perchAnchor, clampToViewport);

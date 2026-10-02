@@ -30,6 +30,7 @@ import MascotStage, { type MascotStageStatus } from "@/components/assistant/masc
 import { resolveSignalReaction } from "@/components/assistant/mascot-state";
 import { subscribeToAssistantSignals } from "@/lib/assistant/assistant-signals";
 import {
+  MASCOT_DISPLAY_SCALE_DESKTOP,
   MASCOT_FRAME_HEIGHT_PX,
   MASCOT_FRAME_WIDTH_PX,
   MASCOT_STATIC_FALLBACK_URL,
@@ -52,6 +53,9 @@ interface MascotDragGesture {
 const SPEECH_BUBBLE_DURATION_MS = 6_000;
 const PANEL_OPEN_MOOD_DURATION_MS = 2_000;
 const DRAG_THRESHOLD_PX = 6;
+/** The box before the canvas measures it, and the size of the no-WebGL still. */
+const FALLBACK_BOX_WIDTH_PX = Math.round(MASCOT_FRAME_WIDTH_PX * MASCOT_DISPLAY_SCALE_DESKTOP);
+const FALLBACK_BOX_HEIGHT_PX = Math.round(MASCOT_FRAME_HEIGHT_PX * MASCOT_DISPLAY_SCALE_DESKTOP);
 
 export default function AssistantRoot() {
   const mascotBoxRef = useRef<HTMLDivElement>(null);
@@ -215,7 +219,7 @@ export default function AssistantRoot() {
       <div
         ref={mascotBoxRef}
         data-bubble-side={dockSide}
-        style={{ width: MASCOT_FRAME_WIDTH_PX, height: MASCOT_FRAME_HEIGHT_PX }}
+        style={{ width: FALLBACK_BOX_WIDTH_PX, height: FALLBACK_BOX_HEIGHT_PX }}
         className={`group pointer-events-none fixed z-40 ${
           stageStatus.status !== "unavailable"
             ? "top-0 left-0"
@@ -230,8 +234,8 @@ export default function AssistantRoot() {
           <img
             src={MASCOT_STATIC_FALLBACK_URL}
             alt=""
-            width={MASCOT_FRAME_WIDTH_PX}
-            height={MASCOT_FRAME_HEIGHT_PX}
+            width={FALLBACK_BOX_WIDTH_PX}
+            height={FALLBACK_BOX_HEIGHT_PX}
             className="size-full"
           />
         )}

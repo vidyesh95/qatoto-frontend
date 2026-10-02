@@ -41,6 +41,15 @@ export const MASCOT_STATIC_FALLBACK_URL = `${MASCOT_ART_DIRECTORY}/fallback.webp
 export const MASCOT_FRAME_WIDTH_PX = 96;
 export const MASCOT_FRAME_HEIGHT_PX = 116;
 
+/**
+ * How much larger than its frame the mascot is drawn on screen. Desktop shows it at about
+ * 145×175 CSS px, a phone at about 106×128 so it does not crowd the bottom nav. Above 1 the art is
+ * upscaled (the sheet's figures are ~182 px tall, drawn at 1.7 stored px per CSS px), so it softens
+ * slightly on a 2x screen; a sheet rendered larger fixes that with no code change.
+ */
+export const MASCOT_DISPLAY_SCALE_DESKTOP = 1.5;
+export const MASCOT_DISPLAY_SCALE_MOBILE = 1.1;
+
 /** How long one pose holds when the atlas does not say. */
 export const MASCOT_DEFAULT_FRAME_HOLD_MS = 1_600;
 
