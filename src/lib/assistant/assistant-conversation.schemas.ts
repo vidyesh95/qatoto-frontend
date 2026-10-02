@@ -14,9 +14,15 @@
 // keeping, so neither survives a reload: a chat restored from storage can never show a "Thinking…"
 // that nothing will ever finish.
 //
-// A CHAT'S MODEL IS LOCKED BY ITS FIRST ANSWER, FOR GOOD. There is deliberately no unlock. A viewer
-// who chatted with Gemini Nano was told nothing they typed leaves the device; switching that chat to
-// the cloud would send its whole history to Google. The way out is a new chat with the other model.
+// A CHAT'S MODEL IS LOCKED BY ITS FIRST MODEL ANSWER, FOR GOOD. There is deliberately no unlock. A
+// viewer who chatted with Gemini Nano was told nothing they typed leaves the device; switching that
+// chat to the cloud would send its whole history to Google. The way out is a new chat with the
+// other model.
+//
+// A ROUTER ANSWER LOCKS NOTHING. The deterministic router (`assistant-router.ts`) answers "my
+// orders" without any model, so a chat whose turns so far were all routed is saved with
+// `lockedModel: null` and its picker stays open. A router answer is saved as the MATCH (a place, a
+// search, a choice), never as a URL, so a renamed route moves every saved card with it.
 //
 // A NEW CHAT IS NOT SAVED UNTIL IT HAS AN ANSWER. Until then it is a draft id held in memory, so an
 // opened-and-abandoned chat costs nothing and never counts against the limit.
@@ -25,7 +31,10 @@
 
 import { z } from "zod";
 
+import { ASSISTANT_DESTINATION_KEYS } from "@/lib/assistant/assistant-destinations";
 import {
+  ASSISTANT_SEARCH_QUERY_MAXIMUM_LENGTH,
+  ASSISTANT_SEARCH_SCOPES,
   ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH,
   AssistantReplySchema,
   type AssistantReply,
@@ -46,15 +55,41 @@ const SavedUserMessageSchema = z.object({
   text: z.string().trim().min(1).max(ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH),
 });
 
-const SavedAssistantMessageSchema = z.object({
+const SavedModelAnswerSchema = z.object({
   role: z.literal("assistant"),
   reply: AssistantReplySchema,
   answeredBy: z.enum(ASSISTANT_MODEL_ROUTES),
 });
 
-export const SavedAssistantConversationMessageSchema = z.discriminatedUnion("role", [
+/** What the router offered. `none` is never saved: with a model it falls through, without one it
+ * is an unsaved reply. */
+export const SavedRouterMatchSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("destination"),
+    destinationKey: z.enum(ASSISTANT_DESTINATION_KEYS),
+  }),
+  z.object({
+    kind: z.literal("search"),
+    scope: z.enum(ASSISTANT_SEARCH_SCOPES),
+    query: z.string().trim().min(1).max(ASSISTANT_SEARCH_QUERY_MAXIMUM_LENGTH),
+  }),
+  z.object({
+    kind: z.literal("choices"),
+    destinationKeys: z.array(z.enum(ASSISTANT_DESTINATION_KEYS)).min(2).max(3),
+  }),
+]);
+export type SavedRouterMatch = z.infer<typeof SavedRouterMatchSchema>;
+
+const SavedRouterAnswerSchema = z.object({
+  role: z.literal("assistant"),
+  answeredBy: z.literal("router"),
+  routerMatch: SavedRouterMatchSchema,
+});
+
+export const SavedAssistantConversationMessageSchema = z.union([
   SavedUserMessageSchema,
-  SavedAssistantMessageSchema,
+  SavedModelAnswerSchema,
+  SavedRouterAnswerSchema,
 ]);
 export type SavedAssistantConversationMessage = z.infer<
   typeof SavedAssistantConversationMessageSchema
@@ -65,7 +100,7 @@ export const AssistantConversationSchema = z.object({
   title: z.string().trim().min(1).max(ASSISTANT_CONVERSATION_TITLE_MAXIMUM_LENGTH),
   createdAtMs: z.number().int().nonnegative(),
   updatedAtMs: z.number().int().nonnegative(),
-  /** Null only in a value this file never writes: a saved chat always has its first answer. */
+  /** Null until a MODEL answers: a chat whose turns were all routed has used no model yet. */
   lockedModel: z.enum(ASSISTANT_MODEL_ROUTES).nullable(),
   messages: z
     .array(SavedAssistantConversationMessageSchema)
@@ -138,18 +173,36 @@ export function isConversationListFull(conversations: readonly AssistantConversa
   return conversations.length >= ASSISTANT_CONVERSATION_LIMIT;
 }
 
+/** One answer to save: a model's reply, or what the router matched. */
+export type AssistantPairAnswer =
+  | {
+      readonly kind: "model";
+      readonly reply: AssistantReply;
+      readonly answeredBy: AssistantModelRoute;
+    }
+  | { readonly kind: "router"; readonly routerMatch: SavedRouterMatch };
+
+function buildSavedAnswer(answer: AssistantPairAnswer): SavedAssistantConversationMessage {
+  return answer.kind === "model"
+    ? { role: "assistant", reply: answer.reply, answeredBy: answer.answeredBy }
+    : { role: "assistant", answeredBy: "router", routerMatch: answer.routerMatch };
+}
+
+/** The model this answer locks a chat to, if it is the chat's first model answer. */
+function readAnswerModel(answer: AssistantPairAnswer): AssistantModelRoute | null {
+  return answer.kind === "model" ? answer.answeredBy : null;
+}
+
 /** The first saved form of a chat, written together with its first answer. */
 export function createConversation({
   conversationId,
   questionText,
-  reply,
-  answeredBy,
+  answer,
   nowMs,
 }: {
   readonly conversationId: string;
   readonly questionText: string;
-  readonly reply: AssistantReply;
-  readonly answeredBy: AssistantModelRoute;
+  readonly answer: AssistantPairAnswer;
   readonly nowMs: number;
 }): AssistantConversation {
   return {
@@ -157,11 +210,8 @@ export function createConversation({
     title: buildConversationTitle(questionText),
     createdAtMs: nowMs,
     updatedAtMs: nowMs,
-    lockedModel: answeredBy,
-    messages: [
-      { role: "user", text: questionText },
-      { role: "assistant", reply, answeredBy },
-    ],
+    lockedModel: readAnswerModel(answer),
+    messages: [{ role: "user", text: questionText }, buildSavedAnswer(answer)],
   };
 }
 
@@ -171,7 +221,7 @@ export type AppendAnsweredPairResult =
   | { readonly status: "conversation_full" }
   /** A new chat, and this browser already keeps its 10. */
   | { readonly status: "list_full" }
-  /** The chat is locked to the other model. Only reachable through a hand-edited blob. */
+  /** A model answer from the other model than the chat is locked to. Only another tab gets here. */
   | { readonly status: "model_mismatch" };
 
 /**
@@ -185,14 +235,12 @@ export function appendAnsweredPair(
   {
     conversationId,
     questionText,
-    reply,
-    answeredBy,
+    answer,
     nowMs,
   }: {
     readonly conversationId: string;
     readonly questionText: string;
-    readonly reply: AssistantReply;
-    readonly answeredBy: AssistantModelRoute;
+    readonly answer: AssistantPairAnswer;
     readonly nowMs: number;
   },
 ): AppendAnsweredPairResult {
@@ -206,15 +254,17 @@ export function appendAnsweredPair(
       status: "saved",
       conversations: [
         ...conversations,
-        createConversation({ conversationId, questionText, reply, answeredBy, nowMs }),
+        createConversation({ conversationId, questionText, answer, nowMs }),
       ],
     };
   }
 
   if (isConversationFull(existingConversation)) return { status: "conversation_full" };
+  const answerModel = readAnswerModel(answer);
   if (
+    answerModel !== null &&
     existingConversation.lockedModel !== null &&
-    existingConversation.lockedModel !== answeredBy
+    existingConversation.lockedModel !== answerModel
   ) {
     return { status: "model_mismatch" };
   }
@@ -222,11 +272,11 @@ export function appendAnsweredPair(
   const updatedConversation: AssistantConversation = {
     ...existingConversation,
     updatedAtMs: nowMs,
-    lockedModel: existingConversation.lockedModel ?? answeredBy,
+    lockedModel: existingConversation.lockedModel ?? answerModel,
     messages: [
       ...existingConversation.messages,
       { role: "user", text: questionText },
-      { role: "assistant", reply, answeredBy },
+      buildSavedAnswer(answer),
     ],
   };
   return {

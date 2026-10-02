@@ -58,11 +58,9 @@ import {
   sortConversationsByRecency,
   type AssistantConversation,
   type AssistantModelRoute,
+  type AssistantPairAnswer,
 } from "@/lib/assistant/assistant-conversation.schemas";
-import {
-  ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH,
-  type AssistantReply,
-} from "@/lib/assistant/assistant-reply.schemas";
+import { ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH } from "@/lib/assistant/assistant-reply.schemas";
 import type { MascotExpression } from "@/lib/assistant/mascot-expressions";
 import { computeAssistantPanelBottomPx } from "@/lib/assistant/mascot-display";
 import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
@@ -199,8 +197,7 @@ export default function AssistantPanel({
   const handleAnsweredPair = (answeredPair: {
     readonly conversationId: string;
     readonly questionText: string;
-    readonly reply: AssistantReply;
-    readonly answeredBy: AssistantModelRoute;
+    readonly answer: AssistantPairAnswer;
     readonly answeredAtMs: number;
   }): AssistantPairSaveStatus => {
     // Held in an object: the updater runs inside `updatePreference`, and TypeScript does not see an
@@ -210,8 +207,7 @@ export default function AssistantPanel({
       const appendResult = appendAnsweredPair(readAssistantConversations(storedValue), {
         conversationId: answeredPair.conversationId,
         questionText: answeredPair.questionText,
-        reply: answeredPair.reply,
-        answeredBy: answeredPair.answeredBy,
+        answer: answeredPair.answer,
         nowMs: answeredPair.answeredAtMs,
       });
       if (appendResult.status !== "saved") {
@@ -388,6 +384,23 @@ export default function AssistantPanel({
             />
             Chats
             <span className="text-muted-foreground">{conversations.length}</span>
+          </button>
+        )}
+        {/* The list replaces the chat below `lg`, so it needs its own way back that does not close
+            the whole panel. From `lg` the list is a rail beside the chat and this never shows. */}
+        {paneView === "list" && (
+          <button
+            type="button"
+            onClick={() => setPaneView("chat")}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint lg:hidden"
+          >
+            <Image
+              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              alt=""
+              width={16}
+              height={16}
+            />
+            Back to chat
           </button>
         )}
         <h2

@@ -23,12 +23,19 @@
 // the ACTIVE chat's searches run, so opening the panel with ten saved chats costs at most one
 // chat's worth of public reads.
 //
+// THE ROUTER ANSWERS FIRST. `routeAssistantRequest` (`assistant-router.ts`) is tried before any
+// model, synchronously and without the network: "go to my orders" and "find solar pumps" become a
+// card at once, are saved at once, and lock no model. Only what it does not understand reaches the
+// chat's model, and with no model the viewer is told places and searches still work. That is why
+// the composer renders even when no model can answer.
+//
 // NOTHING IS OPTIMISTIC AND NOTHING IS AUTOMATIC. A reply's destination renders as a link, its
 // search runs one public read and says so, and its note is an offer the viewer must accept.
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import {
+  describeRouterOnlyFallback,
   readModelAvailability,
   selectConversationChatState,
   type AssistantModelAvailability,
@@ -45,7 +52,10 @@ import {
   isConversationFull,
   type AssistantConversation,
   type AssistantModelRoute,
+  type AssistantPairAnswer,
+  type SavedRouterMatch,
 } from "@/lib/assistant/assistant-conversation.schemas";
+import type { AssistantDestinationKey } from "@/lib/assistant/assistant-destinations";
 import {
   ASSISTANT_HISTORY_TURN_LIMIT,
   ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH,
@@ -53,7 +63,12 @@ import {
   type AssistantReply,
   type AssistantSearchScope,
 } from "@/lib/assistant/assistant-reply.schemas";
-import { runAssistantSearch, type AssistantSearchResult } from "@/lib/assistant/assistant-search";
+import { describeRouterMatchForHistory, routeAssistantRequest } from "@/lib/assistant/assistant-router";
+import {
+  ASSISTANT_SEARCH_SCOPE_LABELS,
+  runAssistantSearch,
+  type AssistantSearchResult,
+} from "@/lib/assistant/assistant-search";
 import {
   getAssistantCloudAccess,
   isPremiumRequiredError,
@@ -121,6 +136,23 @@ export type AssistantMessage =
       readonly role: "assistant";
       readonly status: "failed";
       readonly message: string;
+    }
+  /** The router understood it: a place, a search or a choice, with no model involved. */
+  | {
+      readonly messageKey: string;
+      readonly role: "assistant";
+      readonly status: "routed";
+      readonly routerMatch: SavedRouterMatch;
+      /** `null` for a saved answer. */
+      readonly saveProblem: AssistantSaveProblem | null;
+    }
+  /** The router did not understand it and no model can answer here. Never saved. */
+  | {
+      readonly messageKey: string;
+      readonly role: "assistant";
+      readonly status: "unrouted";
+      readonly message: string;
+      readonly nearbyDestinationKeys: readonly AssistantDestinationKey[];
     };
 
 /** A turn held only in this panel. Its search lives in the same keyed map a saved answer's does. */
@@ -145,6 +177,20 @@ type UnsavedEntry =
       readonly role: "assistant";
       readonly status: "failed";
       readonly message: string;
+    }
+  | {
+      readonly messageKey: string;
+      readonly role: "assistant";
+      readonly status: "routed";
+      readonly routerMatch: SavedRouterMatch;
+      readonly saveProblem: Exclude<AssistantSaveProblem, "storage_refused">;
+    }
+  | {
+      readonly messageKey: string;
+      readonly role: "assistant";
+      readonly status: "unrouted";
+      readonly message: string;
+      readonly nearbyDestinationKeys: readonly AssistantDestinationKey[];
     };
 
 /** The chat on screen: its id, and its saved form, or `null` while it has no answer yet. */
@@ -175,6 +221,13 @@ function buildConversationTurns(
       conversationTurns.push({ role: "user", text: message.text });
     } else if (message.status === "answered") {
       conversationTurns.push({ role: "assistant", text: message.reply.reply });
+    } else if (message.status === "routed") {
+      // A routed turn is in the history as what it offered, so the model does not see a question
+      // with no answer after it.
+      conversationTurns.push({
+        role: "assistant",
+        text: describeRouterMatchForHistory(message.routerMatch, ASSISTANT_SEARCH_SCOPE_LABELS),
+      });
     }
   }
   return conversationTurns.map((conversationTurn) => ({
@@ -251,8 +304,7 @@ export function useAssistantBrain({
   readonly onAnsweredPair: (answeredPair: {
     readonly conversationId: string;
     readonly questionText: string;
-    readonly reply: AssistantReply;
-    readonly answeredBy: AssistantModelRoute;
+    readonly answer: AssistantPairAnswer;
     readonly answeredAtMs: number;
   }) => AssistantPairSaveStatus;
   readonly onMood: (expression: MascotExpression, holdMs: number) => void;
@@ -319,6 +371,9 @@ export function useAssistantBrain({
     preferredModel,
     modelAvailability,
   });
+  // THE COMPOSER TAKES TEXT IN EVERY STATE THE ROUTER CAN ANSWER IN, model or not. Only a full chat
+  // and a full list refuse it, because nothing asked there could be saved.
+  const canTakeQuestion = chatState.status !== "full" && chatState.status !== "list_full";
 
   const readSearchState = (messageKey: string, reply: AssistantReply): AssistantSearchState => {
     if (reply.search === null) return { status: "none" };
@@ -334,17 +389,27 @@ export function useAssistantBrain({
   const savedMessages: AssistantMessage[] = (savedConversation?.messages ?? []).map(
     (savedMessage, messageIndex): AssistantMessage => {
       const messageKey = buildSavedMessageKey(activeConversationId, messageIndex);
-      return savedMessage.role === "user"
-        ? { messageKey, role: "user", text: savedMessage.text }
-        : {
-            messageKey,
-            role: "assistant",
-            status: "answered",
-            reply: savedMessage.reply,
-            answeredBy: savedMessage.answeredBy,
-            search: readSearchState(messageKey, savedMessage.reply),
-            saveProblem: null,
-          };
+      if (savedMessage.role === "user") {
+        return { messageKey, role: "user", text: savedMessage.text };
+      }
+      if (savedMessage.answeredBy === "router") {
+        return {
+          messageKey,
+          role: "assistant",
+          status: "routed",
+          routerMatch: savedMessage.routerMatch,
+          saveProblem: null,
+        };
+      }
+      return {
+        messageKey,
+        role: "assistant",
+        status: "answered",
+        reply: savedMessage.reply,
+        answeredBy: savedMessage.answeredBy,
+        search: readSearchState(messageKey, savedMessage.reply),
+        saveProblem: null,
+      };
     },
   );
   const unsavedMessages: AssistantMessage[] = (
@@ -460,7 +525,8 @@ export function useAssistantBrain({
   useEffect(() => {
     if (savedConversation === null) return;
     savedConversation.messages.forEach((savedMessage, messageIndex) => {
-      if (savedMessage.role !== "assistant" || savedMessage.reply.search === null) return;
+      if (savedMessage.role !== "assistant" || savedMessage.answeredBy === "router") return;
+      if (savedMessage.reply.search === null) return;
       runSavedSearch(
         buildSavedMessageKey(savedConversation.conversationId, messageIndex),
         savedMessage.reply.search,
@@ -597,10 +663,26 @@ export function useAssistantBrain({
     });
   };
 
+  /**
+   * The pair is in the preferences now (in storage, or only in this page's memory when storage
+   * refused it) and renders from there, so this chat's unsaved turns go. Any earlier failure goes
+   * with them: it was never saved, and left behind it would now sit after the answer it came before.
+   */
+  const settleSavedPair = (
+    conversationId: string,
+    saveStatus: "saved" | "storage_refused",
+  ) => {
+    updateUnsavedEntries(conversationId, () => []);
+    if (saveStatus === "storage_refused") {
+      setStorageRefusedConversationIds(
+        (currentConversationIds) => new Set([...currentConversationIds, conversationId]),
+      );
+    }
+  };
+
   const sendMessage = async (rawQuestionText: string) => {
     const questionText = rawQuestionText.trim().slice(0, ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH);
-    if (questionText.length === 0 || isAwaitingReply || chatState.status !== "ready") return;
-    const chatRoute = chatState.route;
+    if (questionText.length === 0 || isAwaitingReply || !canTakeQuestion) return;
     // Captured now: the viewer may switch chats while this one is answering, and the answer still
     // belongs to the chat it was asked in.
     const conversationId = activeConversationId;
@@ -609,6 +691,57 @@ export function useAssistantBrain({
     nextUnsavedEntryIdRef.current += 1;
     const userMessageKey = `${conversationId}:unsaved:${unsavedEntryId}:question`;
     const pendingMessageKey = `${conversationId}:unsaved:${unsavedEntryId}:answer`;
+
+    // THE ROUTER FIRST: synchronous, no network, no model. A match is saved and shown at once.
+    const routerMatch = routeAssistantRequest(questionText);
+    if (routerMatch.kind !== "none") {
+      const savedRouterMatch: SavedRouterMatch =
+        routerMatch.kind === "choices"
+          ? { kind: "choices", destinationKeys: [...routerMatch.destinationKeys] }
+          : routerMatch;
+      const routerSaveStatus = onAnsweredPair({
+        conversationId,
+        questionText,
+        answer: { kind: "router", routerMatch: savedRouterMatch },
+        answeredAtMs: Date.now(),
+      });
+      if (routerSaveStatus === "saved" || routerSaveStatus === "storage_refused") {
+        settleSavedPair(conversationId, routerSaveStatus);
+      } else {
+        updateUnsavedEntries(conversationId, (currentEntries) => [
+          ...currentEntries,
+          { messageKey: userMessageKey, role: "user", text: questionText },
+          {
+            messageKey: pendingMessageKey,
+            role: "assistant",
+            status: "routed",
+            routerMatch: savedRouterMatch,
+            saveProblem: routerSaveStatus,
+          },
+        ]);
+      }
+      onMood("joy", REPLY_MOOD_HOLD_MS);
+      onDestinationOffered();
+      return;
+    }
+
+    // Not understood, and no model can answer here: say so, and offer what is near. Not saved.
+    if (chatState.status !== "ready") {
+      updateUnsavedEntries(conversationId, (currentEntries) => [
+        ...currentEntries,
+        { messageKey: userMessageKey, role: "user", text: questionText },
+        {
+          messageKey: pendingMessageKey,
+          role: "assistant",
+          status: "unrouted",
+          message: describeRouterOnlyFallback(chatState),
+          nearbyDestinationKeys: routerMatch.nearbyDestinationKeys,
+        },
+      ]);
+      onMood("embarrassed", FAILURE_MOOD_HOLD_MS);
+      return;
+    }
+    const chatRoute = chatState.route;
     const priorTurns = buildConversationTurns(messages);
     const questionTurn: AssistantConversationTurn = { role: "user", text: questionText };
     updateUnsavedEntries(conversationId, (currentEntries) => [
@@ -653,21 +786,11 @@ export function useAssistantBrain({
     const saveStatus = onAnsweredPair({
       conversationId,
       questionText,
-      reply: replyResult.data,
-      answeredBy: chatRoute,
+      answer: { kind: "model", reply: replyResult.data, answeredBy: chatRoute },
       answeredAtMs: Date.now(),
     });
     if (saveStatus === "saved" || saveStatus === "storage_refused") {
-      // The pair is in the preferences now (in storage, or only in this page's memory when storage
-      // refused it) and renders from there, so this chat's unsaved turns go. Any earlier failure
-      // goes with them: it was never saved, and left behind it would now sit after the answer it
-      // came before.
-      updateUnsavedEntries(conversationId, () => []);
-      if (saveStatus === "storage_refused") {
-        setStorageRefusedConversationIds(
-          (currentConversationIds) => new Set([...currentConversationIds, conversationId]),
-        );
-      }
+      settleSavedPair(conversationId, saveStatus);
     } else {
       replaceUnsavedEntry(conversationId, pendingMessageKey, {
         messageKey: pendingMessageKey,
@@ -688,6 +811,7 @@ export function useAssistantBrain({
   return {
     modelAvailability,
     chatState,
+    canTakeQuestion,
     messages,
     /** Storage refused this chat at least once in this panel: it will not survive a reload. */
     isActiveConversationStorageRefused: storageRefusedConversationIds.has(activeConversationId),

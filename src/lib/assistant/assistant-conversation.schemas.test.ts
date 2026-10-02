@@ -37,8 +37,7 @@ function buildConversation(
     ...createConversation({
       conversationId: buildConversationId(conversationIndex),
       questionText: `question ${conversationIndex}`,
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 1_000 + conversationIndex,
     }),
     ...overrides,
@@ -52,8 +51,7 @@ function buildConversationWithPairs(pairCount: number): AssistantConversation {
     const appendResult = appendAnsweredPair(conversations, {
       conversationId: buildConversationId(0),
       questionText: `question ${pairIndex}`,
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 1_000 + pairIndex,
     });
     if (appendResult.status !== "saved")
@@ -82,8 +80,7 @@ describe("createConversation", () => {
     const conversation = createConversation({
       conversationId: buildConversationId(0),
       questionText: "where is my cart",
-      reply: SAMPLE_REPLY,
-      answeredBy: "cloud",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "cloud" },
       nowMs: 42,
     });
     expect(conversation).toEqual({
@@ -105,8 +102,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair([], {
       conversationId: buildConversationId(0),
       questionText: "first",
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 5,
     });
     expect(appendResult.status).toBe("saved");
@@ -120,8 +116,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair([existingConversation], {
       conversationId: existingConversation.conversationId,
       questionText: "second question",
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 9_999,
     });
     expect(appendResult.status).toBe("saved");
@@ -138,8 +133,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair([buildConversation(0)], {
       conversationId: buildConversationId(0),
       questionText: "follow-up",
-      reply: SAMPLE_REPLY,
-      answeredBy: "cloud",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "cloud" },
       nowMs: 10,
     });
     expect(appendResult).toEqual({ status: "model_mismatch" });
@@ -151,8 +145,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair([fullConversation], {
       conversationId: fullConversation.conversationId,
       questionText: "one more",
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 10,
     });
     expect(appendResult).toEqual({ status: "conversation_full" });
@@ -165,8 +158,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair(savedConversations, {
       conversationId: buildConversationId(99),
       questionText: "an eleventh chat",
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 10,
     });
     expect(appendResult).toEqual({ status: "list_full" });
@@ -177,8 +169,7 @@ describe("appendAnsweredPair", () => {
     const appendResult = appendAnsweredPair([buildConversation(0), otherConversation], {
       conversationId: buildConversationId(0),
       questionText: "follow-up",
-      reply: SAMPLE_REPLY,
-      answeredBy: "on_device",
+      answer: { kind: "model", reply: SAMPLE_REPLY, answeredBy: "on_device" },
       nowMs: 10,
     });
     expect(appendResult.status).toBe("saved");

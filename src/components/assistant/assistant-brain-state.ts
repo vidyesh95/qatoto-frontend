@@ -368,3 +368,30 @@ function describeNoChatLine(cloudReason: ModelUnavailableReason | null): string 
     }
   }
 }
+
+/**
+ * What the assistant says when the router did not understand a request and no model can answer
+ * this chat: why not, and that places and searches still work. Never a guess at an answer.
+ */
+export function describeRouterOnlyFallback(chatState: ConversationChatState): string {
+  switch (chatState.status) {
+    case "unselected_unavailable":
+      return "No chat model in this browser, so only places and searches work here.";
+    case "checking":
+      return "Still finding out which model this browser can use. Places and searches work now.";
+    case "awaiting_download_click":
+    case "needs_download":
+      return "Gemini Nano isn't downloaded yet. Places and searches work now.";
+    case "locked_unavailable":
+      return `This chat's model, ${ASSISTANT_MODEL_NAMES[chatState.lockedModel]}, isn't available here, so only places and searches work in it.`;
+    // A ready model takes the question itself, and a full chat or list takes no question at all.
+    case "ready":
+    case "full":
+    case "list_full":
+      return "Only places and searches work here right now.";
+    default: {
+      const exhaustiveCheck: never = chatState;
+      return exhaustiveCheck;
+    }
+  }
+}
