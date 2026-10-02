@@ -936,10 +936,34 @@ recompute**; the crons already order it that way (Monday 01:40 vs nightly 04:10)
   SN) is Excel-only until WDI ingests it.
 - **UI:** a country-level block on the readout, like purchasing power, absent when null.
 
+**Part 4 of Civic Pulse F (2026-10-02): Comtrade beyond India was BUILT, RUN, AND ROLLED BACK.**
+
+- **What happened.** US, CN, DE, JP and KR were seeded and backfilled. Each is ~60k rows and
+  ~50 MB of `commodity_trade_flow` before WAL. The shared Aiven free-tier database (1 GB) went
+  **read-only** during the fifth country (`57P01`, `default_transaction_read_only = on`).
+- **What was removed.** The five countries' rows, their 6 regions (plus East Asia) and the
+  ingest plan entries. The table was TRUNCATEd and India re-pulled, because a `DELETE` would have
+  written ~100 MB+ of WAL on a full disk.
+- **The ceiling is disk, not the 500-call quota.** Widening the plan needs a bigger disk first.
+- ⚠️ **M49 codes, verified live for later:** US is 842 (not 840), CN 156, DE 276 (not 280), JP
+  392, KR 410 (408 is the DPRK). They are the same class of trap as India's 699.
+
+What stayed, because it is right at any country count:
+
+- The plan lives in the backend's `comtrade-ingest-plan.ts`, shared by the weekly tick and
+  `pnpm db:sync-comtrade`, so the two cannot drift.
+- `LOCALIZATION_ASSESSMENT_COUNTRY_CODES = ["IN"]` keeps any future non-India reporter out of the
+  import-substitution ranking and its Gemini narratives. The reasons:
+    - the ladders are calibrated on India;
+    - an exporter's two-way trade is not a substitution gap;
+    - each ranked country costs ~25 Gemini calls a night.
+- `/import-reporters` carries `isLocalizationRanked`, and Market Research says "never ranked"
+  rather than "not scored yet" for such a country.
+- Market Research defaults to India. With no `?reporterCountryCode`, the leaderboard and grid
+  used to run unfiltered, which with several reporters would interleave their rank 1s.
+
 Still open:
 
-- **Comtrade beyond India** — the weekly plan is `["IN"]`, so manufacturing is India-only and
-  every other country shows purchasing power alone. That is honest, not a bug.
 - **The readout on cluster pages** — needs `domain` on the nested `DiscoveryCategoryRef`.
 - **Factory sites** (`commerce_organization_site`) carry no domain, so they are not counted as
   producers. Only suppliers on a published substitute mapping are.

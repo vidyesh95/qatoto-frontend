@@ -31,6 +31,7 @@ import {
   type MarketResearchTab,
 } from "@/lib/rnd/discovery.schemas";
 import {
+  DEFAULT_IMPORT_REPORTER_COUNTRY_CODE,
   listImportCommodities,
   listImportCommodityKinds,
   listImportReporters,
@@ -40,6 +41,7 @@ import {
 import {
   IMPORT_COMMODITY_KINDS,
   type ImportCommodityKindOption,
+  type ImportReporter,
 } from "@/lib/rnd/import-intelligence.schemas";
 import { callerRequestOptions } from "@/lib/server-http";
 import { toListViewState, type ListViewState } from "@/lib/view-state";
@@ -105,10 +107,12 @@ function MarketResearchLeaderboardSection({
   assessmentsResult,
   commodityKinds,
   searchParams,
+  unrankedCountryNotice,
 }: {
   assessmentsResult: LocalizationAssessmentsResult;
   commodityKinds: readonly ImportCommodityKindOption[];
   searchParams: RawSearchParams;
+  unrankedCountryNotice: string | null;
 }) {
   const state = toListViewState(assessmentsResult);
   switch (state.status) {
@@ -126,6 +130,7 @@ function MarketResearchLeaderboardSection({
           pagination={assessmentsResult.success ? assessmentsResult.data.pagination : null}
           commodityKinds={commodityKinds}
           searchParams={searchParams}
+          unrankedCountryNotice={unrankedCountryNotice}
         />
       );
     default: {
@@ -180,10 +185,11 @@ function MarketResearchOverviewTab({
   pickerAssessments,
   assessmentGridCells,
   commodityCategoryByHsCode,
+  unrankedCountryNotice,
   searchParams,
 }: {
   reporters: readonly ImportReporterItem[];
-  reporterCountryCode: string | undefined;
+  reporterCountryCode: string;
   assessments: readonly LocalizationAssessmentItem[];
   demandSignals: readonly DemandSignalItem[];
   catalogueTotal: number;
@@ -192,6 +198,7 @@ function MarketResearchOverviewTab({
   pickerAssessments: readonly LocalizationAssessmentItem[];
   assessmentGridCells: readonly LocalizationAssessmentGridCellItem[];
   commodityCategoryByHsCode: Map<string, string>;
+  unrankedCountryNotice: string | null;
   searchParams: RawSearchParams;
 }) {
   return (
@@ -213,7 +220,9 @@ function MarketResearchOverviewTab({
 
       <div className="px-4 lg:px-6">
         {pickerAssessments.length === 0 ? (
-          <RndStatusPanel message="Nothing has been scored for this country yet." />
+          <RndStatusPanel
+            message={unrankedCountryNotice ?? "Nothing has been scored for this country yet."}
+          />
         ) : (
           <OpportunityScatter
             assessments={pickerAssessments}
@@ -273,9 +282,10 @@ function MarketResearchImportSubstitutionTab({
   assessmentsResult,
   commoditiesResult,
   commodityKinds,
+  unrankedCountryNotice,
 }: {
   reporters: readonly ImportReporterItem[];
-  reporterCountryCode: string | undefined;
+  reporterCountryCode: string;
   assessments: readonly LocalizationAssessmentItem[];
   demandSignals: readonly DemandSignalItem[];
   catalogueTotal: number;
@@ -283,6 +293,7 @@ function MarketResearchImportSubstitutionTab({
   assessmentsResult: LocalizationAssessmentsResult;
   commoditiesResult: ImportCommoditiesResult;
   commodityKinds: readonly ImportCommodityKindOption[];
+  unrankedCountryNotice: string | null;
 }) {
   return (
     <div className="space-y-8">
@@ -298,6 +309,7 @@ function MarketResearchImportSubstitutionTab({
         assessmentsResult={assessmentsResult}
         commodityKinds={commodityKinds}
         searchParams={searchParams}
+        unrankedCountryNotice={unrankedCountryNotice}
       />
       <MarketResearchCatalogueSection
         commoditiesResult={commoditiesResult}
@@ -308,15 +320,39 @@ function MarketResearchImportSubstitutionTab({
   );
 }
 
+/**
+ * Copy for a country that is ingested but NEVER RANKED (`isLocalizationRanked: false`), or
+ * `null` for a ranked one. The two empty states mean different things — "not scored yet" is a
+ * wait, "not ranked" is a decision — and a reader is owed the one that is true. The ranked
+ * countries are named from the data, not hardcoded.
+ */
+function describeUnrankedReporter(
+  reporters: readonly ImportReporter[],
+  reporterCountryCode: string,
+): string | null {
+  const selectedReporter = reporters.find(
+    (reporter) => reporter.countryCode === reporterCountryCode,
+  );
+  if (selectedReporter === undefined || selectedReporter.isLocalizationRanked) return null;
+  const rankedCountryLabels = reporters
+    .filter((reporter) => reporter.isLocalizationRanked)
+    .map((reporter) => reporter.displayLabel);
+  const rankedScope =
+    rankedCountryLabels.length === 0
+      ? "is not computed for any country yet"
+      : `covers ${rankedCountryLabels.join(", ")} only`;
+  return `The import-substitution ranking ${rankedScope}. It scores replacing imports, which does not fit an economy that already exports much of what it imports. ${selectedReporter.displayLabel}'s trade catalogue and feasibility readout are still shown.`;
+}
+
 async function loadMarketResearchData(
   resolvedSearchParams: RawSearchParams,
   requestOptions: Awaited<ReturnType<typeof callerRequestOptions>>,
 ) {
-  const reporterCountryCode = readPatternParam(
-    resolvedSearchParams,
-    "reporterCountryCode",
-    COUNTRY_CODE_PATTERN,
-  );
+  // Always a country: an absent param means the default, so no ranked read runs unfiltered
+  // across reporters (which would interleave several countries' rank 1s).
+  const reporterCountryCode =
+    readPatternParam(resolvedSearchParams, "reporterCountryCode", COUNTRY_CODE_PATTERN) ??
+    DEFAULT_IMPORT_REPORTER_COUNTRY_CODE;
 
   const commodityKind = readEnumParam(
     resolvedSearchParams,
@@ -356,9 +392,7 @@ async function loadMarketResearchData(
       requestOptions,
     ),
     listImportCommodityKinds(requestOptions),
-    reporterCountryCode === undefined
-      ? Promise.resolve(null)
-      : getFeasibilityReadout(reporterCountryCode, requestOptions),
+    getFeasibilityReadout(reporterCountryCode, requestOptions),
   ]);
 
   // Secondary reads: losing one costs a section or a chip row, not the page.
@@ -385,6 +419,7 @@ async function loadMarketResearchData(
 
   return {
     reporterCountryCode,
+    unrankedCountryNotice: describeUnrankedReporter(reporters, reporterCountryCode),
     insightsResult,
     demandSignalsResult,
     assessmentsResult,
@@ -425,6 +460,7 @@ function MarketResearchActiveTabContent({
           pickerAssessments={data.pickerAssessments}
           assessmentGridCells={data.assessmentGridCells}
           commodityCategoryByHsCode={data.commodityCategoryByHsCode}
+          unrankedCountryNotice={data.unrankedCountryNotice}
           searchParams={searchParams}
         />
       );
@@ -447,6 +483,7 @@ function MarketResearchActiveTabContent({
           assessmentsResult={data.assessmentsResult}
           commoditiesResult={data.commoditiesResult}
           commodityKinds={data.commodityKinds}
+          unrankedCountryNotice={data.unrankedCountryNotice}
         />
       );
     default: {

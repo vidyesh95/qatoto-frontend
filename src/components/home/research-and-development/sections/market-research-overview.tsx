@@ -7,6 +7,7 @@ import HairlineDefinitionRow, {
 import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import { formatTradeValueCompact } from "@/lib/rnd/import-format";
+import { DEFAULT_IMPORT_REPORTER_COUNTRY_CODE } from "@/lib/rnd/import-intelligence.api";
 import type { ImportReporter, LocalizationAssessment } from "@/lib/rnd/import-intelligence.schemas";
 import type { DemandSignal } from "@/lib/rnd/discovery.schemas";
 
@@ -74,9 +75,12 @@ function buildOverviewFacts(input: {
  * The country picker and the KPI row.
  *
  * ⚠️ THE PICKER IS BUILT FROM `/import-reporters`, NOT FROM THE REGION TAXONOMY. Eighteen
- * countries are seeded in `discovery_region` and one has been ingested; a picker over the
- * taxonomy would offer seventeen dead ends. Every chip carries its commodity count, so a
- * reader can see how much is behind a country before clicking it.
+ * countries are seeded in `discovery_region` and one is ingested; a picker over the taxonomy
+ * would offer seventeen dead ends. Every chip carries its commodity count, so a reader can see
+ * how much is behind a country before clicking it.
+ *
+ * ⚠️ A COUNTRY IS ALWAYS SELECTED. The page defaults to `DEFAULT_IMPORT_REPORTER_COUNTRY_CODE`,
+ * and that chip's link writes the param OUT so the bare URL stays the canonical one.
  *
  * ⚠️ ONE SELECTION DRIVES BOTH TABS. `?reporterCountryCode=IN` filters the import reads
  * directly, and the page maps it onto the matching `discovery_region` slug to filter the
@@ -92,7 +96,7 @@ export default function MarketResearchOverview({
   searchParams,
 }: {
   reporters: readonly ImportReporter[];
-  selectedCountryCode: string | undefined;
+  selectedCountryCode: string;
   assessments: readonly LocalizationAssessment[];
   demandSignals: readonly DemandSignal[];
   totalCommodityCount: number;
@@ -100,14 +104,18 @@ export default function MarketResearchOverview({
 }) {
   const countryChips: FilterChipOption[] = reporters.map((reporter) => ({
     label: `${reporter.displayLabel} · ${reporter.commodityCount.toLocaleString("en-US")}`,
-    href: buildFilterHref(searchParams, { reporterCountryCode: reporter.countryCode }),
+    href: buildFilterHref(searchParams, {
+      reporterCountryCode:
+        reporter.countryCode === DEFAULT_IMPORT_REPORTER_COUNTRY_CODE
+          ? undefined
+          : reporter.countryCode,
+    }),
     isSelected: selectedCountryCode === reporter.countryCode,
   }));
 
-  const selectedReporter =
-    selectedCountryCode === undefined
-      ? reporters[0]
-      : reporters.find((reporter) => reporter.countryCode === selectedCountryCode);
+  const selectedReporter = reporters.find(
+    (reporter) => reporter.countryCode === selectedCountryCode,
+  );
 
   // The import bill of what is ON THIS PAGE, not of the whole catalogue — the leaderboard is
   // one page of the ranking, and claiming a national total from it would be wrong by orders of

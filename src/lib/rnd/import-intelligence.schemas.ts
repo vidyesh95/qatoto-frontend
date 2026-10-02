@@ -319,6 +319,11 @@ export type ImportCommodityDetail = z.infer<typeof ImportCommodityDetailSchema>;
  * ⚠️ THIS IS NOT THE COUNTRY TAXONOMY. `discovery_region` seeds eighteen countries and only the
  * ones ingested appear here — a picker built off the taxonomy would offer seventeen dead ends.
  * The counts ride along so a chip can say how much is behind it before it is clicked.
+ *
+ * `isLocalizationRanked` is backend POLICY, not data: whether the import-substitution ranking is
+ * computed for this country at all. Only India is today. A country ingested for the feasibility
+ * readout's manufacturing pillar but not ranked has an empty leaderboard that means "never
+ * ranked", not "not scored yet".
  */
 export const ImportReporterSchema = z.object({
   countryCode: z.string(),
@@ -328,6 +333,7 @@ export const ImportReporterSchema = z.object({
   flowCount: z.number(),
   earliestPeriodYear: z.number(),
   latestPeriodYear: z.number(),
+  isLocalizationRanked: z.boolean(),
 });
 export type ImportReporter = z.infer<typeof ImportReporterSchema>;
 

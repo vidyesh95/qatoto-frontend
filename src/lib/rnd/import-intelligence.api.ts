@@ -192,6 +192,13 @@ export function requestPathwayNarrative(
 }
 
 /**
+ * The country Market Research shows when the URL names none. India is the one country the
+ * import-substitution ranking covers, so it is the view the bare URL has always meant. Without a
+ * default every ranked read would run unfiltered and interleave several countries' rank 1s.
+ */
+export const DEFAULT_IMPORT_REPORTER_COUNTRY_CODE = "IN";
+
+/**
  * The countries that have trade data, with how much.
  *
  * Unpaginated: the ceiling is the number of countries ingested. An EMPTY array means nothing

@@ -83,7 +83,9 @@
 > **A pillar is null when no source covers the cell, never 0:**
 >
 > - Need density is null with no active cluster in that country and domain.
-> - Manufacturing is null when Comtrade has no lines for that country and domain.
+> - Manufacturing is null when Comtrade has no lines for that country and domain. Comtrade is
+>   ingested for India only. US, CN, DE, JP and KR were added and removed on 2026-10-02,
+>   because the free-tier database ran out of disk (see todo.md §19.3).
 > - Purchasing power is null when the World Bank publishes no value.
 > - The regulatory framework is null when no B-READY edition on the API covers the economy.
 >

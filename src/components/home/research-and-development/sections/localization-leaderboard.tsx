@@ -29,11 +29,14 @@ export default function LocalizationLeaderboard({
   pagination,
   commodityKinds,
   searchParams,
+  unrankedCountryNotice,
 }: {
   assessments: readonly LocalizationAssessment[];
   pagination: PaginationMeta | null;
   commodityKinds: readonly ImportCommodityKindOption[];
   searchParams: RawSearchParams;
+  /** Set when the selected country is ingested but never ranked; replaces "not scored yet". */
+  unrankedCountryNotice: string | null;
 }) {
   const selectedKind = searchParams["commodityKind"];
   const selectedKindValue = typeof selectedKind === "string" ? selectedKind : undefined;
@@ -69,8 +72,8 @@ export default function LocalizationLeaderboard({
       {assessments.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {/* Not "no results": the difference matters to whoever reads this next. */}
-          Nothing has been scored yet. The feasibility run happens nightly and writes a ranking once
-          there is trade data to rank.
+          {unrankedCountryNotice ??
+            "Nothing has been scored yet. The feasibility run happens nightly and writes a ranking once there is trade data to rank."}
         </p>
       ) : (
         <>
