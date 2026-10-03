@@ -46,6 +46,7 @@ const PRIVATE_PATH_PREFIXES = [
   "/messages",
   "/disputes",
   "/service-engagements",
+  "/customer-service/cases",
 
   // Buyer/seller negotiation. `/store/rfqs` and `/store/quotes` cover their `/compare` children.
   "/store/rfqs",
@@ -63,13 +64,42 @@ const PRIVATE_PATH_PREFIXES = [
   "/api/",
 ] as const;
 
+/**
+ * Training crawlers. Robots.txt is a REQUEST, not enforcement — Bytespider ignores it, so the
+ * Cloudflare WAF rule is what actually stops the load. `Google-Extended` and
+ * `Applebot-Extended` are opt-out tokens, not crawlers: listing them changes nothing about
+ * Googlebot/Applebot crawling or search ranking. AI SEARCH agents (OAI-SearchBot,
+ * ChatGPT-User, Claude-SearchBot, PerplexityBot …) are deliberately NOT here — they are how
+ * Qatoto gets cited in AI answers.
+ */
+const AI_TRAINING_USER_AGENTS = [
+  "GPTBot",
+  "ClaudeBot",
+  "anthropic-ai",
+  "CCBot",
+  "Bytespider",
+  "Google-Extended",
+  "Applebot-Extended",
+  "meta-externalagent",
+  "FacebookBot",
+  "cohere-training-data-crawler",
+  "Diffbot",
+  "Amazonbot",
+] as const;
+
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [...PRIVATE_PATH_PREFIXES],
-    },
+    rules: [
+      {
+        userAgent: [...AI_TRAINING_USER_AGENTS],
+        disallow: "/",
+      },
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [...PRIVATE_PATH_PREFIXES],
+      },
+    ],
     // `src/app/sitemap.ts` EXISTS NOW, which is the only condition under which this line may be
     // here: a `robots.txt` advertising a sitemap that 404s is a Search Console error rather than a
     // harmless placeholder. If that file is ever removed, remove this line in the same change.
