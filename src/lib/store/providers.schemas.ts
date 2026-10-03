@@ -47,6 +47,35 @@ import {
 // --- Wire enums -------------------------------------------------------------
 
 /**
+ * `commerce_cargo_coverage_class_code`, verbatim (todo §23.4). The FILTERABLE cover types an
+ * insurer ticks on an offering, beside the free-text classes it writes — the `standardCode`
+ * precedent. The free text is what a policy says; these are what a buyer can filter on.
+ */
+export const CARGO_COVERAGE_CLASS_CODES = [
+  "institute_cargo_clauses_a",
+  "institute_cargo_clauses_b",
+  "institute_cargo_clauses_c",
+  "institute_cargo_clauses_air",
+  "institute_war_clauses",
+  "institute_strikes_clauses",
+  "stock_throughput",
+  "goods_in_storage",
+] as const;
+
+export type CargoCoverageClassCode = (typeof CARGO_COVERAGE_CLASS_CODES)[number];
+
+export const CARGO_COVERAGE_CLASS_LABELS: Readonly<Record<CargoCoverageClassCode, string>> = {
+  institute_cargo_clauses_a: "Institute Cargo Clauses (A), all risks",
+  institute_cargo_clauses_b: "Institute Cargo Clauses (B)",
+  institute_cargo_clauses_c: "Institute Cargo Clauses (C)",
+  institute_cargo_clauses_air: "Institute Cargo Clauses (Air)",
+  institute_war_clauses: "Institute War Clauses",
+  institute_strikes_clauses: "Institute Strikes Clauses",
+  stock_throughput: "Stock throughput",
+  goods_in_storage: "Goods in storage",
+};
+
+/**
  * A provider profile's own verification state.
  *
  * `rejected` and `suspended` never reach a public read — the eligibility predicate excludes
@@ -225,6 +254,8 @@ export const ServiceOfferingDetailSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("insurance_provider"),
     cargoCoverageClasses: z.array(z.string()),
+    /** The filterable cover types, beside the free text above. Empty is ordinary. */
+    coverageClassCodes: z.array(z.enum(CARGO_COVERAGE_CLASS_CODES)),
     coverageLimitMinInCents: z.number().int().optional(),
     coverageLimitMaxInCents: z.number().int().optional(),
     currency: z.string().optional(),
@@ -326,6 +357,8 @@ export interface ListProvidersFilter {
   readonly standard?: string;
   /** Free text on a warehouse's `storageTypes` array. */
   readonly storageType?: string;
+  /** A CLOSED SET, unlike the three free-text keys above — an insurer's ticked cover types. */
+  readonly coverageClass?: CargoCoverageClassCode;
   /** `AAA/BBB`, uppercase — e.g. `USD/INR`. */
   readonly currencyPair?: string;
   /**
@@ -504,6 +537,8 @@ export type ServiceOfferingDetailInput =
   | {
       readonly kind: "insurance_provider";
       readonly cargoCoverageClasses: readonly string[];
+      /** Optional on the wire — the backend defaults it to none. */
+      readonly coverageClassCodes?: readonly CargoCoverageClassCode[];
       readonly coverageLimitMinInCents?: number;
       readonly coverageLimitMaxInCents?: number;
       readonly currency?: string;

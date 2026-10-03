@@ -8,8 +8,17 @@ import {
   TokenListField,
 } from "@/components/commerce/composer/composer-fields";
 import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
+import {
+  CARGO_COVERAGE_CLASS_CODES,
+  CARGO_COVERAGE_CLASS_LABELS,
+} from "@/lib/store/providers.schemas";
 import type { ServiceOfferingDetailDraft } from "@/lib/store/service-offering-draft";
 import { FREIGHT_TRANSPORT_MODES } from "@/lib/store/shared.schemas";
+
+const COVERAGE_CLASS_OPTIONS = CARGO_COVERAGE_CLASS_CODES.map((coverageClassCode) => ({
+  value: coverageClassCode,
+  label: CARGO_COVERAGE_CLASS_LABELS[coverageClassCode],
+}));
 
 const TRANSPORT_MODE_OPTIONS = FREIGHT_TRANSPORT_MODES.map((mode) => ({
   value: mode,
@@ -112,6 +121,17 @@ export function InsuranceProviderFields({
         }
         placeholder="All risks"
         maxEntries={50}
+      />
+      {/* THE FILTER, BESIDE THE WORDS ABOVE — the factory "Filterable code" precedent. The classes
+          you type are what buyers read; these are what they can filter on. Optional. */}
+      <ChipMultiSelectField
+        label="Filterable cover types (optional)"
+        hint="Buyers can filter insurers by these. If you write stock throughput, tick Goods in storage too: it covers goods while stored."
+        selectedValues={draft.coverageClassCodes}
+        options={COVERAGE_CLASS_OPTIONS}
+        onSelectedValuesChange={(coverageClassCodes) =>
+          onDraftChange({ coverageClassCodes: [...coverageClassCodes] })
+        }
       />
       <p className="text-xs leading-4 text-muted-foreground">
         Give both ends of the cover limit or neither. One end alone is refused, and a maximum below

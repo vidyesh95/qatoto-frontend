@@ -21,8 +21,9 @@
 // STORAGE COVER IS AN INSURER'S PRODUCT, NOT A FOURTH KIND. The insurers who write cargo cover also
 // write stock-throughput and stock-in-storage policies, and a warehouse's own liability is limited by
 // its storage terms — so the storage row links to `insurance_provider` again rather than inventing a
-// `warehouse_insurance` kind the backend's pgEnum does not have. The directory cannot filter by
-// coverage class yet, so that link promises an insurer, not storage-specific results.
+// `warehouse_insurance` kind the backend's pgEnum does not have. It pre-filters on the
+// `goods_in_storage` cover type, which an insurer writing stock throughput is asked to tick as well
+// (todo §23.4). An insurer that ticked nothing is not in that list, which the copy does not promise.
 //
 // ⚠️ THE NO-LIABILITY SENTENCES ARE THE LIABILITY POSITION, not boilerplate, and they live in the
 // component rather than a footer for that reason. Do not trim them. Nothing here may say "insured",
@@ -134,7 +135,7 @@ export default function OrderThirdPartyServiceSignposts({
               Find a warehouse
             </Link>
             <Link
-              href="/store/providers?providerKind=insurance_provider"
+              href="/store/providers?providerKind=insurance_provider&coverageClass=goods_in_storage"
               className={SIGNPOST_LINK_CLASS}
             >
               Find an insurer for stored goods

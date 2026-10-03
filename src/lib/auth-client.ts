@@ -40,6 +40,10 @@ export const authClient = createAuthClient({
         handle: { type: "string", required: false, input: false },
         phoneNumber: { type: "string", required: false, input: false },
         phoneNumberVerified: { type: "boolean", required: false, input: false },
+        // Terms acceptance (todo §7): the latest version accepted and when. Written only by the
+        // backend's `recordTermsAcceptance`; read by the acceptance banner to decide whether to ask.
+        termsVersion: { type: "string", required: false, input: false },
+        termsAcceptedAt: { type: "date", required: false, input: false },
       },
     }),
   ],

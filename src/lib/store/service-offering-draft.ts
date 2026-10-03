@@ -6,7 +6,10 @@ import {
   toOptionalPairedRange,
   toOptionalText,
 } from "@/components/commerce/composer/composer-input";
-import type { ServiceOfferingDetailInput } from "@/lib/store/providers.schemas";
+import type {
+  CargoCoverageClassCode,
+  ServiceOfferingDetailInput,
+} from "@/lib/store/providers.schemas";
 import type { FreightTransportMode, ProviderKind } from "@/lib/store/shared.schemas";
 
 /** One superset draft across all nine kinds — same reasoning as the RFQ's requirement draft. */
@@ -22,6 +25,7 @@ export interface ServiceOfferingDetailDraft {
   commodityCoverageSummary: string;
 
   cargoCoverageClasses: string[];
+  coverageClassCodes: CargoCoverageClassCode[];
   coverageLimitMinMajorUnits: string;
   coverageLimitMaxMajorUnits: string;
   coverageCurrency: string;
@@ -70,6 +74,7 @@ export const EMPTY_SERVICE_OFFERING_DETAIL_DRAFT: ServiceOfferingDetailDraft = {
   exportSupported: false,
   commodityCoverageSummary: "",
   cargoCoverageClasses: [],
+  coverageClassCodes: [],
   coverageLimitMinMajorUnits: "",
   coverageLimitMaxMajorUnits: "",
   coverageCurrency: "",
@@ -149,6 +154,10 @@ export function buildOfferingDetailInput(
       return {
         kind: providerKind,
         cargoCoverageClasses: draft.cargoCoverageClasses,
+        // Optional and additive: none ticked sends nothing, and the backend defaults it to none.
+        ...(draft.coverageClassCodes.length === 0
+          ? {}
+          : { coverageClassCodes: draft.coverageClassCodes }),
         ...(coverageLimitRange === undefined
           ? {}
           : {

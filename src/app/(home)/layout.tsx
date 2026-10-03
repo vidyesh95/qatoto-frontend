@@ -8,6 +8,7 @@
 
 import React, { Suspense } from "react";
 import AlphaBanner from "@/components/home/layout/alpha-banner";
+import TermsAcceptanceBanner from "@/components/home/layout/terms-acceptance-banner";
 import Navbar from "@/components/home/layout/navbar";
 import NavbarAccountCluster from "@/components/home/layout/navbar-account-cluster";
 import NavbarAccountSlot from "@/components/home/layout/navbar-account-slot";
@@ -70,6 +71,9 @@ const Layout = ({ children }: Props) => {
               rather than inside it, which is what keeps it on screen without `sticky` and without
               any offset in the group changing; the reasoning is in the component. */}
             <AlphaBanner />
+            {/* Same slot, same reasoning: it sizes by content above the scroll container. It renders
+                nothing until a signed-in session is known to lack the current Terms version. */}
+            <TermsAcceptanceBanner />
             <div className="flex min-h-0 flex-1">
               {/* Same shape and same reasoning as the navbar slot above: the fallback is the
               SIGNED-OUT sidebar, not a skeleton. On a prerendered route it is what ships in the

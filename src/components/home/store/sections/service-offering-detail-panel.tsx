@@ -23,7 +23,10 @@ import DefinitionList, {
 } from "@/components/commerce/shared/definition-list";
 import { formatCentsRangeLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
-import type { ServiceOfferingDetail } from "@/lib/store/providers.schemas";
+import {
+  CARGO_COVERAGE_CLASS_LABELS,
+  type ServiceOfferingDetail,
+} from "@/lib/store/providers.schemas";
 
 /**
  * A boolean capability as words, never a bare tick or a blank.
@@ -80,6 +83,20 @@ function buildDetailItems(detail: ServiceOfferingDetail): DefinitionListItem[] {
     case "insurance_provider":
       return [
         { term: "Cover classes", value: listLabel(detail.cargoCoverageClasses) },
+        // The filterable cover types the insurer ticked. Omitted rather than "Not provided" when
+        // none were: ticking is optional, and the classes above already say what they write.
+        ...(detail.coverageClassCodes.length === 0
+          ? []
+          : [
+              {
+                term: "Listed under",
+                value: listLabel(
+                  detail.coverageClassCodes.map(
+                    (coverageClassCode) => CARGO_COVERAGE_CLASS_LABELS[coverageClassCode],
+                  ),
+                ),
+              },
+            ]),
         {
           term: "Limit range",
           // The currency is optional alongside the limits, and a limit without one cannot be

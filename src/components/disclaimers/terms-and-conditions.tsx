@@ -34,8 +34,10 @@ import {
   LEGAL_ENTITY_NAME,
   SUPPORT_CONTACT_EMAIL,
 } from "@/lib/site";
+import { TERMS_LAST_UPDATED_LABEL } from "@/lib/legal-documents";
 
-const TERMS_LAST_UPDATED_LABEL = "28 September 2026";
+// From the one module the sign-up form and the acceptance banner also read, so the date printed
+// here is always the version an acceptance records. Change it there, with the backend's copy.
 
 const INLINE_LINK_CLASS = "font-medium text-primary-imprint hover:underline";
 

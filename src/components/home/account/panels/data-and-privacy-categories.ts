@@ -35,6 +35,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Your password, stored only as a hash we cannot reverse",
       "Your passkeys and any linked Google or GitHub account",
       "Each signed-in device, with the IP address and browser it signed in from",
+      "Which version of the Terms and Conditions you accepted, and when. Kept after deletion as proof of what was agreed",
     ],
   },
   {

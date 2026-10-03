@@ -78,7 +78,9 @@ export default function PrivacyPolicy() {
             forum posts you make, the products you view, your cart and your orders, the projects you
             found, join or apply to, the effort you log, and the records of equity, pay and payments
             that follow from them. Each signed-in device is recorded with the IP address and browser
-            it signed in from.
+            it signed in from. When you accept our Terms and Conditions, we record which version you
+            accepted and when, and we keep that record after your account is deleted, as proof of
+            what was agreed.
             <br />
             <br />
             Some parts of Qatoto collect more, and only from the people who use them. If you sell,

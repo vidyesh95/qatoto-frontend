@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { signIn } from "@/lib/auth-client";
+import { TERMS_VERSION } from "@/lib/legal-documents";
 import {
   AuthEmailInput,
   AuthOtpStep,
@@ -15,6 +16,24 @@ import {
 } from "./auth-step-components";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+/**
+ * The backend's own sentence from a refusal envelope, or a neutral fallback when the body is not
+ * the envelope (a proxy error page, say). Read as `unknown` and narrowed — never cast.
+ */
+async function readRefusalMessage(response: Response): Promise<string> {
+  const fallbackMessage = "This could not be completed. Reload the page and try again.";
+  try {
+    const body: unknown = await response.json();
+    if (typeof body === "object" && body !== null && "message" in body) {
+      const message = body.message;
+      if (typeof message === "string" && message.trim() !== "") return message;
+    }
+  } catch {
+    // Not JSON — fall through to the neutral sentence.
+  }
+  return fallbackMessage;
+}
 
 const handleGoogleSignIn = () =>
   signIn.social({ provider: "google", callbackURL: window.location.origin });
@@ -106,18 +125,27 @@ export default function SignUp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, otp: otp.join(""), password }),
+        // The Terms version beside the button the person just pressed (todo §7). The backend
+        // records it as their acceptance, or refuses with a 409 if it is no longer current.
+        body: JSON.stringify({
+          email,
+          otp: otp.join(""),
+          password,
+          acceptedTermsVersion: TERMS_VERSION,
+        }),
       });
       isSubmittingRef.current = false;
       setIsSubmitting(false);
       if (!response.ok) {
         // Bad/expired OTP → 401; nothing was created. Send the user back to re-enter it.
-        setErrorMessage(
-          response.status === 409
-            ? "Email already registered. Please sign in."
-            : "Invalid or expired code.",
-        );
-        if (response.status !== 409) setStep(2);
+        // A 409 is EITHER an email already registered OR Terms updated since the page loaded, so
+        // the backend's own sentence is shown rather than a guess at which.
+        if (response.status === 409) {
+          setErrorMessage(await readRefusalMessage(response));
+          return;
+        }
+        setErrorMessage("Invalid or expired code.");
+        setStep(2);
         return;
       }
 

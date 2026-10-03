@@ -393,7 +393,12 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
    its recipients (Vercel, AWS, Aiven, Cloudinary, Backblaze, Brevo, Google Gemini, Google/GitHub sign-in,
    Nominatim, the payment provider), the new data categories, the automated assessment of effort claims
    and the third-party content pages load. Both carry a "Last updated" date. Left open by that rewrite:
-    - **Terms acceptance tracking in backend remains open.** `sign-up.tsx` now links both documents (fixed 2026-09-29); the backend has no `terms_accepted_at` or terms version yet.
+    - ~~**Terms acceptance tracking in backend remains open.**~~ **DONE 2026-10-03, uncommitted in both repos** (backend `0219`, applied).
+        - **Record:** `user_terms_acceptance` keeps every acceptance (version, time, surface; `retain` on erasure), and `user.terms_version` / `terms_accepted_at` hold the latest on the session.
+        - **Email sign-up:** echoes `TERMS_VERSION` (`src/lib/legal-documents.ts`), and the sentence beside the button is unchanged.
+        - **Everyone else:** every other signed-in account gets `terms-acceptance-banner.tsx` in `(home)` until it accepts. Non-blocking, by decision.
+        - ⚠️ **Changing the Terms means bumping `TERMS_VERSION` here AND `CURRENT_TERMS_VERSION` in qatoto-backend** (`src/lib/terms-version.ts`) together. An acceptance echoing a version the backend does not consider current is a 409.
+        - The banner is mounted in `(home)` only. A signed-in person who never visits `(home)` (studio/admin only) is not asked there.
     - **The data export lags the inventory.** `data-export.service.ts` omits orders and cart (which "What
       you do here" has always listed), effort, claims, daily logs, receipts, equity and pay, and every
       line of the panel's new "Buying and selling" and "What you publish" cards. Each new card says so
@@ -1533,13 +1538,11 @@ shared DB; `docs/STORE_BACKEND_STRUCTURE.md` A48 is the backend record):
 3. ~~**Render deliverables.**~~ **DONE.** `engagement-deliverables-section.tsx` on the engagement
    detail page: insurance, laboratory (the result labelled "Reported by the laboratory") and
    warehouse results. Other kinds show title and state only.
-4. **Storage cover vocabulary — STILL OPEN, deliberately.** `scope: storage` shipped as the
-   `storage_cover` kind. Still open: a controlled coverage-class vocabulary (e.g.
-   `institute_cargo_clauses_a` / `_b` / `_c`, `stock_throughput`, `stock_in_storage`) and a
-   `coverageClass` filter on `ProvidersQuerySchema`, so "Find an insurer for stored goods" can
-   pre-filter. The backend keeps these arrays free text on purpose ("deliberately not faceted",
-   `commerce-providers.service.ts`), so this needs a decision first, not just a build: it touches the
-   offering, RFQ, quote and deliverable schemas, plus existing free-text rows.
+4. ~~**Storage cover vocabulary.**~~ **DONE 2026-10-03, uncommitted** (backend `0218`, applied; `docs/STORE_BACKEND_STRUCTURE.md` A49).
+    - **Backend:** `commerce_cargo_coverage_class_code`, eight values: ICC A/B/C/Air, War, Strikes, stock throughput, goods in storage. It sits beside the free-text classes on `insurance_offering_detail`, with `?coverageClass=` on `GET /store/providers`.
+    - **Frontend:** a chip multi-select in the offering composer, "Listed under" on the offering page, a static chip row on the directory when narrowed to insurers, and "Find an insurer for stored goods" pre-filtering `goods_in_storage`.
+    - RFQ, quote, engagement and deliverable classes stay free text.
+    - No insurance offering existed, so there was nothing to backfill. Offering details are create-only, as before.
 5. ~~**Privacy.**~~ **DONE.** Privacy policy paragraph and the data panel's "Buying and selling" list
    name declarations and their documents. The table has no `user` FK and no person-shaped column,
    so it is in neither backend manifest (both verifiers pass for it).

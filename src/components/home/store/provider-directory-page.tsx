@@ -48,6 +48,8 @@ import {
 import { countryLabelFromCode, formatCountLabel, formatPercentageLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_LABELS, PROVIDER_KIND_LABELS } from "@/lib/store/labels";
 import {
+  CARGO_COVERAGE_CLASS_CODES,
+  CARGO_COVERAGE_CLASS_LABELS,
   PROVIDER_KIND_VERIFICATION_LABELS,
   PROVIDER_VERIFICATION_LABELS,
   type ProviderDirectoryFacets,
@@ -97,6 +99,8 @@ export default async function ProviderDirectoryPage({
   const jurisdiction = readSingleParam(searchParams, "jurisdiction");
   const standard = readSingleParam(searchParams, "standard");
   const storageType = readSingleParam(searchParams, "storageType");
+  // A CLOSED SET, so it is shape-checked like the enums above: an unknown code is dropped, not sent.
+  const coverageClass = readEnumParam(searchParams, "coverageClass", CARGO_COVERAGE_CLASS_CODES);
   // ABSENT IS "NO FILTER", NOT "FALSE". Only `?acceptingRequests=true` narrows; anything else —
   // including a hand-typed `false` — leaves both states in the page, because a buyer may well want
   // to see a provider who has paused intake.
@@ -112,6 +116,7 @@ export default async function ProviderDirectoryPage({
     jurisdiction,
     standard,
     storageType,
+    coverageClass,
     acceptingRequests: isAcceptingRequestsOnly ? true : undefined,
   };
 
@@ -182,6 +187,29 @@ export default async function ProviderDirectoryPage({
             buckets={facets.destinationCountryCodes}
             formatValue={countryLabelFromCode}
           />
+          {/*
+            COVER TYPES — a STATIC row of all eight, not a facet, on the factory-certification
+            precedent: the backend counts four dimensions and this is not one of them. Shown only
+            when the directory is narrowed to insurers (or a cover type is already set, so the way
+            back is always on screen) — on every other kind it would filter to insurers silently.
+          */}
+          {(providerKind === "insurance_provider" || coverageClass !== undefined) && (
+            <FilterChipRow
+              options={[
+                {
+                  label: "Any cover type",
+                  href: buildFilterHref(searchParams, { coverageClass: undefined }),
+                  isSelected: coverageClass === undefined,
+                },
+                ...CARGO_COVERAGE_CLASS_CODES.map((coverageClassCode) => ({
+                  label: CARGO_COVERAGE_CLASS_LABELS[coverageClassCode],
+                  href: buildFilterHref(searchParams, { coverageClass: coverageClassCode }),
+                  isSelected: coverageClass === coverageClassCode,
+                })),
+              ]}
+              ariaLabel="Filter insurers by the cover types they list"
+            />
+          )}
           {/*
             NOT A FACET, so it carries no count — it is a two-state toggle, and "Taking requests ·
             12" beside a directory of 13 says nothing a buyer can act on. It is also NOT part of
