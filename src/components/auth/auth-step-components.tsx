@@ -332,6 +332,38 @@ export function AuthSocialButtons({
           />
         </button>
       </div>
+      <SocialSignInTermsNotice />
     </>
+  );
+}
+
+/**
+ * The Terms sentence beside the Google and GitHub buttons (todo §7).
+ *
+ * LOAD-BEARING, NOT DECORATION. A first sign-in through either button creates an account, and the
+ * backend records that as acceptance of the current Terms (`user.create.after`, surface
+ * `oauth_sign_up`). That record is only honest because this sentence sits beside the buttons on
+ * every page that offers them — sign-up, sign-in and sign-in with password. A new page with these
+ * buttons must render it too.
+ */
+export function SocialSignInTermsNotice() {
+  return (
+    <p className="px-2 text-center text-xs text-muted-foreground">
+      By continuing with Google or GitHub, you agree to Qatoto&apos;s{" "}
+      <Link
+        href="/terms-and-conditions"
+        className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+      >
+        Terms and Conditions
+      </Link>{" "}
+      and{" "}
+      <Link
+        href="/privacy-policy"
+        className="text-primary-imprint underline underline-offset-2 hover:text-foreground"
+      >
+        Privacy Policy
+      </Link>
+      .
+    </p>
   );
 }

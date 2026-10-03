@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
 import { signIn } from "@/lib/auth-client";
+import { SocialSignInTermsNotice } from "./auth-step-components";
 
 const handleGoogleSignIn = () =>
   signIn.social({ provider: "google", callbackURL: window.location.origin });
@@ -118,6 +119,7 @@ export default function SignIn({
           />
           <span>Continue with GitHub</span>
         </button>
+        <SocialSignInTermsNotice />
         <button
           type={"button"}
           onClick={handlePasskeySignIn}

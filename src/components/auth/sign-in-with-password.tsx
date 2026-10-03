@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState } from "react";
 import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import { signIn } from "@/lib/auth-client";
+import { SocialSignInTermsNotice } from "./auth-step-components";
 import ToggleSwitch from "@/components/ui/toggle-switch";
 
 const handleGoogleSignIn = () =>
@@ -229,6 +230,7 @@ export default function SignIn() {
             />
           </button>
         </div>
+        <SocialSignInTermsNotice />
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Don't have an account?</span>
           <Link href={"/sign-up"} className="cursor-pointer text-primary-imprint">

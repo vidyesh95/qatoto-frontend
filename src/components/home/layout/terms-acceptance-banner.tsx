@@ -1,13 +1,15 @@
 // TRANSPORT: client-query — reads the session and writes `POST /users/me/terms-acceptance`.
 "use client";
 
-// Asks a signed-in account to accept the current Terms and Conditions (todo §7).
+// Asks a signed-in account to accept the Terms and Conditions AGAIN after they change (todo §7).
 //
-// WHO SEES IT: every signed-in account whose recorded version is not `TERMS_VERSION`. That is
-// every account created before acceptance was recorded, every Google or GitHub first sign-in (that
-// path shows no Terms text), an email sign-up from an older client, and everybody after the next
-// Terms change. Anonymous sessions never see it: they are not an account that can agree to
-// anything, and the backend refuses them with a 403.
+// WHO SEES IT: ONLY an account whose recorded version is an EARLIER one. An account with no record
+// at all is NOT asked, by decision (2026-10-03): that is every account created before acceptance
+// was recorded, and the Terms' continued-use clause covers them — asking all of them at once read as
+// a nag to people who had already signed up through a page carrying the Terms sentence. New
+// accounts are recorded at sign-up instead: the email form echoes the version, and a Google or
+// GitHub first sign-in is recorded by the backend's `user.create.after` hook, beside a sentence on
+// every page with those buttons. Signed-out visitors and anonymous sessions never see this.
 //
 // IT BLOCKS NOTHING, by decision. The Terms already say continued use is acceptance; this records
 // an explicit one, with its version, so the record does not rest on that clause alone.
@@ -48,10 +50,10 @@ export default function TermsAcceptanceBanner() {
 
   if (isPending || session === null || session === undefined) return null;
   if (isAnonymousSessionUser(session.user)) return null;
-  if (session.user.termsVersion === TERMS_VERSION) return null;
-
-  const hasAcceptedAnEarlierVersion =
-    session.user.termsVersion !== null && session.user.termsVersion !== undefined;
+  // No record → not asked (see the header). The current version → nothing to ask.
+  const recordedTermsVersion = session.user.termsVersion;
+  if (recordedTermsVersion === null || recordedTermsVersion === undefined) return null;
+  if (recordedTermsVersion === TERMS_VERSION) return null;
 
   async function handleAcceptClick() {
     setAttemptState({ status: "submitting" });
@@ -73,9 +75,7 @@ export default function TermsAcceptanceBanner() {
     >
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
         <p>
-          {hasAcceptedAnEarlierVersion
-            ? `Our Terms and Conditions were updated on ${TERMS_LAST_UPDATED_LABEL}.`
-            : `Please accept our Terms and Conditions, last updated ${TERMS_LAST_UPDATED_LABEL}.`}{" "}
+          Our Terms and Conditions were updated on {TERMS_LAST_UPDATED_LABEL}.{" "}
           <Link href="/terms-and-conditions" className="font-medium underline underline-offset-2">
             Read them
           </Link>

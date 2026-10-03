@@ -393,12 +393,12 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
    its recipients (Vercel, AWS, Aiven, Cloudinary, Backblaze, Brevo, Google Gemini, Google/GitHub sign-in,
    Nominatim, the payment provider), the new data categories, the automated assessment of effort claims
    and the third-party content pages load. Both carry a "Last updated" date. Left open by that rewrite:
-    - ~~**Terms acceptance tracking in backend remains open.**~~ **DONE 2026-10-03, uncommitted in both repos** (backend `0219`, applied).
+    - ~~**Terms acceptance tracking in backend remains open.**~~ **DONE 2026-10-03, uncommitted in both repos** (backend `0219` + `0220`, applied).
         - **Record:** `user_terms_acceptance` keeps every acceptance (version, time, surface; `retain` on erasure), and `user.terms_version` / `terms_accepted_at` hold the latest on the session.
-        - **Email sign-up:** echoes `TERMS_VERSION` (`src/lib/legal-documents.ts`), and the sentence beside the button is unchanged.
-        - **Everyone else:** every other signed-in account gets `terms-acceptance-banner.tsx` in `(home)` until it accepts. Non-blocking, by decision.
+        - **How it is recorded:** email sign-up echoes `TERMS_VERSION` (`src/lib/legal-documents.ts`). A Google/GitHub first sign-in is recorded by the backend's `user.create.after` hook, and every page with those buttons carries `SocialSignInTermsNotice`.
+        - **The banner** (`terms-acceptance-banner.tsx`, `(home)` only, non-blocking) shows ONLY to an account that accepted an EARLIER version.
+        - **Accounts with no record are not asked, by decision:** every account from before `0219`, anonymous sessions and Better Auth's raw pass-through sign-up. The continued-use clause covers them, and they were deliberately not backfilled.
         - ⚠️ **Changing the Terms means bumping `TERMS_VERSION` here AND `CURRENT_TERMS_VERSION` in qatoto-backend** (`src/lib/terms-version.ts`) together. An acceptance echoing a version the backend does not consider current is a 409.
-        - The banner is mounted in `(home)` only. A signed-in person who never visits `(home)` (studio/admin only) is not asked there.
     - **The data export lags the inventory.** `data-export.service.ts` omits orders and cart (which "What
       you do here" has always listed), effort, claims, daily logs, receipts, equity and pay, and every
       line of the panel's new "Buying and selling" and "What you publish" cards. Each new card says so
