@@ -210,6 +210,167 @@ export const ServiceEngagementSchema = z.object({
 
 export const ServiceEngagementListPageSchema = cursorPageOf(ServiceEngagementSchema);
 
+// --- Engagement detail: deliverables ----------------------------------------
+
+/** `commerce_engagement_deliverable_state`, verbatim. */
+export const DELIVERABLE_STATES = [
+  "planned",
+  "submitted",
+  "accepted",
+  "waived",
+  "cancelled",
+] as const;
+
+export type DeliverableState = (typeof DELIVERABLE_STATES)[number];
+
+export const DELIVERABLE_STATE_LABELS: Record<DeliverableState, string> = {
+  planned: "Not submitted yet",
+  submitted: "Submitted, awaiting the buyer",
+  accepted: "Accepted by the buyer",
+  waived: "Waived",
+  cancelled: "Cancelled",
+};
+
+/**
+ * One deliverable as `GET /commerce/service-engagements/:engagementId` projects it.
+ *
+ * `result` IS PARSED SECOND, AGAINST THE ENGAGEMENT'S KIND. The server switches on the provider
+ * kind to build it, so its shape is only knowable once the kind is — see `parseDeliverableResult`.
+ * Parsing it here as a union of nine shapes would accept a laboratory result on an insurance
+ * engagement, which is the guess this file refuses to make.
+ */
+export const EngagementDeliverableSchema = z.object({
+  id: z.string(),
+  sequence: z.number().int(),
+  title: z.string(),
+  isRequired: z.boolean(),
+  state: z.enum(DELIVERABLE_STATES),
+  dueAt: IsoDateTimeSchema.nullable(),
+  submittedAt: IsoDateTimeSchema.nullable(),
+  reviewedAt: IsoDateTimeSchema.nullable(),
+  evidenceDocumentId: z.string().nullable(),
+  reviewNote: z.string().nullable(),
+  result: z.unknown(),
+});
+
+export const ServiceEngagementDetailSchema = ServiceEngagementSchema.extend({
+  deliverables: z.array(EngagementDeliverableSchema),
+});
+
+/**
+ * MINOR UNITS ARRIVE AS STRINGS — the columns are bigint-as-text, so a value past 2^53 survives the
+ * wire. Kept as a string here; `formatMinorUnitsLabel` decides whether it is safe to format.
+ */
+const MinorUnitsSchema = z.string().regex(/^-?\d+$/);
+
+export const InsuranceDeliverableResultSchema = z.object({
+  policyReference: z.string(),
+  coverageClass: z.string(),
+  insuredValueMinorUnits: MinorUnitsSchema.nullable(),
+  coverageLimitMinorUnits: MinorUnitsSchema.nullable(),
+  currency: z.string().nullable(),
+  effectiveFrom: IsoDateTimeSchema.nullable(),
+  effectiveTo: IsoDateTimeSchema.nullable(),
+});
+
+/** The laboratory's own result. Rendered attributed to the laboratory, never as Qatoto's. */
+export const TESTING_RESULTS = ["passed", "failed", "inconclusive"] as const;
+
+export const TestingDeliverableResultSchema = z.object({
+  standard: z.string(),
+  specimenReference: z.string().nullable(),
+  result: z.enum(TESTING_RESULTS),
+  laboratoryLocation: z.string().nullable(),
+  reportedAt: IsoDateTimeSchema.nullable(),
+});
+
+export const WAREHOUSE_MOVEMENT_KINDS = [
+  "receipt",
+  "putaway",
+  "pick",
+  "release",
+  "adjustment",
+] as const;
+
+export const WAREHOUSE_MOVEMENT_KIND_LABELS: Record<
+  (typeof WAREHOUSE_MOVEMENT_KINDS)[number],
+  string
+> = {
+  receipt: "Received into the warehouse",
+  putaway: "Put away",
+  pick: "Picked",
+  release: "Released",
+  adjustment: "Stock adjustment",
+};
+
+export const WarehouseDeliverableResultSchema = z.object({
+  movementKind: z.enum(WAREHOUSE_MOVEMENT_KINDS),
+  /** A fixed-point quantity: `quantityUnits / 10^quantityScale`. Never a float on the wire. */
+  quantityUnits: MinorUnitsSchema,
+  quantityScale: z.number().int().nonnegative(),
+  unitLabel: z.string(),
+  facilityIdentifier: z.string().nullable(),
+  occurredAt: IsoDateTimeSchema.nullable(),
+});
+
+export type InsuranceDeliverableResult = z.infer<typeof InsuranceDeliverableResultSchema>;
+export type TestingDeliverableResult = z.infer<typeof TestingDeliverableResultSchema>;
+export type WarehouseDeliverableResult = z.infer<typeof WarehouseDeliverableResultSchema>;
+
+/**
+ * The deliverable's result, typed by the engagement's kind.
+ *
+ * ONLY THE THREE KINDS THIS SURFACE RENDERS ARE PARSED. Every other kind, a null result and a result
+ * that fails its schema all come back as `none` — the row still shows its title and state, and no
+ * field is invented for a shape this file has not transcribed.
+ */
+export type ParsedDeliverableResult =
+  | { readonly kind: "insurance"; readonly value: InsuranceDeliverableResult }
+  | { readonly kind: "testing"; readonly value: TestingDeliverableResult }
+  | { readonly kind: "warehouse"; readonly value: WarehouseDeliverableResult }
+  | { readonly kind: "none" };
+
+export function parseDeliverableResult(
+  providerKind: (typeof PROVIDER_KINDS)[number],
+  result: unknown,
+): ParsedDeliverableResult {
+  if (result === null || result === undefined) return { kind: "none" };
+  switch (providerKind) {
+    case "insurance_provider": {
+      const parsed = InsuranceDeliverableResultSchema.safeParse(result);
+      return parsed.success ? { kind: "insurance", value: parsed.data } : { kind: "none" };
+    }
+    case "testing_certification_lab": {
+      const parsed = TestingDeliverableResultSchema.safeParse(result);
+      return parsed.success ? { kind: "testing", value: parsed.data } : { kind: "none" };
+    }
+    case "warehouse_provider": {
+      const parsed = WarehouseDeliverableResultSchema.safeParse(result);
+      return parsed.success ? { kind: "warehouse", value: parsed.data } : { kind: "none" };
+    }
+    default:
+      return { kind: "none" };
+  }
+}
+
+// --- Services arranged for a goods order ------------------------------------
+
+/**
+ * `GET /commerce/orders/:orderId/linked-service-engagements`.
+ *
+ * Engagements on SERVICE orders whose `relatedOrderId` is this goods order, and only those the
+ * CALLER bought — a buyer's insurer is not shown to the seller, nor the reverse. `serviceOrderId`
+ * is named for what it is: the engagement's own order is never the goods order.
+ */
+export const LinkedServiceEngagementSchema = ServiceEngagementSchema.extend({
+  serviceOrderId: z.string(),
+});
+
+export const LinkedServiceEngagementListSchema = z.object({
+  orderId: z.string(),
+  items: z.array(LinkedServiceEngagementSchema),
+});
+
 /**
  * The engagement as the fulfillment read projects it — the same row plus execution-contract fields.
  *
@@ -307,6 +468,10 @@ export type ShipmentLeg = z.infer<typeof ShipmentLegSchema>;
 export type FulfillmentShipment = z.infer<typeof FulfillmentShipmentSchema>;
 export type ServiceEngagement = z.infer<typeof ServiceEngagementSchema>;
 export type ServiceEngagementListPage = z.infer<typeof ServiceEngagementListPageSchema>;
+export type EngagementDeliverable = z.infer<typeof EngagementDeliverableSchema>;
+export type ServiceEngagementDetail = z.infer<typeof ServiceEngagementDetailSchema>;
+export type LinkedServiceEngagement = z.infer<typeof LinkedServiceEngagementSchema>;
+export type LinkedServiceEngagementList = z.infer<typeof LinkedServiceEngagementListSchema>;
 export type FulfillmentEngagement = z.infer<typeof FulfillmentEngagementSchema>;
 export type OrderFulfillment = z.infer<typeof OrderFulfillmentSchema>;
 export type FulfillmentAttentionItem = z.infer<typeof FulfillmentAttentionItemSchema>;

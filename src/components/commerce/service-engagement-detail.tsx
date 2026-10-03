@@ -18,6 +18,7 @@
 
 import { useMemo } from "react";
 
+import EngagementDeliverablesSection from "@/components/commerce/sections/engagement-deliverables-section";
 import DefinitionList, {
   type DefinitionListItem,
 } from "@/components/commerce/shared/definition-list";
@@ -193,6 +194,8 @@ export default function ServiceEngagementDetail({ engagementId }: { engagementId
 
       <div className="space-y-4 px-4 pt-4 lg:px-6">
         <DefinitionList items={terms} />
+
+        <EngagementDeliverablesSection engagement={engagement} />
 
         <section aria-label="History" className="rounded-xl border border-border px-4 py-3">
           <p className="pb-2 text-sm font-medium text-foreground">History</p>

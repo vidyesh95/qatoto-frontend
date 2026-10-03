@@ -173,6 +173,12 @@ export const OrderDetailSchema = z.object({
   state: z.enum(ORDER_STATES),
   // Present when `source` is `accepted_quote` — the revision this order was snapshotted from.
   acceptedQuoteId: z.string().nullable(),
+  /**
+   * On a SERVICE order opened from an RFQ that named a goods order, that goods order's id. An id
+   * only: following it still requires being a party to the goods order, which the provider on this
+   * order is not — so it is offered as a link to the buyer side alone.
+   */
+  relatedOrderId: z.string().nullable(),
   currency: z.string(),
   subtotalInCents: z.number().int(),
   taxInCents: z.number().int(),

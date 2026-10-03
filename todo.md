@@ -1513,48 +1513,42 @@ NOT verified, to run in your own Chrome:
 
 ### 23. Insurance, lab testing & warehousing on orders — part 2 (backend first)
 
-**Part 1 shipped 2026-10-03, frontend only:** `order-third-party-service-signposts.tsx` on the order's
-Fulfilment tab — three read-only rows (cargo insurance, testing lab, warehousing) with the
-no-liability sentences, a CIF/CIP Incoterm note, and plain directory links. It renders outside
-`OrderFulfillmentPanel` because that read 404s until something ships.
+**Part 1 shipped 2026-10-03:** `order-third-party-service-signposts.tsx` on the order's Fulfilment
+tab, with the no-liability sentences, a CIF/CIP Incoterm note and directory links.
 
-Why nothing more was built: the backend stores no self-arranged policy, test report or storage cover
-against an order (`commerce_order`, `commerce_shipment_leg` have no such column), the directory
-query is `.strict()` with no `orderId`, and an RFQ has no order link — accepting a quote creates its
-OWN order (`commerce-quotes.service.ts`), so its insurance/lab/warehouse engagement never appears in
-the goods order's `engagements[]`. Rendering attachment fields no server sends would be a control
-with no backing table (`docs/Design.md` §6).
+**Part 2 shipped 2026-10-03, uncommitted in both repos** (backend `0216` + `0217` applied to the
+shared DB; `docs/STORE_BACKEND_STRUCTURE.md` A48 is the backend record):
 
-Each part below is backend first; the frontend follows the backend contract, not the other way round.
+1. ~~**Self-declared cover / test report.**~~ **DONE.** `commerce_order_third_party_declaration`,
+   `GET|POST /commerce/orders/:orderId/declarations`, `POST …/:declarationId/withdraw`. Frontend:
+   `order-third-party-declarations-panel.tsx`. Server-stamped disclaimer version (409 when stale),
+   no pass/fail on a test report, both sides may record, the author alone withdraws, evidence via
+   `TradeDocumentPicker`. The other party can open it through a fourth `organizationMayReadDocument`
+   path, which a withdrawal revokes.
+2. ~~**RFQ → goods-order link.**~~ **DONE.** `relatedOrderId` on RFQ create (422 unless the caller
+   is a party and the order is not cancelled; services only), copied onto the accepted quote's order.
+   `GET /commerce/orders/:orderId/linked-service-engagements` returns the CALLER's services only.
+   Frontend: "Request quotes for this order" → `/store/rfqs/new?relatedOrderId=`, the linked list in
+   the signposts, and "Arranged for" on the service order (buyer side).
+3. ~~**Render deliverables.**~~ **DONE.** `engagement-deliverables-section.tsx` on the engagement
+   detail page: insurance, laboratory (the result labelled "Reported by the laboratory") and
+   warehouse results. Other kinds show title and state only.
+4. **Storage cover vocabulary — STILL OPEN, deliberately.** `scope: storage` shipped as the
+   `storage_cover` kind. Still open: a controlled coverage-class vocabulary (e.g.
+   `institute_cargo_clauses_a` / `_b` / `_c`, `stock_throughput`, `stock_in_storage`) and a
+   `coverageClass` filter on `ProvidersQuerySchema`, so "Find an insurer for stored goods" can
+   pre-filter. The backend keeps these arrays free text on purpose ("deliberately not faceted",
+   `commerce-providers.service.ts`), so this needs a decision first, not just a build: it touches the
+   offering, RFQ, quote and deliverable schemas, plus existing free-text rows.
+5. ~~**Privacy.**~~ **DONE.** Privacy policy paragraph and the data panel's "Buying and selling" list
+   name declarations and their documents. The table has no `user` FK and no person-shaped column,
+   so it is in neither backend manifest (both verifiers pass for it).
 
-1. **Self-declared cover / test report.** New table(s) keyed to the order, optional `shipmentLegId`.
-   Server-stamped `declaredAt`, `declaredByOrganizationId` (from the session, never the body) and
-   `disclaimerVersion` — the version is stamped by the server, not hashed on the client. Money as ONE
-   nullable object `{ amountInCents, currency }` (the `billOfMaterialsCostRange` precedent). Evidence
-   through the existing `commerce_encrypted_document` (`certification_evidence` / `trade_attachment`),
-   never a free-string reference. **No pass/fail field on a self-declared lab report** — Qatoto is not
-   a conformity assessment body. `validUntil` is a date. Both sides may declare (an Incoterm decides
-   who is OBLIGED to insure, not who may record cover — a CIF buyer often buys top-up cover); only
-   the author may withdraw. Frontend then adds read `z.object` + write `z.strictObject` schemas and a
-   `client-query` island: per-attempt idempotency key, nothing optimistic.
-2. **RFQ → goods-order link.** `relatedOrderId` on `CreateDraftRfqSchema` (strict, so server-side
-   first), carried onto the accepted quote's service order; the fulfillment read lists the linked
-   insurance / lab / warehouse engagements. The frontend passes it via
-   `/store/rfqs/new?relatedOrderId=`, **never** `/store/providers`, whose strict query would 422.
-   No `directory_partner` snapshot with its own `status`: the engagement and its deliverable are the
-   record, and a copied status is a second source of truth.
-3. **Render deliverables on the goods order.** Insurance `policyReference` / `coverageClass` /
-   `effectiveFrom` / `effectiveTo`; a lab's `result` ALWAYS attributed ("Reported by <lab>"), never as
-   a Qatoto verdict.
-4. **Storage cover.** Declarations carry `scope: transit | storage` (snake_case pgEnum); a storage
-   declaration may reference a warehouse engagement. Add a controlled coverage-class vocabulary
-   (e.g. `institute_cargo_clauses_a` / `_b` / `_c`, `stock_throughput`, `stock_in_storage`) beside the
-   free-text display string, plus a `coverageClass` filter on `ProvidersQuerySchema` — only then can
-   "Find an insurer for stored goods" pre-filter. Storage insurance stays a coverage class of
-   `insurance_provider`, NOT a new provider kind: the same insurers write both, and a second kind would
-   split one insurer into two listings.
-5. **Privacy.** If declarations store personal data, update the privacy policy and
-   `docs/DATA_RETENTION.md` in the same change.
+**Not verified end to end:** a real create → accept → linked-engagement round trip. The test
+account's org is `pending`, so it has no orders, and the UI was checked against stubbed responses.
+`db:verify-text-pii-coverage` fails on two pre-existing Civic Pulse columns
+(`country_business_ready_score.source_name`, `country_economic_indicator.source_name`), unrelated
+to this.
 
 ---
 

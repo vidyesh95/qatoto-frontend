@@ -32,7 +32,7 @@ import type {
   SettlementAttestationList,
 } from "@/lib/store/attestations.schemas";
 import { ATTESTATION_KIND_LABELS } from "@/lib/store/attestations.schemas";
-import { formatCentsLabel, formatIsoInstantLabel } from "@/lib/store/format";
+import { formatCentsLabel, formatIsoInstantLabel, parseAmountToCents } from "@/lib/store/format";
 
 export default function SettlementAttestationPanel({
   orderId,
@@ -290,18 +290,4 @@ function AttestationForm({
       ) : null}
     </form>
   );
-}
-
-/**
- * "1,234.56" → 123456 cents, or `null` when it is not a number.
- *
- * PARSED, NOT ROUNDED FROM A FLOAT MULTIPLICATION. `Math.round(1234.56 * 100)` is the classic way
- * to lose a cent, and this is a figure a seller reconciles against their bank statement.
- */
-function parseAmountToCents(amountText: string): number | null {
-  const cleaned = amountText.replaceAll(",", "").trim();
-  if (cleaned === "" || !/^\d+(\.\d{0,2})?$/.test(cleaned)) return null;
-  const [wholeUnits, fractionalUnits = ""] = cleaned.split(".");
-  const paddedFraction = fractionalUnits.padEnd(2, "0");
-  return Number(wholeUnits) * 100 + Number(paddedFraction);
 }

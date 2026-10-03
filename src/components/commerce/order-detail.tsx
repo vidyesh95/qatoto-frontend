@@ -21,6 +21,8 @@
 
 import { useMemo } from "react";
 
+import Link from "next/link";
+
 import DefinitionList, {
   type DefinitionListItem,
 } from "@/components/commerce/shared/definition-list";
@@ -29,6 +31,7 @@ import OrderDeliveryAddressReveal from "@/components/commerce/sections/order-del
 import OrderArrivalWindowPanel from "@/components/commerce/sections/order-arrival-window-panel";
 import OrderFulfillmentPanel from "@/components/commerce/sections/order-fulfillment-panel";
 import OrderPaymentPanel from "@/components/commerce/sections/order-payment-panel";
+import OrderThirdPartyDeclarationsPanel from "@/components/commerce/sections/order-third-party-declarations-panel";
 import OrderThirdPartyServiceSignposts from "@/components/commerce/sections/order-third-party-service-signposts";
 import SettlementAttestationPanel from "@/components/commerce/sections/settlement-attestation-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
@@ -116,6 +119,26 @@ function OrderBody({
     { term: "Order state", value: ORDER_STATE_LABELS[order.state] },
     { term: "Placed", value: formatIsoInstantLabel(order.createdAt) },
     { term: "Source", value: ORDER_SOURCE_LABELS[order.source] },
+    /**
+     * A SERVICE ORDER BOUGHT FOR A GOODS ORDER links back to it — on the BUYER side only. The
+     * provider on this order is not a party to the goods order, so a link would only 404 for them;
+     * an absent row says nothing false.
+     */
+    ...(order.relatedOrderId !== null && isBuyerSide
+      ? [
+          {
+            term: "Arranged for",
+            value: (
+              <Link
+                href={`/orders-and-returns/${encodeURIComponent(order.relatedOrderId)}`}
+                className="font-medium text-primary-imprint underline underline-offset-2 hover:text-foreground"
+              >
+                The order this service was requested for
+              </Link>
+            ),
+          },
+        ]
+      : []),
     { term: "Buyer", value: order.buyerLegalNameSnapshot },
     { term: "Seller", value: order.counterpartyLegalNameSnapshot },
     // Nullable on the wire, and `DefinitionList` prints "Not provided" for a null rather than dropping
@@ -265,7 +288,13 @@ function OrderBody({
                 {/* A SIBLING of the fulfillment panel, not a child: that read 404s until something
                     ships, and cover and testing are decided before anything does. Both sides see
                     it — it is read-only links, with nothing to authorize. */}
-                <OrderThirdPartyServiceSignposts incotermSnapshot={order.incotermSnapshot} />
+                <OrderThirdPartyServiceSignposts
+                  orderId={order.id}
+                  incotermSnapshot={order.incotermSnapshot}
+                />
+                {/* What either party SAYS it arranged on its own — cover or a test report. Both sides
+                    may record; each row says who did, and Qatoto checks none of it. */}
+                <OrderThirdPartyDeclarationsPanel orderId={order.id} />
               </div>
             ),
           },

@@ -9,6 +9,9 @@ import type { StoreProductDetail } from "@/lib/store/products.schemas";
 import { getStoreServiceOffering } from "@/lib/store/providers.api";
 import type { PublicServiceOffering } from "@/lib/store/providers.schemas";
 
+/** Order ids are uuids. Anything else in `?relatedOrderId=` is dropped, not forwarded. */
+const ORDER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Permanently dynamic: session-scoped and behind a BUYER organization membership.
 export const instant = false;
 
@@ -92,11 +95,27 @@ function buildServiceLineSeed(offering: PublicServiceOffering): RfqServiceLineSe
 export default async function NewRfqRoute({
   searchParams,
 }: {
-  searchParams: Promise<{ productSlug?: string | string[]; offeringSlug?: string | string[] }>;
+  searchParams: Promise<{
+    productSlug?: string | string[];
+    offeringSlug?: string | string[];
+    relatedOrderId?: string | string[];
+  }>;
 }) {
-  const { productSlug, offeringSlug } = await searchParams;
+  const { productSlug, offeringSlug, relatedOrderId } = await searchParams;
   const requestedProductSlug = Array.isArray(productSlug) ? productSlug[0] : productSlug;
   const requestedOfferingSlug = Array.isArray(offeringSlug) ? offeringSlug[0] : offeringSlug;
+  const requestedRelatedOrderId = Array.isArray(relatedOrderId)
+    ? relatedOrderId[0]
+    : relatedOrderId;
+  /**
+   * SHAPE-CHECKED ONLY. Whether the reader is a party to that order is the backend's call, made on
+   * submit (422 otherwise) — reading the order here to decide would be the page asserting an
+   * authorization fact. A malformed value is dropped rather than sent to be refused.
+   */
+  const linkedOrderId =
+    requestedRelatedOrderId !== undefined && ORDER_ID_PATTERN.test(requestedRelatedOrderId)
+      ? requestedRelatedOrderId
+      : null;
 
   let seededGoodsLine: RfqGoodsLineSeed | null = null;
   if (requestedProductSlug !== undefined && requestedProductSlug.length > 0) {
@@ -112,7 +131,15 @@ export default async function NewRfqRoute({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pt-4 pb-10 lg:px-6">
-      <RfqComposer seededGoodsLine={seededGoodsLine} seededServiceLine={seededServiceLine} />
+      {/* KEYED ON WHAT SEEDS THE DRAFT. The composer holds its draft in `useState`, which reads its
+          props once; a client-side move to this route with a different `?relatedOrderId=` (or
+          none) would otherwise keep the previous link. A new key is a new draft. */}
+      <RfqComposer
+        key={`${linkedOrderId ?? "unlinked"}:${requestedProductSlug ?? ""}:${requestedOfferingSlug ?? ""}`}
+        seededGoodsLine={seededGoodsLine}
+        seededServiceLine={seededServiceLine}
+        relatedOrderId={linkedOrderId}
+      />
     </div>
   );
 }

@@ -40,6 +40,21 @@ export function formatCentsLabel(amountInCents: number, currency: string): strin
 }
 
 /**
+ * "1,234.56" → 123456 cents, or `null` when it is not a number.
+ *
+ * PARSED, NOT ROUNDED FROM A FLOAT MULTIPLICATION. `Math.round(1234.56 * 100)` is the classic way
+ * to lose a cent, and these are figures a party reconciles against a bank statement or a policy
+ * schedule. Shared by the settlement attestation form and the third-party declaration form.
+ */
+export function parseAmountToCents(amountText: string): number | null {
+  const cleaned = amountText.replaceAll(",", "").trim();
+  if (cleaned === "" || !/^\d+(\.\d{0,2})?$/.test(cleaned)) return null;
+  const [wholeUnits, fractionalUnits = ""] = cleaned.split(".");
+  const paddedFraction = fractionalUnits.padEnd(2, "0");
+  return Number(wholeUnits) * 100 + Number(paddedFraction);
+}
+
+/**
  * A price range in one currency, collapsing to a single amount when the ends match.
  *
  * For the indicative bands a service offering publishes and the delivery estimate

@@ -147,8 +147,11 @@ export function RfqGoodsStep({
   onAddLine,
   onPatchLine,
   onRemoveLine,
+  isLinkedToOrder = false,
 }: {
   readonly goodsLines: readonly GoodsLineDraft[];
+  /** A request for an existing order asks for services only — the backend refuses goods beside it. */
+  readonly isLinkedToOrder?: boolean;
   readonly onAddLine: () => void;
   readonly onPatchLine: (localId: string, patch: Partial<GoodsLineDraft>) => void;
   readonly onRemoveLine: (localId: string) => void;
@@ -156,7 +159,9 @@ export function RfqGoodsStep({
   return (
     <div className="space-y-3">
       <p className="text-xs leading-4 text-muted-foreground">
-        A request can be goods only, services only, or both. Every line needs a quantity and a unit.
+        {isLinkedToOrder
+          ? "This request is for an existing order, so it asks for services only. Skip to Services."
+          : "A request can be goods only, services only, or both. Every line needs a quantity and a unit."}
       </p>
       {goodsLines.map((goodsLine, goodsLineIndex) => (
         <fieldset
@@ -204,13 +209,15 @@ export function RfqGoodsStep({
           </button>
         </fieldset>
       ))}
-      <button
-        type="button"
-        onClick={onAddLine}
-        className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
-      >
-        Add a goods line
-      </button>
+      {!isLinkedToOrder && (
+        <button
+          type="button"
+          onClick={onAddLine}
+          className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
+        >
+          Add a goods line
+        </button>
+      )}
     </div>
   );
 }

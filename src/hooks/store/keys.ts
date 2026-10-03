@@ -64,6 +64,14 @@ export const storeKeys = {
     ["store", "orders", "list", which, state] as const,
   order: (orderId: string) => ["store", "orders", orderId] as const,
   orderFulfillment: (orderId: string) => ["store", "orders", orderId, "fulfillment"] as const,
+  /** Services the caller arranged for this goods order. Not part of the fulfillment entry above. */
+  orderLinkedServiceEngagements: (orderId: string) =>
+    ["store", "orders", orderId, "linked-service-engagements"] as const,
+  /**
+   * Both parties' third-party declarations on one order. Every write answers the whole list, so
+   * this entry is WRITTEN rather than invalidated — the `orderSettlementAttestations` shape.
+   */
+  orderDeclarations: (orderId: string) => ["store", "orders", orderId, "declarations"] as const,
   /**
    * THE MODE IS PART OF THE KEY, not a detail of the request.
    *

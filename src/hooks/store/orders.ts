@@ -34,6 +34,7 @@ import {
   getOrderFulfillment,
   getServiceEngagement,
   listBuyerOrders,
+  listLinkedServiceEngagements,
   listProviderOrders,
   listServiceEngagements,
   transitionServiceEngagement,
@@ -116,6 +117,18 @@ export function useOrderFulfillmentQuery(orderId: string) {
   return useQuery({
     queryKey: storeKeys.orderFulfillment(orderId),
     queryFn: () => getOrderFulfillment(orderId),
+  });
+}
+
+/**
+ * Services the caller arranged for this goods order. `retry: false` — a 404 means the caller is not a
+ * party to the order, which is an answer rather than a fault.
+ */
+export function useOrderLinkedServiceEngagementsQuery(orderId: string) {
+  return useQuery({
+    queryKey: storeKeys.orderLinkedServiceEngagements(orderId),
+    queryFn: () => listLinkedServiceEngagements(orderId),
+    retry: false,
   });
 }
 

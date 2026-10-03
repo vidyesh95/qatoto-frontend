@@ -1,6 +1,8 @@
 // TRANSPORT: client-query — writes POST /commerce/rfqs.
 "use client";
 
+import Link from "next/link";
+
 import { ComposerWizardShell } from "./composer-wizard-shell";
 import {
   COMPOSER_STEPS,
@@ -23,9 +25,12 @@ export type { RfqGoodsLineSeed, RfqServiceLineSeed };
 export default function RfqComposer({
   seededGoodsLine = null,
   seededServiceLine = null,
+  relatedOrderId = null,
 }: {
   readonly seededGoodsLine?: RfqGoodsLineSeed | null;
   readonly seededServiceLine?: RfqServiceLineSeed | null;
+  /** The goods order this request is for, from `?relatedOrderId=`. Services only while set. */
+  readonly relatedOrderId?: string | null;
 } = {}) {
   const {
     currentStepIndex,
@@ -44,7 +49,7 @@ export default function RfqComposer({
     input,
     createDraftRfq,
     handleSubmit,
-  } = useRfqComposerState({ seededGoodsLine, seededServiceLine });
+  } = useRfqComposerState({ seededGoodsLine, seededServiceLine, relatedOrderId });
 
   const createResult = createDraftRfq.data;
 
@@ -65,6 +70,7 @@ export default function RfqComposer({
         return (
           <RfqGoodsStep
             goodsLines={draft.goodsLines}
+            isLinkedToOrder={draft.relatedOrderId !== null}
             onAddLine={addGoodsLine}
             onPatchLine={patchGoodsLine}
             onRemoveLine={removeGoodsLine}
@@ -118,6 +124,21 @@ export default function RfqComposer({
         </button>
       }
     >
+      {draft.relatedOrderId !== null && (
+        // WHY THE GOODS STEP IS EMPTY, said once, above every step. The backend checks the link —
+        // a party to that order, not cancelled — and the refusal shows below if it fails.
+        <p className="mb-4 rounded-xl bg-secondary px-4 py-3 text-xs leading-4 text-secondary-foreground">
+          Asking for services for{" "}
+          <Link
+            href={`/orders-and-returns/${encodeURIComponent(draft.relatedOrderId)}`}
+            className="font-medium underline"
+          >
+            one of your orders
+          </Link>
+          , such as cargo insurance, lab testing or warehousing. A quote you accept becomes its own
+          order and shows on that order for you only. Goods belong on a separate request.
+        </p>
+      )}
       {renderStep()}
       {createResult !== undefined && !createResult.success && (
         <p className="mt-4 text-xs leading-4 text-destructive">{createResult.error.message}</p>

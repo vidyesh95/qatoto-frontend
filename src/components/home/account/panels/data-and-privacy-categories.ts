@@ -102,6 +102,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Business details you gave as a seller, with registration and tax numbers stored encrypted",
       "Documents you uploaded as evidence of your business",
       "Delivery addresses and customisation artwork you gave with an order",
+      "Cargo cover, storage cover and laboratory reports you recorded against an order, with any document attached",
       "Inquiries you sent to factories",
     ],
     absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,

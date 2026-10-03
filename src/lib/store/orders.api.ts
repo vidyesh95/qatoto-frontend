@@ -29,12 +29,16 @@ import {
   type RequestOptions,
 } from "@/lib/http";
 import {
+  LinkedServiceEngagementListSchema,
   OrderFulfillmentSchema,
+  ServiceEngagementDetailSchema,
   ServiceEngagementListPageSchema,
   ServiceEngagementSchema,
+  type LinkedServiceEngagementList,
   type ListServiceEngagementsFilter,
   type OrderFulfillment,
   type ServiceEngagement,
+  type ServiceEngagementDetail,
   type ServiceEngagementListPage,
   type TransitionServiceEngagementInput,
 } from "@/lib/store/fulfillment.schemas";
@@ -157,6 +161,19 @@ export function getOrderFulfillment(
 }
 
 /**
+ * Insurance, laboratory and warehouse engagements the CALLER arranged for this goods order through
+ * an RFQ that named it. A separate read from the fulfillment one on purpose: these never move the
+ * goods order's progress, and the other party to the goods order never sees them.
+ */
+export function listLinkedServiceEngagements(
+  orderId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<LinkedServiceEngagementList>> {
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/linked-service-engagements`;
+  return getJson(path, LinkedServiceEngagementListSchema, options);
+}
+
+/**
  * The buyer's decrypted delivery address, for a counterparty with an active order.
  *
  * EVERY CALL WRITES AN AUDIT ENTRY TO THE BUYER'S STREAM, and if that write fails the read rolls back.
@@ -212,9 +229,9 @@ export function listServiceEngagements(
 export function getServiceEngagement(
   engagementId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<ServiceEngagement>> {
+): Promise<ActionResponse<ServiceEngagementDetail>> {
   const path = `/commerce/service-engagements/${engagementId}`;
-  return getJson(path, ServiceEngagementSchema, options);
+  return getJson(path, ServiceEngagementDetailSchema, options);
 }
 
 /**

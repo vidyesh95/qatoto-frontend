@@ -489,4 +489,11 @@ export interface CreateDraftRfqInput {
   readonly productLines: readonly RfqProductLineInput[];
   readonly serviceLines: readonly RfqServiceLineInput[];
   readonly sourceInquiryId?: string;
+  /**
+   * The goods order this request asks cover, testing or storage FOR. The backend refuses it (422)
+   * unless the caller is a party to that order and it is not cancelled, and refuses any goods line
+   * beside it — a request for an existing order asks for services only. An accepted quote then
+   * opens its own order carrying this link back.
+   */
+  readonly relatedOrderId?: string;
 }

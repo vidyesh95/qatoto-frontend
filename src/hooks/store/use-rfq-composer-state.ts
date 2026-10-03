@@ -65,6 +65,11 @@ export interface RfqComposerDraft {
   attachedDocumentIds: readonly string[];
   goodsLines: readonly GoodsLineDraft[];
   serviceLines: readonly ServiceLineDraft[];
+  /**
+   * The goods order this request is for, from `?relatedOrderId=`. Not editable in the composer:
+   * it is where the reader came from, and the backend decides whether they may use it.
+   */
+  relatedOrderId: string | null;
 }
 
 export interface RfqGoodsLineSeed {
@@ -101,6 +106,7 @@ export function mintLocalId(prefix: "goods" | "service"): string {
 export function buildInitialDraft(
   seededGoodsLine: RfqGoodsLineSeed | null,
   seededServiceLine: RfqServiceLineSeed | null,
+  relatedOrderId: string | null = null,
 ): RfqComposerDraft {
   return {
     title:
@@ -118,8 +124,12 @@ export function buildInitialDraft(
     destinationCountryCode: "",
     destinationLocality: "",
     attachedDocumentIds: [],
+    relatedOrderId,
+    // A request for an existing order asks for services only, so a goods seed is dropped there.
     goodsLines:
-      seededGoodsLine === null ? [] : [{ localId: mintLocalId("goods"), ...seededGoodsLine }],
+      seededGoodsLine === null || relatedOrderId !== null
+        ? []
+        : [{ localId: mintLocalId("goods"), ...seededGoodsLine }],
     serviceLines:
       seededServiceLine === null
         ? []
@@ -203,6 +213,8 @@ export function buildCreateDraftRfqInput(draft: RfqComposerDraft): CreateDraftRf
   }
 
   if (productLines.length === 0 && serviceLines.length === 0) return null;
+  // The backend refuses goods beside a related order; refusing here keeps the button honest.
+  if (draft.relatedOrderId !== null && productLines.length > 0) return null;
 
   const description = toOptionalText(draft.description);
   const destinationCountryCode = toOptionalCountryCode(draft.destinationCountryCode);
@@ -225,6 +237,7 @@ export function buildCreateDraftRfqInput(draft: RfqComposerDraft): CreateDraftRf
     ...(destinationLocality === undefined ? {} : { destinationLocality }),
     ...(hasCompleteDeliveryWindow ? { desiredDeliveryStartsAt, desiredDeliveryEndsAt } : {}),
     ...(draft.attachedDocumentIds.length === 0 ? {} : { documentIds: draft.attachedDocumentIds }),
+    ...(draft.relatedOrderId === null ? {} : { relatedOrderId: draft.relatedOrderId }),
   };
 }
 
@@ -239,6 +252,11 @@ export function collectMissingRequirements(draft: RfqComposerDraft): string[] {
   }
   if (draft.goodsLines.length === 0 && draft.serviceLines.length === 0) {
     missing.push("At least one goods line or service line.");
+  }
+  if (draft.relatedOrderId !== null && draft.goodsLines.length > 0) {
+    missing.push(
+      "A request for an existing order asks for services only. Remove the goods lines, or start a separate request for them.",
+    );
   }
 
   for (const [goodsLineIndex, goodsLine] of draft.goodsLines.entries()) {
@@ -273,15 +291,17 @@ export function collectMissingRequirements(draft: RfqComposerDraft): string[] {
 export function useRfqComposerState({
   seededGoodsLine = null,
   seededServiceLine = null,
+  relatedOrderId = null,
 }: {
   readonly seededGoodsLine?: RfqGoodsLineSeed | null;
   readonly seededServiceLine?: RfqServiceLineSeed | null;
+  readonly relatedOrderId?: string | null;
 } = {}) {
   const [currentStepIndex, setCurrentStepIndex] = useState(
     seededServiceLine !== null && seededGoodsLine === null ? SERVICES_STEP_INDEX : 0,
   );
   const [draft, setDraft] = useState<RfqComposerDraft>(() =>
-    buildInitialDraft(seededGoodsLine, seededServiceLine),
+    buildInitialDraft(seededGoodsLine, seededServiceLine, relatedOrderId),
   );
 
   const getIdempotencyKey = useAttemptIdempotencyKey();

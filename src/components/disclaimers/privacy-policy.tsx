@@ -85,24 +85,26 @@ export default function PrivacyPolicy() {
             we hold the business details you give us — including registration and tax numbers, which
             we store encrypted — and the documents you upload as evidence of your business. If you
             buy, we hold the delivery address you give and any artwork you upload to customise a
-            product, and your seller sees both. If you contact a factory, we hold the inquiry. If
-            you log work on a project, we hold your daily updates — their text and any video link —
-            the transcript and claims drawn from them, and any receipt photos you upload as
-            evidence. If you post a pitch or record how one was funded, we hold it, including the
-            name of the funder you type. If you report a problem on the problem map, we hold the
-            place you describe and, if you drop a pin, a position your browser rounds to about 110
-            metres before sending it, and any photos you attach — which anyone can see on the
-            problem map, have the location your camera recorded removed, and are deleted two years
-            after you add them, 90 days after the problem is marked fixed, or when you erase your
-            account, whichever comes first. If you publish a teardown, a product launch or a case
-            study, we hold it and the statements you make with it — and if you withhold a company's
-            name from a case study, our moderators still see it, though readers never do. If you
-            send an intellectual property claim about a teardown, we hold your name, organisation,
-            email, your standing and what you claim: our moderators see them, the teardown&rsquo;s
-            publisher never does, and they are kept while the claim is open and for six years after
-            it is answered, then deleted, even if you erase your account sooner. If you list
-            yourself in the cofounder directory, we hold that profile. The same inventory, in the
-            same words, is in your account under Settings → Your data &amp; privacy.
+            product, and your seller sees both. If you record cargo cover, cover for stored goods or
+            a laboratory report against an order, we hold what you typed and any document you
+            attach, and the other party to that order sees both. If you contact a factory, we hold
+            the inquiry. If you log work on a project, we hold your daily updates — their text and
+            any video link — the transcript and claims drawn from them, and any receipt photos you
+            upload as evidence. If you post a pitch or record how one was funded, we hold it,
+            including the name of the funder you type. If you report a problem on the problem map,
+            we hold the place you describe and, if you drop a pin, a position your browser rounds to
+            about 110 metres before sending it, and any photos you attach — which anyone can see on
+            the problem map, have the location your camera recorded removed, and are deleted two
+            years after you add them, 90 days after the problem is marked fixed, or when you erase
+            your account, whichever comes first. If you publish a teardown, a product launch or a
+            case study, we hold it and the statements you make with it — and if you withhold a
+            company's name from a case study, our moderators still see it, though readers never do.
+            If you send an intellectual property claim about a teardown, we hold your name,
+            organisation, email, your standing and what you claim: our moderators see them, the
+            teardown&rsquo;s publisher never does, and they are kept while the claim is open and for
+            six years after it is answered, then deleted, even if you erase your account sooner. If
+            you list yourself in the cofounder directory, we hold that profile. The same inventory,
+            in the same words, is in your account under Settings → Your data &amp; privacy.
           </dd>
         </div>
         <div>

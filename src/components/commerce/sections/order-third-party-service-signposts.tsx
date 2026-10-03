@@ -1,18 +1,22 @@
-// TRANSPORT: props-only — renders the order's Incoterm it was handed and three directory links, no network.
+// TRANSPORT: client-query — reads the services the viewer arranged for this order; the rest is
+// the order's Incoterm it was handed and directory links.
+"use client";
+
+// Cargo insurance, lab testing and warehousing: where to find a provider, how to ask for quotes FOR
+// this order, and the services the viewer has already arranged for it. What a party says it arranged
+// on its own lives beside this, in `order-third-party-declarations-panel.tsx`.
 //
-// Cargo insurance, lab testing and warehousing, as SIGNPOSTS to the provider directory. Nothing here
-// is a record of cover, a test result or a storage contract, because nothing in the backend stores
-// one against an order: `commerce_order` and `commerce_shipment_leg` carry no such column, and a
-// card that read "Attached" or "Optional" over a field no server sends is the control-with-no-
-// backing-table that `docs/Design.md` §6 bans. The declaration write is todo.md §23.
+// RENDERED OUTSIDE `OrderFulfillmentPanel`, ON PURPOSE. Pre-shipment testing and pre-dispatch cover
+// happen before anything moves, and this has to be visible then.
 //
-// RENDERED OUTSIDE `OrderFulfillmentPanel`, ON PURPOSE. The fulfillment read 404s until something
-// ships, and pre-shipment testing and pre-dispatch cover are exactly that window — mounted inside the
-// panel's success branch this would never show when it is useful.
+// THE DIRECTORY LINKS CARRY NO `orderId`. `GET /store/providers` is `.strict()` and has no order
+// param. The link that does carry the order is "Request quotes for this order", which opens the RFQ
+// composer with `?relatedOrderId=` — the backend checks the viewer is a party to the order, and an
+// accepted quote opens its OWN order that links back here.
 //
-// NO `orderId` IN ANY LINK. `GET /store/providers` is `.strict()` and has no order param, and an RFQ
-// carries no order link: accepting a quote creates its OWN order. A `?orderId=` here would read as a
-// connection that does not exist, so the copy says where an accepted quote ends up instead.
+// LINKED SERVICES ARE THE VIEWER'S OWN. The backend returns only engagements the viewer's
+// organization bought, so a buyer never sees the seller's insurer nor the reverse. Nothing here
+// says how many the other party has, and nothing renders when the viewer has none.
 //
 // STORAGE COVER IS AN INSURER'S PRODUCT, NOT A FOURTH KIND. The insurers who write cargo cover also
 // write stock-throughput and stock-in-storage policies, and a warehouse's own liability is limited by
@@ -27,6 +31,8 @@
 import Link from "next/link";
 
 import ProviderKindBadge from "@/components/commerce/shared/provider-kind-badge";
+import { useOrderLinkedServiceEngagementsQuery } from "@/hooks/store/orders";
+import { SERVICE_ENGAGEMENT_STATE_LABELS } from "@/lib/store/fulfillment.schemas";
 
 /**
  * The two Incoterms® 2020 rules that put the duty to insure on the seller.
@@ -43,8 +49,10 @@ const SIGNPOST_LINK_CLASS =
   "text-xs leading-4 font-medium text-primary-imprint underline underline-offset-2 hover:text-foreground";
 
 export default function OrderThirdPartyServiceSignposts({
+  orderId,
   incotermSnapshot,
 }: {
+  orderId: string;
   incotermSnapshot: string | null;
 }) {
   return (
@@ -59,9 +67,17 @@ export default function OrderThirdPartyServiceSignposts({
         Insurance, testing and storage
       </h3>
       <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-        Arranged directly with a provider from the directory. A quote you accept there becomes its
-        own order and is tracked on that order, not this one.
+        Arranged directly with a provider from the directory. A quote you accept becomes its own
+        order. When you request it for this order, it is also listed here, for you only.
       </p>
+      <Link
+        href={`/store/rfqs/new?relatedOrderId=${encodeURIComponent(orderId)}`}
+        className={`mt-2 inline-block ${SIGNPOST_LINK_CLASS}`}
+      >
+        Request quotes for this order
+      </Link>
+
+      <LinkedServiceEngagements orderId={orderId} />
 
       <ul className="mt-2 divide-y divide-border">
         <li className="space-y-1 py-3">
@@ -127,5 +143,42 @@ export default function OrderThirdPartyServiceSignposts({
         </li>
       </ul>
     </section>
+  );
+}
+
+/**
+ * The services the viewer arranged for this order. Renders NOTHING while loading, on a refusal and
+ * when there are none — an empty list is the ordinary state, and the order's own errors are already
+ * shown by the panels that own them.
+ */
+function LinkedServiceEngagements({ orderId }: { orderId: string }) {
+  const linkedEngagementsQuery = useOrderLinkedServiceEngagementsQuery(orderId);
+  const result = linkedEngagementsQuery.data;
+  if (result === undefined || !result.success || result.data.items.length === 0) return null;
+
+  return (
+    <div className="mt-3">
+      <p className="text-xs leading-4 font-medium text-foreground">
+        Services you arranged for this order
+      </p>
+      <ul className="mt-1 space-y-1">
+        {result.data.items.map((engagement) => (
+          <li key={engagement.id}>
+            {/* THE VIEWER IS THIS ENGAGEMENT'S BUYER — the backend returns no other — so the buyer
+                route is the right one. */}
+            <Link
+              href={`/service-engagements/${encodeURIComponent(engagement.id)}`}
+              className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
+            >
+              <ProviderKindBadge providerKind={engagement.providerKind} isCompact />
+              <span className="text-xs leading-4 text-foreground">{engagement.titleSnapshot}</span>
+              <span className="text-xs leading-4 text-muted-foreground">
+                {SERVICE_ENGAGEMENT_STATE_LABELS[engagement.state]}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
