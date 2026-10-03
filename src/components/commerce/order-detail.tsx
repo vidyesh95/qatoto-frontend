@@ -29,6 +29,7 @@ import OrderDeliveryAddressReveal from "@/components/commerce/sections/order-del
 import OrderArrivalWindowPanel from "@/components/commerce/sections/order-arrival-window-panel";
 import OrderFulfillmentPanel from "@/components/commerce/sections/order-fulfillment-panel";
 import OrderPaymentPanel from "@/components/commerce/sections/order-payment-panel";
+import OrderThirdPartyServiceSignposts from "@/components/commerce/sections/order-third-party-service-signposts";
 import SettlementAttestationPanel from "@/components/commerce/sections/settlement-attestation-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
 import OrderCancelControl from "@/components/commerce/sections/order-cancel-control";
@@ -261,6 +262,10 @@ function OrderBody({
                   // shipment is built FROM those lines. Passed down rather than re-read.
                   productLines={order.productLines}
                 />
+                {/* A SIBLING of the fulfillment panel, not a child: that read 404s until something
+                    ships, and cover and testing are decided before anything does. Both sides see
+                    it — it is read-only links, with nothing to authorize. */}
+                <OrderThirdPartyServiceSignposts incotermSnapshot={order.incotermSnapshot} />
               </div>
             ),
           },

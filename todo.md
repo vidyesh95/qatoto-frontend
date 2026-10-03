@@ -1511,6 +1511,53 @@ NOT verified, to run in your own Chrome:
 
 ---
 
+### 23. Insurance, lab testing & warehousing on orders — part 2 (backend first)
+
+**Part 1 shipped 2026-10-03, frontend only:** `order-third-party-service-signposts.tsx` on the order's
+Fulfilment tab — three read-only rows (cargo insurance, testing lab, warehousing) with the
+no-liability sentences, a CIF/CIP Incoterm note, and plain directory links. It renders outside
+`OrderFulfillmentPanel` because that read 404s until something ships.
+
+Why nothing more was built: the backend stores no self-arranged policy, test report or storage cover
+against an order (`commerce_order`, `commerce_shipment_leg` have no such column), the directory
+query is `.strict()` with no `orderId`, and an RFQ has no order link — accepting a quote creates its
+OWN order (`commerce-quotes.service.ts`), so its insurance/lab/warehouse engagement never appears in
+the goods order's `engagements[]`. Rendering attachment fields no server sends would be a control
+with no backing table (`docs/Design.md` §6).
+
+Each part below is backend first; the frontend follows the backend contract, not the other way round.
+
+1. **Self-declared cover / test report.** New table(s) keyed to the order, optional `shipmentLegId`.
+   Server-stamped `declaredAt`, `declaredByOrganizationId` (from the session, never the body) and
+   `disclaimerVersion` — the version is stamped by the server, not hashed on the client. Money as ONE
+   nullable object `{ amountInCents, currency }` (the `billOfMaterialsCostRange` precedent). Evidence
+   through the existing `commerce_encrypted_document` (`certification_evidence` / `trade_attachment`),
+   never a free-string reference. **No pass/fail field on a self-declared lab report** — Qatoto is not
+   a conformity assessment body. `validUntil` is a date. Both sides may declare (an Incoterm decides
+   who is OBLIGED to insure, not who may record cover — a CIF buyer often buys top-up cover); only
+   the author may withdraw. Frontend then adds read `z.object` + write `z.strictObject` schemas and a
+   `client-query` island: per-attempt idempotency key, nothing optimistic.
+2. **RFQ → goods-order link.** `relatedOrderId` on `CreateDraftRfqSchema` (strict, so server-side
+   first), carried onto the accepted quote's service order; the fulfillment read lists the linked
+   insurance / lab / warehouse engagements. The frontend passes it via
+   `/store/rfqs/new?relatedOrderId=`, **never** `/store/providers`, whose strict query would 422.
+   No `directory_partner` snapshot with its own `status`: the engagement and its deliverable are the
+   record, and a copied status is a second source of truth.
+3. **Render deliverables on the goods order.** Insurance `policyReference` / `coverageClass` /
+   `effectiveFrom` / `effectiveTo`; a lab's `result` ALWAYS attributed ("Reported by <lab>"), never as
+   a Qatoto verdict.
+4. **Storage cover.** Declarations carry `scope: transit | storage` (snake_case pgEnum); a storage
+   declaration may reference a warehouse engagement. Add a controlled coverage-class vocabulary
+   (e.g. `institute_cargo_clauses_a` / `_b` / `_c`, `stock_throughput`, `stock_in_storage`) beside the
+   free-text display string, plus a `coverageClass` filter on `ProvidersQuerySchema` — only then can
+   "Find an insurer for stored goods" pre-filter. Storage insurance stays a coverage class of
+   `insurance_provider`, NOT a new provider kind: the same insurers write both, and a second kind would
+   split one insurer into two listings.
+5. **Privacy.** If declarations store personal data, update the privacy policy and
+   `docs/DATA_RETENTION.md` in the same change.
+
+---
+
 ## Decided: AI Assist Mode scope
 
 - **Cloud replies do not stream.** Declined 2026-10-02: Flash-Lite answers in ~1 s, and streaming
