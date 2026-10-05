@@ -96,7 +96,8 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Equity, pay records, and payments",
     ],
     note: "This is the category that outlives a deleted account, without your name attached.",
-    absentFromExport: `Projects you founded, joined or applied to, programme effort and contributions, daily updates and effort claims are in the download. Daily-update transcripts and the claims drawn from them, receipt photos, equity, pay records and payments are not yet. For a copy of those, email ${PRIVACY_CONTACT_EMAIL}.`,
+    absentFromExport:
+      "All of it is in the download, with two limits. Each receipt is listed with the address of its photo rather than the photo itself. And your equity is your own share of each snapshot, never another member's, because their share is their data.",
   },
   {
     title: "Buying and selling",
@@ -114,6 +115,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
     title: "What you publish",
     icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     items: [
+      "Videos you published, with their details and transcripts",
       "Pitches you posted, and funding outcomes you recorded, including the funder's name",
       "Teardowns, product launches and case studies, with the statements you made with them",
       "A company name you withheld from a case study, which moderators see and readers do not",
@@ -122,7 +124,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Your cofounder directory profile",
       "Rights claims you sent about a teardown, with your name, organisation, email and standing, which moderators see and the publisher does not, kept for six years after the claim is answered",
     ],
-    absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,
+    absentFromExport: `Your videos, their details and their transcripts are in the download. Pitches, funding outcomes, teardowns, launches, case studies, problem reports, your cofounder profile and rights claims are not yet. For a copy of those, email ${PRIVACY_CONTACT_EMAIL}.`,
   },
   {
     title: "Settings on this device",

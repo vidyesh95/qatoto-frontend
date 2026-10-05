@@ -149,7 +149,7 @@ _Open Question_: Is SMS verification necessary? Email OTP and WebAuthn Passkeys 
 #### What Needs to Be Done:
 
 1. ~~Admin UI for lifting search-term suppressions~~ — done: `/admin/search-terms` (2026-10-05).
-2. If paywalled videos are desired: Introduce an entitlement model in the backend with recurring payment processing (`isPremium`).
+2. If paywalled videos are desired: Introduce an entitlement model in the backend with recurring payment processing (`isPremium`). **Deferred (2026-10-05): left hardcoded `false`.** Any paywall over a YouTube embed is bypassable by anyone holding the id, and billing runs into the no-custody posture.
 
 #### Decided: Not Building It (Deliberate Non-Goal):
 
@@ -168,7 +168,7 @@ _Open Question_: Is SMS verification necessary? Email OTP and WebAuthn Passkeys 
 #### What Needs to Be Done:
 
 1. ~~Add `defaultIncoterm` to the listing~~ — done (2026-10-05): `product.default_incoterm` (backend migration `0222`), set in the listing editor's Packaging & shipping section, shown as a "Shipping terms" row on the product page. Display only; nothing binds an order to it.
-2. Implement multi-axis variant matrix (`commerce_product_variant_option`) if Size × Color combinations are required.
+2. Implement multi-axis variant matrix (`commerce_product_variant_option`). **Confirmed to build (2026-10-05), as its own part** — this supersedes the "deferred" status of backend `STORE_BACKEND_STRUCTURE.md` A26, whose "What it would take" paragraph is the starting shape.
 3. Replace `/studio/learn` with real onboarding documentation.
 
 ---
@@ -190,7 +190,7 @@ _Open Question_: Is SMS verification necessary? Email OTP and WebAuthn Passkeys 
 
 1. Update company incorporation details in `site.ts`.
 2. Add `terms_accepted_at` and `terms_version` tracking in the backend (sign-up consent links shipped 2026-09-29).
-3. Expand `data-export.service.ts` to export orders, cart, and R&D effort logs.
+3. ~~Expand `data-export.service.ts` to export orders, cart, and R&D effort logs.~~ — done (schema 2); schema 3 (2026-10-05) added daily-log transcripts and analysis, receipt metadata, equity, pay records and payments, and the person's own videos and video transcripts.
 4. ~~Correct contradictory copy in `src/components/information/how-qatoto-works.tsx` (lines 37, 124) claiming Qatoto handles shipping and returns.~~ (Completed)
 5. ~~Add "Not legal, tax or investment advice" notices to R&D equity pages.~~ (Completed 2026-09-29)
 
