@@ -407,11 +407,19 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
       and effort claims. Still missing: daily-log transcripts and extracted claims, receipts, equity
       and pay, the rest of "Buying and selling" (business details and documents, full addresses,
       artwork, factory inquiries) and all of "What you publish". Each card's `absentFromExport` now
-      says exactly that. ⚠️ **Probable scrub bug, found while scoping this and not fixed:** the
-      anonymization manifest DELETES `research_program_participant` rows, but `research_effort_log`
-      and `research_contribution_ledger_entry` reference them `ON DELETE restrict` and are
-      append-only, so anonymizing anyone who logged programme effort should fail with 23503. Derived
-      from the schema, not run.
+      says exactly that.
+    - ~~**Anonymization dead-lettered on RESTRICT children**~~ — **FIXED (uncommitted, 2026-10-05,
+      backend).** Two `delete_rows` steps raised 23503 on real accounts, which retried the job until
+      it dead-lettered with the erasure half done: `research_program_participant` (its effort logs
+      and contributions are append-only RESTRICT children) and `video` (its trending and quality
+      ranking snapshots). Reproduced both in a rolled-back transaction. The participant row is now
+      `retain` with `contribution_summary` scrubbed; the creator's ranking snapshots are deleted by
+      `clear:*` steps that run before the manifest. `db:verify-anonymization-coverage` gained
+      check 7, which finds every such edge from Postgres and fails on any not cleared by a named
+      step. Open, not touched: the studio's own `deleteVideo` still hits the same 23503 (response code unverified) on a video that ranked
+      in the last 14 days (same RESTRICT, which the schema comment calls deliberate), and
+      `db:verify-text-pii-coverage` is red on two unclassified `source_name` columns
+      (`country_business_ready_score`, `country_economic_indicator`) that predate this change.
     - ~~**`information/how-qatoto-works.tsx:37,124` contradicts the terms**~~ — **FIXED.** Replaced
       claims that Qatoto ships goods, runs operations, files certifications, and handles returns with
       accurate marketplace venue copy aligned with Terms clause 5.
