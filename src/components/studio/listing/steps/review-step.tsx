@@ -4,6 +4,7 @@ import type { ListingCategoryChoice } from "@/components/studio/listing/listing-
 import type { ListingCompleteness } from "@/lib/products/schemas";
 import { SAMPLE_POLICY_LABELS, type ProductSamplePolicy } from "@/lib/store/organizations.schemas";
 import { countryLabelFromCode } from "@/lib/store/format";
+import { QUOTE_INCOTERM_LABELS, type QuoteIncoterm } from "@/lib/store/quotes.schemas";
 import {
   describeListingModelDraft,
   stepIndexOf,
@@ -45,6 +46,7 @@ export interface ReviewStepProps {
   readonly packageHeightMm: string;
   readonly packageGrossWeightGrams: string;
   readonly unitsPerPackage: string;
+  readonly defaultIncoterm: QuoteIncoterm | "";
   readonly listingCompleteness: ListingCompleteness | undefined;
 }
 
@@ -267,6 +269,7 @@ function PackagingReviewSection({
   packageHeightMm,
   packageGrossWeightGrams,
   unitsPerPackage,
+  defaultIncoterm,
   onNavigateToStepIndex,
 }: {
   readonly packageLengthMm: string;
@@ -274,6 +277,7 @@ function PackagingReviewSection({
   readonly packageHeightMm: string;
   readonly packageGrossWeightGrams: string;
   readonly unitsPerPackage: string;
+  readonly defaultIncoterm: QuoteIncoterm | "";
   readonly onNavigateToStepIndex: (stepIndex: number) => void;
 }) {
   const sizeValue =
@@ -290,6 +294,10 @@ function PackagingReviewSection({
         { label: "Package size", value: sizeValue },
         { label: "Gross weight", value: weightValue },
         { label: "Units per package", value: unitsPerPackage },
+        {
+          label: "Standard shipping terms",
+          value: defaultIncoterm === "" ? "" : QUOTE_INCOTERM_LABELS[defaultIncoterm],
+        },
       ]}
     />
   );

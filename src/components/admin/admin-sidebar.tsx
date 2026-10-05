@@ -242,6 +242,16 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // `moderate_content`, beside the other Home reports: a moderator HIDES a trending search
+        // term from the watch page itself, and this is the only place one comes back. Desktop only,
+        // for the mobile bar's six-tab reason. `visibility_off` ships as one glyph — its outlined
+        // and filled forms are the same drawing — so both states use the committed file.
+        href: "/admin/search-terms",
+        label: "Hidden search terms",
+        activeIcon: "/icons/visibility_off_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/visibility_off_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },

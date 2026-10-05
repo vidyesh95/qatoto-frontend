@@ -46,6 +46,8 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Comments and forum replies you post",
       "Products you view, your cart, and your orders",
     ],
+    absentFromExport:
+      "Orders you placed, in any company, and the cart of your own buyer workspace are in the download. Orders a colleague placed and a company's shared cart are not: they are the company's records, and a shared cart does not record who added each line.",
   },
   {
     title: "How much you watch, and when",
@@ -94,7 +96,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Equity, pay records, and payments",
     ],
     note: "This is the category that outlives a deleted account, without your name attached.",
-    absentFromExport: `Only the projects you founded, joined or applied to are in the download so far. For a copy of the rest, email ${PRIVACY_CONTACT_EMAIL}.`,
+    absentFromExport: `Projects you founded, joined or applied to, programme effort and contributions, daily updates and effort claims are in the download. Daily-update transcripts and the claims drawn from them, receipt photos, equity, pay records and payments are not yet. For a copy of those, email ${PRIVACY_CONTACT_EMAIL}.`,
   },
   {
     title: "Buying and selling",
@@ -106,7 +108,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "Cargo cover, storage cover and laboratory reports you recorded against an order, with any document attached",
       "Inquiries you sent to factories",
     ],
-    absentFromExport: `Not in the download yet. For a copy, email ${PRIVACY_CONTACT_EMAIL}.`,
+    absentFromExport: `Cover and laboratory reports you recorded against an order are in the download, with your orders, without the attached document. Business details, business documents, full delivery addresses, customisation artwork and factory inquiries are not yet. For a copy of those, email ${PRIVACY_CONTACT_EMAIL}.`,
   },
   {
     title: "What you publish",

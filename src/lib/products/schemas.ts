@@ -11,6 +11,7 @@ import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/org
 import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
 import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
 import { PRODUCT_RELATION_SOURCE_KINDS } from "@/lib/store/products.schemas";
+import { QUOTE_INCOTERMS, type QuoteIncoterm } from "@/lib/store/quotes.schemas";
 
 /**
  * Client-side contract for the store product-listing API. Data truth lives in the
@@ -376,6 +377,12 @@ export const PublicProductSchema = z.object({
   modelNumber: z.string().nullable(),
   countryOfOriginCode: z.string().nullable(),
   unitOfMeasure: z.string().nullable(),
+  /**
+   * The seller's declared standard Incoterms 2020 term, `null` when not declared. Display only —
+   * the quote or order states the binding term. `.default(null)` so a backend deployed before the
+   * column still parses.
+   */
+  defaultIncoterm: z.enum(QUOTE_INCOTERMS).nullable().default(null),
   images: z.array(ProductImageSchema),
   pricingTiers: z.array(ProductPricingTierSchema),
   /**
@@ -544,6 +551,11 @@ export interface CreateProductInput {
   countryOfOriginCode?: string;
   /** Free text — "piece", "set", "metre", "carton". There is no unit enum on the wire. */
   unitOfMeasure?: string;
+  /**
+   * The seller's declared standard Incoterm. `null` clears it — sent on every save, unlike the
+   * optional strings above, so a seller who picks "Not stated" on an edit actually withdraws it.
+   */
+  defaultIncoterm?: QuoteIncoterm | null;
   pricingTiers: ProductPricingTierInput[];
   /**
    * The spec sheet, as a REPLACE-SET. Sending it on a PATCH replaces every row the listing has;

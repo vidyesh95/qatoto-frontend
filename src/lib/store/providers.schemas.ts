@@ -379,20 +379,6 @@ export type PublicOfferingCard = z.infer<typeof PublicOfferingCardSchema>;
 export type PublicCoverage = z.infer<typeof PublicCoverageSchema>;
 
 /**
- * ⚠️ **THERE IS NO COVERAGE WRITE ON THIS CLIENT, AND THAT IS A BACKEND GAP.**
- *
- * `PUT /commerce/service-offerings/:offeringId/coverage` exists and replaces the WHOLE lane list —
- * an omitted lane is a deletion. **No read returns a provider its own lanes**:
- * `GET /providers/offerings/mine` answers the raw offering row, and `PublicCoverageSchema` above is
- * reached only through the public detail read, which exists solely for `active` listings. A form
- * that cannot show what it is about to replace would delete a provider's lanes the first time they
- * added one, so the wrapper is not written until a `GET …/coverage` exists to seed it.
- *
- * This is the same shape the seller profile had — writes with no owner-side read — and it was fixed
- * there by adding the GET rather than by guessing at the current state.
- */
-
-/**
  * `PATCH /commerce/service-offerings/:offeringId` — a SPARSE patch.
  *
  * An omitted key is untouched; an explicit `null` clears the two nullable pairs. The body is
@@ -673,3 +659,27 @@ export type CreatedServiceOffering = z.infer<typeof CreatedServiceOfferingSchema
  * shows only `active`, so a provider looking for the draft they just created can find it nowhere else.
  */
 export const MyServiceOfferingListSchema = z.array(CreatedServiceOfferingSchema);
+
+/**
+ * `GET /commerce/service-offerings/:offeringId/coverage` — the OWNER's read of every lane, in any
+ * state, which seeds the Studio coverage editor.
+ *
+ * ⚠️ **THE WRITE REPLACES THE WHOLE LIST.** `PUT …/coverage` takes every lane the offering should
+ * have, and an omitted lane is a deletion. That is why this read had to exist before the write was
+ * wrapped: a form that cannot show what it is about to replace would delete a provider's lanes the
+ * first time they added one. The seller profile had the same gap and was fixed the same way.
+ *
+ * `isEditable` is the write's own gate (`draft` or `pending_review`), answered by the server so the
+ * editor and the route cannot disagree. A lane's NULL country means "any", never "unknown".
+ */
+export const OwnedOfferingCoverageSchema = z.object({
+  offeringId: z.string(),
+  state: z.enum(SERVICE_OFFERING_STATES),
+  isEditable: z.boolean(),
+  coverages: z.array(PublicCoverageSchema),
+});
+
+export type OwnedOfferingCoverage = z.infer<typeof OwnedOfferingCoverageSchema>;
+
+/** The PUT answers the stored rows; only the lane fields are read back. */
+export const ReplacedCoverageListSchema = z.array(PublicCoverageSchema);

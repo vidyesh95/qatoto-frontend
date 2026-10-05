@@ -195,6 +195,13 @@ export const OrderDetailSchema = z.object({
    * mode the goods actually move by lives on the shipment's legs.
    */
   requestedFreightModeSnapshot: z.string().nullable(),
+  /**
+   * Where the goods are going — ISO 3166-1 alpha-2, from the delivery address or a quote's RFQ
+   * destination, `null` when neither names one. Coarse on purpose: it narrows the provider
+   * directory links in the third-party signposts and decides nothing. `.default(null)` so a backend
+   * deployed before the field still parses.
+   */
+  deliveryCountryCode: z.string().nullable().default(null),
 
   buyerLegalNameSnapshot: z.string(),
   counterpartyLegalNameSnapshot: z.string(),

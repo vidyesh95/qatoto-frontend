@@ -1,6 +1,6 @@
-// TRANSPORT: client-query — the report queue, the action log, the withdrawn-answer list, the decision
-// and the restore all call
-// hooks in `@/hooks/store/admin-content-reports`. The capability check reads
+// TRANSPORT: client-query — the report queue, the action log, the withdrawn-answer and
+// withdrawn-question lists, the decision and the restore all call hooks in
+// `@/hooks/store/admin-content-reports`. The capability check reads
 // `@/hooks/rnd/platform-roles`.
 "use client";
 
@@ -27,6 +27,7 @@ import { useState } from "react";
 import CommerceModerationActionLog from "@/components/admin/commerce-reports/commerce-moderation-action-log";
 import CommerceReportQueue from "@/components/admin/commerce-reports/commerce-report-queue";
 import CommerceWithdrawnAnswerLog from "@/components/admin/commerce-reports/commerce-withdrawn-answer-log";
+import CommerceWithdrawnQuestionLog from "@/components/admin/commerce-reports/commerce-withdrawn-question-log";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import {
   COMMERCE_CONTENT_TARGET_KINDS,
@@ -46,9 +47,10 @@ const QUIET_BUTTON_CLASS =
 /**
  * Which half of the console is on screen.
  *
- * A union rather than a boolean, which the third tab — withdrawn answers — has now cashed in.
+ * A union rather than a boolean, which the withdrawn-answer and withdrawn-question tabs have now
+ * cashed in.
  */
-type ModerationTab = "reports" | "log" | "withdrawn";
+type ModerationTab = "reports" | "log" | "withdrawn" | "withdrawnQuestions";
 
 /**
  * ⚠️ **`restricted` IS A VIEW STATE AND IT WINS OVER `loading`.** "Nothing to show because you may
@@ -193,6 +195,17 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
         >
           Withdrawn answers
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("withdrawnQuestions")}
+          className={
+            activeTab === "withdrawnQuestions"
+              ? `${QUIET_BUTTON_CLASS} text-primary outline-primary`
+              : QUIET_BUTTON_CLASS
+          }
+        >
+          Withdrawn questions
+        </button>
       </div>
 
       {activeTab === "reports" && (
@@ -214,7 +227,7 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
         </div>
       )}
 
-      {activeTab === "withdrawn" && (
+      {isWithdrawalTab(activeTab) && (
         <div className="flex flex-wrap gap-2">
           {WITHDRAWN_ANSWER_STATE_FILTERS.map((state) => (
             <button
@@ -235,15 +248,15 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
 
       {/*
         THE KIND FILTER SERVES THE FIRST TWO TABS — it is the one query parameter the
-        moderation-action route actually reads. The withdrawn tab has no kind filter, because every
-        row on it is an answer.
+        moderation-action route actually reads. The withdrawn tabs have no kind filter, because every
+        row on each is one kind. They share one `state` filter, which means the same on both.
 
         ⚠️ **THERE IS NO STATUS FILTER ON THE LOG TAB AND THAT IS DELIBERATE.** The backend shares
         one query schema between the two reads, so `?status=` PARSES there and is then never read
         by `listModerationActions`. A status control on the log would change the query key,
         refetch, and return byte-identical rows — a filter that looks like it works and does not.
       */}
-      {activeTab !== "withdrawn" && (
+      {!isWithdrawalTab(activeTab) && (
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -284,6 +297,10 @@ function PermittedConsole({ controls }: { readonly controls: ConsoleControls }) 
   );
 }
 
+function isWithdrawalTab(tab: ModerationTab): boolean {
+  return tab === "withdrawn" || tab === "withdrawnQuestions";
+}
+
 function renderActiveTab(controls: ConsoleControls) {
   switch (controls.activeTab) {
     case "reports":
@@ -304,6 +321,13 @@ function renderActiveTab(controls: ConsoleControls) {
     case "withdrawn":
       return (
         <CommerceWithdrawnAnswerLog
+          key={controls.withdrawnStateFilter}
+          state={controls.withdrawnStateFilter}
+        />
+      );
+    case "withdrawnQuestions":
+      return (
+        <CommerceWithdrawnQuestionLog
           key={controls.withdrawnStateFilter}
           state={controls.withdrawnStateFilter}
         />

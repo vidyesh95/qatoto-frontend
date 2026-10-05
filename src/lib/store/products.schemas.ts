@@ -294,6 +294,13 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   keyFeatures: z.array(z.string()),
   modelNumber: z.string().nullable(),
   countryOfOriginCode: z.string().nullable(),
+  /**
+   * The seller's DECLARED standard Incoterms 2020 term, or `null` when none is declared — which
+   * renders nothing. A statement, not a contract: the quote or order states the term that binds.
+   * Read as a plain string and labelled through `formatIncotermLabel`, which renders an unknown code
+   * as itself, the way `incotermSnapshot` is read. `.default(null)` for a backend deployed first.
+   */
+  defaultIncoterm: z.string().nullable().default(null),
   unitOfMeasure: z.string().nullable(),
   // NULL IS NOT FREE. `samplePolicy` says whether a sample can be had at all; this says what it
   // costs, and an unstated price renders as unstated.

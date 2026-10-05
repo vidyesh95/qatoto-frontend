@@ -309,6 +309,37 @@ export interface ListWithdrawnAnswersFilter {
   readonly cursor?: string;
 }
 
+// --- Withdrawn questions ----------------------------------------------------
+//
+// `GET /commerce/admin/withdrawn-questions`, the question twin of the read above. A question has no
+// organization, so its `product_question_withdrawn` event sits on the SELLER's audit chain — the
+// company it was asked of. The same `state` filter values, with the same meaning.
+
+/**
+ * One question withdrawal. `questionBodyText` IS THE WITHDRAWN TEXT, here for the same reason
+ * `answerBodyText` is, and it must never reach a public surface. `actorUserId` is the asker, `null`
+ * once their account is anonymized. `answerCount` is what went down with it: a withdrawn question
+ * takes other people's answers off the page too.
+ */
+export const WithdrawnProductQuestionSchema = z.object({
+  auditEntryId: z.string(),
+  withdrawnAt: IsoDateTimeSchema,
+  actorUserId: z.string().nullable(),
+  questionId: z.string(),
+  questionBodyText: z.string(),
+  currentVisibilityState: z.enum(COMMERCE_UGC_VISIBILITY_STATES),
+  answerCount: z.number().int().nonnegative(),
+  productId: z.string(),
+  productTitle: z.string(),
+  productPublicSlug: z.string().nullable(),
+});
+
+export type WithdrawnProductQuestion = z.infer<typeof WithdrawnProductQuestionSchema>;
+
+export const WithdrawnProductQuestionPageSchema = cursorPageOf(WithdrawnProductQuestionSchema);
+
+export type WithdrawnProductQuestionPage = z.infer<typeof WithdrawnProductQuestionPageSchema>;
+
 // --- Display maps -----------------------------------------------------------
 //
 // These live here rather than in `labels.ts`, which that file reserves for enums crossing more

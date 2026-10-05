@@ -20,8 +20,10 @@ import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
 import {
   createServiceOffering,
+  getOwnedOfferingCoverage,
   listMyServiceOfferings,
   listStoreProviders,
+  setOfferingCoverage,
   submitServiceOffering,
   updateServiceOffering,
 } from "@/lib/store/providers.api";
@@ -29,7 +31,10 @@ import type {
   CreatedServiceOffering,
   CreateServiceOfferingInput,
   ListProvidersFilter,
+  OwnedOfferingCoverage,
   ProviderDirectoryPage,
+  PublicCoverage,
+  ServiceCoverageInput,
   UpdateServiceOfferingInput,
 } from "@/lib/store/providers.schemas";
 
@@ -141,6 +146,46 @@ export function useSubmitServiceOfferingMutation(): UseMutationResult<
     onSuccess: (result) => {
       if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.providerOfferingsMine() });
+    },
+  });
+}
+
+/** One offering's lanes, as its owner reads them. Fetched only while the editor is open. */
+export function useOwnedOfferingCoverageQuery(offeringId: string, isEnabled: boolean) {
+  return useQuery<ActionResponse<OwnedOfferingCoverage>>({
+    queryKey: storeKeys.providerOfferingCoverage(offeringId),
+    queryFn: () => getOwnedOfferingCoverage(offeringId),
+    enabled: isEnabled,
+    retry: false,
+  });
+}
+
+/**
+ * Replaces an offering's WHOLE lane list. Not optimistic: the editor shows the server's list again
+ * after a save, because a lane the provider removed by accident is gone the moment this lands.
+ * The idempotency key is minted once per attempt by the editor.
+ */
+export function useSetOfferingCoverageMutation(): UseMutationResult<
+  ActionResponse<PublicCoverage[]>,
+  Error,
+  {
+    readonly offeringId: string;
+    readonly coverages: readonly ServiceCoverageInput[];
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ offeringId, coverages, idempotencyKey }) =>
+      setOfferingCoverage(offeringId, coverages, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
+    onSuccess: (result, { offeringId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.providerOfferingCoverage(offeringId),
+      });
     },
   });
 }

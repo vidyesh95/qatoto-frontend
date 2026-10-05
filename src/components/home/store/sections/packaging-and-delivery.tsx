@@ -14,11 +14,21 @@
 // THE LEAD-TIME BANDS COME FROM `pricingTiers[].leadTimeDays`, not a parallel array. A tier's own
 // lead time is the promise attached to that quantity; `null` means the band declared none and the
 // product's range applies, so it says so rather than inventing a number.
+//
+// THE SHIPPING-TERMS ROW IS THE SELLER'S DECLARATION, NOT A CONTRACT. `defaultIncoterm` is what the
+// seller says they normally sell on; nothing on the platform enforces it, and the quote or order
+// states the term that binds. `null` renders no row — never a guessed EXW.
 
 import Image from "next/image";
 
 import { formatLeadTimeRangeLabel } from "@/lib/store/format";
 import type { ProductPackaging, ProductPricingTier } from "@/lib/store/products.schemas";
+import {
+  formatIncotermLabel,
+  INCOTERM_MAIN_CARRIAGE_ARRANGED_BY,
+  QUOTE_INCOTERMS,
+  type QuoteIncoterm,
+} from "@/lib/store/quotes.schemas";
 
 /** Millimetres to centimetres, at one decimal, dropping a trailing `.0`. */
 function millimetresToCentimetresLabel(millimetres: number): string {
@@ -38,16 +48,31 @@ function grossWeightLabel(packageGrossWeightGrams: number | null): string | null
   return `${Number.isInteger(kilograms) ? kilograms : kilograms.toFixed(2)} kg`;
 }
 
+function findKnownIncoterm(incoterm: string): QuoteIncoterm | undefined {
+  return QUOTE_INCOTERMS.find((knownIncoterm) => knownIncoterm === incoterm);
+}
+
+/** One line on who books the main carriage, or `null` for a code this client does not know. */
+function describeMainCarriage(incoterm: string): string | null {
+  const knownIncoterm = findKnownIncoterm(incoterm);
+  if (knownIncoterm === undefined) return null;
+  return INCOTERM_MAIN_CARRIAGE_ARRANGED_BY[knownIncoterm] === "buyer"
+    ? "You arrange the main carriage."
+    : "The seller arranges the main carriage.";
+}
+
 export default function PackagingAndDelivery({
   packaging,
   pricingTiers,
   leadTimeMinDays,
   leadTimeMaxDays,
+  defaultIncoterm,
 }: {
   readonly packaging: ProductPackaging;
   readonly pricingTiers: readonly ProductPricingTier[];
   readonly leadTimeMinDays: number | null;
   readonly leadTimeMaxDays: number | null;
+  readonly defaultIncoterm: string | null;
 }) {
   const packagingRows = [
     packaging.unitsPerPackage === null
@@ -66,11 +91,15 @@ export default function PackagingAndDelivery({
   const productLeadTimeLabel = formatLeadTimeRangeLabel(leadTimeMinDays, leadTimeMaxDays);
   const tiersWithLeadTime = pricingTiers.filter((tier) => tier.leadTimeDays !== null);
 
+  const incotermLabel = formatIncotermLabel(defaultIncoterm);
+  const mainCarriageLine = defaultIncoterm === null ? null : describeMainCarriage(defaultIncoterm);
+
   // Nothing declared at all — the block would be an empty accordion.
   if (
     packagingRows.length === 0 &&
     productLeadTimeLabel === null &&
-    tiersWithLeadTime.length === 0
+    tiersWithLeadTime.length === 0 &&
+    incotermLabel === null
   ) {
     return null;
   }
@@ -98,6 +127,22 @@ export default function PackagingAndDelivery({
               <dd className="flex-1 text-sm text-foreground">{row.value}</dd>
             </div>
           ))}
+        </dl>
+      )}
+
+      {incotermLabel !== null && (
+        <dl className="px-4 pb-2 lg:px-6">
+          <div className="flex gap-2 border-b border-outline-variant/60 py-2">
+            <dt className="w-2/5 text-sm font-medium text-outline-strong">Shipping terms</dt>
+            <dd className="flex-1 space-y-1">
+              <p className="text-sm text-foreground">{incotermLabel}</p>
+              <p className="text-xs leading-4 text-outline-strong">
+                {mainCarriageLine === null ? "" : `${mainCarriageLine} `}
+                Stated by the seller as their usual Incoterms® 2020 term. The term on your quote or
+                order is the one that applies.
+              </p>
+            </dd>
+          </div>
         </dl>
       )}
 

@@ -277,6 +277,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                   pricingTiers={product.pricingTiers}
                   leadTimeMinDays={product.leadTimeMinDays}
                   leadTimeMaxDays={product.leadTimeMaxDays}
+                  defaultIncoterm={product.defaultIncoterm}
                 />
 
                 {/* Desktop inline CTAs — replace the fixed bottom bar at lg+ */}

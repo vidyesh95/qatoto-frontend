@@ -11,6 +11,11 @@ import {
   type ProductSellingState,
 } from "@/lib/store/organizations.schemas";
 import {
+  QUOTE_INCOTERM_LABELS,
+  QUOTE_INCOTERMS,
+  type QuoteIncoterm,
+} from "@/lib/store/quotes.schemas";
+import {
   SELLING_STATE_HELP_TEXT,
   SELLING_STATE_OPTION_LABELS,
   type PricingTierDraft,
@@ -217,6 +222,11 @@ function SamplesFieldset({
   );
 }
 
+/** A `<select>` value back to the union, through the vocabulary rather than a cast. */
+function parseIncotermChoice(value: string): QuoteIncoterm | "" {
+  return QUOTE_INCOTERMS.find((incoterm) => incoterm === value) ?? "";
+}
+
 function PackagingFieldset({
   packageLengthMm,
   onPackageLengthMmChange,
@@ -228,6 +238,8 @@ function PackagingFieldset({
   onPackageGrossWeightGramsChange,
   unitsPerPackage,
   onUnitsPerPackageChange,
+  defaultIncoterm,
+  onDefaultIncotermChange,
 }: {
   readonly packageLengthMm: string;
   readonly onPackageLengthMmChange: (value: string) => void;
@@ -239,6 +251,8 @@ function PackagingFieldset({
   readonly onPackageGrossWeightGramsChange: (value: string) => void;
   readonly unitsPerPackage: string;
   readonly onUnitsPerPackageChange: (value: string) => void;
+  readonly defaultIncoterm: QuoteIncoterm | "";
+  readonly onDefaultIncotermChange: (incoterm: QuoteIncoterm | "") => void;
 }) {
   return (
     <fieldset className="mt-6 flex flex-col gap-3 rounded-xl border border-border p-4">
@@ -283,6 +297,30 @@ function PackagingFieldset({
           onValueChange={onUnitsPerPackageChange}
         />
       </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="default-incoterm" className="text-sm font-medium text-foreground">
+          Standard shipping terms (optional)
+        </label>
+        <select
+          id="default-incoterm"
+          value={defaultIncoterm}
+          onChange={(event) => onDefaultIncotermChange(parseIncotermChoice(event.target.value))}
+          className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-primary-imprint"
+        >
+          <option value="">Not stated</option>
+          {QUOTE_INCOTERMS.map((incoterm) => (
+            <option key={incoterm} value={incoterm}>
+              {QUOTE_INCOTERM_LABELS[incoterm]}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs leading-4 text-muted-foreground">
+          The Incoterms® 2020 term you normally sell on, shown on the product page so buyers know
+          which legs of the journey are theirs to arrange. It is a statement, not a contract: a
+          quote or order still states the term that applies.
+        </p>
+      </div>
     </fieldset>
   );
 }
@@ -324,6 +362,8 @@ export interface PricingStepProps {
   readonly onPackageGrossWeightGramsChange: (value: string) => void;
   readonly unitsPerPackage: string;
   readonly onUnitsPerPackageChange: (value: string) => void;
+  readonly defaultIncoterm: QuoteIncoterm | "";
+  readonly onDefaultIncotermChange: (incoterm: QuoteIncoterm | "") => void;
 }
 
 export function PricingStep({
@@ -359,6 +399,8 @@ export function PricingStep({
   onPackageGrossWeightGramsChange,
   unitsPerPackage,
   onUnitsPerPackageChange,
+  defaultIncoterm,
+  onDefaultIncotermChange,
 }: PricingStepProps) {
   return (
     <StepCard
@@ -455,6 +497,8 @@ export function PricingStep({
         onPackageGrossWeightGramsChange={onPackageGrossWeightGramsChange}
         unitsPerPackage={unitsPerPackage}
         onUnitsPerPackageChange={onUnitsPerPackageChange}
+        defaultIncoterm={defaultIncoterm}
+        onDefaultIncotermChange={onDefaultIncotermChange}
       />
     </StepCard>
   );

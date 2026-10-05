@@ -291,6 +291,7 @@ function OrderBody({
                 <OrderThirdPartyServiceSignposts
                   orderId={order.id}
                   incotermSnapshot={order.incotermSnapshot}
+                  deliveryCountryCode={order.deliveryCountryCode}
                 />
                 {/* What either party SAYS it arranged on its own — cover or a test report. Both sides
                     may record; each row says who did, and Qatoto checks none of it. */}

@@ -272,6 +272,9 @@ export const storeKeys = {
   providerDirectory: (filter: { readonly providerKind?: string }) =>
     ["store", "providers", "directory", filter.providerKind ?? "all"] as const,
   providerOfferingsMine: () => ["store", "provider", "offerings", "mine"] as const,
+  // Under `providerOfferingsMine` so an edit that invalidates the list refreshes the lanes too.
+  providerOfferingCoverage: (offeringId: string) =>
+    ["store", "provider", "offerings", "mine", offeringId, "coverage"] as const,
 
   /**
    * A product's engagement counters plus the caller's own save/bookmark state.

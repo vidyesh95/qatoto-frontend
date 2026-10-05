@@ -16,15 +16,20 @@ import {
 import {
   CreatedServiceOfferingSchema,
   MyServiceOfferingListSchema,
+  OwnedOfferingCoverageSchema,
   ProviderDirectoryPageSchema,
   PublicProviderDetailSchema,
   PublicServiceOfferingSchema,
+  ReplacedCoverageListSchema,
   type CreatedServiceOffering,
   type CreateServiceOfferingInput,
   type ListProvidersFilter,
+  type OwnedOfferingCoverage,
   type ProviderDirectoryPage,
   type PublicProviderDetail,
+  type PublicCoverage,
   type PublicServiceOffering,
+  type ServiceCoverageInput,
   type UpdateServiceOfferingInput,
 } from "@/lib/store/providers.schemas";
 
@@ -171,4 +176,31 @@ export function submitServiceOffering(
 ): Promise<ActionResponse<CreatedServiceOffering>> {
   const path = `/commerce/service-offerings/${encodeURIComponent(offeringId)}/submit`;
   return sendJson(path, "POST", undefined, CreatedServiceOfferingSchema, options);
+}
+
+/**
+ * `GET /commerce/service-offerings/:offeringId/coverage` — the owner's read of every lane, in any
+ * state. Another organization's offering is a 404. Seeds the coverage editor, which must see the
+ * whole list before it can replace it.
+ */
+export function getOwnedOfferingCoverage(
+  offeringId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<OwnedOfferingCoverage>> {
+  const path = `/commerce/service-offerings/${encodeURIComponent(offeringId)}/coverage`;
+  return getJson(path, OwnedOfferingCoverageSchema, options);
+}
+
+/**
+ * `PUT /commerce/service-offerings/:offeringId/coverage` — REPLACES THE WHOLE LANE LIST. An omitted
+ * lane is a deletion and `[]` clears them all, so the caller sends every lane it means to keep.
+ * Refused outside `draft` / `pending_review`. Needs an `Idempotency-Key`.
+ */
+export function setOfferingCoverage(
+  offeringId: string,
+  coverages: readonly ServiceCoverageInput[],
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicCoverage[]>> {
+  const path = `/commerce/service-offerings/${encodeURIComponent(offeringId)}/coverage`;
+  return sendJson(path, "PUT", { coverages }, ReplacedCoverageListSchema, options);
 }

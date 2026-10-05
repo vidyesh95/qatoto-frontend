@@ -1,4 +1,5 @@
-// TRANSPORT: client-query — reads GET /commerce/providers/offerings/mine.
+// TRANSPORT: client-query — reads GET /commerce/providers/offerings/mine; each row's coverage editor
+// reads and replaces its lanes.
 "use client";
 
 // THE PROVIDER'S OWN LISTINGS, and the only place a draft is visible at all.
@@ -16,20 +17,16 @@
 // `pending_review` is already submitted, and `suspended` / `retired` are moderator states this
 // route refuses — a control whose only outcome is an error is worse than its absence.
 //
-// ⚠️ **THERE IS NO COVERAGE EDITOR HERE, AND THAT IS A BACKEND GAP RATHER THAN AN OMISSION.**
-// `PUT /commerce/service-offerings/:id/coverage` replaces the WHOLE lane list — an omitted lane is
-// a deletion — and no read returns an offering's current lanes to a provider:
-// `GET /providers/offerings/mine` answers the raw offering row and the public detail read exists
-// only for `active` listings. A form that cannot show what it is about to replace would delete a
-// provider's lanes the first time they added one. No wrapper was written either: an uncalled one is
-// unverified code, and the audit in CLAUDE.md exists to catch exactly that. See
-// `providers.schemas.ts` for what the backend would need first.
+// COVERAGE IS ITS OWN EDITOR, opened per row (`service-offering-coverage-editor.tsx`). The lane
+// write replaces the WHOLE list, so the editor reads the owner's lanes first
+// (`GET /commerce/service-offerings/:id/coverage`) and only then offers a Save.
 
 import { useState } from "react";
 
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import ServiceOfferingCoverageEditor from "@/components/studio/commerce/services/service-offering-coverage-editor";
 import {
   useMyServiceOfferingsQuery,
   useSubmitServiceOfferingMutation,
@@ -124,6 +121,7 @@ function narrowToPricingModel(value: string): ServicePricingModel | undefined {
 function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
   const isFindableByBuyers = offering.state === "active";
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingCoverage, setIsEditingCoverage] = useState(false);
   const submitOffering = useSubmitServiceOfferingMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
@@ -210,6 +208,13 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
         >
           {isEditing ? "Stop editing" : "Edit the details"}
         </button>
+        <button
+          type="button"
+          onClick={() => setIsEditingCoverage((wasEditingCoverage) => !wasEditingCoverage)}
+          className={QUIET_BUTTON_CLASS}
+        >
+          {isEditingCoverage ? "Close coverage" : "Where it works"}
+        </button>
       </div>
 
       {/* THE STATE IN THE RESPONSE, NEVER AN ASSUMED ONE. A submitted listing reads
@@ -229,6 +234,8 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
           Sent for review. A moderator decides from here — it is not listed yet.
         </p>
       )}
+
+      {isEditingCoverage && <ServiceOfferingCoverageEditor offeringId={offering.id} />}
 
       {isEditing && (
         <OfferingEditForm

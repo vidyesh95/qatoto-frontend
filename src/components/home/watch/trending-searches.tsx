@@ -20,8 +20,8 @@ import { ApiRequestError } from "@/lib/http";
  * ⚠️ **HIDE IS A MODERATOR CONTROL, SHOWN ONLY TO `moderate_content` HOLDERS, AND THE BACKEND IS
  * THE GATE.** A reader who forged the button would get a 403. Hiding asks for a reason (the audit
  * record) and a confirm, then refreshes: the list is server-rendered and the suppression applies on
- * the very next read. Lifting a suppression has no button — a hidden term never renders — so it is
- * API-only until an admin list exists (`todo.md`).
+ * the very next read. Lifting a suppression has no button here — a hidden term never renders — so
+ * it happens on the staff list at `/admin/search-terms`.
  *
  * ONE HIDE AT A TIME, AS A UNION: nothing selected, a reason being written, or confirming.
  */

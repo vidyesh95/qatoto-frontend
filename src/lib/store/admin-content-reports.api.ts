@@ -33,6 +33,7 @@ import {
   CommerceModerationActionPageSchema,
   CommerceModerationActionSchema,
   WithdrawnProductAnswerPageSchema,
+  WithdrawnProductQuestionPageSchema,
   type CommerceContentReport,
   type CommerceContentReportPage,
   type CommerceModerationAction,
@@ -43,6 +44,7 @@ import {
   type ListWithdrawnAnswersFilter,
   type RestoreCommerceContentInput,
   type WithdrawnProductAnswerPage,
+  type WithdrawnProductQuestionPage,
 } from "@/lib/store/content-reports.schemas";
 
 /**
@@ -99,6 +101,18 @@ export function listWithdrawnProductAnswers(
 ): Promise<ActionResponse<WithdrawnProductAnswerPage>> {
   const path = `/commerce/admin/withdrawn-answers${buildQueryString({ ...filter })}`;
   return getJson(path, WithdrawnProductAnswerPageSchema, options);
+}
+
+/**
+ * One page of withdrawn product questions, NEWEST FIRST — the question twin of the read above,
+ * from the `product_question_withdrawn` events on the sellers' audit chains. Takes the same filter.
+ */
+export function listWithdrawnProductQuestions(
+  filter: ListWithdrawnAnswersFilter,
+  options?: RequestOptions,
+): Promise<ActionResponse<WithdrawnProductQuestionPage>> {
+  const path = `/commerce/admin/withdrawn-questions${buildQueryString({ ...filter })}`;
+  return getJson(path, WithdrawnProductQuestionPageSchema, options);
 }
 
 /**

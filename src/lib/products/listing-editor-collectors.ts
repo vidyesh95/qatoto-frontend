@@ -11,6 +11,7 @@ import {
 import type { CategoryAttribute } from "@/lib/store/catalog.schemas";
 import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
 import type { ProductSamplePolicy, ProductSellingState } from "@/lib/store/organizations.schemas";
+import type { QuoteIncoterm } from "@/lib/store/quotes.schemas";
 import type { ListingCategoryChoice } from "@/components/studio/listing/listing-category-picker";
 import {
   collectPackagingFacts,
@@ -31,6 +32,7 @@ export interface CollectListingInputParams {
   readonly modelNumber: string;
   readonly countryOfOriginCode: string;
   readonly unitOfMeasure: string;
+  readonly defaultIncoterm: QuoteIncoterm | "";
   readonly productDescription: string;
   readonly keyFeatures: readonly string[];
   readonly priceInDollars: string;
@@ -136,6 +138,7 @@ export function collectListingInput(
     modelNumber: params.modelNumber.trim() || undefined,
     countryOfOriginCode: toOptionalCountryCode(params.countryOfOriginCode),
     unitOfMeasure: params.unitOfMeasure.trim() || undefined,
+    defaultIncoterm: params.defaultIncoterm === "" ? null : params.defaultIncoterm,
     description: params.productDescription.trim() || undefined,
     keyFeatures: [...params.keyFeatures],
     priceInCents,

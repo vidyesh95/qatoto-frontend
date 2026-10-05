@@ -30,6 +30,7 @@ import {
 import { formatByteSizeLabel } from "@/lib/store/format";
 import type { ProductDocumentKind } from "@/lib/store/products.schemas";
 import type { ProductSamplePolicy, ProductSellingState } from "@/lib/store/organizations.schemas";
+import type { QuoteIncoterm } from "@/lib/store/quotes.schemas";
 import type { ListingCategoryChoice } from "@/components/studio/listing/listing-category-picker";
 import {
   LISTING_STEPS,
@@ -62,6 +63,7 @@ interface ProductPrefillSetters {
   readonly setModelNumber: (modelNumber: string) => void;
   readonly setCountryOfOriginCode: (code: string) => void;
   readonly setUnitOfMeasure: (unit: string) => void;
+  readonly setDefaultIncoterm: (incoterm: QuoteIncoterm | "") => void;
   readonly setProductDescription: (description: string) => void;
   readonly setKeyFeatures: (features: string[]) => void;
   readonly setPriceInDollars: (price: string) => void;
@@ -119,6 +121,7 @@ function applyProductPrefill(loadedProduct: LoadedProductDetail, setters: Produc
   setters.setModelNumber(loadedProduct.modelNumber ?? "");
   setters.setCountryOfOriginCode(loadedProduct.countryOfOriginCode ?? "");
   setters.setUnitOfMeasure(loadedProduct.unitOfMeasure ?? "");
+  setters.setDefaultIncoterm(loadedProduct.defaultIncoterm ?? "");
   setters.setProductDescription(loadedProduct.description ?? "");
   setters.setKeyFeatures(loadedProduct.keyFeatures);
   setters.setPriceInDollars(centsToDollarString(loadedProduct.priceInCents));
@@ -293,6 +296,8 @@ export function useCreateListingState(productId?: string) {
   const [modelNumber, setModelNumber] = useState("");
   const [countryOfOriginCode, setCountryOfOriginCode] = useState("");
   const [unitOfMeasure, setUnitOfMeasure] = useState("");
+  // Declared beside packaging in the pricing step; "" is "Not stated" and saves as null.
+  const [defaultIncoterm, setDefaultIncoterm] = useState<QuoteIncoterm | "">("");
 
   // Step 2 — images
   const [selectedImagePreviews, setSelectedImagePreviews] = useState<{ file: File }[]>([]);
@@ -403,6 +408,7 @@ export function useCreateListingState(productId?: string) {
       setModelNumber,
       setCountryOfOriginCode,
       setUnitOfMeasure,
+      setDefaultIncoterm,
       setProductDescription,
       setKeyFeatures,
       setPriceInDollars,
@@ -874,6 +880,7 @@ export function useCreateListingState(productId?: string) {
       modelNumber,
       countryOfOriginCode,
       unitOfMeasure,
+      defaultIncoterm,
       productDescription,
       keyFeatures,
       priceInDollars,
@@ -996,6 +1003,8 @@ export function useCreateListingState(productId?: string) {
     setCountryOfOriginCode,
     unitOfMeasure,
     setUnitOfMeasure,
+    defaultIncoterm,
+    setDefaultIncoterm,
     // Step 2
     selectedImagePreviews,
     existingImages,

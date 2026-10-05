@@ -23,6 +23,7 @@ import {
   listCommerceContentReports,
   listCommerceModerationActions,
   listWithdrawnProductAnswers,
+  listWithdrawnProductQuestions,
   restoreCommerceContent,
 } from "@/lib/store/admin-content-reports.api";
 import type {
@@ -34,6 +35,7 @@ import type {
   RestoreCommerceContentInput,
   WithdrawnAnswerStateFilter,
   WithdrawnProductAnswer,
+  WithdrawnProductQuestion,
 } from "@/lib/store/content-reports.schemas";
 
 /**
@@ -53,6 +55,8 @@ export const commerceModerationKeys = {
     ["store", "admin", "commerce-moderation", "actions", targetKind] as const,
   withdrawnAnswers: (state: WithdrawnAnswerStateFilter) =>
     ["store", "admin", "commerce-moderation", "withdrawn-answers", state] as const,
+  withdrawnQuestions: (state: WithdrawnAnswerStateFilter) =>
+    ["store", "admin", "commerce-moderation", "withdrawn-questions", state] as const,
 };
 
 /**
@@ -127,6 +131,25 @@ export function useWithdrawnProductAnswerLog(
       toCursorKeysetPage(
         mapItemsToRows(
           await listWithdrawnProductAnswers({
+            state,
+            ...(typeof token === "string" ? { cursor: token } : {}),
+          }),
+        ),
+      ),
+  });
+}
+
+/** Withdrawn product questions, NEWEST FIRST, under the same root key for the same reason. */
+export function useWithdrawnProductQuestionLog(
+  state: WithdrawnAnswerStateFilter,
+): KeysetListResult<WithdrawnProductQuestion> {
+  return useKeysetList<WithdrawnProductQuestion>({
+    queryKey: commerceModerationKeys.withdrawnQuestions(state),
+    initialPage: null,
+    fetchPage: async (token) =>
+      toCursorKeysetPage(
+        mapItemsToRows(
+          await listWithdrawnProductQuestions({
             state,
             ...(typeof token === "string" ? { cursor: token } : {}),
           }),

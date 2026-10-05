@@ -543,6 +543,26 @@ function isQuoteIncoterm(value: string): value is QuoteIncoterm {
   return (QUOTE_INCOTERMS as readonly string[]).includes(value);
 }
 
+/**
+ * Who books the MAIN carriage under each term — the one fact about a term a buyer needs before
+ * asking for a quote. Incoterms® 2020's own grouping: under the E and F terms the buyer contracts
+ * the main carriage, under the C and D terms the seller does. A `Record`, so a twelfth term is a
+ * compile error until it says which side it is on.
+ */
+export const INCOTERM_MAIN_CARRIAGE_ARRANGED_BY: Record<QuoteIncoterm, "buyer" | "seller"> = {
+  EXW: "buyer",
+  FCA: "buyer",
+  FAS: "buyer",
+  FOB: "buyer",
+  CPT: "seller",
+  CIP: "seller",
+  CFR: "seller",
+  CIF: "seller",
+  DAP: "seller",
+  DPU: "seller",
+  DDP: "seller",
+};
+
 export const QUOTE_INCOTERM_LABELS: Record<QuoteIncoterm, string> = {
   EXW: "EXW — Ex Works",
   FCA: "FCA — Free Carrier",

@@ -162,6 +162,8 @@ export function ListingStepView({ stepId, state }: ListingStepViewProps) {
           onPackageGrossWeightGramsChange={state.setPackageGrossWeightGrams}
           unitsPerPackage={state.unitsPerPackage}
           onUnitsPerPackageChange={state.setUnitsPerPackage}
+          defaultIncoterm={state.defaultIncoterm}
+          onDefaultIncotermChange={state.setDefaultIncoterm}
         />
       );
 
@@ -234,6 +236,7 @@ export function ListingStepView({ stepId, state }: ListingStepViewProps) {
           packageHeightMm={state.packageHeightMm}
           packageGrossWeightGrams={state.packageGrossWeightGrams}
           unitsPerPackage={state.unitsPerPackage}
+          defaultIncoterm={state.defaultIncoterm}
           listingCompleteness={state.productQuery.data?.listingCompleteness}
         />
       );

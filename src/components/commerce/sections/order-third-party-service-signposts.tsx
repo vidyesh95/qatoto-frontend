@@ -14,6 +14,13 @@
 // composer with `?relatedOrderId=` — the backend checks the viewer is a party to the order, and an
 // accepted quote opens its OWN order that links back here.
 //
+// THE DESTINATION IS LINKED, BESIDE THE UNFILTERED LINK AND NEVER IN PLACE OF IT. When the order
+// names a delivery country, the insurer and warehouse rows also link the directory filtered by
+// `destinationCountryCode` — the providers whose coverage lanes name that country. The directory's
+// filter matches only lanes that NAME the country, so a provider whose lane says "any country" is
+// not in the filtered list; that is why the unfiltered link stays. Testing gets no filtered link:
+// pre-shipment testing happens where the goods are, not where they are going.
+//
 // LINKED SERVICES ARE THE VIEWER'S OWN. The backend returns only engagements the viewer's
 // organization bought, so a buyer never sees the seller's insurer nor the reverse. Nothing here
 // says how many the other party has, and nothing renders when the viewer has none.
@@ -33,6 +40,7 @@ import Link from "next/link";
 
 import ProviderKindBadge from "@/components/commerce/shared/provider-kind-badge";
 import { useOrderLinkedServiceEngagementsQuery } from "@/hooks/store/orders";
+import { countryName } from "@/lib/countries";
 import { SERVICE_ENGAGEMENT_STATE_LABELS } from "@/lib/store/fulfillment.schemas";
 
 /**
@@ -46,16 +54,29 @@ function isSellerInsuredIncoterm(incotermSnapshot: string | null): boolean {
   return incotermSnapshot === "CIF" || incotermSnapshot === "CIP";
 }
 
+/** The directory for one provider kind, narrowed to providers with a lane to the destination. */
+function buildDestinationDirectoryHref(providerKind: string, deliveryCountryCode: string): string {
+  const searchParams = new URLSearchParams({
+    providerKind,
+    destinationCountryCode: deliveryCountryCode,
+  });
+  return `/store/providers?${searchParams.toString()}`;
+}
+
 const SIGNPOST_LINK_CLASS =
   "text-xs leading-4 font-medium text-primary-imprint underline underline-offset-2 hover:text-foreground";
 
 export default function OrderThirdPartyServiceSignposts({
   orderId,
   incotermSnapshot,
+  deliveryCountryCode,
 }: {
   orderId: string;
   incotermSnapshot: string | null;
+  deliveryCountryCode: string | null;
 }) {
+  const destinationName = deliveryCountryCode === null ? null : countryName(deliveryCountryCode);
+
   return (
     <section
       aria-labelledby="order-third-party-services-heading"
@@ -94,12 +115,22 @@ export default function OrderThirdPartyServiceSignposts({
               Qatoto holds no record of a policy.
             </p>
           )}
-          <Link
-            href="/store/providers?providerKind=insurance_provider"
-            className={SIGNPOST_LINK_CLASS}
-          >
-            Find a cargo insurer
-          </Link>
+          <p className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link
+              href="/store/providers?providerKind=insurance_provider"
+              className={SIGNPOST_LINK_CLASS}
+            >
+              Find a cargo insurer
+            </Link>
+            {deliveryCountryCode !== null && (
+              <Link
+                href={buildDestinationDirectoryHref("insurance_provider", deliveryCountryCode)}
+                className={SIGNPOST_LINK_CLASS}
+              >
+                Insurers listing {destinationName}
+              </Link>
+            )}
+          </p>
         </li>
 
         <li className="space-y-1 py-3">
@@ -134,6 +165,14 @@ export default function OrderThirdPartyServiceSignposts({
             >
               Find a warehouse
             </Link>
+            {deliveryCountryCode !== null && (
+              <Link
+                href={buildDestinationDirectoryHref("warehouse_provider", deliveryCountryCode)}
+                className={SIGNPOST_LINK_CLASS}
+              >
+                Warehouses listing {destinationName}
+              </Link>
+            )}
             <Link
               href="/store/providers?providerKind=insurance_provider&coverageClass=goods_in_storage"
               className={SIGNPOST_LINK_CLASS}
