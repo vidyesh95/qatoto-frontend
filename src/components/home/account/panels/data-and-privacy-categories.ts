@@ -117,7 +117,7 @@ export const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
     items: [
       "Videos you published, with their details and transcripts",
       "Pitches you posted, and funding outcomes you recorded, including the funder's name",
-      "Teardowns, product launches and case studies, with the statements you made with them",
+      "Teardowns, product launches and case studies, with the statements you made with them and the files you uploaded with a teardown",
       "A company name you withheld from a case study, which moderators see and readers do not",
       "Problems you reported on the map, with a pin rounded to about 110 metres",
       "Photos you attached to a problem report, which are public and deleted after two years, or 90 days after the problem is marked fixed",

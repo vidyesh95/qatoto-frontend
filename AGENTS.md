@@ -474,10 +474,13 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   backend still accepts both on purpose — a caller on a cached bundle posts the old shape — and files
   each link by its OWN label at publish, so such a row is correct data. The admin card labels it from
   a merged map and marks it rather than refusing.
-  **Uploads do not exist**, so every teardown file is a pasted https URL and the walkthrough is a
-  YouTube link through `extractYoutubeVideoId`; there is no dropzone and the step says why. The
-  launch form is the exception: it uploads its heading image with the launch and each write-up image as
-  it is added (below). **There is no
+  **A teardown file is a pasted https URL OR a staged upload** (`POST /blueprints/teardowns/uploads`,
+  CAD/3D up to 50 MB, PDF up to 25 MB). An upload is stored privately in object storage, claimed by the
+  submit, and served only after publish through a 300-second presigned link; nothing scans it, and an
+  unclaimed upload that no saved draft names is swept after a day (`sweep-orphan-teardown-uploads`).
+  The receipt says which of the two the author used. The walkthrough is still a YouTube link through
+  `extractYoutubeVideoId`, and the wizard uploads no per-part model. The launch form uploads its
+  heading image with the launch and each write-up image as it is added (below). **There is no
   element-table editor and there must not be one** until a file from an analyser can be attached: a
   free-text percent field invites somebody to type a datasheet figure, which the composition table
   then renders looking exactly like a measurement.

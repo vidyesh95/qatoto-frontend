@@ -82,7 +82,7 @@ export function MediaDocumentRowItem({
               placeholder="https://…"
             />
             <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-              <span>or upload a PDF (up to 50 MB)</span>
+              <span>or upload a PDF (up to 25 MB)</span>
               <label className="cursor-pointer font-medium text-primary-imprint hover:underline">
                 {isUploading ? "Uploading…" : "Upload PDF"}
                 <input

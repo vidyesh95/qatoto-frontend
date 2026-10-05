@@ -1,7 +1,6 @@
 export const UPLOAD_STEPS = [
   { id: "details", label: "Details" },
   { id: "video-elements", label: "Video elements" },
-  { id: "checks", label: "Checks" },
   { id: "visibility", label: "Visibility" },
 ] as const;
 

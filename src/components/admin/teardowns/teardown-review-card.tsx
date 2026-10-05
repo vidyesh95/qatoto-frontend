@@ -859,7 +859,8 @@ function NoteField({
  * THE TWO FIELDS THE PUBLISHER NEVER SENT, AND ONE THEY COULD NOT.
  *
  * `thumbnailUrl` and `difficulty` are required of every published blueprint and the wizard collects
- * neither — it cannot ask for a thumbnail, because there is no upload route. So this is where the
+ * neither — it cannot ask for a thumbnail, because teardown uploads take documents and CAD files,
+ * not images. So this is where the
  * read contract gets satisfied, and the legend says so rather than letting a moderator believe the
  * publisher chose either.
  */

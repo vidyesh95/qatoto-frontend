@@ -41,7 +41,23 @@ export default function TeardownWizard() {
   } = useTeardownWizardState();
 
   if (viewState.status === "submitted") {
-    return <SubmissionReceipt receipt={viewState.receipt} onStartAnother={handleStartAnother} />;
+    // What the submit actually carried, read off the draft it was collected from — the same
+    // source/uploadId test `collectTeardownSubmission` uses, so the receipt and the payload agree.
+    const submittedFileRows = [...draft.documents, ...draft.manufacturingFiles];
+    const hasUploadedFiles = submittedFileRows.some(
+      (fileRow) => fileRow.source === "uploaded" && fileRow.uploadId !== undefined,
+    );
+    const hasLinkedFiles = submittedFileRows.some(
+      (fileRow) => !(fileRow.source === "uploaded" && fileRow.uploadId !== undefined),
+    );
+    return (
+      <SubmissionReceipt
+        receipt={viewState.receipt}
+        hasUploadedFiles={hasUploadedFiles}
+        hasLinkedFiles={hasLinkedFiles}
+        onStartAnother={handleStartAnother}
+      />
+    );
   }
 
   return (

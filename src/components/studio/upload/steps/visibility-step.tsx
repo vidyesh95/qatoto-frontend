@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import type { StudioVideoVisibility, UploadDraft } from "@/lib/videos/studio-view";
 
-// Step 4 — visibility. THREE TIERS, NOT FOUR. `investor_only` and NDA-gated playback
+// Step 3 — visibility. THREE TIERS, NOT FOUR. `investor_only` and NDA-gated playback
 // exist in the enum (`VIDEO_VISIBILITIES`) and a badge still renders for a row that
 // carries them, but they are UNREACHABLE FROM THIS WIZARD and the option is not offered.
 //
@@ -151,7 +151,11 @@ export default function VisibilityStep({ draft, onDraftChange }: VisibilityStepP
       <section className="flex flex-col gap-2 rounded-2xl border border-border p-6">
         <h3 className="text-base font-semibold text-foreground">Before you publish</h3>
         <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted-foreground">
-          <li>Check your video for copyright and privacy issues.</li>
+          <li>
+            After you save, Qatoto confirms the link with YouTube; publishing unlocks once it is
+            verified. Qatoto does not scan videos for copyright, so check yours for copyright and
+            privacy issues yourself.
+          </li>
           <li>Make sure links, roles, and attached products are up to date.</li>
           <li>You can change visibility any time from My videos.</li>
         </ul>

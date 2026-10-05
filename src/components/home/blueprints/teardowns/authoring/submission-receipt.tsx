@@ -22,15 +22,28 @@ import { formatIsoInstantLabel } from "@/lib/store/format";
  * gone rather than softened. What replaced it is the two things that are still true, in plain
  * prose, because neither is alarming.
  *
+ * ⚠️ THE FILE SENTENCE FOLLOWS WHAT WAS SUBMITTED. It used to say "Qatoto stored your survey, not
+ * your files. Every file here is a link", written on 2026-09-12 when that was true; uploads shipped
+ * a day later and the sentence went on telling authors who had just uploaded a file that Qatoto
+ * held none. An uploaded file IS stored, privately, and served only once a moderator publishes; a
+ * linked file still lives wherever the link points. Each case gets its own sentence, both when the
+ * survey had both, and neither when it had no files.
+ *
  * ⚠️ AND IT DOES NOT POLL. The R&D surfaces poll a 202 to a verdict; copying that here would put a
  * spinner in front of an author implying somebody is reading their survey this minute. A moderator
  * reads it when they read it, and My teardowns is where the answer appears.
  */
 export default function SubmissionReceipt({
   receipt,
+  hasUploadedFiles,
+  hasLinkedFiles,
   onStartAnother,
 }: {
   readonly receipt: TeardownSubmissionReceipt;
+  /** At least one submitted file was uploaded to Qatoto rather than linked. */
+  readonly hasUploadedFiles: boolean;
+  /** At least one submitted file is a link to somewhere else. */
+  readonly hasLinkedFiles: boolean;
   readonly onStartAnother: () => void;
 }) {
   return (
@@ -60,10 +73,17 @@ export default function SubmissionReceipt({
           A moderator reads it. There is no queue position to watch and nothing will email you — the
           decision shows up on My teardowns, whenever you next look.
         </p>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Qatoto stored your survey, not your files. Every file here is a link to where it already
-          lives, so keep those links working.
-        </p>
+        {hasUploadedFiles && (
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            The files you uploaded are stored by Qatoto, privately. Readers can download them only
+            once a moderator publishes the teardown.
+          </p>
+        )}
+        {hasLinkedFiles && (
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Linked files stay where they already live, so keep those links working.
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">

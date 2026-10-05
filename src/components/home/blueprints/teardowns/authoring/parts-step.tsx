@@ -18,8 +18,9 @@ function newPartDraftRow(): PartDraftRow {
  * THE PARTS LIST — AND DELIBERATELY NOT AN ASSEMBLY.
  *
  * ⚠️ THERE IS NO GEOMETRY FIELD ON THIS STEP AND THE WRITE CONTRACT HAS NONE EITHER. The read
- * contract's exploded view is driven by a `.glb` per part, which is the shape an upload takes — and
- * there is no upload route. So a submission cannot produce a modelled teardown, and this step says
+ * contract's exploded view is driven by a `.glb` per part, and this wizard has no field that uploads
+ * one — the backend can claim an assembly model upload, but nothing here sends it. So a submission
+ * from this form cannot produce a modelled teardown, and this step says
  * that plainly instead of offering a file field that goes nowhere or, worse, quietly omitting the
  * feature so a publisher wonders why their teardown has no 3D view.
  *
@@ -40,9 +41,9 @@ export default function PartsStep({ draft, onDraftChange }: TeardownWizardStepPr
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-medium text-foreground">No 3D model in this version</h2>
         <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
-          The exploded view on a teardown page is built from a 3D file for every part, and there is
-          nowhere to upload one yet. List the parts here and your teardown reads as a list rather
-          than a model. Nothing you write now is wasted when uploads open.
+          The exploded view on a teardown page is built from a 3D file for every part, and this form
+          has nowhere to upload one yet. List the parts here and your teardown reads as a list
+          rather than a model. Nothing you write now is wasted when uploads open.
         </p>
       </div>
 

@@ -130,10 +130,13 @@ export function UploadModalFooter({
 
   return (
     <div className="flex items-center justify-between gap-4 border-t border-border px-6 py-4">
+      {/*
+        NOTHING IS CLAIMED HERE WHEN NOTHING WENT WRONG. This line used to read "Checks complete. No
+        issues found." on every step, over a Checks step that simulated a copyright scan Qatoto
+        does not run; both were removed. The empty span keeps the buttons right-aligned.
+      */}
       {saveErrorMessage === null ? (
-        <p className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
-          Checks complete. No issues found.
-        </p>
+        <span aria-hidden="true" />
       ) : (
         <p role="alert" className="min-w-0 flex-1 text-xs text-destructive">
           {saveErrorMessage}

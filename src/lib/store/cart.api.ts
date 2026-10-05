@@ -126,9 +126,9 @@ export function prepareCheckout(
  * not establish it: the server revalidates the agreement under a row lock and refuses the confirm
  * outright if it has lapsed rather than silently downgrading the rail.
  *
- * WHAT THAT DISTINCTION IS WORTH DOWNSTREAM: only `direct_processor` and `internal_custody` can
- * take a payment intent. `createPaymentIntent` refuses the other two with a `409` naming that
- * rail's own settlement path — so the rail decided here is what makes the order payable at all.
+ * WHAT THAT DISTINCTION IS WORTH DOWNSTREAM: only `direct_processor` can take a payment intent.
+ * `createPaymentIntent` refuses the other three with a `409` naming that rail's own settlement path
+ * (the frozen `internal_custody`, that it is a model Qatoto no longer operates) — so the rail decided here is what makes the order payable at all.
  *
  * THE ORDERS COME BACK `pending_payment`. Confirm creates them and pays for nothing.
  *

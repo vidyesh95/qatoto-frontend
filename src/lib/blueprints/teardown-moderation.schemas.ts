@@ -207,7 +207,7 @@ const DESIRED_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  *
  * ⚠️ PUBLISHING CARRIES TWO FIELDS THE PUBLISHER NEVER SENT, and they are not moderator preferences:
  * `thumbnailUrl` and `difficulty` are required of every published blueprint by `BlueprintMediaShape`,
- * and the wizard collects neither — it cannot ask for a thumbnail, because there is no upload route.
+ * and the wizard collects neither — it cannot ask for a thumbnail, because teardown uploads take documents and CAD files, not images.
  * The publish form is where the read contract gets satisfied, and the card must say so rather than
  * implying the publisher stated either.
  *

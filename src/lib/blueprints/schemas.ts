@@ -960,7 +960,7 @@ export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFile
  * One part an author LISTED, as a table of contents rather than as a model.
  *
  * ⚠️ NOT `TeardownPart`, AND NOT PART OF AN ASSEMBLY. The authoring wizard collects a label and a
- * material and nothing else — there is no upload route, so there is no geometry, no node name and
+ * material and nothing else — it uploads no part model, so there is no geometry, no node name and
  * no `.glb` — and its own parts step promises the author that listing them means "your teardown
  * reads as a list rather than a model". This is where that promise is kept.
  *

@@ -62,8 +62,8 @@ import {
  * the worst on this surface: a retried POST with a fresh key is a second charge.
  *
  * A `409` HERE IS USUALLY A FINDING, NOT A RETRY, and its message is the useful part. Only
- * `direct_processor` and the frozen `internal_custody` rail can take a payment intent at all;
- * `direct_offline` and `external_escrow` are refused with a sentence naming that rail's OWN
+ * `direct_processor` can take a payment intent at all; the frozen `internal_custody` rail is refused
+ * as a model Qatoto no longer operates, and `direct_offline` and `external_escrow` are refused with a sentence naming that rail's OWN
  * settlement path — record a transfer as an attestation, or fund the escrow session at the provider.
  * Render the backend's sentence verbatim. Paraphrasing it to "this order cannot be paid" throws away
  * the half that says how it IS paid.

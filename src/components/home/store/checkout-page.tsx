@@ -504,11 +504,14 @@ function ReservedStep({
         <p className="text-xs leading-4 font-medium tracking-wider text-outline-strong uppercase">
           How this settles
         </p>
-        {/* SAID BEFORE CONFIRMING. The default rail is `direct_offline` and nobody holds the money;
-            a checkout silent about that implies the opposite. There is no escrow agreement to name
-            here — that is something the two parties negotiate in their own thread first. */}
+        {/* SAID BEFORE CONFIRMING. A direct checkout always produces `direct_processor`
+            (`commerce-checkout.service.ts` passes `hasProcessorPayment: true`) and nobody holds the
+            money; a checkout silent about that implies the opposite. This line used to show
+            `direct_offline`'s sentence, which describes a quote order, not this one. There is no
+            escrow agreement to name here — that is something the two parties negotiate in their own
+            thread first. */}
         <p className="mt-1 text-sm leading-5 text-foreground">
-          {SETTLEMENT_RAIL_LABELS.direct_offline}
+          {SETTLEMENT_RAIL_LABELS.direct_processor}
         </p>
         <p className="mt-1 text-xs leading-4 text-outline-strong">
           You and the seller can agree on a licensed escrow provider separately. Without one, you

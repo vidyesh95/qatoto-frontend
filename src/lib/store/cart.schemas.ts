@@ -252,7 +252,8 @@ export type OrderState = (typeof ORDER_STATES)[number];
  * `direct_offline` belongs to QUOTE-ORIGINATED orders, settled by T/T, L/C or whatever the parties
  * arranged and recorded as a party attestation. Nothing on the checkout page can produce it. This
  * comment used to call it "the default", which was wrong in the one place it mattered: only
- * `direct_processor` and `internal_custody` can take a payment intent at all, so a reader who
+ * `direct_processor` can take a payment intent (the backend refuses one on `internal_custody`
+ * too, with "a settlement model Qatoto no longer operates"), so a reader who
  * believed a checkout produced `direct_offline` would have gone looking for a wire-transfer UI
  * instead of the pay control.
  *
@@ -449,11 +450,19 @@ export const ORDER_STATE_LABELS: Record<OrderState, string> = {
  * What each rail means for the buyer's money, in plain words.
  *
  * These sentences are the ONE place a buyer learns whether anybody is holding the funds, so none of
- * them may imply a protection that the rail does not provide. `direct_offline` in particular has to
- * say so outright — it is the default.
+ * them may imply a protection that the rail does not provide. The two direct rails say outright
+ * that Qatoto is not holding the money, because nobody else on the page will.
+ *
+ * ⚠️ `internal_custody` IS HISTORICAL AND ITS SENTENCE SAYS SO. It read "Held by Qatoto" — present
+ * tense, about a rail §14 froze, on a platform that holds no money — and it was reachable: every
+ * order created before Phase 14 carries it (the column defaulted to it, and the snapshot trigger
+ * keeps it), and the backend refuses any new payment on it. Labelled the way the R&D surfaces label
+ * a retired value (`rnd/labels.ts`: readable on historical rows, never offered), and never claiming
+ * what Qatoto did with money it is not holding.
  */
 export const SETTLEMENT_RAIL_LABELS: Record<SettlementRail, string> = {
-  internal_custody: "Held by Qatoto",
+  internal_custody:
+    "Placed under a settlement arrangement Qatoto has retired. Qatoto is not holding money for this order.",
   direct_offline: "You pay the seller directly. Qatoto is not holding the money.",
   direct_processor: "Card or bank payment settled to the seller. Qatoto is not holding the money.",
   external_escrow: "Held by the escrow provider you and the seller agreed on.",

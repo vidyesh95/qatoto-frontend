@@ -17,9 +17,10 @@
 // `/studio/subtitles` is the one stub left, which is why YouTube's captions are explained below in
 // prose with no link.
 //
-// ⚠️ THE UPLOAD MODAL'S CHECKS STEP IS NOT MENTIONED, ON PURPOSE. It simulates a pass that always
-// lands on "No issues found" (`upload/steps/checks-step.tsx`), so describing it as a copyright or
-// content scan would be this page inventing a safeguard.
+// ⚠️ THE UPLOAD MODAL HAS NO CHECKS STEP, AND THIS PAGE MUST NOT DESCRIBE ONE. It had a step that
+// simulated a copyright scan and always landed on "No issues found"; it was removed rather than
+// documented, because Qatoto runs no such scan. The one real check — YouTube confirming the link —
+// is the "Verifying…" row below.
 //
 // WORDING, which binds here as it does everywhere:
 //  - A submission is "sent for review", never "published". Product listings are the one honest
@@ -109,8 +110,8 @@ const LEARN_SECTIONS: readonly LearnSection[] = [
           <>
             Paste a YouTube link on <GuideLink href="/studio">Create</GuideLink> — watch, Shorts and
             youtu.be links all work. Uploading a file is not available, because Qatoto does not host
-            video yet. Four steps follow: Details, Video elements, Checks and Visibility. Closing
-            the window part-way saves the video as a private draft.
+            video yet. Three steps follow: Details, Video elements and Visibility. Closing the
+            window part-way saves the video as a private draft.
           </>
         ),
       },

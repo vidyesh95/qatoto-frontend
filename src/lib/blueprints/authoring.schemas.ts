@@ -138,10 +138,11 @@ const TeardownSubmissionFileUrlSchema = createExternalHttpsUrlSchema(512);
  * purpose, so that a fix here needs no backend release and a submission sent before that fix still
  * files each file by the label its author chose. **This is the only gate that exists for it.**
  *
- * ⚠️ A URL, NOT AN UPLOAD, AND THAT IS THE HONEST SHAPE TODAY. There is no upload route for a
- * blueprint and no Cloudinary folder behind one, so a file picker here would be a control that
- * cannot do its job. `create-studio-page.tsx` already takes a pasted link for video for the same
- * reason. When an upload route exists this field keeps its name and gains a sibling.
+ * A PASTED LINK OR A STAGED UPLOAD, discriminated on `source`. The link arm came first, when there
+ * was no upload route; `POST /blueprints/teardowns/uploads` shipped on 2026-09-13 and the `uploaded`
+ * arm names what it returned. An uploaded file is stored privately in object storage, claimed by the
+ * submit, and served only after publish through a short-lived presigned link; an unclaimed upload
+ * that no saved draft names is swept after a day (`sweep-orphan-teardown-uploads`).
  */
 export const TeardownSubmissionDocumentSchema = z.discriminatedUnion("source", [
   z.strictObject({
@@ -180,10 +181,10 @@ export type TeardownSubmissionManufacturingFile = z.infer<
 /**
  * One part a publisher lists.
  *
- * ⚠️ NO GEOMETRY FIELD. The read contract's `IndividualTeardownPart` carries a `.glb` per part,
- * which is the shape an upload takes — and there is no upload. A submission therefore cannot
- * produce a modelled teardown, and the wizard says so rather than offering a field that goes
- * nowhere. This is the one place the write contract is deliberately NARROWER than the read one.
+ * ⚠️ NO GEOMETRY FIELD. The read contract's `IndividualTeardownPart` carries a `.glb` per part.
+ * The backend can now claim an assembly model upload, but this wizard does not send one, so a
+ * submission from it cannot produce a modelled teardown, and the wizard says so rather than
+ * offering a field that goes nowhere. This is the one place the write contract is deliberately NARROWER than the read one.
  */
 export const TeardownSubmissionPartSchema = z.strictObject({
   label: z.string().min(1, "Name the part."),

@@ -3,7 +3,6 @@
 import type { UploadDraft } from "@/lib/videos/studio-view";
 import type { UploadStepId } from "./upload-modal-types";
 import type { PendingTranscriptChange } from "./transcript-field";
-import ChecksStep from "./steps/checks-step";
 import DetailsStep from "./steps/details-step";
 import VideoElementsStep from "./steps/video-elements-step";
 import VisibilityStep from "./steps/visibility-step";
@@ -65,8 +64,6 @@ export function UploadModalStepContent({
           onPendingTranscriptChangeChange={onPendingTranscriptChangeChange}
         />
       );
-    case "checks":
-      return <ChecksStep />;
     case "visibility":
       return <VisibilityStep draft={draft} onDraftChange={onApplyDraftPatch} />;
     default: {

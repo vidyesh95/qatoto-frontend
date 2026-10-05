@@ -191,8 +191,8 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-sm font-medium text-foreground">Direct uploads and external links</h2>
         <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
-          You can stage CAD models, 3D meshes, schematics and PDFs directly on Qatoto (up to 50 MB
-          each), or paste a link to wherever they already live.
+          You can stage CAD models, 3D meshes and schematics directly on Qatoto (up to 50 MB each)
+          and PDFs (up to 25 MB each), or paste a link to wherever they already live.
         </p>
       </div>
 

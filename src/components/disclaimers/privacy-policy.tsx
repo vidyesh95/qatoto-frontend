@@ -38,7 +38,7 @@ import {
 } from "@/lib/site";
 import { PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL } from "@/lib/privacy-request";
 
-const PRIVACY_POLICY_LAST_UPDATED_LABEL = "2 October 2026";
+const PRIVACY_POLICY_LAST_UPDATED_LABEL = "5 October 2026";
 
 export default function PrivacyPolicy() {
   return (
@@ -99,14 +99,15 @@ export default function PrivacyPolicy() {
             the problem map, have the location your camera recorded removed, and are deleted two
             years after you add them, 90 days after the problem is marked fixed, or when you erase
             your account, whichever comes first. If you publish a teardown, a product launch or a
-            case study, we hold it and the statements you make with it — and if you withhold a
-            company's name from a case study, our moderators still see it, though readers never do.
-            If you send an intellectual property claim about a teardown, we hold your name,
-            organisation, email, your standing and what you claim: our moderators see them, the
-            teardown&rsquo;s publisher never does, and they are kept while the claim is open and for
-            six years after it is answered, then deleted, even if you erase your account sooner. If
-            you list yourself in the cofounder directory, we hold that profile. The same inventory,
-            in the same words, is in your account under Settings → Your data &amp; privacy.
+            case study, we hold it, the statements you make with it and any files you upload with a
+            teardown — and if you withhold a company's name from a case study, our moderators still
+            see it, though readers never do. If you send an intellectual property claim about a
+            teardown, we hold your name, organisation, email, your standing and what you claim: our
+            moderators see them, the teardown&rsquo;s publisher never does, and they are kept while
+            the claim is open and for six years after it is answered, then deleted, even if you
+            erase your account sooner. If you list yourself in the cofounder directory, we hold that
+            profile. The same inventory, in the same words, is in your account under Settings → Your
+            data &amp; privacy.
           </dd>
         </div>
         <div>
@@ -222,14 +223,15 @@ export default function PrivacyPolicy() {
             We share your information with the service providers who run Qatoto for us, and only for
             the job each one does: Vercel, which serves this website; Amazon Web Services, which
             runs our servers; Aiven, which hosts our database; Cloudinary, which stores and serves
-            images; Backblaze, which stores research-paper files and the data exports you request;
-            Brevo, which sends our email; and Google, whose Gemini model transcribes daily updates
-            and answers AI assistant questions for Premium AI accounts when their browser cannot,
-            both as described above. If you sign in with Google or GitHub, or connect a GitHub
-            repository to a project, that provider exchanges information with us to make it work.
-            When you report a problem, the place you describe is sent to OpenStreetMap's Nominatim
-            service to find its country and region. When you pay for an order, the seller's payment
-            provider receives what it needs to take the payment.
+            images; Backblaze, which stores research-paper files, the files you upload with a
+            teardown, the documents attached to videos and listings, and the data exports you
+            request; Brevo, which sends our email; and Google, whose Gemini model transcribes daily
+            updates and answers AI assistant questions for Premium AI accounts when their browser
+            cannot, both as described above. If you sign in with Google or GitHub, or connect a
+            GitHub repository to a project, that provider exchanges information with us to make it
+            work. When you report a problem, the place you describe is sent to OpenStreetMap's
+            Nominatim service to find its country and region. When you pay for an order, the
+            seller's payment provider receives what it needs to take the payment.
             <br />
             <br />
             Other people on Qatoto see some of your information because that is the point of the

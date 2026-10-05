@@ -23,9 +23,9 @@
 //  3. A NON-NULL `paymentIntentId` IS NOT "PAID". The backend's live-intent predicate includes
 //     `settled`, `refunded`, `partially_refunded` and `disputed` alongside the in-flight states, so
 //     the id says "this is the intent to look at" and only the INTENT'S state says what happened.
-//  4. A `409` IS A FINDING, NOT A RETRY. Only `direct_processor` and the frozen `internal_custody`
-//     rail can take a payment intent; the other two are refused with a sentence naming that rail's
-//     own settlement path. The backend's message is rendered verbatim, because the half that says
+//  4. A `409` IS A FINDING, NOT A RETRY. Only `direct_processor` can take a payment intent; the
+//     frozen `internal_custody` rail is refused as a model Qatoto no longer operates, and the other
+//     two with a sentence naming that rail's own settlement path. The backend's message is rendered verbatim, because the half that says
 //     how the order IS settled is the half a buyer can act on.
 //
 // THE ORDER STATE IS NOT THE GATE. `pending_payment` is when paying makes sense, but the server

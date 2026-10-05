@@ -127,7 +127,9 @@ function OrderRow({ order, which }: { order: OrderSummary; which: "buyer" | "pro
           money nobody is, and a queue that only mentioned it on the protected orders would leave the
           unprotected ones reading as protected by default. */}
       <p className="mt-1 text-xs leading-4 text-muted-foreground">
-        {order.hasEscrowProtection
+        {/* The retired rail's sentence already says nobody is holding money, so "No escrow." after
+            it would only repeat that. */}
+        {order.hasEscrowProtection || order.settlementRail === "internal_custody"
           ? SETTLEMENT_RAIL_LABELS[order.settlementRail]
           : `${SETTLEMENT_RAIL_LABELS[order.settlementRail]} No escrow.`}
       </p>

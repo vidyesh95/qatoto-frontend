@@ -17,10 +17,11 @@ import {
  * a sheet, which needs an island to hold the open row; a STEP file or a Gerber has no inline
  * reading at all. These rows are links and nothing else.
  *
- * ⚠️ `download` WORKS HERE BECAUSE THE FIXTURES ARE SITE-RELATIVE. Browsers ignore the attribute
- * cross-origin, so the day these come from Cloudinary the server has to send
- * `Content-Disposition: attachment` instead — the same trap `store/sections/product-documents.tsx`
- * records against the product document list.
+ * ⚠️ `download` IS ONLY A HINT HERE. Browsers ignore the attribute cross-origin. An uploaded file's
+ * href is a path on the API (`/blueprints/teardowns/:slug/…/:fileId`) that 302s to a presigned
+ * object-storage link, and the object was stored with `Content-Disposition: attachment`, which is
+ * what actually makes it download — the same rule `store/sections/product-documents.tsx` records
+ * against the product document list. A pasted link downloads, or not, as its own host decides.
  */
 export default function ManufacturingFileBundles({
   manufacturingFiles,
