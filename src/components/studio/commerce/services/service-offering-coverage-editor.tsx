@@ -203,10 +203,9 @@ function CoverageLaneForm({
   return (
     <div className="mt-3 space-y-3 rounded-xl border border-border px-3 py-3">
       <p className="text-xs leading-4 text-muted-foreground">
-        Where this service works. Leave a country blank to mean any country. Buyers filtering the
-        directory by country find only lanes that name it, so name the countries you want to be
-        found for. Saving replaces the whole list, so a lane you remove here is removed from the
-        listing.
+        Where this service works. Leave a country blank to mean any country: a buyer filtering the
+        directory by any country will find that lane. Saving replaces the whole list, so a lane you
+        remove here is removed from the listing.
       </p>
 
       {laneDrafts.length === 0 && (

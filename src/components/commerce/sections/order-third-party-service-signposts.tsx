@@ -16,10 +16,10 @@
 //
 // THE DESTINATION IS LINKED, BESIDE THE UNFILTERED LINK AND NEVER IN PLACE OF IT. When the order
 // names a delivery country, the insurer and warehouse rows also link the directory filtered by
-// `destinationCountryCode` — the providers whose coverage lanes name that country. The directory's
-// filter matches only lanes that NAME the country, so a provider whose lane says "any country" is
-// not in the filtered list; that is why the unfiltered link stays. Testing gets no filtered link:
-// pre-shipment testing happens where the goods are, not where they are going.
+// `destinationCountryCode` — the providers with a coverage lane naming that country or naming none
+// ("any country"). The unfiltered link stays because a provider that declared NO lanes is not in
+// the filtered list at all. Testing gets no filtered link: pre-shipment testing happens where the
+// goods are, not where they are going.
 //
 // LINKED SERVICES ARE THE VIEWER'S OWN. The backend returns only engagements the viewer's
 // organization bought, so a buyer never sees the seller's insurer nor the reverse. Nothing here
