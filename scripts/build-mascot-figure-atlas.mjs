@@ -351,15 +351,25 @@ const medianFigureHeight = sheetFigureHeights[Math.floor(sheetFigureHeights.leng
 const frameCells = [];
 const animations = {};
 
-for (const group of SHEET_GROUPS) {
-  const frameNames = [];
-  for (const [figureIndex, figure] of figuresByGroup.get(group.name).entries()) {
-    const frameName = `figure/${group.name}/${figureIndex}`;
-    // Only the hero is resampled: it is drawn larger than the rest and must stand at their height.
-    const scale = group.role === "hero" ? medianFigureHeight / figure.solidHeight : 1;
-    frameCells.push([frameName, await placeInCell(figure, scale)]);
-    frameNames.push(frameName);
-  }
+const processedGroups = await Promise.all(
+  SHEET_GROUPS.map(async (group) => {
+    const figures = figuresByGroup.get(group.name);
+    const cells = await Promise.all(
+      figures.map(async (figure, figureIndex) => {
+        const frameName = `figure/${group.name}/${figureIndex}`;
+        // Only the hero is resampled: it is drawn larger than the rest and must stand at their height.
+        const scale = group.role === "hero" ? medianFigureHeight / figure.solidHeight : 1;
+        const cellBuffer = await placeInCell(figure, scale);
+        return [frameName, cellBuffer];
+      }),
+    );
+    const frameNames = cells.map(([frameName]) => frameName);
+    return { group, cells, frameNames };
+  }),
+);
+
+for (const { group, cells, frameNames } of processedGroups) {
+  frameCells.push(...cells);
   if (group.expression !== undefined) animations[`figure/${group.expression}`] = frameNames;
   if (group.pointingDirection !== undefined) {
     animations[`figure/point_${group.pointingDirection}`] = frameNames;

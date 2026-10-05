@@ -7,8 +7,8 @@
 // assistive technology: the character is ornament. Everything a person can act on (the open button,
 // the speech bubble) is real DOM in `assistant-root.tsx`, positioned over the drawing.
 //
-// `await import("pixi.js")` inside the effect is the whole bundle story: the chunk is requested the
-// first time AI Assist Mode is on, and never on a page where it is off.
+// `loadMascotStageResources()` caches both the static atlas JSON and the PixiJS chunk in memory:
+// the chunk is requested the first time AI Assist Mode is on, and never on a page where it is off.
 //
 // IF ANYTHING HERE FAILS — no WebGL, an atlas that breaks the contract, an image that 404s — the
 // stage reports `unavailable` and the root shows one static frame instead. A failure is a state the
@@ -20,7 +20,7 @@ import {
   createMascotController,
   type MascotController,
 } from "@/components/assistant/mascot-controller";
-import { MASCOT_ATLAS_JSON_URL, parseMascotAtlas } from "@/lib/assistant/mascot-atlas.schemas";
+import { loadMascotStageResources } from "@/components/assistant/mascot-stage-loader";
 import type { MascotDockSide, MascotSize, MascotSpeed } from "@/lib/browser-preferences";
 
 export type MascotStageStatus =
@@ -66,19 +66,16 @@ export default function MascotStage({
 
     const mountStage = async () => {
       try {
-        const atlasResponse = await fetch(MASCOT_ATLAS_JSON_URL);
-        const rawAtlas: unknown = atlasResponse.ok ? await atlasResponse.json() : null;
-        const atlasResult = parseMascotAtlas(rawAtlas);
-        if (!atlasResult.success) {
+        const resources = await loadMascotStageResources();
+        if (resources === null) {
           if (!isCancelled) reportStatus({ status: "unavailable" });
           return;
         }
 
-        const pixi = await import("pixi.js");
         if (isCancelled) return;
         const createdController = await createMascotController({
-          pixi,
-          atlas: atlasResult.data,
+          pixi: resources.pixi,
+          atlas: resources.atlas,
           canvasHost,
           mascotBox,
           ...readInitialAppearance(),

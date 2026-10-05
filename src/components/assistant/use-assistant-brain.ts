@@ -344,7 +344,16 @@ export function useAssistantBrain({
   const sessionRef = useRef<OnDeviceSession | null>(null);
   /** Which chat and which notes the live session was primed with. */
   const sessionKeyRef = useRef<string>("");
-  const abortControllerRef = useRef<AbortController>(new AbortController());
+  const abortControllerRef = useRef<AbortController | null>(null);
+  if (abortControllerRef.current === null) {
+    abortControllerRef.current = new AbortController();
+  }
+  const getAbortSignal = (): AbortSignal => {
+    if (abortControllerRef.current === null) {
+      abortControllerRef.current = new AbortController();
+    }
+    return abortControllerRef.current.signal;
+  };
   const nextUnsavedEntryIdRef = useRef(1);
   /** Message keys whose search has been started in this panel, so each runs once per mount. */
   const startedSearchKeysRef = useRef<Set<string>>(new Set());
@@ -557,7 +566,7 @@ export function useAssistantBrain({
           progressPercent: Math.round(Math.min(1, Math.max(0, loadedFraction)) * 100),
         });
       },
-      signal: abortControllerRef.current.signal,
+      signal: getAbortSignal(),
     });
     if (!sessionResult.success) {
       setOnDeviceModelStatus({ status: "downloadable" });
@@ -618,7 +627,7 @@ export function useAssistantBrain({
       systemText: buildAssistantSystemText({ memoryNotes }),
       priorTurns: priorTurns.slice(-ON_DEVICE_REPLAY_TURN_COUNT),
       onDownloadProgress: () => {},
-      signal: abortControllerRef.current.signal,
+      signal: getAbortSignal(),
     });
     if (sessionResult.success) {
       sessionRef.current = sessionResult.data;
@@ -649,7 +658,7 @@ export function useAssistantBrain({
       session: sessionResult.data,
       questionText: fullQuestionText,
       onPartialReplyText,
-      signal: abortControllerRef.current.signal,
+      signal: getAbortSignal(),
     });
     if (firstAttempt.success || firstAttempt.error.code !== "context_overflow") return firstAttempt;
 
@@ -662,7 +671,7 @@ export function useAssistantBrain({
       session: freshSessionResult.data,
       questionText: fullQuestionText,
       onPartialReplyText,
-      signal: abortControllerRef.current.signal,
+      signal: getAbortSignal(),
     });
   };
 

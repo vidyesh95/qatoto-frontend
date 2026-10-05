@@ -109,12 +109,15 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
   // second setup, so the revoked one is never left on the element.
   useEffect(() => {
     const videoElement = videoElementRef.current;
-    if (!videoFile || videoElement === null) return undefined;
-    const objectUrl = URL.createObjectURL(videoFile);
-    videoElement.src = objectUrl;
+    const objectUrl = videoFile && videoElement !== null ? URL.createObjectURL(videoFile) : null;
+    if (objectUrl !== null && videoElement !== null) {
+      videoElement.src = objectUrl;
+    }
     return () => {
-      videoElement.removeAttribute("src");
-      URL.revokeObjectURL(objectUrl);
+      if (objectUrl) {
+        videoElement?.removeAttribute("src");
+        URL.revokeObjectURL(objectUrl);
+      }
     };
   }, [videoFile]);
 
