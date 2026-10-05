@@ -200,15 +200,16 @@ export function UploadModalPreview({
 }) {
   if (props.mode === "edit") {
     return draft.youtubeUrl === "" ? (
-      <VideoPreviewCard fileName={draft.title} />
+      <VideoPreviewCard fileName={draft.title} savedVideoId={props.videoIdToEdit} />
     ) : (
-      <VideoPreviewCard youtubeUrl={draft.youtubeUrl} />
+      <VideoPreviewCard youtubeUrl={draft.youtubeUrl} savedVideoId={props.videoIdToEdit} />
     );
   }
+  // Create mode: the video has no id until Save, so there is no watch link to show yet.
   return props.source.kind === "file" ? (
-    <VideoPreviewCard videoFile={props.source.videoFile} />
+    <VideoPreviewCard videoFile={props.source.videoFile} savedVideoId={null} />
   ) : (
-    <VideoPreviewCard youtubeUrl={props.source.youtubeUrl} />
+    <VideoPreviewCard youtubeUrl={props.source.youtubeUrl} savedVideoId={null} />
   );
 }
 

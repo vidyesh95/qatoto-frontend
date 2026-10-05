@@ -1,22 +1,34 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, type RefObject } from "react";
+import { SITE_URL } from "@/lib/site";
 import { buildYoutubeEmbedUrl, extractYoutubeVideoId } from "@/lib/youtube";
 
 // Right-hand column of the upload modal. A linked YouTube video embeds
 // directly — the iframe shows YouTube's own thumbnail until it is played, so
-// there is nothing to "process". A picked File uses a short timeout to fake the
-// "Processing video…" → playable preview transition (UPLOAD_VIDEO_STRUCTURE.md
-// §4). Edit mode only has the stored filename (no File object survives a save),
-// so it shows a static placeholder instead.
-type PreviewStage = "processing" | "ready";
+// there is nothing to "process". A picked File plays straight from the
+// browser's own copy (an object URL) the moment it is picked. Edit mode only has
+// the stored filename (no File object survives a save), so it shows a static
+// placeholder instead.
+//
+// ⚠️ NO "PROCESSING" STAGE. A picked file used to sit behind a 2-second timer
+// showing "Processing video…" before the same local preview appeared. Nothing was
+// being processed — the file had not left the browser, and today it never does,
+// because Qatoto does not host video and the save refuses a file. The timer only
+// pretended the upload was further along than it was.
+//
+// ⚠️ THE "VIDEO LINK" IS THE REAL WATCH URL OR NOTHING. It used to be
+// `https://qatoto.com/watch/<hash of the title or YouTube URL>` — a path the watch route does
+// not serve (it reads `?v=<video id>`), shown with a copy button before the video even existed.
+// A creator who pasted it anywhere shared a dead link. Now an existing video (edit mode) shows
+// `/watch?v=<its id>`, and a video not yet saved says the link arrives with the save.
+type VideoPreviewSource = { videoFile: File } | { youtubeUrl: string } | { fileName: string };
 
-const FAKE_PROCESSING_DURATION_MS = 2000;
+/** `savedVideoId` is the backend's id once the video exists, and `null` before the first save. */
+type VideoPreviewCardProps = VideoPreviewSource & { readonly savedVideoId: string | null };
 
-type VideoPreviewCardProps = { videoFile: File } | { youtubeUrl: string } | { fileName: string };
-
-function resolvePreviewProps(props: VideoPreviewCardProps) {
+function resolvePreviewProps(props: VideoPreviewSource) {
   if ("youtubeUrl" in props) {
     const youtubeVideoId = extractYoutubeVideoId(props.youtubeUrl);
     return {
@@ -45,13 +57,11 @@ function resolvePreviewProps(props: VideoPreviewCardProps) {
 function VideoDisplay({
   youtubeVideoId,
   videoFile,
-  previewStage,
-  videoObjectUrl,
+  videoElementRef,
 }: {
   readonly youtubeVideoId: string | null;
   readonly videoFile: File | null;
-  readonly previewStage: PreviewStage;
-  readonly videoObjectUrl: string | null;
+  readonly videoElementRef: RefObject<HTMLVideoElement | null>;
 }) {
   if (youtubeVideoId !== null) {
     return (
@@ -80,63 +90,41 @@ function VideoDisplay({
     );
   }
 
-  if (previewStage === "processing") {
-    return (
-      <div className="flex aspect-video w-full animate-pulse flex-col items-center justify-center gap-2 bg-secondary">
-        <Image
-          src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-          alt=""
-          width={28}
-          height={28}
-        />
-        <p className="text-xs text-muted-foreground">Processing video…</p>
-      </div>
-    );
-  }
-
-  if (videoObjectUrl !== null) {
-    return (
-      <video src={videoObjectUrl} controls className="aspect-video w-full bg-black">
-        <track kind="captions" />
-      </video>
-    );
-  }
-
-  return null;
+  // `src` is attached by the card's effect, not here: the object URL is an external resource with a
+  // lifetime, and the effect is what creates and revokes it.
+  return (
+    <video ref={videoElementRef} controls className="aspect-video w-full bg-black">
+      <track kind="captions" />
+    </video>
+  );
 }
 
 export default function VideoPreviewCard(props: VideoPreviewCardProps) {
   const { videoFile, youtubeUrl, youtubeVideoId, fileName } = resolvePreviewProps(props);
 
-  const [trackedVideoFile, setTrackedVideoFile] = useState(videoFile);
-  const [previewStage, setPreviewStage] = useState<PreviewStage>("processing");
-  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
-  if (videoFile !== trackedVideoFile) {
-    setTrackedVideoFile(videoFile);
-    setPreviewStage("processing");
-    setVideoObjectUrl(null);
-  }
-
+  // Points the player at the browser's own copy of the picked file, and revokes that copy when the
+  // file changes or the card unmounts. Strict Mode's setup → cleanup → setup makes a fresh URL on the
+  // second setup, so the revoked one is never left on the element.
   useEffect(() => {
-    if (!videoFile) return undefined;
+    const videoElement = videoElementRef.current;
+    if (!videoFile || videoElement === null) return undefined;
     const objectUrl = URL.createObjectURL(videoFile);
-
-    const processingTimeoutId = setTimeout(() => {
-      setPreviewStage("ready");
-      setVideoObjectUrl(objectUrl);
-    }, FAKE_PROCESSING_DURATION_MS);
-
+    videoElement.src = objectUrl;
     return () => {
-      clearTimeout(processingTimeoutId);
+      videoElement.removeAttribute("src");
       URL.revokeObjectURL(objectUrl);
     };
   }, [videoFile]);
 
-  const fakeWatchUrl = `https://qatoto.com/watch/${buildFakeWatchSlug(fileName)}`;
+  const watchUrl =
+    props.savedVideoId === null
+      ? null
+      : `${SITE_URL}/watch?v=${encodeURIComponent(props.savedVideoId)}`;
 
   function handleCopyWatchLinkClick() {
-    void navigator.clipboard?.writeText(fakeWatchUrl);
+    if (watchUrl !== null) void navigator.clipboard?.writeText(watchUrl);
   }
 
   return (
@@ -144,29 +132,34 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
       <VideoDisplay
         youtubeVideoId={youtubeVideoId}
         videoFile={videoFile}
-        previewStage={previewStage}
-        videoObjectUrl={videoObjectUrl}
+        videoElementRef={videoElementRef}
       />
 
       <div className="flex flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Video link</p>
-            <p className="truncate text-sm text-primary-imprint">{fakeWatchUrl}</p>
+            {watchUrl === null ? (
+              <p className="text-sm text-muted-foreground">Available once you save</p>
+            ) : (
+              <p className="truncate text-sm text-primary-imprint">{watchUrl}</p>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={handleCopyWatchLinkClick}
-            aria-label="Copy video link"
-            className="shrink-0 cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
-          >
-            <Image
-              src="/icons/content_copy_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={20}
-              height={20}
-            />
-          </button>
+          {watchUrl !== null && (
+            <button
+              type="button"
+              onClick={handleCopyWatchLinkClick}
+              aria-label="Copy video link"
+              className="shrink-0 cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
+            >
+              <Image
+                src="/icons/content_copy_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+          )}
         </div>
 
         <div className="min-w-0">
@@ -178,14 +171,4 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
       </div>
     </div>
   );
-}
-
-// Stable pseudo-slug so the fake link doesn't change between renders — real
-// video ids come from the backend later.
-function buildFakeWatchSlug(fileName: string) {
-  let hashValue = 0;
-  for (let characterIndex = 0; characterIndex < fileName.length; characterIndex++) {
-    hashValue = (hashValue * 31 + fileName.charCodeAt(characterIndex)) % 36 ** 6;
-  }
-  return hashValue.toString(36).padStart(6, "0");
 }
