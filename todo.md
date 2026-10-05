@@ -417,9 +417,7 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
       `clear:*` steps that run before the manifest. `db:verify-anonymization-coverage` gained
       check 7, which finds every such edge from Postgres and fails on any not cleared by a named
       step. Open, not touched: the studio's own `deleteVideo` still hits the same 23503 (response code unverified) on a video that ranked
-      in the last 14 days (same RESTRICT, which the schema comment calls deliberate), and
-      `db:verify-text-pii-coverage` is red on two unclassified `source_name` columns
-      (`country_business_ready_score`, `country_economic_indicator`) that predate this change.
+      in the last 14 days (same RESTRICT, which the schema comment calls deliberate).
     - ~~**`information/how-qatoto-works.tsx:37,124` contradicts the terms**~~ — **FIXED.** Replaced
       claims that Qatoto ships goods, runs operations, files certifications, and handles returns with
       accurate marketplace venue copy aligned with Terms clause 5.
@@ -1566,9 +1564,8 @@ shared DB; `docs/STORE_BACKEND_STRUCTURE.md` A48 is the backend record):
 
 **Not verified end to end:** a real create → accept → linked-engagement round trip. The test
 account's org is `pending`, so it has no orders, and the UI was checked against stubbed responses.
-`db:verify-text-pii-coverage` fails on two pre-existing Civic Pulse columns
-(`country_business_ready_score.source_name`, `country_economic_indicator.source_name`), unrelated
-to this.
+(`db:verify-text-pii-coverage` was red here on two Civic Pulse `source_name` columns; both were
+classified `not_personal_data` on 2026-10-05 and it passes.)
 
 ---
 
