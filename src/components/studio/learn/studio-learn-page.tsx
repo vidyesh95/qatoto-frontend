@@ -9,8 +9,8 @@
 //
 // ⚠️ EVERY CLAIM HERE IS ONE THE APP ALREADY MAKES. Each row was written from copy that ships on
 // the surface it describes, and that surface is the authority: when a flow changes, its row here
-// changes in the same edit. The known upcoming case is variant axes — when a listing can sell on
-// two dimensions, the variants row under `listings` is wrong until it is rewritten.
+// changes in the same edit. Variant options (A26) were the first case: the variants row under
+// `listings` was rewritten in the change that shipped them.
 //
 // ⚠️ EVERY `href` MUST BE A ROUTE THAT WORKS, the `site-capabilities.ts` rule. A reader arrives here
 // already stuck, and a link to a `StudioPlannedPage` stub would tell them "not built yet" twice.
@@ -220,8 +220,11 @@ const LEARN_SECTIONS: readonly LearnSection[] = [
         answer: (
           <>
             Add them on the Variants step. Variants are optional — leave the step empty and the
-            listing sells as one thing. Each variant has its own price and stock, a listing can have
-            up to 50, and a buyer must choose one before adding the listing to a cart.
+            listing sells as one thing. Name up to three options, such as Size and Colour, and every
+            combination of their values becomes a variant; switch off any combination you do not
+            sell. Or list versions by name with no options. Each variant has its own price and
+            stock, a listing can have up to 50, and a buyer must choose one before adding the
+            listing to a cart.
           </>
         ),
       },

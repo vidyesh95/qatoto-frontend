@@ -12,6 +12,8 @@ import {
 import { useStoreCategoryAttributesQuery } from "@/hooks/store/categories";
 import {
   centsToDollarString,
+  PRODUCT_VARIANT_AXIS_MAX_COUNT,
+  PRODUCT_VARIANT_MAX_COUNT,
   SLUG_TO_CONDITION_LABEL,
   type SellerProductDocument,
   type SellerProductRelation,
@@ -50,8 +52,15 @@ import {
   type PricingTierDraft,
   type RelationDraft,
   type SpecificationDraft,
+  type VariantAxisDraft,
   type VariantDraft,
 } from "@/components/studio/listing/listing-editor-types";
+import {
+  countVariantCombinations,
+  deriveVariantAxes,
+  exceedsVariantCombinationLimit,
+  reconcileVariantGrid,
+} from "@/lib/products/variant-grid";
 
 type LoadedProductDetail = NonNullable<ReturnType<typeof useProductQuery>["data"]>;
 
@@ -90,6 +99,7 @@ interface ProductPrefillSetters {
   readonly setModelFileRejectionMessage: (msg: string | null) => void;
   readonly setPricingTiers: (tiers: PricingTierDraft[]) => void;
   readonly setVariants: (variants: VariantDraft[]) => void;
+  readonly setVariantAxes: (axes: VariantAxisDraft[]) => void;
   readonly setRetiredVariantCount: (count: number) => void;
   readonly setCustomizationSlots: (slots: CustomizationSlotDraft[]) => void;
   readonly setRetiredCustomizationSlotCount: (count: number) => void;
@@ -192,27 +202,36 @@ function applyProductPrefill(loadedProduct: LoadedProductDetail, setters: Produc
       .toSorted((first, second) => first.position - second.position)
       .map((tier, tierIndex) => toTierDraft(tier, "hydrated-tier", tierIndex)),
   );
-  setters.setVariants(
-    loadedProduct.variants
-      .filter((variant) => variant.state === "active")
+  const activeVariants = loadedProduct.variants
+    .filter((variant) => variant.state === "active")
+    .toSorted((first, second) => first.position - second.position);
+  const hydratedVariantRows: VariantDraft[] = activeVariants.map((variant, variantIndex) => ({
+    localId: `hydrated-variant-${String(variantIndex)}`,
+    savedId: variant.id,
+    name: variant.name,
+    publicSlug: variant.publicSlug,
+    isSlugEdited: true,
+    sku: variant.sku ?? "",
+    priceInDollars: centsToDollarString(variant.priceInCents),
+    stockQuantity: String(variant.stockQuantity),
+    minimumOrderQuantity:
+      variant.minimumOrderQuantity === null ? "" : String(variant.minimumOrderQuantity),
+    pricingTiers: variant.pricingTiers
       .toSorted((first, second) => first.position - second.position)
-      .map((variant, variantIndex) => ({
-        localId: `hydrated-variant-${String(variantIndex)}`,
-        savedId: variant.id,
-        name: variant.name,
-        publicSlug: variant.publicSlug,
-        isSlugEdited: true,
-        sku: variant.sku ?? "",
-        priceInDollars: centsToDollarString(variant.priceInCents),
-        stockQuantity: String(variant.stockQuantity),
-        minimumOrderQuantity:
-          variant.minimumOrderQuantity === null ? "" : String(variant.minimumOrderQuantity),
-        pricingTiers: variant.pricingTiers
-          .toSorted((first, second) => first.position - second.position)
-          .map((tier, tierIndex) =>
-            toTierDraft(tier, `hydrated-variant-${String(variantIndex)}-tier`, tierIndex),
-          ),
-      })),
+      .map((tier, tierIndex) =>
+        toTierDraft(tier, `hydrated-variant-${String(variantIndex)}-tier`, tierIndex),
+      ),
+    optionValues: variant.options.map((option) => option.value),
+    isOffered: true,
+  }));
+  // A26. Saved options rebuild the axes, and the grid is regenerated from them so a combination
+  // the seller switched off last time comes back as a row that is off, rather than vanishing.
+  const hydratedVariantAxes = deriveVariantAxes(activeVariants);
+  setters.setVariantAxes(hydratedVariantAxes);
+  setters.setVariants(
+    hydratedVariantAxes.length === 0
+      ? hydratedVariantRows
+      : reconcileVariantGrid(hydratedVariantAxes, hydratedVariantAxes, hydratedVariantRows, false),
   );
   setters.setRetiredVariantCount(
     loadedProduct.variants.filter((variant) => variant.state === "retired").length,
@@ -327,6 +346,9 @@ export function useCreateListingState(productId?: string) {
   // Step 6 — variants
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [retiredVariantCount, setRetiredVariantCount] = useState(0);
+  // A26. Empty is a flat list; any axis puts the step in grid mode.
+  const [variantAxes, setVariantAxes] = useState<VariantAxisDraft[]>([]);
+  const [variantGridLimitMessage, setVariantGridLimitMessage] = useState<string | null>(null);
 
   // Step 7 — customization
   const [customizationSlots, setCustomizationSlots] = useState<CustomizationSlotDraft[]>([]);
@@ -435,6 +457,7 @@ export function useCreateListingState(productId?: string) {
       setModelFileRejectionMessage,
       setPricingTiers,
       setVariants,
+      setVariantAxes,
       setRetiredVariantCount,
       setCustomizationSlots,
       setRetiredCustomizationSlotCount,
@@ -650,8 +673,68 @@ export function useCreateListingState(productId?: string) {
         stockQuantity: "",
         minimumOrderQuantity: "",
         pricingTiers: [],
+        optionValues: [],
+        isOffered: true,
       },
     ]);
+  }
+
+  /**
+   * A26. Every axis edit goes through here, so the grid is always regenerated from the axes and
+   * the rows it carries through are matched by the axes they share (`reconcileVariantGrid`).
+   *
+   * Removing the LAST axis returns to a flat list made of the offered rows, keeping their generated
+   * names. Adding the FIRST axis to a flat list carries none of its rows into the grid — a "Sea
+   * blue" variant is not "Small" renamed — so the saved ones are retired on save; the step says so
+   * before the button is pressed.
+   */
+  function applyVariantAxes(nextAxes: VariantAxisDraft[]) {
+    if (exceedsVariantCombinationLimit(nextAxes)) {
+      setVariantGridLimitMessage(
+        `That would make ${String(countVariantCombinations(nextAxes))} combinations. A listing can hold ${String(PRODUCT_VARIANT_MAX_COUNT)}.`,
+      );
+      return;
+    }
+    setVariantGridLimitMessage(null);
+    const previousAxes = variantAxes;
+    setVariantAxes(nextAxes);
+    setVariants((previousRows) =>
+      nextAxes.length === 0
+        ? previousRows
+            .filter((row) => row.isOffered)
+            .map((row) => ({ ...row, optionValues: [], isOffered: true }))
+        : reconcileVariantGrid(nextAxes, previousAxes, previousRows, true),
+    );
+  }
+
+  function handleAddVariantAxisClick() {
+    if (variantAxes.length >= PRODUCT_VARIANT_AXIS_MAX_COUNT) return;
+    applyVariantAxes([...variantAxes, { localId: crypto.randomUUID(), name: "", values: [] }]);
+  }
+
+  function handleRemoveVariantAxisClick(axisIndexToRemove: number) {
+    applyVariantAxes(variantAxes.filter((_, axisIndex) => axisIndex !== axisIndexToRemove));
+  }
+
+  function handleVariantAxisNameChange(axisIndex: number, name: string) {
+    // A name is not part of any row's identity, so renaming an axis regenerates nothing.
+    setVariantAxes((previousAxes) =>
+      previousAxes.map((axis, index) => (index === axisIndex ? { ...axis, name } : axis)),
+    );
+  }
+
+  function handleVariantAxisValuesChange(axisIndex: number, values: string[]) {
+    applyVariantAxes(
+      variantAxes.map((axis, index) => (index === axisIndex ? { ...axis, values } : axis)),
+    );
+  }
+
+  function handleVariantOfferedChange(variantIndex: number, isOffered: boolean) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex ? { ...variant, isOffered } : variant,
+      ),
+    );
   }
 
   function handleVariantNameChange(variantIndex: number, value: string) {
@@ -904,7 +987,7 @@ export function useCreateListingState(productId?: string) {
       setLocalError(input.error);
       return;
     }
-    const collectedVariants = collectVariants(variants);
+    const collectedVariants = collectVariants(variants, variantAxes);
     if ("error" in collectedVariants) {
       setLocalError(collectedVariants.error);
       return;
@@ -1101,6 +1184,13 @@ export function useCreateListingState(productId?: string) {
     // Step 8
     variants,
     retiredVariantCount,
+    variantAxes,
+    variantGridLimitMessage,
+    handleAddVariantAxisClick,
+    handleRemoveVariantAxisClick,
+    handleVariantAxisNameChange,
+    handleVariantAxisValuesChange,
+    handleVariantOfferedChange,
     handleAddVariantClick,
     handleVariantNameChange,
     handleVariantSlugChange,

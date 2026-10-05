@@ -2,6 +2,7 @@ import {
   CONDITION_LABEL_TO_SLUG,
   dollarsToCents,
   PRODUCT_SPECIFICATION_MAX_COUNT,
+  PRODUCT_VARIANT_AXIS_NAME_MAX_LENGTH,
   type CreateProductInput,
   type ProductAttributeValueInput,
   type ProductCustomizationOptionInput,
@@ -21,6 +22,7 @@ import {
   type HighlightDraft,
   type PricingTierDraft,
   type SpecificationDraft,
+  type VariantAxisDraft,
   type VariantDraft,
 } from "@/components/studio/listing/listing-editor-types";
 
@@ -174,11 +176,49 @@ export function collectHighlights(highlights: readonly HighlightDraft[]): {
   return { plan, imageFileByIndex };
 }
 
+/**
+ * A26. The axes, checked before any row: a row's options are only as good as the axes they name.
+ * `null` when they are fine.
+ */
+function findVariantAxisError(axes: readonly VariantAxisDraft[]): string | null {
+  const seenAxisNames = new Set<string>();
+  for (const [axisIndex, axis] of axes.entries()) {
+    const axisName = axis.name.trim();
+    const axisLabel = axisName.length > 0 ? `"${axisName}"` : `option ${String(axisIndex + 1)}`;
+    if (axisName.length === 0) return `Name ${axisLabel} — Size or Colour, for example.`;
+    if (axisName.length > PRODUCT_VARIANT_AXIS_NAME_MAX_LENGTH) {
+      return `Shorten the option name ${axisLabel} to ${String(PRODUCT_VARIANT_AXIS_NAME_MAX_LENGTH)} characters.`;
+    }
+    if (axis.values.length === 0) return `Add at least one value to ${axisLabel}, or remove it.`;
+    const normalizedAxisName = axisName.toLowerCase();
+    if (seenAxisNames.has(normalizedAxisName)) return `Two options are both called ${axisLabel}.`;
+    seenAxisNames.add(normalizedAxisName);
+  }
+  return null;
+}
+
+/**
+ * Turns the variant step into the `PUT /products/:id/variants` payload.
+ *
+ * WITH AXES (A26), only OFFERED rows are sent, each naming one value per axis. A combination the
+ * seller switched off is simply left out, which retires it on the backend if it was saved — the
+ * same retirement a removed flat-list row gets.
+ */
 export function collectVariants(
   variants: readonly VariantDraft[],
+  variantAxes: readonly VariantAxisDraft[],
 ): { variants: ProductVariantInput[] } | { error: string } {
+  const isGridMode = variantAxes.length > 0;
+  if (isGridMode) {
+    const axisError = findVariantAxisError(variantAxes);
+    if (axisError !== null) return { error: axisError };
+    if (!variants.some((variant) => variant.isOffered)) {
+      return { error: "Offer at least one combination, or remove the options." };
+    }
+  }
   const collected: ProductVariantInput[] = [];
   for (const [variantIndex, variant] of variants.entries()) {
+    if (!variant.isOffered) continue;
     const name = variant.name.trim();
     const publicSlug = variant.publicSlug.trim();
     const sku = variant.sku.trim();
@@ -193,7 +233,9 @@ export function collectVariants(
       rawStock.length === 0 &&
       rawMinimum.length === 0 &&
       variant.pricingTiers.length === 0;
-    if (isUntouchedNewRow) continue;
+    // A grid row is never "untouched": it exists because the seller offered that combination, so
+    // an empty price there is a question to answer, not a row to skip.
+    if (isUntouchedNewRow && !isGridMode) continue;
 
     const label = name.length > 0 ? `"${name}"` : `variant ${String(variantIndex + 1)}`;
     if (name.length === 0) {
@@ -235,6 +277,12 @@ export function collectVariants(
       ...(sku.length === 0 ? {} : { sku }),
       ...(rawMinimum.length === 0 ? {} : { minimumOrderQuantity }),
       pricingTiers: collectedVariantTiers.tiers,
+      options: isGridMode
+        ? variantAxes.map((axis, axisIndex) => ({
+            name: axis.name.trim(),
+            value: variant.optionValues[axisIndex] ?? "",
+          }))
+        : [],
     });
   }
 

@@ -163,6 +163,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
         // the same quantity and the same variant. Client component, server-rendered children.
         <ProductSelectionProvider
           variants={product.variants}
+          variantAxes={product.variantAxes}
           productMinimumOrderQuantity={product.minimumOrderQuantity}
         >
           <div className="mx-auto w-full max-w-md pb-40 md:max-w-2xl md:pb-24 lg:max-w-6xl lg:pb-12">

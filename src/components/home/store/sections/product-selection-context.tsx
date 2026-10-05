@@ -21,7 +21,7 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
-import type { ProductVariant } from "@/lib/store/products.schemas";
+import type { ProductVariant, ProductVariantAxis } from "@/lib/store/products.schemas";
 
 interface ProductSelection {
   // --- Variant ---
@@ -29,13 +29,18 @@ interface ProductSelection {
    * The variant the buy actions write against, or `null` for a product with no variants.
    *
    * `hasVariants` on the product is what decides whether `null` is legal: a product that declares it
-   * refuses `PUT /commerce/cart/items/:id` with `VARIANT_REQUIRED` until one is chosen. A FLAT LIST,
-   * not attribute axes — "Sea blue × Large" is one opaque variant name, deliberately (backend A26).
+   * refuses `PUT /commerce/cart/items/:id` with `VARIANT_REQUIRED` until one is chosen.
+   *
+   * ONE VARIANT, EVEN WITH OPTION AXES (A26). The picker's per-axis choices are READ off this
+   * variant's `options` rather than held separately, so the page cannot reach a combination that
+   * does not exist — `variant-selection.ts` turns every click into a real variant.
    */
   readonly selectedVariantId: string | null;
   readonly selectedVariant: ProductVariant | null;
   readonly selectVariant: (variantId: string) => void;
   readonly variants: readonly ProductVariant[];
+  /** A26. `[]` on a flat-list listing, which keeps the picker on its tile strip. */
+  readonly variantAxes: readonly ProductVariantAxis[];
 
   // --- Quantity ---
   /** The parsed, floored quantity. This is what a mutation sends. */
@@ -58,10 +63,12 @@ const ProductSelectionContext = createContext<ProductSelection | null>(null);
 
 export function ProductSelectionProvider({
   variants,
+  variantAxes,
   productMinimumOrderQuantity,
   children,
 }: {
   readonly variants: readonly ProductVariant[];
+  readonly variantAxes: readonly ProductVariantAxis[];
   /** `null` when the seller declared none; the floor is then 1. */
   readonly productMinimumOrderQuantity: number | null;
   readonly children: ReactNode;
@@ -102,6 +109,7 @@ export function ProductSelectionProvider({
         });
       },
       variants,
+      variantAxes,
       quantity: Math.max(
         minimumOrderQuantity,
         Number.isNaN(parsedQuantity) ? minimumOrderQuantity : parsedQuantity,
@@ -116,6 +124,7 @@ export function ProductSelectionProvider({
     selectedVariantId,
     selectedVariant,
     variants,
+    variantAxes,
     productMinimumOrderQuantity,
   ]);
 

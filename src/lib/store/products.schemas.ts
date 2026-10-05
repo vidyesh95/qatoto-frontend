@@ -127,8 +127,9 @@ export const ProductPricingTierSchema = z.object({
 /**
  * A1. One buyable variation, with its own price, stock, MOQ and gallery.
  *
- * A FLAT LIST, NOT AXES (A26, deferred deliberately). "Sea blue × Large" is one opaque variant
- * name rather than two dimensions a buyer picks independently. The picker renders one strip.
+ * A26: `options` is one value per option axis, in axis order, or `[]` on a flat-list listing. The
+ * variant stays the unit a buyer adds to a cart; the options only decide how the picker offers it.
+ * `.default([])` keeps the read parseable against a backend from before `0223`.
  */
 export const ProductVariantSchema = z.object({
   id: z.string(),
@@ -140,6 +141,16 @@ export const ProductVariantSchema = z.object({
   position: z.number().int(),
   images: z.array(ProductMediaSchema),
   pricingTiers: z.array(ProductPricingTierSchema),
+  options: z.array(z.object({ name: z.string(), value: z.string() })).default([]),
+});
+
+/**
+ * A26. One option axis, grouped by the SERVER so every client draws one order: axis order by option
+ * position, value order by first appearance across the variants in `position` order.
+ */
+export const ProductVariantAxisSchema = z.object({
+  name: z.string(),
+  values: z.array(z.string()),
 });
 
 /** A6. Richer than `keyFeatures`: a title, a body, and an image. */
@@ -313,6 +324,8 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   images: z.array(ProductMediaSchema),
   pricingTiers: z.array(ProductPricingTierSchema),
   variants: z.array(ProductVariantSchema),
+  /** A26. `[]` when the variants are a flat list, which keeps the PDP on its tile strip. */
+  variantAxes: z.array(ProductVariantAxisSchema).default([]),
   highlights: z.array(ProductHighlightSchema),
   documents: z.array(ProductDocumentSchema),
   /** A47. Null is "the seller attached none", and the page renders no 360° control for it. */
@@ -725,6 +738,7 @@ export type ProductPackaging = z.infer<typeof ProductPackagingSchema>;
 export type ProductMedia = z.infer<typeof ProductMediaSchema>;
 export type ProductPricingTier = z.infer<typeof ProductPricingTierSchema>;
 export type ProductVariant = z.infer<typeof ProductVariantSchema>;
+export type ProductVariantAxis = z.infer<typeof ProductVariantAxisSchema>;
 export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
 export type ProductDocument = z.infer<typeof ProductDocumentSchema>;
 export type ProductDocumentKind = (typeof PRODUCT_DOCUMENT_KINDS)[number];

@@ -187,6 +187,24 @@ export interface VariantDraft {
   stockQuantity: string;
   minimumOrderQuantity: string;
   pricingTiers: PricingTierDraft[];
+  /**
+   * A26. One value per option axis, in axis order; `[]` on a flat-list row. On a grid row these
+   * are the row's identity — `reconcileVariantGrid` matches rows across axis edits by them.
+   */
+  optionValues: string[];
+  /**
+   * Whether this combination is sold. Always true on a flat row. On a grid row, switching it off
+   * is how a seller removes a combination: the row stays so it can be switched back on, and the
+   * save omits it, which retires it if it was saved.
+   */
+  isOffered: boolean;
+}
+
+/** A26. One option axis the seller is defining — "Size" with "S", "M", "L". */
+export interface VariantAxisDraft {
+  localId: string;
+  name: string;
+  values: string[];
 }
 
 export interface CustomizationSlotDraft {

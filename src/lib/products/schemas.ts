@@ -112,9 +112,17 @@ export const ProductPricingTierSchema = z.object({
  * deleted because `commerce_order_product_line.variant_id` is `restrict`. The buyer's projection
  * filters to `active`; a seller form must show what exists and edit only what is live.
  *
- * A FLAT LIST, NOT AXES (A26, deferred). "Sea blue × Large" is one opaque variant name rather than
- * two dimensions — see `src/components/home/store/sections/variant-picker.tsx`.
+ * A26: A VARIANT MAY CARRY ONE VALUE PER OPTION AXIS. `options` is `[]` on a flat-list variant and
+ * `[{ name: "Colour", value: "Sea blue" }, { name: "Size", value: "Large" }]` on an axis one, in
+ * axis order. The variant is still the unit that is bought and snapshotted; the axes only decide how
+ * the editor generates variants and how the PDP offers them. `.default([])` keeps this read
+ * parseable against a backend from before `0223`.
  */
+export const ProductVariantOptionSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
+
 export const SellerProductVariantSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -126,6 +134,7 @@ export const SellerProductVariantSchema = z.object({
   position: z.number().int(),
   state: z.enum(["active", "retired"]),
   pricingTiers: z.array(ProductPricingTierSchema),
+  options: z.array(ProductVariantOptionSchema).default([]),
 });
 
 /**
@@ -673,6 +682,10 @@ export interface ProductHighlightInput {
  * that changed nothing. The field is required here so the compiler makes every caller decide, and
  * `[]` now means what it says — this variant has no ladder of its own and falls back to the
  * listing's.
+ *
+ * `options` (A26) is required for the same reason: `[]` is a flat-list variant, and an axis variant
+ * names one value per axis, in axis order. The backend refuses a set whose variants disagree on the
+ * axes or repeat a combination, so the editor generates them rather than letting a seller type them.
  */
 export interface ProductVariantInput {
   name: string;
@@ -682,6 +695,13 @@ export interface ProductVariantInput {
   stockQuantity: number;
   minimumOrderQuantity?: number;
   pricingTiers: ProductPricingTierInput[];
+  options: ProductVariantOptionInput[];
+}
+
+/** A26. One value of one option axis on the way IN. */
+export interface ProductVariantOptionInput {
+  name: string;
+  value: string;
 }
 
 /**
@@ -743,6 +763,13 @@ export const PRODUCT_CUSTOMIZATION_SLOT_KEY_PATTERN = /^[a-z0-9]+(_[a-z0-9]+)*$/
 export const PRODUCT_VARIANT_NAME_MAX_LENGTH = 120;
 export const PRODUCT_VARIANT_SLUG_MAX_LENGTH = 80;
 export const PRODUCT_VARIANT_SKU_MAX_LENGTH = 80;
+/**
+ * A26. At most three option axes. A value is at most 36 characters so three of them joined with
+ * " / " still fit `PRODUCT_VARIANT_NAME_MAX_LENGTH`, which is what the generated name must pass.
+ */
+export const PRODUCT_VARIANT_AXIS_MAX_COUNT = 3;
+export const PRODUCT_VARIANT_AXIS_NAME_MAX_LENGTH = 40;
+export const PRODUCT_VARIANT_AXIS_VALUE_MAX_LENGTH = 36;
 
 export const PRODUCT_HIGHLIGHT_MAX_COUNT = 12;
 export const PRODUCT_HIGHLIGHT_TITLE_MAX_LENGTH = 120;

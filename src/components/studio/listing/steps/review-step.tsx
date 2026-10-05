@@ -32,6 +32,8 @@ export interface ReviewStepProps {
   readonly filledSpecificationCount: number;
   readonly filledHighlightCount: number;
   readonly variantsCount: number;
+  /** A26. The option names, in order; `[]` for a flat list. */
+  readonly variantAxisNames: readonly string[];
   readonly customizationSlotsCount: number;
   readonly priceInDollars: string;
   readonly compareAtPriceInDollars: string;
@@ -178,13 +180,20 @@ function HighlightsReviewSection({
 
 function VariantsReviewSection({
   variantsCount,
+  variantAxisNames,
   onNavigateToStepIndex,
 }: {
   readonly variantsCount: number;
+  /** A26. The option names, in order; `[]` for a flat list. */
+  readonly variantAxisNames: readonly string[];
   readonly onNavigateToStepIndex: (stepIndex: number) => void;
 }) {
   const variantValue =
-    variantsCount > 0 ? `${String(variantsCount)} variant${variantsCount === 1 ? "" : "s"}` : "";
+    variantsCount === 0
+      ? ""
+      : variantAxisNames.length > 0
+        ? `${variantAxisNames.join(" × ")} — ${String(variantsCount)} combination${variantsCount === 1 ? "" : "s"} offered`
+        : `${String(variantsCount)} variant${variantsCount === 1 ? "" : "s"}`;
   return (
     <ReviewSection
       title="Variants"

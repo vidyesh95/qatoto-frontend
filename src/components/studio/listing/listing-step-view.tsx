@@ -172,6 +172,13 @@ export function ListingStepView({ stepId, state }: ListingStepViewProps) {
         <VariantsStep
           variants={state.variants}
           retiredVariantCount={state.retiredVariantCount}
+          variantAxes={state.variantAxes}
+          variantGridLimitMessage={state.variantGridLimitMessage}
+          onAddVariantAxis={state.handleAddVariantAxisClick}
+          onRemoveVariantAxis={state.handleRemoveVariantAxisClick}
+          onVariantAxisNameChange={state.handleVariantAxisNameChange}
+          onVariantAxisValuesChange={state.handleVariantAxisValuesChange}
+          onVariantOfferedChange={state.handleVariantOfferedChange}
           onAddVariant={state.handleAddVariantClick}
           onRemoveVariant={state.handleRemoveVariantClick}
           onVariantNameChange={state.handleVariantNameChange}
@@ -221,7 +228,14 @@ export function ListingStepView({ stepId, state }: ListingStepViewProps) {
           keyFeatures={state.keyFeatures}
           filledSpecificationCount={state.filledSpecificationCount}
           filledHighlightCount={state.filledHighlightCount}
-          variantsCount={state.variants.length}
+          // Counts what the save would actually send: offered combinations, or named flat rows —
+          // not the untouched blank rows `collectVariants` skips.
+          variantsCount={
+            state.variantAxes.length > 0
+              ? state.variants.filter((variant) => variant.isOffered).length
+              : state.variants.filter((variant) => variant.name.trim().length > 0).length
+          }
+          variantAxisNames={state.variantAxes.map((axis) => axis.name.trim())}
           customizationSlotsCount={state.customizationSlots.length}
           priceInDollars={state.priceInDollars}
           compareAtPriceInDollars={state.compareAtPriceInDollars}
