@@ -19,6 +19,7 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query";
 
+import { communityModerationKeys } from "@/hooks/store/admin-community";
 import type { ActionResponse } from "@/lib/http";
 import {
   acceptForumReply,
@@ -184,16 +185,20 @@ export function useSetForumReplyHelpful(): UseMutationResult<
 /**
  * Reports a thread or a reply.
  *
- * IT INVALIDATES NOTHING, and here that is correct rather than a gap: a report changes no read
- * this viewer has. The content stays exactly where it was until a moderator decides, and a UI that
- * refetched would be implying otherwise.
+ * Invalidates the staff community moderation queue if active in cache.
+ * For standard viewers, no reporter query exists so this is a clean no-op.
  */
 export function useCreateCommunityReport(): UseMutationResult<
   ActionResponse<CreatedCommunityReport>,
   Error,
   { readonly input: CreateCommunityReportInput }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input }) => createCommunityReport(input),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: communityModerationKeys.all });
+    },
   });
 }

@@ -14,8 +14,9 @@
 // change to what OTHER people see, and re-reading the product page to watch your own report take
 // something down would be teaching the reporter they have a delete button. They do not.
 
-import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 
+import { commerceModerationKeys } from "@/hooks/store/admin-content-reports";
 import type { ActionResponse } from "@/lib/http";
 import { createCommerceContentReport } from "@/lib/store/content-reports.api";
 import type {
@@ -36,14 +37,22 @@ import type {
  * The `Idempotency-Key` is passed by the CALLER, minted once per attempt, because only the
  * component knows when an attempt began. See the api file for why it is sent on a route that does
  * not demand one.
+ *
+ * Invalidates `commerceModerationKeys.all` if active in cache (e.g. for staff moderators testing or
+ * managing the queue). For standard viewers with no moderation queries in cache, this is a clean no-op.
  */
 export function useReportCommerceContentMutation(): UseMutationResult<
   ActionResponse<CommerceContentReport>,
   Error,
   { readonly input: CreateCommerceReportInput; readonly idempotencyKey: string }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, idempotencyKey }) =>
       createCommerceContentReport(input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: commerceModerationKeys.all });
+    },
   });
 }
