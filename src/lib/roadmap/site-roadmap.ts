@@ -852,20 +852,20 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other five Studio entries stay
-        // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
-        // (The count is the live one: Subtitles, Earn, Learn, Support, Feedback. It drifted to
-        // "six" and "seven" here as routes graduated and these comments did not.)
+        // `route`, not `planned`: the page reads real data now. Subtitles is the one Studio entry
+        // still `planned` — an honest placeholder is not a feature. (This comment named five, then
+        // six and seven, as routes graduated and it did not; `rg -l "^import StudioPlannedPage"
+        // "src/app/(studio)"` is the count that cannot drift.)
         kind: "route",
         label: "Analytics",
         href: "/studio/analytics",
         summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other five Studio entries stay
-        // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
-        // (The count is the live one: Subtitles, Earn, Learn, Support, Feedback. It drifted to
-        // "six" and "seven" here as routes graduated and these comments did not.)
+        // `route`, not `planned`: the page reads real data now. Subtitles is the one Studio entry
+        // still `planned` — an honest placeholder is not a feature. (This comment named five, then
+        // six and seven, as routes graduated and it did not; `rg -l "^import StudioPlannedPage"
+        // "src/app/(studio)"` is the count that cannot drift.)
         kind: "route",
         label: "Comments",
         href: "/studio/comments",
@@ -987,10 +987,12 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Collaborator credits on your videos. Credits grant no access.",
       },
       {
-        kind: "planned",
+        // GRADUATED from `planned`: the page now carries real guides, one anchored section per
+        // Studio area, written from the copy each of those surfaces already ships.
+        kind: "route",
         label: "Learn",
-        pathPattern: "/studio/learn",
-        summary: "How to do the thing you are stuck on.",
+        href: "/studio/learn",
+        summary: "How each part of the Studio works, by what you are trying to do.",
       },
       {
         // GRADUATED. It was `planned` while `todo.md` could still say "there is no ticket API";

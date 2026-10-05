@@ -17,7 +17,8 @@
 // ⚠️ EVERY `href` MUST BE A ROUTE THAT WORKS. `site-capabilities.ts` states the rule for the
 // roadmap and it binds harder here, because a reader arrives at this page already stuck: linking
 // a `StudioPlannedPage` stub would spend their trust to tell them "not built yet" a second time.
-// `/studio/learn` and `/studio/subtitles` are the two left, and neither is linked below.
+// `/studio/subtitles` is the one left, and it is not linked below. (`/studio/learn` graduated into
+// real guides; it is not linked from here yet either — in-context links into it are a later change.)
 //
 // ⚠️ THIS LINE NAMED `/studio/feedback` AMONG THEM AND NO LONGER DOES, because that route
 // graduated. It is still not linked from here, for a different and better reason: feedback ends
