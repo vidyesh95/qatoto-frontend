@@ -39,7 +39,8 @@ export function useReportBlueprintMutation(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: ReportBlueprintVariables) => reportBlueprint(variables),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: blueprintKeys.myReports() });
     },
   });

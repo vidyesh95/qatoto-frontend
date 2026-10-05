@@ -125,6 +125,19 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
   const submitOffering = useSubmitServiceOfferingMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
+  const handleSendForReviewClick = () => {
+    if (submitOffering.isPending) return;
+    submitOffering.mutate(
+      { offeringId: offering.id, idempotencyKey: getIdempotencyKey() },
+      {
+        onSuccess: (result) => {
+          if (!result.success) return;
+          resetIdempotencyKey();
+        },
+      },
+    );
+  };
+
   return (
     <div className="rounded-xl border border-border px-4 py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -141,61 +154,15 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
         {OFFERING_PRICING_MODEL_LABELS[offering.pricingModel]}
       </p>
 
-      {/* A NULL RANGE IS "QUOTED PER JOB", NEVER FREE AND NEVER BLANK. The currency column is non-null even
-          when both price ends are, so a blank here would read as a zero that has a currency. */}
-      <p className="mt-1 text-xs leading-4 text-foreground">
-        {offering.indicativePriceMinInCents === null || offering.indicativePriceMaxInCents === null
-          ? "Quoted per job"
-          : formatCentsRangeLabel(
-              offering.indicativePriceMinInCents,
-              offering.indicativePriceMaxInCents,
-              offering.currency,
-            )}
-      </p>
-
-      {offering.minimumLeadTimeDays !== null && offering.maximumLeadTimeDays !== null && (
-        <p className="text-xs leading-4 text-muted-foreground">
-          Lead time {formatCountLabel(offering.minimumLeadTimeDays)}–
-          {formatCountLabel(offering.maximumLeadTimeDays)} days
-        </p>
-      )}
-
-      {isFindableByBuyers ? (
-        <Link
-          href={`/store/services/${offering.slug}`}
-          className="mt-1 inline-block text-xs font-medium text-primary underline"
-        >
-          View the public listing
-        </Link>
-      ) : (
-        // NO LINK. Every non-active state 404s on its public URL, and a dead link reads as a bug rather than
-        // as an unpublished listing.
-        <p className="mt-1 text-xs leading-4 text-muted-foreground">
-          {offering.state === "pending_review"
-            ? "Waiting for a moderator. Buyers cannot find it yet."
-            : "Buyers cannot find this listing."}
-        </p>
-      )}
+      <OfferingPriceSummary offering={offering} />
+      <OfferingAvailabilityNotice offering={offering} isFindableByBuyers={isFindableByBuyers} />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {/* `draft` ONLY. `pending_review` is already in the queue, and the route refuses the two
-            moderator states outright. */}
         {offering.state === "draft" && (
           <button
             type="button"
             disabled={submitOffering.isPending}
-            onClick={() => {
-              if (submitOffering.isPending) return;
-              submitOffering.mutate(
-                { offeringId: offering.id, idempotencyKey: getIdempotencyKey() },
-                {
-                  onSuccess: (result) => {
-                    if (!result.success) return;
-                    resetIdempotencyKey();
-                  },
-                },
-              );
-            }}
+            onClick={handleSendForReviewClick}
             className={PRIMARY_BUTTON_CLASS}
           >
             {submitOffering.isPending ? "Sending…" : "Send for review"}
@@ -217,8 +184,79 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
         </button>
       </div>
 
-      {/* THE STATE IN THE RESPONSE, NEVER AN ASSUMED ONE. A submitted listing reads
-          `pending_review`: a moderator has not looked at it, so nothing here may say published. */}
+      <OfferingSubmitStatus submitOffering={submitOffering} />
+
+      {isEditingCoverage && <ServiceOfferingCoverageEditor offeringId={offering.id} />}
+
+      {isEditing && (
+        <OfferingEditForm
+          key={offering.id}
+          offering={offering}
+          onSaved={() => setIsEditing(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function OfferingPriceSummary({ offering }: { readonly offering: CreatedServiceOffering }) {
+  const hasLeadTime =
+    offering.minimumLeadTimeDays !== null && offering.maximumLeadTimeDays !== null;
+  const priceLabel =
+    offering.indicativePriceMinInCents === null || offering.indicativePriceMaxInCents === null
+      ? "Quoted per job"
+      : formatCentsRangeLabel(
+          offering.indicativePriceMinInCents,
+          offering.indicativePriceMaxInCents,
+          offering.currency,
+        );
+
+  return (
+    <>
+      <p className="mt-1 text-xs leading-4 text-foreground">{priceLabel}</p>
+      {hasLeadTime && (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Lead time {formatCountLabel(offering.minimumLeadTimeDays!)}–
+          {formatCountLabel(offering.maximumLeadTimeDays!)} days
+        </p>
+      )}
+    </>
+  );
+}
+
+function OfferingAvailabilityNotice({
+  offering,
+  isFindableByBuyers,
+}: {
+  readonly offering: CreatedServiceOffering;
+  readonly isFindableByBuyers: boolean;
+}) {
+  if (isFindableByBuyers) {
+    return (
+      <Link
+        href={`/store/services/${offering.slug}`}
+        className="mt-1 inline-block text-xs font-medium text-primary underline"
+      >
+        View the public listing
+      </Link>
+    );
+  }
+
+  const noticeText =
+    offering.state === "pending_review"
+      ? "Waiting for a moderator. Buyers cannot find it yet."
+      : "Buyers cannot find this listing.";
+
+  return <p className="mt-1 text-xs leading-4 text-muted-foreground">{noticeText}</p>;
+}
+
+function OfferingSubmitStatus({
+  submitOffering,
+}: {
+  readonly submitOffering: ReturnType<typeof useSubmitServiceOfferingMutation>;
+}) {
+  return (
+    <>
       {submitOffering.data?.success === false && (
         <p className="mt-2 text-xs leading-4 text-destructive">
           {submitOffering.data.error.message}
@@ -234,17 +272,7 @@ function OfferingRow({ offering }: { offering: CreatedServiceOffering }) {
           Sent for review. A moderator decides from here — it is not listed yet.
         </p>
       )}
-
-      {isEditingCoverage && <ServiceOfferingCoverageEditor offeringId={offering.id} />}
-
-      {isEditing && (
-        <OfferingEditForm
-          key={offering.id}
-          offering={offering}
-          onSaved={() => setIsEditing(false)}
-        />
-      )}
-    </div>
+    </>
   );
 }
 

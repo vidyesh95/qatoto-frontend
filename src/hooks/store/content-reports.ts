@@ -14,7 +14,7 @@
 // change to what OTHER people see, and re-reading the product page to watch your own report take
 // something down would be teaching the reporter they have a delete button. They do not.
 
-import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import type { ActionResponse } from "@/lib/http";
 import { createCommerceContentReport } from "@/lib/store/content-reports.api";
@@ -42,12 +42,8 @@ export function useReportCommerceContentMutation(): UseMutationResult<
   Error,
   { readonly input: CreateCommerceReportInput; readonly idempotencyKey: string }
 > {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, idempotencyKey }) =>
       createCommerceContentReport(input, { headers: { "Idempotency-Key": idempotencyKey } }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["store", "content-reports"] });
-    },
   });
 }

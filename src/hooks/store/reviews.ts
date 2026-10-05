@@ -123,7 +123,8 @@ export function useEditOwnReview(): UseMutationResult<
   return useMutation({
     mutationFn: ({ reviewId, input, idempotencyKey }) =>
       editOwnReview(reviewId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
-    onSuccess: (_data, { reviewId }) => {
+    onSuccess: (result, { reviewId }) => {
+      if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
     },
   });
@@ -140,7 +141,8 @@ export function useAttachReviewPhoto(): UseMutationResult<
       attachReviewPhoto(reviewId, imageFile, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
-    onSuccess: (_data, { reviewId }) => {
+    onSuccess: (result, { reviewId }) => {
+      if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
     },
   });
@@ -159,7 +161,8 @@ export function useAttachReviewVideo(): UseMutationResult<
   return useMutation({
     mutationFn: ({ reviewId, input, idempotencyKey }) =>
       attachReviewVideo(reviewId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
-    onSuccess: (_data, { reviewId }) => {
+    onSuccess: (result, { reviewId }) => {
+      if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
     },
   });
@@ -176,7 +179,8 @@ export function useDetachReviewMedia(): UseMutationResult<
       detachReviewMedia(reviewId, mediaId, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
-    onSuccess: (_data, { reviewId }) => {
+    onSuccess: (result, { reviewId }) => {
+      if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.ownReview(reviewId) });
     },
   });
@@ -227,7 +231,7 @@ export function useSetReviewHelpfulVote(): UseMutationResult<
     onSuccess: (result, { productSlug }) => {
       if (!result.success) return;
       void queryClient.invalidateQueries({
-        queryKey: ["store", "products", productSlug, "reviews"],
+        queryKey: storeKeys.productReviewsRoot(productSlug),
       });
     },
   });

@@ -33,7 +33,8 @@ export function useSubmitRightsClaimMutation(): UseMutationResult<
         draft: variables.draft,
         idempotencyKey: variables.idempotencyKey,
       }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (!result.success) return;
       await queryClient.invalidateQueries({ queryKey: blueprintKeys.rightsClaimQueueRoot() });
     },
   });

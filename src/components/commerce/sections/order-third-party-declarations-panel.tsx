@@ -147,41 +147,15 @@ function DeclarationRow({
 }) {
   const isWithdrawn = declaration.withdrawnAt !== null;
   const validityLabel = formatValidityLabel(declaration.validFrom, declaration.validUntil);
+  const kindLabel = `${DECLARATION_KIND_LABELS[declaration.kind]}${isWithdrawn ? " · Withdrawn" : ""}`;
 
   return (
     <div className={isWithdrawn ? "space-y-1 opacity-60" : "space-y-1"}>
-      <p className="text-xs leading-4 font-medium text-muted-foreground">
-        {DECLARATION_KIND_LABELS[declaration.kind]}
-        {isWithdrawn && " · Withdrawn"}
-      </p>
+      <p className="text-xs leading-4 font-medium text-muted-foreground">{kindLabel}</p>
       <p className="text-sm leading-5 font-medium text-foreground">
         {declaration.issuer} · {declaration.reference}
       </p>
-      <dl className="grid gap-x-4 gap-y-0.5 text-xs leading-4 text-muted-foreground sm:grid-cols-[auto_1fr]">
-        {declaration.standard !== null && (
-          <DetailPair term="Standard" description={declaration.standard} />
-        )}
-        {declaration.coverageClass !== null && (
-          <DetailPair term="Cover class" description={declaration.coverageClass} />
-        )}
-        {declaration.coverage !== null && (
-          <DetailPair
-            term="Amount stated"
-            description={formatCentsLabel(
-              declaration.coverage.amountInCents,
-              declaration.coverage.currency,
-            )}
-          />
-        )}
-        {validityLabel !== null && <DetailPair term="Valid" description={validityLabel} />}
-        {declaration.issuedOn !== null && (
-          <DetailPair term="Issued" description={formatIsoDateLabel(declaration.issuedOn)} />
-        )}
-        {declaration.shipmentLegId !== null && (
-          <DetailPair term="Covers" description="One leg of a shipment on this order" />
-        )}
-        {declaration.note !== null && <DetailPair term="Note" description={declaration.note} />}
-      </dl>
+      <DeclarationDetailsList declaration={declaration} validityLabel={validityLabel} />
       {declaration.evidenceDocumentId !== null && !isWithdrawn && (
         <a
           href={`${API_BASE_URL}/commerce/documents/${encodeURIComponent(declaration.evidenceDocumentId)}`}
@@ -192,13 +166,7 @@ function DeclarationRow({
           Open the attached document
         </a>
       )}
-      <p className="text-xs leading-4 text-muted-foreground">
-        Recorded by the {ORDER_PARTY_SIDE_LABELS[declaration.declaredBySide]} (
-        {declaration.declaredByLegalNameSnapshot}) on {formatIsoInstantLabel(declaration.createdAt)}
-        {declaration.withdrawnAt !== null &&
-          `, withdrawn on ${formatIsoInstantLabel(declaration.withdrawnAt)}`}
-        . Not checked by Qatoto.
-      </p>
+      <DeclarationProvenance declaration={declaration} />
       {declaration.isOwnDeclaration && !isWithdrawn && (
         <button
           type="button"
@@ -210,6 +178,57 @@ function DeclarationRow({
         </button>
       )}
     </div>
+  );
+}
+
+function DeclarationDetailsList({
+  declaration,
+  validityLabel,
+}: {
+  readonly declaration: OrderDeclaration;
+  readonly validityLabel: string | null;
+}) {
+  return (
+    <dl className="grid gap-x-4 gap-y-0.5 text-xs leading-4 text-muted-foreground sm:grid-cols-[auto_1fr]">
+      {declaration.standard !== null && (
+        <DetailPair term="Standard" description={declaration.standard} />
+      )}
+      {declaration.coverageClass !== null && (
+        <DetailPair term="Cover class" description={declaration.coverageClass} />
+      )}
+      {declaration.coverage !== null && (
+        <DetailPair
+          term="Amount stated"
+          description={formatCentsLabel(
+            declaration.coverage.amountInCents,
+            declaration.coverage.currency,
+          )}
+        />
+      )}
+      {validityLabel !== null && <DetailPair term="Valid" description={validityLabel} />}
+      {declaration.issuedOn !== null && (
+        <DetailPair term="Issued" description={formatIsoDateLabel(declaration.issuedOn)} />
+      )}
+      {declaration.shipmentLegId !== null && (
+        <DetailPair term="Covers" description="One leg of a shipment on this order" />
+      )}
+      {declaration.note !== null && <DetailPair term="Note" description={declaration.note} />}
+    </dl>
+  );
+}
+
+function DeclarationProvenance({ declaration }: { readonly declaration: OrderDeclaration }) {
+  const withdrawnSuffix =
+    declaration.withdrawnAt !== null
+      ? `, withdrawn on ${formatIsoInstantLabel(declaration.withdrawnAt)}`
+      : "";
+
+  return (
+    <p className="text-xs leading-4 text-muted-foreground">
+      Recorded by the {ORDER_PARTY_SIDE_LABELS[declaration.declaredBySide]} (
+      {declaration.declaredByLegalNameSnapshot}) on {formatIsoInstantLabel(declaration.createdAt)}
+      {withdrawnSuffix}. Not checked by Qatoto.
+    </p>
   );
 }
 

@@ -77,7 +77,14 @@ export default function SuppressedSearchTermsPage() {
         </p>
       )}
 
-      {renderListBody(viewState)}
+      <SuppressedTermsListBody
+        state={viewState}
+        unhideCandidateTerm={unhideCandidateTerm}
+        isLifting={liftMutation.isPending}
+        onConfirmUnhide={handleConfirmUnhideClick}
+        onSelectUnhideCandidate={setUnhideCandidateTerm}
+        onCancelUnhide={() => setUnhideCandidateTerm(null)}
+      />
 
       {viewState.status === "ready" && suppressedTermsQuery.hasNextPage && (
         <button
@@ -91,79 +98,93 @@ export default function SuppressedSearchTermsPage() {
       )}
     </div>
   );
+}
 
-  function renderListBody(state: SuppressedTermListViewState) {
-    switch (state.status) {
-      case "checking":
-      case "loading":
-        return <p className="text-sm text-muted-foreground">Loading…</p>;
-      case "restricted":
-        return (
-          <p className="text-sm text-muted-foreground">
-            Hidden search terms are open to staff who can moderate content.
-          </p>
-        );
-      case "error":
-        return <p className="text-sm text-muted-foreground">{state.message}</p>;
-      case "empty":
-        return <p className="text-sm text-muted-foreground">No search term is hidden.</p>;
-      case "ready":
-        return (
-          <ul className="divide-y divide-border">
-            {state.suppressedTerms.map((suppressedTerm) => (
-              <li
-                key={suppressedTerm.term}
-                className="flex flex-wrap items-start justify-between gap-3 py-3"
-              >
-                <div className="min-w-0 space-y-1">
-                  <p className="text-sm font-medium break-words text-foreground">
-                    {suppressedTerm.term}
-                  </p>
-                  <p className="text-xs leading-4 text-muted-foreground">
-                    Hidden {formatIsoInstantLabel(suppressedTerm.suppressedAt)}
-                    {suppressedTerm.suppressedBy === null
-                      ? " · moderator erased"
-                      : ` by ${suppressedTerm.suppressedBy.name}`}
-                  </p>
-                  <p className="text-xs leading-4 break-words text-foreground">
-                    {suppressedTerm.reason}
-                  </p>
-                </div>
-                {unhideCandidateTerm === suppressedTerm.term ? (
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      disabled={liftMutation.isPending}
-                      onClick={() => handleConfirmUnhideClick(suppressedTerm.term)}
-                      className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-60"
-                    >
-                      {liftMutation.isPending ? "Unhiding…" : "Confirm unhide"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUnhideCandidateTerm(null)}
-                      className="cursor-pointer text-xs font-medium text-foreground underline"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
+function SuppressedTermsListBody({
+  state,
+  unhideCandidateTerm,
+  isLifting,
+  onConfirmUnhide,
+  onSelectUnhideCandidate,
+  onCancelUnhide,
+}: {
+  readonly state: SuppressedTermListViewState;
+  readonly unhideCandidateTerm: string | null;
+  readonly isLifting: boolean;
+  readonly onConfirmUnhide: (term: string) => void;
+  readonly onSelectUnhideCandidate: (term: string) => void;
+  readonly onCancelUnhide: () => void;
+}) {
+  switch (state.status) {
+    case "checking":
+    case "loading":
+      return <p className="text-sm text-muted-foreground">Loading…</p>;
+    case "restricted":
+      return (
+        <p className="text-sm text-muted-foreground">
+          Hidden search terms are open to staff who can moderate content.
+        </p>
+      );
+    case "error":
+      return <p className="text-sm text-muted-foreground">{state.message}</p>;
+    case "empty":
+      return <p className="text-sm text-muted-foreground">No search term is hidden.</p>;
+    case "ready":
+      return (
+        <ul className="divide-y divide-border">
+          {state.suppressedTerms.map((suppressedTerm) => (
+            <li
+              key={suppressedTerm.term}
+              className="flex flex-wrap items-start justify-between gap-3 py-3"
+            >
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-medium wrap-break-word text-foreground">
+                  {suppressedTerm.term}
+                </p>
+                <p className="text-xs leading-4 text-muted-foreground">
+                  Hidden {formatIsoInstantLabel(suppressedTerm.suppressedAt)}
+                  {suppressedTerm.suppressedBy === null
+                    ? " · moderator erased"
+                    : ` by ${suppressedTerm.suppressedBy.name}`}
+                </p>
+                <p className="text-xs leading-4 wrap-break-word text-foreground">
+                  {suppressedTerm.reason}
+                </p>
+              </div>
+              {unhideCandidateTerm === suppressedTerm.term ? (
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setUnhideCandidateTerm(suppressedTerm.term)}
+                    disabled={isLifting}
+                    onClick={() => onConfirmUnhide(suppressedTerm.term)}
+                    className="cursor-pointer rounded-full bg-primary-imprint px-4 py-1.5 text-xs font-medium text-primary-imprint-foreground disabled:opacity-60"
+                  >
+                    {isLifting ? "Unhiding…" : "Confirm unhide"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onCancelUnhide}
                     className="cursor-pointer text-xs font-medium text-foreground underline"
                   >
-                    Unhide
+                    Cancel
                   </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        );
-      default: {
-        const exhaustiveCheck: never = state;
-        return exhaustiveCheck;
-      }
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSelectUnhideCandidate(suppressedTerm.term)}
+                  className="cursor-pointer text-xs font-medium text-foreground underline"
+                >
+                  Unhide
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      );
+    default: {
+      const exhaustiveCheck: never = state;
+      return exhaustiveCheck;
     }
   }
 }

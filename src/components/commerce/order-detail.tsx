@@ -105,25 +105,14 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   }
 }
 
-function OrderBody({
-  order,
-  relation,
-}: {
-  order: OrderDetailValue;
-  relation: OrderViewerRelation;
-}) {
-  const isBuyerSide = relation === "buyer" || relation === "both";
-  const isCounterpartySide = relation === "counterparty" || relation === "both";
-
-  const commercialTerms: DefinitionListItem[] = [
+function buildOrderCommercialTerms(
+  order: OrderDetailValue,
+  isBuyerSide: boolean,
+): DefinitionListItem[] {
+  return [
     { term: "Order state", value: ORDER_STATE_LABELS[order.state] },
     { term: "Placed", value: formatIsoInstantLabel(order.createdAt) },
     { term: "Source", value: ORDER_SOURCE_LABELS[order.source] },
-    /**
-     * A SERVICE ORDER BOUGHT FOR A GOODS ORDER links back to it — on the BUYER side only. The
-     * provider on this order is not a party to the goods order, so a link would only 404 for them;
-     * an absent row says nothing false.
-     */
     ...(order.relatedOrderId !== null && isBuyerSide
       ? [
           {
@@ -141,18 +130,8 @@ function OrderBody({
       : []),
     { term: "Buyer", value: order.buyerLegalNameSnapshot },
     { term: "Seller", value: order.counterpartyLegalNameSnapshot },
-    // Nullable on the wire, and `DefinitionList` prints "Not provided" for a null rather than dropping
-    // the row — on an order, "the seller did not state an Incoterm" is itself the fact worth showing.
     { term: "Incoterm", value: formatIncotermLabel(order.incotermSnapshot) },
     {
-      /**
-       * A45. WHAT THE BUYER ASKED FOR, and the label says "requested" for a reason: nothing here
-       * books freight. The mode the goods actually move by lives on the shipment's legs, visible
-       * on `/studio/logistics`.
-       *
-       * `DefinitionList` prints "Not provided" for a null, which is the correct reading — null
-       * means the buyer was never asked or never chose, not that they have no preference.
-       */
       term: "Requested transport",
       value: formatRequestedFreightModeLabel(order.requestedFreightModeSnapshot),
     },
@@ -163,44 +142,113 @@ function OrderBody({
     },
     {
       term: "Escrow",
-      // Absence made legible, which is why `hasEscrowProtection` is on the wire at all. Leaving it to
-      // be inferred from the rail name is how an interface implies a protection nobody agreed to.
       value: order.hasEscrowProtection
         ? "A third party is holding the funds."
         : "Nobody is holding the funds. The buyer carries the counterparty risk.",
     },
   ];
+}
+
+function OrderHeader({
+  order,
+  relation,
+  isBuyerSide,
+  isCounterpartySide,
+}: {
+  readonly order: OrderDetailValue;
+  readonly relation: OrderViewerRelation;
+  readonly isBuyerSide: boolean;
+  readonly isCounterpartySide: boolean;
+}) {
+  const placementLabel =
+    isCounterpartySide && !isBuyerSide ? "Order you received" : "Order you placed";
+  const organizationName =
+    isCounterpartySide && !isBuyerSide
+      ? order.buyerLegalNameSnapshot
+      : order.counterpartyLegalNameSnapshot;
+
+  return (
+    <header className="px-4 pt-4 lg:px-6">
+      <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
+        {placementLabel}
+      </p>
+      <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+        {formatCentsLabel(order.totalInCents, order.currency)}
+      </h1>
+      <p className="mt-0.5 text-sm text-muted-foreground">{organizationName}</p>
+
+      {relation === "neither" && (
+        <p className="mt-3 rounded-lg bg-warning-container px-3 py-2 text-xs leading-4 text-warning-container-foreground">
+          You are not a member of either organization on this order, so no actions are available. If
+          you expected to be, reload — this page may be showing a cached result from another
+          session.
+        </p>
+      )}
+
+      {relation === "both" && (
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
+          Your organization is both the buyer and the seller on this order, so both sides&apos;
+          controls are shown.
+        </p>
+      )}
+    </header>
+  );
+}
+
+function OrderTermsTabPanel({
+  order,
+  commercialTerms,
+  relation,
+  isBuyerSide,
+  isCounterpartySide,
+}: {
+  readonly order: OrderDetailValue;
+  readonly commercialTerms: readonly DefinitionListItem[];
+  readonly relation: OrderViewerRelation;
+  readonly isBuyerSide: boolean;
+  readonly isCounterpartySide: boolean;
+}) {
+  return (
+    <div className="space-y-4 px-4 pb-4 lg:px-6">
+      <DefinitionList items={commercialTerms} />
+      <OrderMoneyBreakdown order={order} />
+      {isBuyerSide && (
+        <OrderPaymentPanel orderId={order.id} paymentIntentId={order.paymentIntentId} />
+      )}
+      {isCounterpartySide && (
+        <OrderDeliveryAddressReveal orderId={order.id} orderState={order.state} />
+      )}
+      {order.settlementRail === "direct_offline" && (
+        <SettlementAttestationPanel
+          orderId={order.id}
+          viewerAttestationKind={isBuyerSide ? "payment_sent" : "payment_received"}
+        />
+      )}
+      <OrderCancelControl orderId={order.id} orderState={order.state} />
+      <OrderDisputeControl orderId={order.id} orderState={order.state} relation={relation} />
+    </div>
+  );
+}
+
+function OrderBody({
+  order,
+  relation,
+}: {
+  order: OrderDetailValue;
+  relation: OrderViewerRelation;
+}) {
+  const isBuyerSide = relation === "buyer" || relation === "both";
+  const isCounterpartySide = relation === "counterparty" || relation === "both";
+  const commercialTerms = buildOrderCommercialTerms(order, isBuyerSide);
 
   return (
     <div className="pb-10">
-      <header className="px-4 pt-4 lg:px-6">
-        <p className="text-xs leading-4 font-medium tracking-wider text-muted-foreground uppercase">
-          {isCounterpartySide && !isBuyerSide ? "Order you received" : "Order you placed"}
-        </p>
-        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
-          {formatCentsLabel(order.totalInCents, order.currency)}
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {isCounterpartySide && !isBuyerSide
-            ? order.buyerLegalNameSnapshot
-            : order.counterpartyLegalNameSnapshot}
-        </p>
-
-        {relation === "neither" && (
-          <p className="mt-3 rounded-lg bg-warning-container px-3 py-2 text-xs leading-4 text-warning-container-foreground">
-            You are not a member of either organization on this order, so no actions are available.
-            If you expected to be, reload — this page may be showing a cached result from another
-            session.
-          </p>
-        )}
-
-        {relation === "both" && (
-          <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
-            Your organization is both the buyer and the seller on this order, so both sides&apos;
-            controls are shown.
-          </p>
-        )}
-      </header>
+      <OrderHeader
+        order={order}
+        relation={relation}
+        isBuyerSide={isBuyerSide}
+        isCounterpartySide={isCounterpartySide}
+      />
 
       <TabStrip
         ariaLabel="Order sections"
@@ -210,52 +258,13 @@ function OrderBody({
             id: "terms",
             label: "Terms",
             panel: (
-              <div className="space-y-4 px-4 pb-4 lg:px-6">
-                <DefinitionList items={commercialTerms} />
-                <OrderMoneyBreakdown order={order} />
-                {/* BUYER-SIDE ONLY, because `POST …/payment-intents` carries
-                    `requireActiveBuyerCommerceOrganization` — a seller pressing it would get a 403.
-                    The panel still READS the intent and the refunds for whoever can see the order,
-                    so a seller is not shown a pay button; they are simply not shown this block.
-                    Showing it read-only to the seller is the obvious next step and wants its own
-                    decision about what a seller should learn from a buyer's payment state. */}
-                {isBuyerSide && (
-                  <OrderPaymentPanel orderId={order.id} paymentIntentId={order.paymentIntentId} />
-                )}
-                {/* Only a counterparty can reveal the address, and only past `confirmed`. The control
-                    itself explains what pressing it does — see its own file. */}
-                {isCounterpartySide && (
-                  <OrderDeliveryAddressReveal orderId={order.id} orderState={order.state} />
-                )}
-                {/* BOTH SIDES, AND ONLY ON THE OFFLINE RAIL. The buyer records `payment_sent` and
-                    the seller `payment_received` — the server derives which from the order, so
-                    neither can claim the other's half. Gated on the rail rather than left to the
-                    panel's own `isAttestable` so that a processor or escrow order does not spend a
-                    request to be told there is nothing to record. */}
-                {order.settlementRail === "direct_offline" && (
-                  <SettlementAttestationPanel
-                    orderId={order.id}
-                    /* WHICH CLAIM THIS VIEWER OWNS. The server derives the kind from the order and
-                       ignores anything the client says, so this is purely so the panel labels the
-                       right half and does not offer a form for a claim already made. `both` — an
-                       organization trading with itself — resolves to the buyer's half, matching the
-                       server's own tie-break in `resolveAttestationKind`. */
-                    viewerAttestationKind={isBuyerSide ? "payment_sent" : "payment_received"}
-                  />
-                )}
-                {/* BOTH SIDES, because the service accepts the buyer OR the counterparty. This used to be a
-                    buyer-only line of copy pointing at a cancel control on the orders list that did not
-                    exist — see `order-cancel-control.tsx`. */}
-                <OrderCancelControl orderId={order.id} orderState={order.state} />
-                {/* BUYER-ONLY, unlike cancellation above: the service refuses any actor that is not
-                    the order's buyer organization. A seller answers an accusation with a note on the
-                    dispute, which is what the note write is for. */}
-                <OrderDisputeControl
-                  orderId={order.id}
-                  orderState={order.state}
-                  relation={relation}
-                />
-              </div>
+              <OrderTermsTabPanel
+                order={order}
+                commercialTerms={commercialTerms}
+                relation={relation}
+                isBuyerSide={isBuyerSide}
+                isCounterpartySide={isCounterpartySide}
+              />
             ),
           },
           {

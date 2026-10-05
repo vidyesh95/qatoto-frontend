@@ -74,7 +74,7 @@ export function useRecordSettlementAttestation(): UseMutationResult<
     onSuccess: (result, { orderId }) => {
       if (!result.success) return;
       queryClient.setQueryData(storeKeys.orderSettlementAttestations(orderId), result);
-      void queryClient.invalidateQueries({ queryKey: ["store", "provider", "earnings"] });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerEarningsRoot() });
     },
   });
 }

@@ -17,7 +17,7 @@
 // server says which applies (`isEditable`), so the editor shows the lanes and the reason instead of
 // a Save whose only outcome is an error.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   useOwnedOfferingCoverageQuery,
@@ -148,7 +148,7 @@ function CoverageLaneForm({
   const [laneDrafts, setLaneDrafts] = useState<readonly CoverageLaneDraft[]>(() =>
     coverage.coverages.map((lane, index) => toLaneDraft(lane, index)),
   );
-  const [nextDraftId, setNextDraftId] = useState(coverage.coverages.length);
+  const nextDraftIdRef = useRef(coverage.coverages.length);
   const setCoverage = useSetOfferingCoverageMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
@@ -172,8 +172,9 @@ function CoverageLaneForm({
   }
 
   function handleAddLaneClick() {
-    setLaneDrafts((currentLanes) => [...currentLanes, emptyLaneDraft(nextDraftId)]);
-    setNextDraftId((draftId) => draftId + 1);
+    const draftId = nextDraftIdRef.current;
+    nextDraftIdRef.current += 1;
+    setLaneDrafts((currentLanes) => [...currentLanes, emptyLaneDraft(draftId)]);
     resetIdempotencyKey();
   }
 

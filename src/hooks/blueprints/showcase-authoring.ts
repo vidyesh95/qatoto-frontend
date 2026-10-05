@@ -57,7 +57,8 @@ export function useUploadShowcaseWriteUpImageMutation() {
   return useMutation({
     mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
       uploadShowcaseWriteUpImage(variables.imageFile, variables.draftId),
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
+      if (!result.success) return;
       if (variables.draftId) {
         void queryClient.invalidateQueries({
           queryKey: blueprintKeys.draft(variables.draftId),
@@ -78,7 +79,8 @@ export function useUploadShowcaseHeadingImageMutation() {
   return useMutation({
     mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
       uploadShowcaseHeadingImage(variables.imageFile, variables.draftId),
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
+      if (!result.success) return;
       if (variables.draftId) {
         void queryClient.invalidateQueries({
           queryKey: blueprintKeys.draft(variables.draftId),

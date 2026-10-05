@@ -92,6 +92,30 @@ function buildServiceLineSeed(offering: PublicServiceOffering): RfqServiceLineSe
  * what the composer's own copy tells the buyer. Nothing currently links here with both, but
  * refusing the combination would be this route inventing a rule the request model does not have.
  */
+function extractFirstSearchParam(param: string | string[] | undefined): string | undefined {
+  return Array.isArray(param) ? param[0] : param;
+}
+
+function resolveLinkedOrderId(rawOrderId: string | undefined): string | null {
+  return rawOrderId !== undefined && ORDER_ID_PATTERN.test(rawOrderId) ? rawOrderId : null;
+}
+
+async function loadSeededGoodsLine(
+  productSlug: string | undefined,
+): Promise<RfqGoodsLineSeed | null> {
+  if (!productSlug) return null;
+  const productResult = await getStoreProduct(productSlug);
+  return productResult.success ? buildGoodsLineSeed(productResult.data) : null;
+}
+
+async function loadSeededServiceLine(
+  offeringSlug: string | undefined,
+): Promise<RfqServiceLineSeed | null> {
+  if (!offeringSlug) return null;
+  const offeringResult = await getStoreServiceOffering(offeringSlug);
+  return offeringResult.success ? buildServiceLineSeed(offeringResult.data) : null;
+}
+
 export default async function NewRfqRoute({
   searchParams,
 }: {
@@ -102,32 +126,21 @@ export default async function NewRfqRoute({
   }>;
 }) {
   const { productSlug, offeringSlug, relatedOrderId } = await searchParams;
-  const requestedProductSlug = Array.isArray(productSlug) ? productSlug[0] : productSlug;
-  const requestedOfferingSlug = Array.isArray(offeringSlug) ? offeringSlug[0] : offeringSlug;
-  const requestedRelatedOrderId = Array.isArray(relatedOrderId)
-    ? relatedOrderId[0]
-    : relatedOrderId;
+  const requestedProductSlug = extractFirstSearchParam(productSlug);
+  const requestedOfferingSlug = extractFirstSearchParam(offeringSlug);
+  const requestedRelatedOrderId = extractFirstSearchParam(relatedOrderId);
+
   /**
    * SHAPE-CHECKED ONLY. Whether the reader is a party to that order is the backend's call, made on
    * submit (422 otherwise) — reading the order here to decide would be the page asserting an
    * authorization fact. A malformed value is dropped rather than sent to be refused.
    */
-  const linkedOrderId =
-    requestedRelatedOrderId !== undefined && ORDER_ID_PATTERN.test(requestedRelatedOrderId)
-      ? requestedRelatedOrderId
-      : null;
+  const linkedOrderId = resolveLinkedOrderId(requestedRelatedOrderId);
 
-  let seededGoodsLine: RfqGoodsLineSeed | null = null;
-  if (requestedProductSlug !== undefined && requestedProductSlug.length > 0) {
-    const productResult = await getStoreProduct(requestedProductSlug);
-    if (productResult.success) seededGoodsLine = buildGoodsLineSeed(productResult.data);
-  }
-
-  let seededServiceLine: RfqServiceLineSeed | null = null;
-  if (requestedOfferingSlug !== undefined && requestedOfferingSlug.length > 0) {
-    const offeringResult = await getStoreServiceOffering(requestedOfferingSlug);
-    if (offeringResult.success) seededServiceLine = buildServiceLineSeed(offeringResult.data);
-  }
+  const [seededGoodsLine, seededServiceLine] = await Promise.all([
+    loadSeededGoodsLine(requestedProductSlug),
+    loadSeededServiceLine(requestedOfferingSlug),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pt-4 pb-10 lg:px-6">

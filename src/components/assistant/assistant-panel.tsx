@@ -27,6 +27,7 @@ import {
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
+  type RefObject,
 } from "react";
 
 import Image from "next/image";
@@ -123,6 +124,471 @@ function resolveActiveConversation({
       };
 }
 
+function recordAnsweredPairInPreferences(
+  updatePreference: ReturnType<typeof useBrowserPreferences>["updatePreference"],
+  answeredPair: {
+    readonly conversationId: string;
+    readonly questionText: string;
+    readonly answer: AssistantPairAnswer;
+    readonly answeredAtMs: number;
+  },
+): AssistantPairSaveStatus {
+  const saveOutcome: { status: AssistantPairSaveStatus } = { status: "storage_refused" };
+  const didStorageAcceptWrite = updatePreference("assistantConversations", (storedValue) => {
+    const appendResult = appendAnsweredPair(readAssistantConversations(storedValue), {
+      conversationId: answeredPair.conversationId,
+      questionText: answeredPair.questionText,
+      answer: answeredPair.answer,
+      nowMs: answeredPair.answeredAtMs,
+    });
+    if (appendResult.status !== "saved") {
+      saveOutcome.status = appendResult.status;
+      return storedValue;
+    }
+    saveOutcome.status = "saved";
+    return appendResult.conversations;
+  });
+  if (saveOutcome.status === "saved" && !didStorageAcceptWrite) return "storage_refused";
+  return saveOutcome.status;
+}
+
+function computeLastAnsweredText(
+  lastMessage: ReturnType<typeof useAssistantBrain>["messages"][number] | undefined,
+): string {
+  if (lastMessage?.role === "assistant") {
+    if (lastMessage.status === "answered") return lastMessage.reply.reply;
+    if (lastMessage.status === "failed") return lastMessage.message;
+  }
+  return "";
+}
+
+function computeLastMessageKey(
+  conversationId: string,
+  lastMessage: ReturnType<typeof useAssistantBrain>["messages"][number] | undefined,
+  paneView: PaneView,
+): string {
+  if (lastMessage === undefined) {
+    return `${conversationId}-none-${paneView}`;
+  }
+  const statusOrRole = lastMessage.role === "assistant" ? lastMessage.status : "user";
+  return `${conversationId}-${lastMessage.messageKey}-${statusOrRole}-${paneView}`;
+}
+
+function computePanelBottomStyle(
+  mascotSize: MascotSize,
+): CSSProperties & Record<`--${string}`, string> {
+  const panelBottomPx = computeAssistantPanelBottomPx(mascotSize);
+  return {
+    "--assistant-panel-bottom": `${panelBottomPx.mobile}px`,
+    "--assistant-panel-bottom-desktop": `${panelBottomPx.desktop}px`,
+  };
+}
+
+function AssistantPanelHeader({
+  paneView,
+  conversationsCount,
+  headingRef,
+  onSetPaneView,
+  onClose,
+}: {
+  readonly paneView: PaneView;
+  readonly conversationsCount: number;
+  readonly headingRef: RefObject<HTMLHeadingElement | null>;
+  readonly onSetPaneView: (paneView: PaneView) => void;
+  readonly onClose: () => void;
+}) {
+  return (
+    <header className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+      {paneView === "chat" && (
+        <button
+          type="button"
+          onClick={() => onSetPaneView("list")}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint lg:hidden"
+        >
+          <Image
+            src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={16}
+            height={16}
+          />
+          Chats
+          <span className="text-muted-foreground">{conversationsCount}</span>
+        </button>
+      )}
+      {paneView === "list" && (
+        <button
+          type="button"
+          onClick={() => onSetPaneView("chat")}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint lg:hidden"
+        >
+          <Image
+            src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={16}
+            height={16}
+          />
+          Back to chat
+        </button>
+      )}
+      <h2
+        ref={headingRef}
+        id={`${ASSISTANT_PANEL_ID}-heading`}
+        tabIndex={-1}
+        className="min-w-0 flex-1 truncate px-1 text-sm font-medium text-foreground focus:outline-none"
+      >
+        Qatoto assistant
+      </h2>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close assistant"
+        className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+      >
+        <Image
+          src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={20}
+          height={20}
+        />
+      </button>
+    </header>
+  );
+}
+
+function AssistantSettingsPane({
+  activeSettingsView,
+  memoryNotes,
+  mascotSize,
+  mascotSpeed,
+  dockSide,
+  onBackToChat,
+  onRemoveNote,
+  onClearNotes,
+  onMascotSizeChange,
+  onMascotSpeedChange,
+  onDockSideChange,
+}: {
+  readonly activeSettingsView: AssistantSettingsView;
+  readonly memoryNotes: readonly string[];
+  readonly mascotSize: MascotSize;
+  readonly mascotSpeed: MascotSpeed;
+  readonly dockSide: MascotDockSide;
+  readonly onBackToChat: () => void;
+  readonly onRemoveNote: (noteIndex: number) => void;
+  readonly onClearNotes: () => void;
+  readonly onMascotSizeChange: (mascotSize: MascotSize) => void;
+  readonly onMascotSpeedChange: (mascotSpeed: MascotSpeed) => void;
+  readonly onDockSideChange: (dockSide: MascotDockSide) => void;
+}) {
+  return (
+    <>
+      <div className="flex items-center gap-1 border-b border-border px-2 py-2">
+        <button
+          type="button"
+          onClick={onBackToChat}
+          className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
+        >
+          <Image
+            src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={18}
+            height={18}
+          />
+          <span className="sr-only">Back to the chat</span>
+        </button>
+        <h3 className="text-sm leading-5 font-medium text-foreground">
+          {SETTINGS_VIEW_HEADINGS[activeSettingsView]}
+        </h3>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        {activeSettingsView === "memory" ? (
+          <MemorySection
+            memoryNotes={memoryNotes}
+            onRemoveNote={onRemoveNote}
+            onClearNotes={onClearNotes}
+          />
+        ) : (
+          <AppearanceSection
+            mascotSize={mascotSize}
+            mascotSpeed={mascotSpeed}
+            dockSide={dockSide}
+            onMascotSizeChange={onMascotSizeChange}
+            onMascotSpeedChange={onMascotSpeedChange}
+            onDockSideChange={onDockSideChange}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+function AssistantChatComposer({
+  draftQuestion,
+  isModelReady,
+  isAwaitingReply,
+  canSend,
+  onDraftQuestionChange,
+  onSubmitDraft,
+}: {
+  readonly draftQuestion: string;
+  readonly isModelReady: boolean;
+  readonly isAwaitingReply: boolean;
+  readonly canSend: boolean;
+  readonly onDraftQuestionChange: (draftQuestion: string) => void;
+  readonly onSubmitDraft: () => void;
+}) {
+  const handleComposerSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
+    formEvent.preventDefault();
+    onSubmitDraft();
+  };
+
+  const handleComposerKeyDown = (keyboardEvent: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      keyboardEvent.key !== "Enter" ||
+      keyboardEvent.shiftKey ||
+      keyboardEvent.nativeEvent.isComposing
+    ) {
+      return;
+    }
+    keyboardEvent.preventDefault();
+    onSubmitDraft();
+  };
+
+  return (
+    <form
+      onSubmit={handleComposerSubmit}
+      className="flex items-end gap-2 border-t border-border px-3 py-3"
+    >
+      <label htmlFor={`${ASSISTANT_PANEL_ID}-question`} className="sr-only">
+        Ask the assistant
+      </label>
+      <textarea
+        id={`${ASSISTANT_PANEL_ID}-question`}
+        value={draftQuestion}
+        onChange={(changeEvent) => onDraftQuestionChange(changeEvent.target.value)}
+        onKeyDown={handleComposerKeyDown}
+        maxLength={ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH}
+        rows={2}
+        placeholder={isModelReady ? "Ask anything" : "Go to a place or search, like “my orders”"}
+        className="min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
+      />
+      <button
+        type="submit"
+        disabled={!canSend}
+        className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {isAwaitingReply ? "Asking…" : "Send"}
+      </button>
+    </form>
+  );
+}
+
+function AssistantChatPane({
+  activeConversationTitle,
+  conversationId,
+  paneView,
+  lockedModel,
+  selectedModel,
+  modelAvailability,
+  isListFull,
+  chatState,
+  isModelReady,
+  isComposerShown,
+  isAwaitingReply,
+  canSend,
+  messages,
+  memoryNotes,
+  isActiveConversationStorageRefused,
+  draftQuestion,
+  onSelectModel,
+  onStartNewChatWith,
+  onStartNewChat,
+  onStartOnDeviceDownload,
+  onSaveNote,
+  onNavigate,
+  onSendMessage,
+  onDraftQuestionChange,
+  onSubmitDraft,
+}: {
+  readonly activeConversationTitle: string;
+  readonly conversationId: string;
+  readonly paneView: PaneView;
+  readonly lockedModel: AssistantModelRoute | null;
+  readonly selectedModel: ReturnType<typeof resolveConversationModel>;
+  readonly modelAvailability: ReturnType<typeof useAssistantBrain>["modelAvailability"];
+  readonly isListFull: boolean;
+  readonly chatState: ReturnType<typeof useAssistantBrain>["chatState"];
+  readonly isModelReady: boolean;
+  readonly isComposerShown: boolean;
+  readonly isAwaitingReply: boolean;
+  readonly canSend: boolean;
+  readonly messages: ReturnType<typeof useAssistantBrain>["messages"];
+  readonly memoryNotes: readonly string[];
+  readonly isActiveConversationStorageRefused: boolean;
+  readonly draftQuestion: string;
+  readonly onSelectModel: (model: AssistantModelRoute) => void;
+  readonly onStartNewChatWith: (model: AssistantModelRoute) => void;
+  readonly onStartNewChat: () => void;
+  readonly onStartOnDeviceDownload: () => void;
+  readonly onSaveNote: (memoryNote: string) => void;
+  readonly onNavigate: () => void;
+  readonly onSendMessage: (messageText: string) => void;
+  readonly onDraftQuestionChange: (draftQuestion: string) => void;
+  readonly onSubmitDraft: () => void;
+}) {
+  const conversationScrollAreaRef = useRef<HTMLDivElement>(null);
+  const conversationEndRef = useRef<HTMLDivElement>(null);
+  const lastScrolledMessageKeyRef = useRef("");
+
+  const lastMessage = messages.at(-1);
+  const lastMessageKey = computeLastMessageKey(conversationId, lastMessage, paneView);
+
+  useEffect(() => {
+    if (lastScrolledMessageKeyRef.current === lastMessageKey) return;
+    lastScrolledMessageKeyRef.current = lastMessageKey;
+    if (lastMessage === undefined) {
+      conversationScrollAreaRef.current?.scrollTo({ top: 0 });
+      return;
+    }
+    conversationEndRef.current?.scrollIntoView({ block: "end" });
+  }, [lastMessageKey, lastMessage]);
+
+  const lastAnsweredText = computeLastAnsweredText(lastMessage);
+
+  return (
+    <>
+      <div className="space-y-1.5 border-b border-border px-4 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="min-w-0 truncate text-sm leading-5 font-medium text-foreground">
+            {activeConversationTitle}
+          </h3>
+          <AssistantModelPicker
+            idPrefix={ASSISTANT_PANEL_ID}
+            lockedModel={lockedModel}
+            selectedModel={selectedModel}
+            modelAvailability={modelAvailability}
+            canStartNewChat={!isListFull}
+            onSelectModel={onSelectModel}
+            onStartNewChatWith={onStartNewChatWith}
+          />
+        </div>
+        {/* WHICH MODEL THIS CHAT USES, always, before anything is typed. An <output> is a
+            status live region, so a change (a download finishing) is announced. */}
+        <output className="block text-xs leading-4 text-muted-foreground">
+          {describeChatStateLine(chatState)}
+        </output>
+      </div>
+
+      <div
+        ref={conversationScrollAreaRef}
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3"
+      >
+        <ChatStateNotice
+          chatState={chatState}
+          canStartNewChat={!isListFull}
+          onDownloadClick={onStartOnDeviceDownload}
+          onStartNewChat={onStartNewChat}
+        />
+
+        {messages.length > 0 ? (
+          <AssistantMessageList
+            messages={messages}
+            memoryNotes={memoryNotes}
+            onSaveNote={onSaveNote}
+            onNavigate={onNavigate}
+          />
+        ) : (
+          <>
+            {isComposerShown && (
+              <>
+                <p className="text-xs leading-4 text-muted-foreground">
+                  {isModelReady
+                    ? "Ask where something is on Qatoto, or ask it to find a product, a video or a research programme. Places and searches open at once; anything else goes to the model, which can be wrong, so check what it links to."
+                    : "Ask for a place or a search. These work in any browser, with no model."}
+                </p>
+                <RouterExamples
+                  isDisabled={isAwaitingReply}
+                  onExampleClick={(exampleText) => onSendMessage(exampleText)}
+                />
+              </>
+            )}
+            <PlacesSection onNavigate={onNavigate} />
+          </>
+        )}
+        {isActiveConversationStorageRefused && (
+          <p className="text-xs leading-4 text-destructive">
+            Couldn&apos;t save this chat in this browser. Storage is full or blocked, so it will be
+            gone after a reload.
+          </p>
+        )}
+        <div ref={conversationEndRef} />
+        <p className="sr-only" aria-live="polite">
+          {lastAnsweredText}
+        </p>
+      </div>
+
+      {isComposerShown && (
+        <AssistantChatComposer
+          draftQuestion={draftQuestion}
+          isModelReady={isModelReady}
+          isAwaitingReply={isAwaitingReply}
+          canSend={canSend}
+          onDraftQuestionChange={onDraftQuestionChange}
+          onSubmitDraft={onSubmitDraft}
+        />
+      )}
+    </>
+  );
+}
+
+function AssistantRailPane({
+  isOpenOnMobile,
+  conversations,
+  activeConversationId,
+  isDraftActive,
+  isListFull,
+  panelOpenedAtMs,
+  activeSettingsView,
+  memoryNoteCount,
+  onSelectConversation,
+  onStartNewChat,
+  onDeleteConversation,
+  onOpenSettings,
+}: {
+  readonly isOpenOnMobile: boolean;
+  readonly conversations: readonly AssistantConversation[];
+  readonly activeConversationId: string;
+  readonly isDraftActive: boolean;
+  readonly isListFull: boolean;
+  readonly panelOpenedAtMs: number;
+  readonly activeSettingsView: AssistantSettingsView | null;
+  readonly memoryNoteCount: number;
+  readonly onSelectConversation: (conversationId: string) => void;
+  readonly onStartNewChat: () => void;
+  readonly onDeleteConversation: (conversationId: string) => void;
+  readonly onOpenSettings: (paneView: PaneView) => void;
+}) {
+  return (
+    <div
+      className={`${isOpenOnMobile ? "flex" : "hidden"} min-h-0 w-full flex-col lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-border`}
+    >
+      <AssistantConversationRail
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        isDraftActive={isDraftActive}
+        isConversationListFull={isListFull}
+        listedAtMs={panelOpenedAtMs}
+        activeSettingsView={activeSettingsView}
+        memoryNoteCount={memoryNoteCount}
+        onSelectConversation={onSelectConversation}
+        onStartNewChat={onStartNewChat}
+        onDeleteConversation={onDeleteConversation}
+        onOpenSettings={onOpenSettings}
+      />
+    </div>
+  );
+}
+
 export default function AssistantPanel({
   pathname,
   dockSide,
@@ -167,8 +633,6 @@ export default function AssistantPanel({
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const conversationEndRef = useRef<HTMLDivElement>(null);
-  const conversationScrollAreaRef = useRef<HTMLDivElement>(null);
   const [draftQuestion, setDraftQuestion] = useState("");
   const [paneView, setPaneView] = useState<PaneView>("chat");
   const { preferences, setPreference, updatePreference } = useBrowserPreferences();
@@ -184,7 +648,6 @@ export default function AssistantPanel({
   });
   const preferredModel = preferences.assistantPreferredModel;
 
-  /** One layout read, on open or when a reply carries a link — never per frame. */
   const pointMascotAtPanel = () => {
     const panelRect = panelRef.current?.getBoundingClientRect();
     if (panelRect === undefined) return;
@@ -200,27 +663,7 @@ export default function AssistantPanel({
     readonly questionText: string;
     readonly answer: AssistantPairAnswer;
     readonly answeredAtMs: number;
-  }): AssistantPairSaveStatus => {
-    // Held in an object: the updater runs inside `updatePreference`, and TypeScript does not see an
-    // assignment to a plain local made inside a callback.
-    const saveOutcome: { status: AssistantPairSaveStatus } = { status: "storage_refused" };
-    const didStorageAcceptWrite = updatePreference("assistantConversations", (storedValue) => {
-      const appendResult = appendAnsweredPair(readAssistantConversations(storedValue), {
-        conversationId: answeredPair.conversationId,
-        questionText: answeredPair.questionText,
-        answer: answeredPair.answer,
-        nowMs: answeredPair.answeredAtMs,
-      });
-      if (appendResult.status !== "saved") {
-        saveOutcome.status = appendResult.status;
-        return storedValue;
-      }
-      saveOutcome.status = "saved";
-      return appendResult.conversations;
-    });
-    if (saveOutcome.status === "saved" && !didStorageAcceptWrite) return "storage_refused";
-    return saveOutcome.status;
-  };
+  }): AssistantPairSaveStatus => recordAnsweredPairInPreferences(updatePreference, answeredPair);
 
   const {
     modelAvailability,
@@ -241,15 +684,13 @@ export default function AssistantPanel({
     onMood,
     onDestinationOffered: pointMascotAtPanel,
   });
+
   const lockedModel = activeConversation.savedConversation?.lockedModel ?? null;
   const selectedModel = resolveConversationModel({
     lockedModel,
     preferredModel,
     modelAvailability,
   });
-  // THE COMPOSER NEEDS NO MODEL. The router answers places and searches in any browser, so the box
-  // is drawn whenever a question could be saved (`canTakeQuestion`: not a full chat, not a full
-  // list). What changes without a model is only the placeholder, and what the empty state says.
   const isComposerShown = canTakeQuestion;
   const isModelReady = chatState.status === "ready";
   const canSend = isComposerShown && !isAwaitingReply && draftQuestion.trim().length > 0;
@@ -260,37 +701,6 @@ export default function AssistantPanel({
     pointMascotAtPanelOnOpen();
   }, []);
 
-  // Keep the newest turn in view as it streams, and land at the end of a chat when it is opened.
-  // One scroll call, not a layout read per word.
-  const lastMessage = messages.at(-1);
-  const lastMessageKey = `${activeConversation.conversationId}-${
-    lastMessage === undefined
-      ? "none"
-      : `${lastMessage.messageKey}-${lastMessage.role === "assistant" ? lastMessage.status : "user"}`
-  }-${paneView}`;
-  // Compared against the last key scrolled for (`main-scroll-reset.tsx` precedent), so the
-  // dependency is a real input: a new turn, a turn that finished or another chat, never every word.
-  // An empty chat starts at the top instead, where its intro and the places are; otherwise it would
-  // keep wherever the previous chat had been scrolled to.
-  const lastScrolledMessageKeyRef = useRef("");
-  useEffect(() => {
-    if (lastScrolledMessageKeyRef.current === lastMessageKey) return;
-    lastScrolledMessageKeyRef.current = lastMessageKey;
-    if (lastMessage === undefined) {
-      conversationScrollAreaRef.current?.scrollTo({ top: 0 });
-      return;
-    }
-    conversationEndRef.current?.scrollIntoView({ block: "end" });
-  }, [lastMessageKey, lastMessage]);
-
-  // The one live region: each finished reply, announced once.
-  const lastAnsweredText =
-    lastMessage?.role === "assistant" && lastMessage.status === "answered"
-      ? lastMessage.reply.reply
-      : lastMessage?.role === "assistant" && lastMessage.status === "failed"
-        ? lastMessage.message
-        : "";
-
   const submitDraft = () => {
     if (!canSend) return;
     const questionText = draftQuestion;
@@ -298,24 +708,6 @@ export default function AssistantPanel({
     void sendMessage(questionText);
   };
 
-  const handleComposerSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
-    formEvent.preventDefault();
-    submitDraft();
-  };
-
-  const handleComposerKeyDown = (keyboardEvent: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (
-      keyboardEvent.key !== "Enter" ||
-      keyboardEvent.shiftKey ||
-      keyboardEvent.nativeEvent.isComposing
-    ) {
-      return;
-    }
-    keyboardEvent.preventDefault();
-    submitDraft();
-  };
-
-  /** Following a link keeps the panel open where the page is still visible beside it. */
   const handleNavigate = () => {
     if (!window.matchMedia(TWO_COLUMN_MEDIA_QUERY).matches) onClose();
   };
@@ -339,7 +731,6 @@ export default function AssistantPanel({
     updatePreference("assistantConversations", (storedValue) =>
       deleteConversation(readAssistantConversations(storedValue), conversationId),
     );
-    // The active chat is gone: fall back to the most recent one, or a new chat.
     if (conversationId === activeConversation.conversationId) {
       onConversationSelectionChange({ kind: "unset" });
     }
@@ -349,15 +740,7 @@ export default function AssistantPanel({
     setPreference("assistantPreferredModel", model);
   };
 
-  // The panel sits above the docked mascot, so a bigger mascot pushes it up. CSS variables let one
-  // class serve both the phone offset and the desktop one. Its height is capped so its top stays
-  // 4.5rem below the viewport's top, clear of the 56px navbar that paints above it.
-  const panelBottomPx = computeAssistantPanelBottomPx(mascotSize);
-  const panelBottomStyle: CSSProperties & Record<`--${string}`, string> = {
-    "--assistant-panel-bottom": `${panelBottomPx.mobile}px`,
-    "--assistant-panel-bottom-desktop": `${panelBottomPx.desktop}px`,
-  };
-
+  const panelBottomStyle = computePanelBottomStyle(mascotSize);
   const activeSettingsView: AssistantSettingsView | null =
     paneView === "memory" || paneView === "appearance" ? paneView : null;
   const activeConversationTitle = activeConversation.savedConversation?.title ?? "New chat";
@@ -372,239 +755,75 @@ export default function AssistantPanel({
         dockSide === "right" ? "md:right-6" : "md:left-6"
       }`}
     >
-      <header className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-        {paneView === "chat" && (
-          <button
-            type="button"
-            onClick={() => setPaneView("list")}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint lg:hidden"
-          >
-            <Image
-              src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={16}
-              height={16}
-            />
-            Chats
-            <span className="text-muted-foreground">{conversations.length}</span>
-          </button>
-        )}
-        {/* The list replaces the chat below `lg`, so it needs its own way back that does not close
-            the whole panel. From `lg` the list is a rail beside the chat and this never shows. */}
-        {paneView === "list" && (
-          <button
-            type="button"
-            onClick={() => setPaneView("chat")}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs leading-4 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint lg:hidden"
-          >
-            <Image
-              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={16}
-              height={16}
-            />
-            Back to chat
-          </button>
-        )}
-        <h2
-          ref={headingRef}
-          id={`${ASSISTANT_PANEL_ID}-heading`}
-          tabIndex={-1}
-          className="min-w-0 flex-1 truncate px-1 text-sm font-medium text-foreground focus:outline-none"
-        >
-          Qatoto assistant
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close assistant"
-          className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
-        >
-          <Image
-            src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
-          />
-        </button>
-      </header>
+      <AssistantPanelHeader
+        paneView={paneView}
+        conversationsCount={conversations.length}
+        headingRef={headingRef}
+        onSetPaneView={setPaneView}
+        onClose={onClose}
+      />
 
       <div className="flex min-h-0 flex-1">
-        <div
-          className={`${paneView === "list" ? "flex" : "hidden"} min-h-0 w-full flex-col lg:flex lg:w-52 lg:shrink-0 lg:border-r lg:border-border`}
-        >
-          <AssistantConversationRail
-            conversations={conversations}
-            activeConversationId={activeConversation.conversationId}
-            isDraftActive={activeConversation.savedConversation === null}
-            isConversationListFull={isListFull}
-            listedAtMs={panelOpenedAtMs}
-            activeSettingsView={activeSettingsView}
-            memoryNoteCount={memoryNotes.length}
-            onSelectConversation={handleSelectConversation}
-            onStartNewChat={handleStartNewChat}
-            onDeleteConversation={handleDeleteConversation}
-            onOpenSettings={setPaneView}
-          />
-        </div>
+        <AssistantRailPane
+          isOpenOnMobile={paneView === "list"}
+          conversations={conversations}
+          activeConversationId={activeConversation.conversationId}
+          isDraftActive={activeConversation.savedConversation === null}
+          isListFull={isListFull}
+          panelOpenedAtMs={panelOpenedAtMs}
+          activeSettingsView={activeSettingsView}
+          memoryNoteCount={memoryNotes.length}
+          onSelectConversation={handleSelectConversation}
+          onStartNewChat={handleStartNewChat}
+          onDeleteConversation={handleDeleteConversation}
+          onOpenSettings={setPaneView}
+        />
 
         <div
           className={`${paneView === "list" ? "hidden" : "flex"} min-h-0 min-w-0 flex-1 flex-col lg:flex`}
         >
           {activeSettingsView !== null ? (
-            <>
-              <div className="flex items-center gap-1 border-b border-border px-2 py-2">
-                <button
-                  type="button"
-                  onClick={() => setPaneView("chat")}
-                  className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
-                >
-                  <Image
-                    src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                    alt=""
-                    width={18}
-                    height={18}
-                  />
-                  <span className="sr-only">Back to the chat</span>
-                </button>
-                <h3 className="text-sm leading-5 font-medium text-foreground">
-                  {SETTINGS_VIEW_HEADINGS[activeSettingsView]}
-                </h3>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-                {activeSettingsView === "memory" ? (
-                  <MemorySection
-                    memoryNotes={memoryNotes}
-                    onRemoveNote={onRemoveNote}
-                    onClearNotes={onClearNotes}
-                  />
-                ) : (
-                  <AppearanceSection
-                    mascotSize={mascotSize}
-                    mascotSpeed={mascotSpeed}
-                    dockSide={dockSide}
-                    onMascotSizeChange={onMascotSizeChange}
-                    onMascotSpeedChange={onMascotSpeedChange}
-                    onDockSideChange={onDockSideChange}
-                  />
-                )}
-              </div>
-            </>
+            <AssistantSettingsPane
+              activeSettingsView={activeSettingsView}
+              memoryNotes={memoryNotes}
+              mascotSize={mascotSize}
+              mascotSpeed={mascotSpeed}
+              dockSide={dockSide}
+              onBackToChat={() => setPaneView("chat")}
+              onRemoveNote={onRemoveNote}
+              onClearNotes={onClearNotes}
+              onMascotSizeChange={onMascotSizeChange}
+              onMascotSpeedChange={onMascotSpeedChange}
+              onDockSideChange={onDockSideChange}
+            />
           ) : (
-            <>
-              <div className="space-y-1.5 border-b border-border px-4 py-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="min-w-0 truncate text-sm leading-5 font-medium text-foreground">
-                    {activeConversationTitle}
-                  </h3>
-                  {lockedModel === null && (
-                    <AssistantModelPicker
-                      idPrefix={ASSISTANT_PANEL_ID}
-                      lockedModel={null}
-                      selectedModel={selectedModel}
-                      modelAvailability={modelAvailability}
-                      canStartNewChat={!isListFull}
-                      onSelectModel={handleSelectModel}
-                      onStartNewChatWith={handleStartNewChatWith}
-                    />
-                  )}
-                </div>
-                {lockedModel !== null && (
-                  <AssistantModelPicker
-                    idPrefix={ASSISTANT_PANEL_ID}
-                    lockedModel={lockedModel}
-                    selectedModel={selectedModel}
-                    modelAvailability={modelAvailability}
-                    canStartNewChat={!isListFull}
-                    onSelectModel={handleSelectModel}
-                    onStartNewChatWith={handleStartNewChatWith}
-                  />
-                )}
-                {/* WHICH MODEL THIS CHAT USES, always, before anything is typed. An <output> is a
-                    status live region, so a change (a download finishing) is announced. */}
-                <output className="block text-xs leading-4 text-muted-foreground">
-                  {describeChatStateLine(chatState)}
-                </output>
-              </div>
-
-              <div
-                ref={conversationScrollAreaRef}
-                className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3"
-              >
-                <ChatStateNotice
-                  chatState={chatState}
-                  canStartNewChat={!isListFull}
-                  onDownloadClick={startOnDeviceDownload}
-                  onStartNewChat={handleStartNewChat}
-                />
-
-                {messages.length > 0 ? (
-                  <AssistantMessageList
-                    messages={messages}
-                    memoryNotes={memoryNotes}
-                    onSaveNote={onSaveNote}
-                    onNavigate={handleNavigate}
-                  />
-                ) : (
-                  <>
-                    {isComposerShown && (
-                      <>
-                        <p className="text-xs leading-4 text-muted-foreground">
-                          {isModelReady
-                            ? "Ask where something is on Qatoto, or ask it to find a product, a video or a research programme. Places and searches open at once; anything else goes to the model, which can be wrong, so check what it links to."
-                            : "Ask for a place or a search. These work in any browser, with no model."}
-                        </p>
-                        <RouterExamples
-                          isDisabled={isAwaitingReply}
-                          onExampleClick={(exampleText) => void sendMessage(exampleText)}
-                        />
-                      </>
-                    )}
-                    <PlacesSection onNavigate={handleNavigate} />
-                  </>
-                )}
-                {isActiveConversationStorageRefused && (
-                  <p className="text-xs leading-4 text-destructive">
-                    Couldn&apos;t save this chat in this browser. Storage is full or blocked, so it
-                    will be gone after a reload.
-                  </p>
-                )}
-                <div ref={conversationEndRef} />
-                <p className="sr-only" aria-live="polite">
-                  {lastAnsweredText}
-                </p>
-              </div>
-
-              {isComposerShown && (
-                <form
-                  onSubmit={handleComposerSubmit}
-                  className="flex items-end gap-2 border-t border-border px-3 py-3"
-                >
-                  <label htmlFor={`${ASSISTANT_PANEL_ID}-question`} className="sr-only">
-                    Ask the assistant
-                  </label>
-                  <textarea
-                    id={`${ASSISTANT_PANEL_ID}-question`}
-                    value={draftQuestion}
-                    onChange={(changeEvent) => setDraftQuestion(changeEvent.target.value)}
-                    onKeyDown={handleComposerKeyDown}
-                    maxLength={ASSISTANT_TURN_TEXT_MAXIMUM_LENGTH}
-                    rows={2}
-                    placeholder={
-                      isModelReady ? "Ask anything" : "Go to a place or search, like “my orders”"
-                    }
-                    className="min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!canSend}
-                    className="cursor-pointer rounded-full bg-primary-imprint px-4 py-2 text-sm font-medium text-primary-imprint-foreground transition-colors hover:bg-primary-imprint-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {isAwaitingReply ? "Asking…" : "Send"}
-                  </button>
-                </form>
-              )}
-            </>
+            <AssistantChatPane
+              activeConversationTitle={activeConversationTitle}
+              conversationId={activeConversation.conversationId}
+              paneView={paneView}
+              lockedModel={lockedModel}
+              selectedModel={selectedModel}
+              modelAvailability={modelAvailability}
+              isListFull={isListFull}
+              chatState={chatState}
+              isModelReady={isModelReady}
+              isComposerShown={isComposerShown}
+              isAwaitingReply={isAwaitingReply}
+              canSend={canSend}
+              messages={messages}
+              memoryNotes={memoryNotes}
+              isActiveConversationStorageRefused={isActiveConversationStorageRefused}
+              draftQuestion={draftQuestion}
+              onSelectModel={handleSelectModel}
+              onStartNewChatWith={handleStartNewChatWith}
+              onStartNewChat={handleStartNewChat}
+              onStartOnDeviceDownload={startOnDeviceDownload}
+              onSaveNote={onSaveNote}
+              onNavigate={handleNavigate}
+              onSendMessage={(questionText) => void sendMessage(questionText)}
+              onDraftQuestionChange={setDraftQuestion}
+              onSubmitDraft={submitDraft}
+            />
           )}
         </div>
       </div>

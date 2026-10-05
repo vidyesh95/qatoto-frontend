@@ -161,6 +161,7 @@ export const storeKeys = {
    * distinct and meaningful value here: no window at all is the lifetime figure, which is a
    * different response from any bounded one.
    */
+  providerEarningsRoot: () => ["store", "provider", "earnings"] as const,
   providerEarnings: (from: string | undefined, to: string | undefined) =>
     ["store", "provider", "earnings", from, to] as const,
 
@@ -296,6 +297,8 @@ export const storeKeys = {
    * two different answers, and sharing one entry would show the previous filter's rows while the
    * new one loads.
    */
+  productReviewsRoot: (productSlug: string) =>
+    ["store", "products", productSlug, "reviews"] as const,
   productReviews: (productSlug: string, filterKey: string) =>
     ["store", "products", productSlug, "reviews", filterKey] as const,
 

@@ -167,11 +167,15 @@ export function deriveVariantAxes(
   const firstOptionedVariant = variants.find((variant) => variant.options.length > 0);
   if (firstOptionedVariant === undefined) return [];
   return firstOptionedVariant.options.map((axisOption, axisIndex) => {
-    const values: string[] = [];
+    const valueSet = new Set<string>();
     for (const variant of variants) {
       const value = variant.options[axisIndex]?.value;
-      if (value !== undefined && !values.includes(value)) values.push(value);
+      if (value !== undefined) valueSet.add(value);
     }
-    return { localId: `hydrated-axis-${String(axisIndex)}`, name: axisOption.name, values };
+    return {
+      localId: `hydrated-axis-${String(axisIndex)}`,
+      name: axisOption.name,
+      values: Array.from(valueSet),
+    };
   });
 }
