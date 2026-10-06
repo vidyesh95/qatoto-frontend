@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [],
+  "ignorePatterns": [".agents/skills/**", ".agent/skills/**", ".claude/skills/**"],
   "printWidth": 100,
   "sortTailwindcss": {
     "stylesheet": "./src/app/globals.css",
@@ -15,8 +15,14 @@
       }
     },
     {
-      "files": ["*.md", "*.html"],
-      "excludeFiles": ["*.min.js"],
+      "files": ["*.md", "*.mdx"],
+      "options": {
+        "tabWidth": 4,
+        "proseWrap": "preserve"
+      }
+    },
+    {
+      "files": ["*.html"],
       "options": {
         "tabWidth": 4
       }

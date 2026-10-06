@@ -308,7 +308,8 @@ codebase and would have made the store the only surface with its own result type
 
 ```ts
 type ActionResponse<T> =
-    { success: true; data: T } | { success: false; error: { code: string; message: string } };
+    | { success: true; data: T }
+    | { success: false; error: { code: string; message: string } };
 ```
 
 No wired getter falls back to mocks. A contract failure renders an explicit error state and remains

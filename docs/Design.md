@@ -431,7 +431,7 @@ through visual machinery.
 ### Navigation
 
 - **Style:** pill rows. `flex items-center gap-3 rounded-full px-4 py-3 text-sm
-transition-colors`, with a 24dp Material SVG icon and a sans label.
+  transition-colors`, with a 24dp Material SVG icon and a sans label.
 - **Default:** `Ink` text on transparent, `hover:bg-muted/50`.
 - **Active:** `Surface Wash` ground with `Ink` text, plus `aria-current="page"`. The pill is
   never the only signal; the icon also switches from Material `FILL0` outline to `FILL1` solid.

@@ -1271,7 +1271,7 @@ Neither blocks item 8 and neither may be faked client-side.
 - ~~**The cluster detail's four-panel `dl`**~~ — **FIXED.** One hairline `<dl>`, five facts, figures
   at body size.
   ⚠️ **IT BROKE §3 AS WELL AS §6, WHICH THIS ITEM NEVER SAID.** The figures were `text-xl
-font-semibold` — a THIRD type size in a product the Two-Size Rule says is written at 14 and 12px.
+  font-semibold` — a THIRD type size in a product the Two-Size Rule says is written at 14 and 12px.
   ⚠️ **AND THE FOUR WERE NEVER PEERS.** Three cells were counts; the fourth was two formatted
   timestamps, ~50 characters. Identical boxes claimed a symmetry the content did not have.
   **The row is `shared/hairline-definition-row.tsx`**, hoisted out of

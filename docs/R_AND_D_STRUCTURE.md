@@ -1095,7 +1095,7 @@ Two corollaries for this repo specifically:
 > `EscrowDirection`, `EscrowVerificationStatus` and `EscrowLedgerEntry` **deleted outright** along with
 > the `escrowLedger` fixture arrays; the whole `discovery.ts` family re-derived from the response
 > schemas (`mapPosition` gone, `reportCount` → `distinctReporterCount`, `category` → a `{ slug,
-displayLabel, pinIconKey }` ref, `statValue` → three fields, skills → slug objects, hours →
+> displayLabel, pinIconKey }` ref, `statValue` → three fields, skills → slug objects, hours →
 > minutes).
 >
 > **Phases 2–3 closed `workshop.ts` in full and most of `project.ts`.** Both were resolved by

@@ -51,7 +51,7 @@ We have provided a script to make this easy:
 pnpm fmt
 ```
 
-This will run `oxfmt` on the entire project and apply any necessary changes.
+This will run `oxfmt` on the entire project and apply any necessary changes, Markdown included (`docs/`, `README.md`, `AGENTS.md`, `todo.md`). Prose wrapping is preserved as written. The vendored skills under `.agents/skills`, `.agent/skills` and `.claude/skills` are excluded in `.oxfmtrc.json`, because `skills-lock.json` hashes them against upstream.
 
 ### Naming Conventions
 

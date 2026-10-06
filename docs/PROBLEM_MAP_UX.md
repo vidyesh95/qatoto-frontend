@@ -30,7 +30,7 @@
 >   (`todo.md` §19.4, TRAP 1).
 > - ⚠️ **A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPENDENCIES DESTROYS THE MAP ONCE THE PARENT
 >   FETCHES.** Not predicted anywhere here, and the one that actually shipped: `Maximum update
-depth exceeded` ×129, `load` never firing, every marker destroyed — which took
+>   depth exceeded` ×129, `load` never firing, every marker destroyed — which took
 >   `button[aria-pressed]` off the page, and with it both §10's keyboard path and the selector
 >   §11.5 relies on. Callbacks go through refs; that effect's dependency array is empty.
 > - ⚠️ **§6's THREE EMPTY STATES NEED TWO READS THIS DOCUMENT DOES NOT ASK FOR.** Once every read
@@ -56,7 +56,7 @@ depth exceeded` ×129, `load` never firing, every marker destroyed — which too
 >   36px at 1440px and 56px at 500px, because its copy wraps and §5's own source requires it to.
 > - ⚠️ **§5 PUTS THE STANDING NOTE IN THE PANEL HEADER AND ALSO REQUIRES THE PEEK DETENT TO SHOW
 >   CHIPS, COUNT AND A ROW. BOTH CANNOT HOLD.** The note is two lines; pinned, it pushed `Report a
-problem` off the bottom of the peek sheet. The note is context rather than a control, so it
+>   problem` off the bottom of the peek sheet. The note is context rather than a control, so it
 >   moved into the scrolling body.
 > - ⚠️ **§5 DRAWS THE LEGEND BOTTOM-LEFT, WHICH IS WHERE THE DOCKED PANEL IS.** Measured, the four
 >   labels rendered behind it. It is offset past the panel at each of its two widths.
@@ -141,7 +141,7 @@ free on the day appearance returns.
 2. **thetraffic.in `/grievance`, the Place block** — the shape the picker is borrowing.
    Search field beside a "Use my location" button, a map you tap, and a readout strip under
    it reading `12.97207, 77.59401 · a junction on file · Kasturba Road × Vittal Mallya Road ·
-osm · Clear`. A coordinate, a named place, a provenance token, and an undo, on one line.
+   osm · Clear`. A coordinate, a named place, a provenance token, and an undo, on one line.
 3. **Apple Maps' iOS sheet** — the mobile model. Three detents over a live map, the map
    interactive at every one of them, and a drag handle that is a real control rather than a
    decoration.

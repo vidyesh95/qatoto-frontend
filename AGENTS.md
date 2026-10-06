@@ -34,7 +34,7 @@ Two test runners, kept strictly apart:
 
 The two suffixes (`.test.ts` for Vitest, `.spec.ts` for Playwright) are load-bearing — they keep each runner from picking up the other's files. Don't name a Vitest file `*.spec.ts` or put it under `tests/specs/`.
 
-Note `package.json` script is `fmt`, but `CONTRIBUTING.md` references `pnpm run format` — the working command is `pnpm fmt`.
+`pnpm fmt` formats Markdown too (`docs/`, `README.md`, this file, `todo.md`). The `.md` override in `.oxfmtrc.json` sets `proseWrap: "preserve"` on purpose: the docs are hand-wrapped, and `always` would reflow every doc and table. The vendored skills (`.agents/skills`, `.agent/skills`, `.claude/skills`) are in `ignorePatterns` because `skills-lock.json` hashes them against upstream.
 
 ## Architecture
 
@@ -181,7 +181,8 @@ Do not rely on implicit success or component-level `try/catch` to model failure 
 
 ```typescript
 type ActionResponse<T> =
-    { success: true; data: T } | { success: false; error: { code: string; message: string } };
+    | { success: true; data: T }
+    | { success: false; error: { code: string; message: string } };
 ```
 
 Combine with Pattern 1: lift `ActionResponse<T>` into the component's `DashboardState`-style union so the UI for each error code is explicit and exhaustive.
@@ -192,7 +193,7 @@ From `CONTRIBUTING.md`:
 
 - **Commits**: Conventional Commits, imperative mood, **lowercase**. e.g. `feat: add user authentication`, `fix: resolve login bug`.
 - **Naming**: PascalCase classes/components, camelCase vars/functions/file names, kebab-case directories.
-- Run `pnpm fmt` (oxfmt) before opening a PR.
+- Run `pnpm fmt` (oxfmt) before opening a PR. It covers `.md` files as well as code.
 
 ### Naming — descriptive, self-documenting (NON-NEGOTIABLE)
 

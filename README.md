@@ -446,7 +446,7 @@ pnpm start
 pnpm lint
 pnpm lint:fix
 
-# Code formatting with Oxfmt
+# Code formatting with Oxfmt (code and Markdown; vendored skills excluded)
 pnpm fmt
 pnpm fmt:check
 
