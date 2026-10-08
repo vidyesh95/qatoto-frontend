@@ -1572,6 +1572,102 @@ account's org is `pending`, so it has no orders, and the UI was checked against 
 (`db:verify-text-pii-coverage` was red here on two Civic Pulse `source_name` columns; both were
 classified `not_personal_data` on 2026-10-05 and it passes.)
 
+### 24. Next 16.4 adoption — DONE 2026-10-08, uncommitted
+
+The 16.3.8 → 16.4.0 bump itself needed no source change. Every 16.4 option was weighed against this
+repo using the 16.4.0 docs (`node_modules/next/dist/docs/`); the verdicts are below so nobody
+re-derives them. `pnpm build` is green with all of it on.
+
+#### 24.1 Adopted
+
+- **`partialPrefetching: true`.** 16.4 warns on every `dev`/`build` when it is unset under
+  `cacheComponents`, and Next 17 makes it the default and removes the option. A `<Link>` now
+  prefetches one App Shell per route instead of one prefetch per visible link. No audit was needed:
+  `src/` has no `<Link prefetch={true}>` and no `router.prefetch()`, which are the only things this
+  changes the meaning of.
+- **`ensureStatic = "navigation"` on `(information)` and `(disclaimers)` layouts.** A marketing or
+  policy page that reads request data now fails `dev` and `build` instead of silently becoming
+  dynamic. Checked by adding a `connection()` probe inside `<Suspense>` on `/about`, which failed
+  with `Route "/about": Next.js encountered uncached or runtime data on a route that must be fully
+  static`. The probe was then reverted. The rule is in AGENTS.md §Stack.
+- **`experimental.turbopackGc`.** Prunes Turbopack's memory and persistent cache, in both `dev`
+  and `build`. `.next/dev` measured 1.8 GB before it was turned on.
+- **`experimental.turbopackLazyDynamicImports` + `…SSR`.** Dev only. They compile pixi.js, the R3F
+  engine, model-viewer and maplibre when a page first reaches them, not at startup.
+
+#### 24.2 Weighed and NOT adopted
+
+- **`navigation()` / `prefetch()` (`next/cache`).** Neither has a target in this repo. The docs
+  say "uncached work is already left out of prefetches", and every session read here goes through
+  `src/lib/server-http.ts` with `no-store`. They only defer CACHED work, and this repo's `"use
+  cache"` getters (`cms.ts`, `blueprints/api.ts`) are what a prefetch SHOULD carry. Revisit if a
+  `"use cache: private"` read or a `<Link prefetch={true}>` appears.
+- **`ensureStatic` `'shell'` / `'prefetch'` on `(home)`.** The docs say these two add no build
+  validation, only dev insights.
+- **`experimental.turbopackPluginRuntimeStrategy: 'workerThreads'`.** Next falls back to child
+  processes on Node `>=24.13.1` (nodejs/node#65100), which is this repo's minimum version, so the
+  setting would only print a warning.
+- **`experimental.agentFeedback`.** It does not improve the code. On every `dev` it writes a managed
+  block into AGENTS.md telling agents to draft Next.js bug reports, which open in your browser and
+  go to Vercel if you send them. That is Vidyesh's decision. Turning it on is a single config line.
+- **`experimental.agentUpgrade`.** The default `'security'` reminder policy is kept.
+- **`instant()` Playwright checks (`@next/playwright`).** These are tests, so they are not added
+  unless asked.
+
+#### 24.3 Bundle Analyzer pass — the account menu was shipping upfront, FIXED
+
+How to measure: `pnpm next analyze --output --snapshot <name>`, then `pnpm next analyze export
+--snapshot <name> [--route /x] > graph.jsonl`. In the export, a route's initial JS is every `.js`
+output in its `bootstrap` and `render_dependent` groups, and `async` groups are lazy. Match outputs
+to `part` records by file BASENAME, because groups print `[output]/.next/static/…` and parts print
+`[client-fs]/_next/static/…`. Sizes below are per-module compressed sums, so they are good for
+comparing routes and they overstate the real gzip size.
+
+- **Holds:** pixi.js, three/R3F, `@google/model-viewer` and maplibre-gl are in `async` groups on
+  every route. The two-3D-stacks rule and the pixi-only-via-`await import()` rule both hold.
+- **Floor:** marketing and policy routes are about 213k, which is the Next runtime (about 170k) plus
+  zod (about 35k). `(home)` routes start at about 430k. The heaviest is `/blueprints/showcase/new`
+  at about 500k.
+- **Fixed 2026-10-08:** about 75k of account-menu code used to be in the initial JS of every
+  `(home)`, `(studio)` and `(admin)` route: the `src/components/home/account/**` panels,
+  `react-easy-crop`, the data-export and privacy-request code. It rendered only when the menu
+  opened. `AccountMenu` and `AiAssistSheet` now load through
+  `src/components/home/account/menus/lazy-account-menus.tsx` (`React.lazy`), which preloads on the
+  trigger's `pointerenter`/`focus`. Measured with before/after snapshots: every `(home)` route
+  dropped 88–97k, every studio and admin route 91–103k, marketing was unchanged and no route grew
+  (`/` 429k → 340k). A failed chunk fetch renders a "did not load — Reload" stand-in instead of
+  throwing, because the repo has no error boundary. That was checked in a browser by opening the AI
+  Assist sheet offline in a cache-less context, and the hover preload and the online open were
+  checked against `pnpm start`.
+- **The send-feedback sheet followed, same wrapper.** The "Send feedback" row in the menu preloads
+  it. It saved only about 3k more per route, because the composer's dependencies already ship for
+  other reasons, and `/studio/feedback` saved nothing because it renders the composer inline.
+  Measured against the original baseline: `(home)` −91k to −101k, studio and admin −94k to −107k.
+- **The other open-on-click sheets followed, through `src/components/home/shared/lazy-overlay.tsx`**
+  (`createLazySheet`, `createLazySheetBody`; `lazy-account-menus.tsx` now uses it too). Each sheet's
+  exclusive weight was measured from the analyzer's module graph first, and only sheets of about 2k
+  or more were converted, because below that a separate chunk request costs more than it saves.
+    - **Converted (16 conditional mounts):** the store product sheets (details, customization, 360
+      viewer, related, company, delivery, address, chat), report-content, channel about and
+      report-profile, report-video, save-to-playlist, report-blueprint, and `ShareSheet` at all
+      five sites.
+    - **R&D sheets split into shell plus lazy form:** `report-problem`, `edit-talent-profile`,
+      `edit-project` and `apply-role`. These were not conditionally mounted, because each owns its
+      trigger. The form moved to `*-form.tsx` and the trigger preloads it. `apply-role`'s draft
+      state moved into the form, so closing now also resets the commitment pick; the other fields
+      already reset.
+    - **Left static, all under 2k:** compare-products, verified-capabilities, price-chart,
+      problem-map-bottom-sheet and blueprint-document-viewer.
+    - **Result:** 16 routes shrank. `/store/product/[id]` dropped 30k, `/watch` 20k, R&D talent and
+      problem-map 17k each, and `/channel/[handle]` 14k. No route grew. Against the original
+      baseline, `/store/product/[id]` went 484k → 355k and `/watch` 473k → 361k.
+    - **Browser-checked:** the lazy report-problem form, which opened with all its fields and the
+      place-picker map. None of the store, channel or video sheets were opened in a browser,
+      because their pages need the backend.
+- **Not done:** the account menu and the feedback sheet were not checked in a browser, because that needs a signed-in
+  session and the Express backend was not running. Both use the same wrapper and the same mount
+  pattern as the AI Assist sheet, which was checked.
+
 ---
 
 ## Decided: AI Assist Mode scope

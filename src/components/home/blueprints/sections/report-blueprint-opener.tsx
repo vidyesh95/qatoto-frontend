@@ -5,8 +5,14 @@
 
 import { useState } from "react";
 
-import ReportBlueprintSheet from "@/components/home/blueprints/sections/report-blueprint-sheet";
 import type { BlueprintReportArm } from "@/lib/blueprints/reports.schemas";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyReportBlueprintSheet, preload: preloadReportBlueprintSheet } =
+  createLazySheet(
+    () => import("@/components/home/blueprints/sections/report-blueprint-sheet"),
+    "Report this",
+  );
 
 /**
  * "Report this" — the reader's control.
@@ -31,6 +37,8 @@ export default function ReportBlueprintOpener({
     <>
       <button
         type="button"
+        onPointerEnter={preloadReportBlueprintSheet}
+        onFocus={preloadReportBlueprintSheet}
         onClick={() => {
           setIsSheetOpen(true);
         }}
@@ -39,7 +47,7 @@ export default function ReportBlueprintOpener({
         Report this
       </button>
       {isSheetOpen ? (
-        <ReportBlueprintSheet
+        <LazyReportBlueprintSheet
           arm={arm}
           slug={slug}
           targetTitle={targetTitle}

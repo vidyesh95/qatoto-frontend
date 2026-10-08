@@ -6,7 +6,9 @@ Cross-vendor instructions and guidance for AI coding agents (Claude Code, Gemini
 
 Next.js 16 (App Router) on React 19 with the React Compiler. Turbopack is used for both `dev` and `build`. Tailwind v4 via `@tailwindcss/postcss`. TypeScript strict. Package manager is **pnpm** (Node >= 24.13.1, pnpm >= 10.29.3).
 
-`next.config.ts` enables `reactCompiler: true` and `cacheComponents: true`, plus `experimental.turbopackFileSystemCacheForDev`. `cacheComponents` is what makes the `"use cache"` directive (see `src/lib/cms.ts`) valid — do not strip it.
+`next.config.ts` enables `reactCompiler: true`, `cacheComponents: true` and `partialPrefetching: true`, plus the experimental `turbopackRustReactCompiler`, `turbopackGc` and the two dev-only `turbopackLazyDynamicImports*` flags; the reason for each is in a comment beside it. `cacheComponents` is what makes the `"use cache"` directive (see `src/lib/cms.ts`) valid — do not strip it. `partialPrefetching` requires it, and Next 17 makes both the default.
+
+`(information)` and `(disclaimers)` export `ensureStatic = "navigation"` from their layouts, so `next dev` and `next build` FAIL if any marketing or policy page reads `cookies()`/`headers()`/server `searchParams`, calls `connection()` or an uncached fetch, or uses a `"use cache"` scope under five minutes — even inside `<Suspense>`. This was checked by adding a `connection()` probe to `/about`, which failed the build. If one of those pages genuinely needs request data, it belongs in another group; do not delete the export to make the build pass.
 
 ## Commands
 
@@ -935,7 +937,7 @@ cloud half is `POST /assistant/replies` in qatoto-backend (`src/modules/assistan
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

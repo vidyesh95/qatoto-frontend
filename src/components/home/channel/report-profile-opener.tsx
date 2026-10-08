@@ -11,8 +11,12 @@
 // the second such surface and mounts this unchanged.
 
 import { useState } from "react";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
 
-import ReportProfileSheet from "@/components/home/channel/report-profile-sheet";
+const { LazyOverlay: LazyReportProfileSheet, preload: preloadReportProfileSheet } = createLazySheet(
+  () => import("@/components/home/channel/report-profile-sheet"),
+  "Report profile",
+);
 
 export default function ReportProfileOpener({
   reportedUserId,
@@ -27,13 +31,15 @@ export default function ReportProfileOpener({
     <>
       <button
         type="button"
+        onPointerEnter={preloadReportProfileSheet}
+        onFocus={preloadReportProfileSheet}
         onClick={() => setIsReportSheetOpen(true)}
         className="cursor-pointer text-xs text-muted-foreground underline"
       >
         Report this profile
       </button>
       {isReportSheetOpen && (
-        <ReportProfileSheet
+        <LazyReportProfileSheet
           reportedUserId={reportedUserId}
           displayName={displayName}
           onClose={() => setIsReportSheetOpen(false)}

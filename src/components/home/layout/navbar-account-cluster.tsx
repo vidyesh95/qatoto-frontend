@@ -18,9 +18,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
-import AccountMenu from "@/components/home/account/menus/account-menu";
-import AiAssistSheet from "@/components/home/account/menus/ai-assist-sheet";
-import SendFeedbackSheet from "@/components/home/shared/send-feedback-sheet";
+import {
+  LazyAccountMenu,
+  LazyAiAssistSheet,
+  LazySendFeedbackSheet,
+  preloadAccountMenu,
+  preloadAiAssistSheet,
+} from "@/components/home/account/menus/lazy-account-menus";
 import CartNavButton from "@/components/home/layout/cart-nav-button";
 import NotificationBell from "@/components/home/layout/notification-bell";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
@@ -70,6 +74,8 @@ export default function NavbarAccountCluster({
               type="button"
               aria-label="Account"
               aria-haspopup="menu"
+              onPointerEnter={preloadAccountMenu}
+              onFocus={preloadAccountMenu}
               onClick={() => setIsAccountMenuOpen((v) => !v)}
               className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
             >
@@ -82,7 +88,7 @@ export default function NavbarAccountCluster({
               />
             </button>
             {isAccountMenuOpen && (
-              <AccountMenu
+              <LazyAccountMenu
                 onClose={() => setIsAccountMenuOpen(false)}
                 onSendFeedback={() => {
                   setIsAccountMenuOpen(false);
@@ -92,7 +98,7 @@ export default function NavbarAccountCluster({
             )}
           </div>
           {isFeedbackSheetOpen && (
-            <SendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
+            <LazySendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
           )}
         </>
       ) : (
@@ -104,6 +110,8 @@ export default function NavbarAccountCluster({
             type="button"
             aria-haspopup="dialog"
             aria-label="AI Assist"
+            onPointerEnter={preloadAiAssistSheet}
+            onFocus={preloadAiAssistSheet}
             onClick={() => setIsAiAssistSheetOpen(true)}
             className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-imprint"
           >
@@ -117,7 +125,7 @@ export default function NavbarAccountCluster({
             <span className="hidden sm:inline">AI Assist</span>
           </button>
           {isAiAssistSheetOpen && (
-            <AiAssistSheet idPrefix="navbar" onClose={() => setIsAiAssistSheetOpen(false)} />
+            <LazyAiAssistSheet idPrefix="navbar" onClose={() => setIsAiAssistSheetOpen(false)} />
           )}
           <Link
             href={"/sign-in"}
