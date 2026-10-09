@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
+import { buildYoutubeEmbedUrl, extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
 
 describe("youtube", () => {
   describe("extractYoutubeVideoId", () => {
@@ -56,6 +56,12 @@ describe("youtube", () => {
       expect(extractYoutubeVideoId("https://example.com/watch?v=dQw4w9WgXcQ")).toBeNull();
     });
 
+    it("returns null for YouTube domains without a valid video ID path or query parameter", () => {
+      expect(extractYoutubeVideoId("https://www.youtube.com/feed/subscriptions")).toBeNull();
+      expect(extractYoutubeVideoId("https://www.youtube.com/about")).toBeNull();
+      expect(extractYoutubeVideoId("https://m.youtube.com")).toBeNull();
+    });
+
     it("returns null for invalid YouTube IDs", () => {
       expect(extractYoutubeVideoId("https://youtu.be/too-short")).toBeNull(); // < 11 chars
       expect(extractYoutubeVideoId("https://youtu.be/this-is-too-long")).toBeNull(); // > 11 chars
@@ -71,6 +77,14 @@ describe("youtube", () => {
 
     it("returns null for unparseable URLs that are not bare IDs", () => {
       expect(extractYoutubeVideoId("http://%")).toBeNull(); // Invalid URL, but does not match bare ID
+    });
+  });
+
+  describe("buildYoutubeEmbedUrl", () => {
+    it("builds a nocookie embed URL for a given video ID", () => {
+      expect(buildYoutubeEmbedUrl("dQw4w9WgXcQ")).toBe(
+        "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      );
     });
   });
 
