@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isUnauthorized } from "./http";
+import { isForbidden, isUnauthorized } from "./http";
 import type { ApiError } from "./http";
 
 describe("isUnauthorized", () => {
@@ -29,5 +29,35 @@ describe("isUnauthorized", () => {
       message: "Network request failed",
     };
     expect(isUnauthorized(networkError)).toBe(false);
+  });
+});
+
+describe("isForbidden", () => {
+  it("returns true when the error code is '403'", () => {
+    const error: ApiError = {
+      code: "403",
+      message: "Forbidden access",
+    };
+    expect(isForbidden(error)).toBe(true);
+  });
+
+  it("returns false when the error code is not '403'", () => {
+    const unauthorizedError: ApiError = {
+      code: "401",
+      message: "Unauthorized access",
+    };
+    expect(isForbidden(unauthorizedError)).toBe(false);
+
+    const serverError: ApiError = {
+      code: "500",
+      message: "Internal Server Error",
+    };
+    expect(isForbidden(serverError)).toBe(false);
+
+    const networkError: ApiError = {
+      code: "NETWORK",
+      message: "Network request failed",
+    };
+    expect(isForbidden(networkError)).toBe(false);
   });
 });
