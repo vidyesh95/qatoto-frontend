@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
+import { buildYoutubeEmbedUrl, extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
 
 describe("youtube", () => {
   describe("extractYoutubeVideoId", () => {
@@ -85,6 +85,16 @@ describe("youtube", () => {
       expect(isYoutubeVideoUrl("https://vimeo.com/123456789")).toBe(false);
       expect(isYoutubeVideoUrl("not-a-youtube-url")).toBe(false);
       expect(isYoutubeVideoUrl("")).toBe(false);
+    });
+  });
+
+  describe("buildYoutubeEmbedUrl", () => {
+    it("builds correct embed URL for given video ID", () => {
+      expect(buildYoutubeEmbedUrl("dQw4w9WgXcQ")).toBe("//www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    });
+
+    it("encodes the video ID", () => {
+      expect(buildYoutubeEmbedUrl("foo bar")).toBe("//www.youtube-nocookie.com/embed/foo%20bar");
     });
   });
 });
