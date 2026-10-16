@@ -23,17 +23,9 @@ import { useState } from "react";
 
 import Image from "next/image";
 
+import { ShareSheet } from "@/components/home/watch/share-sheet";
 import { buildBlueprintHref, type BlueprintCategory } from "@/lib/blueprints/schemas";
 import { SITE_URL } from "@/lib/site";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySheet(
-  () =>
-    import("@/components/home/watch/share-sheet").then((module) => ({
-      default: module.ShareSheet,
-    })),
-  "Share",
-);
 
 /**
  * TWO LOOKS, EACH WITH A CALLER.
@@ -78,8 +70,6 @@ export default function BlueprintShareButton({
     <span className={WRAPPER_CLASS_BY_VARIANT[variant]}>
       <button
         type="button"
-        onPointerEnter={preloadShareSheet}
-        onFocus={preloadShareSheet}
         onClick={() => setIsShareSheetOpen(true)}
         className={TRIGGER_CLASS_BY_VARIANT[variant]}
       >
@@ -93,7 +83,7 @@ export default function BlueprintShareButton({
         Share
       </button>
       {isShareSheetOpen && (
-        <LazyShareSheet
+        <ShareSheet
           onClose={() => setIsShareSheetOpen(false)}
           shareUrl={`${SITE_URL}${buildBlueprintHref(blueprint)}`}
           videoTitle={blueprint.title}

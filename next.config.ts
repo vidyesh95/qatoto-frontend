@@ -14,16 +14,6 @@ const nextConfig: NextConfig = {
   },
   reactCompiler: true,
   cacheComponents: true,
-  // A `<Link>` prefetches ONE App Shell per route (the URL-independent static + cached part)
-  // instead of one prefetch per visible link, so a grid of fifty cards into the same detail
-  // route costs one prefetch, not fifty. Since 16.4, leaving this unset under `cacheComponents`
-  // logs a warning on every `dev` and `build`, and Next 17 turns it on and removes the option.
-  //
-  // Adopted with no audit because there was nothing to audit: no `<Link prefetch={true}>` and
-  // no `router.prefetch()` exists in `src/`, and those legacy full prefetches are the only thing
-  // this changes the meaning of. Session reads (`src/lib/server-http.ts`) are `no-store`, and
-  // uncached work never enters a prefetch with or without this flag.
-  partialPrefetching: true,
   staticPageGenerationTimeout: 120,
   // Turbopack's filesystem cache for BOTH `next dev` and `next build` is ON BY DEFAULT as of
   // 16.3 (`experimental.turbopackFileSystemCacheForDev` / `...ForBuild`, see
@@ -38,17 +28,6 @@ const nextConfig: NextConfig = {
     // EXPERIMENTAL. If a component starts misbehaving in a way that smells like bad memoization,
     // drop this flag first to fall back to the Babel compiler before hunting the component.
     turbopackRustReactCompiler: true,
-    // Removes unreachable work from Turbopack's memory and its persistent cache, in both `dev`
-    // and `build`. Without it the cache only grows: `.next/dev` measured 1.8 GB on 2026-10-08.
-    // EXPERIMENTAL (16.4). If a build ever serves stale output, drop this before clearing `.next`.
-    turbopackGc: true,
-    // DEV ONLY — neither changes a production build. Compile a dynamic `import()` target when
-    // the browser (or a server render) first reaches it, not at startup. This repo keeps its
-    // heaviest code behind `import()` on purpose — pixi.js, the R3F teardown engine,
-    // model-viewer, maplibre — so most dev sessions never need them compiled at all. A
-    // compile error in one of those surfaces when it is first opened, not when `dev` starts.
-    turbopackLazyDynamicImports: true,
-    turbopackLazyDynamicImportsSSR: true,
   },
   /**
    * Permanent URL moves.

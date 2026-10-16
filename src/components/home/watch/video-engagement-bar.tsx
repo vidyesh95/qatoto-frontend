@@ -14,6 +14,7 @@
 
 import { useState } from "react";
 
+import { ShareSheet } from "@/components/home/watch/share-sheet";
 import StatPill from "@/components/home/watch/stat-pill";
 import {
   describeEngagementError,
@@ -22,15 +23,6 @@ import {
   useVideoShareMutation,
 } from "@/hooks/feed/mutations";
 import { formatCompactCountLabel } from "@/lib/feed/format";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySheet(
-  () =>
-    import("@/components/home/watch/share-sheet").then((module) => ({
-      default: module.ShareSheet,
-    })),
-  "Share",
-);
 
 export default function VideoEngagementBar({
   videoId,
@@ -129,20 +121,14 @@ export default function VideoEngagementBar({
           active={hasSaved}
           onClick={handleSaveClick}
         />
-        {/* The preload sits on the wrapper because `StatPill` takes only `onClick`; `pointerenter`
-            reaches the span as the pointer enters it, and React's `onFocus` bubbles. */}
-        <span
-          className="relative inline-flex w-full lg:w-24"
-          onPointerEnter={preloadShareSheet}
-          onFocus={preloadShareSheet}
-        >
+        <span className="relative inline-flex w-full lg:w-24">
           <StatPill
             icon="share"
             label={formatCompactCountLabel(shareCount)}
             onClick={() => setIsShareSheetOpen(true)}
           />
           {isShareSheetOpen && (
-            <LazyShareSheet
+            <ShareSheet
               videoTitle={videoTitle}
               onClose={() => setIsShareSheetOpen(false)}
               onShared={(channel) => {

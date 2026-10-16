@@ -18,13 +18,8 @@
 
 import { useState } from "react";
 
+import ReportContentSheet from "@/components/home/store/shared/report-content-sheet";
 import type { CommerceContentTargetKind } from "@/lib/store/content-reports.schemas";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyReportContentSheet, preload: preloadReportContentSheet } = createLazySheet(
-  () => import("@/components/home/store/shared/report-content-sheet"),
-  "Report content",
-);
 
 export default function ReportContentOpener({
   targetKind,
@@ -49,17 +44,11 @@ export default function ReportContentOpener({
     // `relative` so the sheet's `sm:absolute` positioning anchors to this control rather than to
     // whatever ancestor happens to be positioned — the shape the video sheet's opener relies on.
     <span className="relative inline-flex">
-      <button
-        type="button"
-        onPointerEnter={preloadReportContentSheet}
-        onFocus={preloadReportContentSheet}
-        onClick={() => setIsReportSheetOpen(true)}
-        className={buttonClassName}
-      >
+      <button type="button" onClick={() => setIsReportSheetOpen(true)} className={buttonClassName}>
         Report
       </button>
       {isReportSheetOpen && (
-        <LazyReportContentSheet
+        <ReportContentSheet
           targetKind={targetKind}
           targetId={targetId}
           targetLabel={targetLabel}

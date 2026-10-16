@@ -7,13 +7,8 @@
 
 import { useState } from "react";
 
+import ChannelAboutSheet from "@/components/home/channel/channel-about-sheet";
 import type { ChannelProfile } from "@/lib/channels/schemas";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyChannelAboutSheet, preload: preloadChannelAboutSheet } = createLazySheet(
-  () => import("@/components/home/channel/channel-about-sheet"),
-  "About",
-);
 
 export default function ChannelAboutOpener({ profile }: { readonly profile: ChannelProfile }) {
   const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
@@ -22,15 +17,13 @@ export default function ChannelAboutOpener({ profile }: { readonly profile: Chan
     <>
       <button
         type="button"
-        onPointerEnter={preloadChannelAboutSheet}
-        onFocus={preloadChannelAboutSheet}
         onClick={() => setIsAboutSheetOpen(true)}
         className="cursor-pointer text-sm font-medium text-foreground underline"
       >
         More info
       </button>
       {isAboutSheetOpen && (
-        <LazyChannelAboutSheet profile={profile} onClose={() => setIsAboutSheetOpen(false)} />
+        <ChannelAboutSheet profile={profile} onClose={() => setIsAboutSheetOpen(false)} />
       )}
     </>
   );

@@ -10,16 +10,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 
+import ThreeDimensionalModelViewerSheet from "@/components/home/store/sheets/three-dimensional-model-viewer-sheet";
 import type { ProductThreeDimensionalModel } from "@/lib/store/products.schemas";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const {
-  LazyOverlay: LazyThreeDimensionalModelViewerSheet,
-  preload: preloadThreeDimensionalModelViewerSheet,
-} = createLazySheet(
-  () => import("@/components/home/store/sheets/three-dimensional-model-viewer-sheet"),
-  "View in 360º",
-);
 
 export default function ViewIn360Opener({
   model,
@@ -38,8 +30,6 @@ export default function ViewIn360Opener({
     <>
       <button
         type="button"
-        onPointerEnter={preloadThreeDimensionalModelViewerSheet}
-        onFocus={preloadThreeDimensionalModelViewerSheet}
         onClick={() => setIsViewerOpen(true)}
         aria-haspopup="dialog"
         className="w-full cursor-pointer text-left"
@@ -48,7 +38,7 @@ export default function ViewIn360Opener({
       </button>
 
       {isViewerOpen && (
-        <LazyThreeDimensionalModelViewerSheet
+        <ThreeDimensionalModelViewerSheet
           model={model}
           posterImageUrl={posterImageUrl}
           productTitle={productTitle}

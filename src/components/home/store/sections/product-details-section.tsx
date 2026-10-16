@@ -14,14 +14,8 @@ import { useState } from "react";
 
 import Image from "next/image";
 
+import ProductDetailsSheet from "@/components/home/store/sheets/product-details-sheet";
 import type { StoreProductDetail } from "@/lib/store/products.schemas";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyProductDetailsSheet, preload: preloadProductDetailsSheet } =
-  createLazySheet(
-    () => import("@/components/home/store/sheets/product-details-sheet"),
-    "Product details",
-  );
 
 export default function ProductDetailsSection({
   product,
@@ -82,8 +76,6 @@ export default function ProductDetailsSection({
 
         <button
           type="button"
-          onPointerEnter={preloadProductDetailsSheet}
-          onFocus={preloadProductDetailsSheet}
           onClick={() => setIsSheetOpen(true)}
           className="flex w-full cursor-pointer items-center px-4 py-2 text-left lg:px-6"
         >
@@ -104,7 +96,7 @@ export default function ProductDetailsSection({
       </details>
 
       {isSheetOpen && (
-        <LazyProductDetailsSheet product={product} onClose={() => setIsSheetOpen(false)} />
+        <ProductDetailsSheet product={product} onClose={() => setIsSheetOpen(false)} />
       )}
     </>
   );

@@ -62,7 +62,7 @@ export function isYoutubeVideoUrl(rawUrl: string): boolean {
 }
 
 export function buildYoutubeEmbedUrl(videoId: string): string {
-  return `//www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`;
+  return `https://www.youtube-nocookie.com/embed/${videoId}`;
 }
 
 function toVideoId(pathSegment: string): string | null {

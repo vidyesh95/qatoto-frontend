@@ -73,8 +73,7 @@ export type ImageFileCheckResult =
   | { readonly success: false; readonly failure: ImageFileCheckFailure };
 
 export function formatMegabytes(byteCount: number): string {
-  const megabytes = byteCount / 1024 / 1024;
-  return `${megabytes % 1 === 0 ? megabytes : megabytes.toFixed(1)} MB`;
+  return `${(byteCount / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /**

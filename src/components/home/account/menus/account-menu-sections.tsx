@@ -5,7 +5,6 @@ import Link from "next/link";
 import { countryName } from "@/lib/countries";
 import type { BrowserPreferences } from "@/lib/browser-preferences";
 import type { AccountMenuView } from "@/components/home/account/menus/account-menu-main-view";
-import { preloadSendFeedbackSheet } from "@/components/home/account/menus/lazy-account-menus";
 
 /** Marketing/information pages, shown as a divider section near the foot of the menu. */
 const INFORMATION_LINKS = [
@@ -380,8 +379,6 @@ export function AccountMenuPreferencesAndSupport({
       </Link>
       <button
         type="button"
-        onPointerEnter={preloadSendFeedbackSheet}
-        onFocus={preloadSendFeedbackSheet}
         onClick={onSendFeedback}
         className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
       >

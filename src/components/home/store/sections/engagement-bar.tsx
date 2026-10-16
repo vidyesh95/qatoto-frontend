@@ -33,6 +33,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { ShareSheet } from "@/components/home/watch/share-sheet";
 import {
   useProductEngagement,
   useRecordProductShare,
@@ -41,15 +42,6 @@ import {
 } from "@/hooks/store/products";
 import { formatCountLabel } from "@/lib/store/format";
 import type { ProductEngagement } from "@/lib/store/products.schemas";
-import { createLazySheet } from "@/components/home/shared/lazy-overlay";
-
-const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySheet(
-  () =>
-    import("@/components/home/watch/share-sheet").then((module) => ({
-      default: module.ShareSheet,
-    })),
-  "Share",
-);
 
 const PILL_CLASS =
   "flex flex-1 cursor-pointer items-center justify-start gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium tracking-wide text-foreground disabled:opacity-60";
@@ -141,19 +133,13 @@ export default function EngagementBar({
 
         {/* Share — opens the bottom sheet; icon stays unfilled because there is nothing to be in. */}
         <span className="relative flex flex-1">
-          <button
-            type="button"
-            onPointerEnter={preloadShareSheet}
-            onFocus={preloadShareSheet}
-            onClick={handleShareClick}
-            className={PILL_CLASS}
-          >
+          <button type="button" onClick={handleShareClick} className={PILL_CLASS}>
             <PillIcon icon="share" filled={false} />
             <span style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}>
               {formatCountLabel(engagement.shareCount)}
             </span>
           </button>
-          {isShareSheetOpen && <LazyShareSheet onClose={() => setIsShareSheetOpen(false)} />}
+          {isShareSheetOpen && <ShareSheet onClose={() => setIsShareSheetOpen(false)} />}
         </span>
       </div>
 
