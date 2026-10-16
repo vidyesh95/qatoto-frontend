@@ -6,13 +6,19 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import CompanyDetailsSheet from "@/components/home/store/sheets/company-details-sheet";
 import VerifiedCapabilitiesSheet from "@/components/home/store/sheets/verified-capabilities-sheet";
 import { countryLabelFromCode, formatPercentageLabel } from "@/lib/store/format";
 import {
   CAPABILITY_KIND_LABELS,
   type OrganizationStorefrontView,
 } from "@/lib/store/organizations.schemas";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyCompanyDetailsSheet, preload: preloadCompanyDetailsSheet } =
+  createLazySheet(
+    () => import("@/components/home/store/sheets/company-details-sheet"),
+    "Company details",
+  );
 
 // "Company details" on the product page. Reads the same storefront the seller's own page renders,
 // so the two cannot disagree.
@@ -189,6 +195,8 @@ export default function CompanyDetailsSection({
 
         <button
           type="button"
+          onPointerEnter={preloadCompanyDetailsSheet}
+          onFocus={preloadCompanyDetailsSheet}
           onClick={() => setIsCompanySheetOpen(true)}
           className="flex w-full cursor-pointer items-center px-4 py-2 text-left lg:px-6"
         >
@@ -213,7 +221,10 @@ export default function CompanyDetailsSection({
         />
       )}
       {isCompanySheetOpen && (
-        <CompanyDetailsSheet storefront={storefront} onClose={() => setIsCompanySheetOpen(false)} />
+        <LazyCompanyDetailsSheet
+          storefront={storefront}
+          onClose={() => setIsCompanySheetOpen(false)}
+        />
       )}
     </>
   );

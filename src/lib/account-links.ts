@@ -15,21 +15,24 @@ type LinkedAccountSummary = {
   providerId: string;
   accountId: string;
   createdAt: Date | string;
+  isOriginal?: boolean;
 };
 
 /**
- * The `providerId` of the account created first (the signup method), or `null`
- * when there are no linked accounts.
+ * Finds the anchor "original" provider the user signed up with.
+ *
+ * This tries:
+ *   1. `"email"` if there are no linked accounts (it was a password/passkey sign-up).
+ *   2. The one marked `isOriginal` (better-auth's own flag for the sign-up provider).
+ *   3. The first linked account.
+ *   4. `"email"` if there are no linked accounts (it was a password/passkey sign-up).
+ *
+ * Always use this when answering "how did this user sign up?" — do not assume the presence
+ * of an email means it was an email sign-up.
  */
 export function findOriginalProviderId(linkedAccounts: LinkedAccountSummary[]): string | null {
-  let originalAccount: LinkedAccountSummary | null = null;
-  let originalAccountCreatedAtMs = Number.POSITIVE_INFINITY;
-  for (const linkedAccount of linkedAccounts) {
-    const linkedAccountCreatedAtMs = new Date(linkedAccount.createdAt).getTime();
-    if (linkedAccountCreatedAtMs < originalAccountCreatedAtMs) {
-      originalAccount = linkedAccount;
-      originalAccountCreatedAtMs = linkedAccountCreatedAtMs;
-    }
-  }
-  return originalAccount?.providerId ?? null;
+  if (linkedAccounts.length === 0) return "email";
+  const original = linkedAccounts.find((a) => a.isOriginal);
+  if (original !== undefined) return original.providerId;
+  return linkedAccounts[0]?.providerId ?? null;
 }

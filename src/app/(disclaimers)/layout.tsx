@@ -1,6 +1,12 @@
 import Link from "next/link";
 import React from "react";
 
+// Every page under this group is marketing or policy copy that must never need a request to
+// render. This makes `next dev` and `next build` FAIL the moment one stops being fully static —
+// a `cookies()` read, an uncached fetch, server `searchParams`, or a "use cache" scope shorter
+// than five minutes — instead of the page silently turning dynamic.
+export const ensureStatic = "navigation";
+
 interface Props {
   children: React.ReactNode;
 }

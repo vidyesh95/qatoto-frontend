@@ -4,10 +4,16 @@ import { buildYoutubeEmbedUrl, extractYoutubeVideoId, isYoutubeVideoUrl } from "
 describe("youtube", () => {
   describe("extractYoutubeVideoId", () => {
     it("extracts ID from full watch URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
       expect(extractYoutubeVideoId("http://youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://music.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
+      expect(extractYoutubeVideoId("https://music.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from short youtu.be URLs", () => {
@@ -16,12 +22,18 @@ describe("youtube", () => {
     });
 
     it("extracts ID from shorts URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from embed URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
+      expect(extractYoutubeVideoId("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from live URLs", () => {
@@ -42,9 +54,13 @@ describe("youtube", () => {
     });
 
     it("ignores extra query parameters or path segments", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s")).toBe(
+        "dQw4w9WgXcQ",
+      );
       expect(extractYoutubeVideoId("https://youtu.be/dQw4w9WgXcQ?t=42")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ/")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ/")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("handles surrounding whitespace", () => {
@@ -99,6 +115,16 @@ describe("youtube", () => {
       expect(isYoutubeVideoUrl("https://vimeo.com/123456789")).toBe(false);
       expect(isYoutubeVideoUrl("not-a-youtube-url")).toBe(false);
       expect(isYoutubeVideoUrl("")).toBe(false);
+    });
+  });
+
+  describe("buildYoutubeEmbedUrl", () => {
+    it("builds correct embed URL for given video ID", () => {
+      expect(buildYoutubeEmbedUrl("dQw4w9WgXcQ")).toBe("//www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    });
+
+    it("encodes the video ID", () => {
+      expect(buildYoutubeEmbedUrl("foo bar")).toBe("//www.youtube-nocookie.com/embed/foo%20bar");
     });
   });
 });

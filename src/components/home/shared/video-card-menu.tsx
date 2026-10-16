@@ -10,11 +10,35 @@
 
 import Image from "next/image";
 
-import ReportVideoSheet from "@/components/home/shared/report-video-sheet";
-import SaveToPlaylistSheet from "@/components/home/shared/save-to-playlist-sheet";
-import { ShareSheet } from "@/components/home/watch/share-sheet";
 import { VideoCardMenuPanel } from "@/components/home/shared/video-card-menu-items";
 import { useVideoCardMenuState } from "@/hooks/feed/use-video-card-menu-state";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySheet(
+  () =>
+    import("@/components/home/watch/share-sheet").then((module) => ({
+      default: module.ShareSheet,
+    })),
+  "Share",
+);
+
+// The menu's three sheets all hang off this one button, so hovering it fetches all three.
+function preloadVideoCardMenuSheets() {
+  preloadReportVideoSheet();
+  preloadSaveToPlaylistSheet();
+  preloadShareSheet();
+}
+
+const { LazyOverlay: LazySaveToPlaylistSheet, preload: preloadSaveToPlaylistSheet } =
+  createLazySheet(
+    () => import("@/components/home/shared/save-to-playlist-sheet"),
+    "Save to playlist",
+  );
+
+const { LazyOverlay: LazyReportVideoSheet, preload: preloadReportVideoSheet } = createLazySheet(
+  () => import("@/components/home/shared/report-video-sheet"),
+  "Report video",
+);
 
 type VideoCardMenuProps = {
   readonly videoId: string;
@@ -60,6 +84,8 @@ export default function VideoCardMenu(props: VideoCardMenuProps) {
         aria-label={`More options for ${title}`}
         aria-haspopup="menu"
         aria-expanded={isMenuOpen}
+        onPointerEnter={preloadVideoCardMenuSheets}
+        onFocus={preloadVideoCardMenuSheets}
         onClick={handleTriggerClick}
         className="relative z-10 cursor-pointer rounded-full p-1 hover:bg-muted"
       >
@@ -103,7 +129,7 @@ export default function VideoCardMenu(props: VideoCardMenuProps) {
       )}
 
       {isReportSheetOpen && (
-        <ReportVideoSheet
+        <LazyReportVideoSheet
           videoId={videoId}
           title={title}
           onClose={() => {
@@ -114,7 +140,7 @@ export default function VideoCardMenu(props: VideoCardMenuProps) {
       )}
 
       {isPlaylistSheetOpen && (
-        <SaveToPlaylistSheet
+        <LazySaveToPlaylistSheet
           videoId={videoId}
           onClose={() => {
             setIsPlaylistSheetOpen(false);
@@ -124,7 +150,7 @@ export default function VideoCardMenu(props: VideoCardMenuProps) {
       )}
 
       {isShareSheetOpen && (
-        <ShareSheet
+        <LazyShareSheet
           {...(shareUrl === undefined ? {} : { shareUrl })}
           videoTitle={title}
           onClose={() => {

@@ -17,10 +17,15 @@ import { useState } from "react";
 
 import Link from "next/link";
 
-import AddressSheet from "@/components/home/store/sheets/address-sheet";
 import { useOrganizationAddressesQuery, useViewerOrganizationId } from "@/hooks/store/addresses";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { formatAddressLines, type OrganizationAddress } from "@/lib/store/addresses.schemas";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyAddressSheet, preload: preloadAddressSheet } = createLazySheet(
+  () => import("@/components/home/store/sheets/address-sheet"),
+  "Delivery address",
+);
 
 export default function DeliverTo({
   isViewerSignedIn,
@@ -83,6 +88,8 @@ export default function DeliverTo({
         </div>
         <button
           type="button"
+          onPointerEnter={preloadAddressSheet}
+          onFocus={preloadAddressSheet}
           onClick={() => setIsSheetOpen(true)}
           className="shrink-0 text-xs font-medium text-primary-imprint"
         >
@@ -91,7 +98,7 @@ export default function DeliverTo({
       </div>
 
       {isSheetOpen && (
-        <AddressSheet
+        <LazyAddressSheet
           organizationId={organizationId}
           addresses={deliveryAddresses}
           selectedAddressId={selectedAddress?.id ?? null}
