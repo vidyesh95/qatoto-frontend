@@ -29,9 +29,12 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
 import { useViewerOrganizationsQuery } from "@/hooks/store/orders";
 import type { ProductContactAffordance } from "@/lib/store/products.schemas";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyManufacturerChatSheet, preload: preloadManufacturerChatSheet } =
+  createLazySheet(() => import("@/components/home/store/sheets/manufacturer-chat-sheet"), "Chat");
 
 export default function StoreAndChatActions({
   productId,
@@ -81,7 +84,7 @@ export default function StoreAndChatActions({
       </div>
 
       {isChatOpen && (
-        <ManufacturerChatSheet
+        <LazyManufacturerChatSheet
           productId={productId}
           sellerDisplayName={sellerDisplayName}
           viewerOrganizationId={viewerOrganizationId}
@@ -102,7 +105,13 @@ function renderContactControl(
   switch (contactAffordance) {
     case "chat":
       return (
-        <button type="button" onClick={onChatClick} className={controlClass}>
+        <button
+          type="button"
+          onPointerEnter={preloadManufacturerChatSheet}
+          onFocus={preloadManufacturerChatSheet}
+          onClick={onChatClick}
+          className={controlClass}
+        >
           <Image
             src="/icons/chat_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
             width={18}

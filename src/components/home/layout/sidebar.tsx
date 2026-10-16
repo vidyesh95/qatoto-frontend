@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, memo, useMemo, useState } from "react";
 import Image from "next/image";
-import AiAssistSheet from "@/components/home/account/menus/ai-assist-sheet";
+import {
+  LazyAiAssistSheet,
+  preloadAiAssistSheet,
+} from "@/components/home/account/menus/lazy-account-menus";
 import { useSidebar } from "@/state/sidebar-context";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas";
@@ -264,6 +267,8 @@ const SidebarActionItem = memo(function SidebarActionItem({
     <button
       type="button"
       aria-haspopup="dialog"
+      onPointerEnter={preloadAiAssistSheet}
+      onFocus={preloadAiAssistSheet}
       onClick={onSelect}
       className={joinClassNames(
         BASE_ITEM_STYLE,
@@ -678,7 +683,7 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
         </footer>
       </div>
       {isAiAssistSheetOpen && (
-        <AiAssistSheet idPrefix="sidebar" onClose={() => setIsAiAssistSheetOpen(false)} />
+        <LazyAiAssistSheet idPrefix="sidebar" onClose={() => setIsAiAssistSheetOpen(false)} />
       )}
     </aside>
   );

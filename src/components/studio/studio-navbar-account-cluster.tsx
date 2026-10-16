@@ -10,8 +10,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
-import AccountMenu from "@/components/home/account/menus/account-menu";
-import SendFeedbackSheet from "@/components/home/shared/send-feedback-sheet";
+import {
+  LazyAccountMenu,
+  LazySendFeedbackSheet,
+  preloadAccountMenu,
+} from "@/components/home/account/menus/lazy-account-menus";
 import CreateMenu from "@/components/studio/create-menu";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
@@ -57,6 +60,8 @@ export default function StudioNavbarAccountCluster({
             type="button"
             aria-label="Account"
             aria-haspopup="menu"
+            onPointerEnter={preloadAccountMenu}
+            onFocus={preloadAccountMenu}
             onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
             className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
           >
@@ -69,7 +74,7 @@ export default function StudioNavbarAccountCluster({
             />
           </button>
           {isAccountMenuOpen && (
-            <AccountMenu
+            <LazyAccountMenu
               onClose={() => setIsAccountMenuOpen(false)}
               onSendFeedback={() => {
                 setIsAccountMenuOpen(false);
@@ -78,7 +83,7 @@ export default function StudioNavbarAccountCluster({
             />
           )}
           {isFeedbackSheetOpen && (
-            <SendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
+            <LazySendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
           )}
         </div>
       ) : (

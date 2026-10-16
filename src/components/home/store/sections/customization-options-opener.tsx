@@ -9,9 +9,14 @@
 
 import { useState } from "react";
 
-import CustomizationSheet from "@/components/home/store/sheets/customization-sheet";
 import type { ProductCustomizationOption } from "@/lib/store/products.schemas";
 import type { ReactNode } from "react";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyCustomizationSheet, preload: preloadCustomizationSheet } = createLazySheet(
+  () => import("@/components/home/store/sheets/customization-sheet"),
+  "Customization options",
+);
 
 export default function CustomizationOptionsOpener({
   options,
@@ -26,6 +31,8 @@ export default function CustomizationOptionsOpener({
     <>
       <button
         type="button"
+        onPointerEnter={preloadCustomizationSheet}
+        onFocus={preloadCustomizationSheet}
         onClick={() => setIsSheetOpen(true)}
         className="flex w-full cursor-pointer flex-col py-2 text-left"
       >
@@ -33,7 +40,7 @@ export default function CustomizationOptionsOpener({
       </button>
 
       {isSheetOpen && (
-        <CustomizationSheet options={options} onClose={() => setIsSheetOpen(false)} />
+        <LazyCustomizationSheet options={options} onClose={() => setIsSheetOpen(false)} />
       )}
     </>
   );

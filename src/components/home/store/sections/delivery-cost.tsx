@@ -23,13 +23,18 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import DeliverySheet from "@/components/home/store/sheets/delivery-sheet";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useProductDeliveryEstimateQuery } from "@/hooks/store/products";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { formatCentsRangeLabel, formatLeadTimeRangeLabel } from "@/lib/store/format";
 import type { ProductDeliveryEstimate } from "@/lib/store/products.schemas";
 import type { FreightLanePlan } from "@/lib/store/freight.schemas";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyDeliverySheet, preload: preloadDeliverySheet } = createLazySheet(
+  () => import("@/components/home/store/sheets/delivery-sheet"),
+  "How this ships",
+);
 
 /**
  * What the row can be showing. A missing destination is a prompt, not an error.
@@ -118,6 +123,8 @@ function DeliveryRouteSheetButton({
   return (
     <button
       type="button"
+      onPointerEnter={preloadDeliverySheet}
+      onFocus={preloadDeliverySheet}
       onClick={onOpen}
       className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-primary-imprint"
     >
@@ -170,7 +177,7 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
       </div>
 
       {isSheetOpen && (
-        <DeliverySheet lanePlan={lanePlanForSheet} onClose={() => setIsSheetOpen(false)} />
+        <LazyDeliverySheet lanePlan={lanePlanForSheet} onClose={() => setIsSheetOpen(false)} />
       )}
     </>
   );

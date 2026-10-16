@@ -28,12 +28,24 @@ import { useState } from "react";
 import Image from "next/image";
 
 import ChannelProfileDetails from "@/components/home/channel/channel-profile-details";
-import ReportProfileSheet from "@/components/home/channel/report-profile-sheet";
 import ModalSheet from "@/components/home/shared/modal-sheet";
-import { ShareSheet } from "@/components/home/watch/share-sheet";
 import type { ChannelProfile } from "@/lib/channels/schemas";
 import { formatCompactCountLabel } from "@/lib/feed/format";
 import { formatCountLabel, formatIsoDateLabel } from "@/lib/store/format";
+import { createLazySheet } from "@/components/home/shared/lazy-overlay";
+
+const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySheet(
+  () =>
+    import("@/components/home/watch/share-sheet").then((module) => ({
+      default: module.ShareSheet,
+    })),
+  "Share",
+);
+
+const { LazyOverlay: LazyReportProfileSheet, preload: preloadReportProfileSheet } = createLazySheet(
+  () => import("@/components/home/channel/report-profile-sheet"),
+  "Report profile",
+);
 
 interface ChannelFact {
   readonly iconFileName: string;
@@ -111,6 +123,8 @@ export default function ChannelAboutSheet({
         <div className="mt-5 flex flex-wrap gap-3">
           <button
             type="button"
+            onPointerEnter={preloadShareSheet}
+            onFocus={preloadShareSheet}
             onClick={() => setIsShareSheetOpen(true)}
             className="flex cursor-pointer items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
           >
@@ -127,6 +141,8 @@ export default function ChannelAboutSheet({
               happened. Hiding it would just look broken. */}
           <button
             type="button"
+            onPointerEnter={preloadReportProfileSheet}
+            onFocus={preloadReportProfileSheet}
             onClick={() => setIsReportSheetOpen(true)}
             className="flex cursor-pointer items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
           >
@@ -151,7 +167,7 @@ export default function ChannelAboutSheet({
         quietly recorded the wrong thing would be worse than recording nothing.
       */}
       {isShareSheetOpen && (
-        <ShareSheet
+        <LazyShareSheet
           onClose={() => setIsShareSheetOpen(false)}
           shareUrl={`/channel/${profile.handle}`}
           videoTitle={profile.name}
@@ -159,7 +175,7 @@ export default function ChannelAboutSheet({
       )}
 
       {isReportSheetOpen && (
-        <ReportProfileSheet
+        <LazyReportProfileSheet
           reportedUserId={profile.creatorId}
           displayName={profile.name}
           onClose={() => setIsReportSheetOpen(false)}

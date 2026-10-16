@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
+import { buildYoutubeEmbedUrl, extractYoutubeVideoId, isYoutubeVideoUrl } from "./youtube";
 
 describe("youtube", () => {
   describe("extractYoutubeVideoId", () => {
     it("extracts ID from full watch URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
       expect(extractYoutubeVideoId("http://youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://music.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://m.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
+      expect(extractYoutubeVideoId("https://music.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from short youtu.be URLs", () => {
@@ -16,12 +22,18 @@ describe("youtube", () => {
     });
 
     it("extracts ID from shorts URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from embed URLs", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
+      expect(extractYoutubeVideoId("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("extracts ID from live URLs", () => {
@@ -42,9 +54,13 @@ describe("youtube", () => {
     });
 
     it("ignores extra query parameters or path segments", () => {
-      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s")).toBe(
+        "dQw4w9WgXcQ",
+      );
       expect(extractYoutubeVideoId("https://youtu.be/dQw4w9WgXcQ?t=42")).toBe("dQw4w9WgXcQ");
-      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ/")).toBe("dQw4w9WgXcQ");
+      expect(extractYoutubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ/")).toBe(
+        "dQw4w9WgXcQ",
+      );
     });
 
     it("handles surrounding whitespace", () => {
@@ -54,6 +70,12 @@ describe("youtube", () => {
     it("returns null for non-YouTube domains", () => {
       expect(extractYoutubeVideoId("https://vimeo.com/123456789")).toBeNull();
       expect(extractYoutubeVideoId("https://example.com/watch?v=dQw4w9WgXcQ")).toBeNull();
+    });
+
+    it("returns null for YouTube domains without a valid video ID path or query parameter", () => {
+      expect(extractYoutubeVideoId("https://www.youtube.com/feed/subscriptions")).toBeNull();
+      expect(extractYoutubeVideoId("https://www.youtube.com/about")).toBeNull();
+      expect(extractYoutubeVideoId("https://m.youtube.com")).toBeNull();
     });
 
     it("returns null for invalid YouTube IDs", () => {
@@ -74,6 +96,14 @@ describe("youtube", () => {
     });
   });
 
+  describe("buildYoutubeEmbedUrl", () => {
+    it("builds a nocookie embed URL for a given video ID", () => {
+      expect(buildYoutubeEmbedUrl("dQw4w9WgXcQ")).toBe(
+        "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      );
+    });
+  });
+
   describe("isYoutubeVideoUrl", () => {
     it("returns true for valid YouTube URLs", () => {
       expect(isYoutubeVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(true);
@@ -85,6 +115,16 @@ describe("youtube", () => {
       expect(isYoutubeVideoUrl("https://vimeo.com/123456789")).toBe(false);
       expect(isYoutubeVideoUrl("not-a-youtube-url")).toBe(false);
       expect(isYoutubeVideoUrl("")).toBe(false);
+    });
+  });
+
+  describe("buildYoutubeEmbedUrl", () => {
+    it("builds correct embed URL for given video ID", () => {
+      expect(buildYoutubeEmbedUrl("dQw4w9WgXcQ")).toBe("//www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
+    });
+
+    it("encodes the video ID", () => {
+      expect(buildYoutubeEmbedUrl("foo bar")).toBe("//www.youtube-nocookie.com/embed/foo%20bar");
     });
   });
 });
