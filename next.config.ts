@@ -42,12 +42,19 @@ const nextConfig: NextConfig = {
     // and `build`. Without it the cache only grows: `.next/dev` measured 1.8 GB on 2026-10-08.
     // EXPERIMENTAL (16.4). If a build ever serves stale output, drop this before clearing `.next`.
     turbopackGc: true,
-    // DEV ONLY — neither changes a production build. Compile a dynamic `import()` target when
-    // the browser (or a server render) first reaches it, not at startup. This repo keeps its
-    // heaviest code behind `import()` on purpose — pixi.js, the R3F teardown engine,
-    // model-viewer, maplibre — so most dev sessions never need them compiled at all. A
-    // compile error in one of those surfaces when it is first opened, not when `dev` starts.
-    turbopackLazyDynamicImports: true,
+    // DEV ONLY — no effect on a production build. Compile a dynamic `import()` target when a
+    // server render first reaches it, not at startup. This repo keeps its heaviest code behind
+    // `import()` on purpose — pixi.js, the R3F teardown engine, model-viewer, maplibre — so most
+    // dev sessions never need them compiled at all. A compile error in one of those surfaces
+    // when it is first opened, not when `dev` starts.
+    //
+    // ⚠️ THE CLIENT TWIN, `turbopackLazyDynamicImports`, IS OFF ON PURPOSE. On 16.4.0 it broke
+    // AI Assist (2026-10-21). It emitted a "lazy compilation proxy" chunk for
+    // `assistant-root.tsx` that requires the module's `(ecmascript, loader)`, but no emitted chunk
+    // defined that loader, so `React.lazy` in `assistant-gate.tsx` threw "the module factory is
+    // not available". 16.4.2's lazy-import fix (vercel/next.js#99940) is for a DIFFERENT bug,
+    // chunk-list collisions, so it is not a reason to turn the flag back on. After a Next upgrade,
+    // re-enable it only if switching AI Assist on in `dev` still works.
     turbopackLazyDynamicImportsSSR: true,
   },
   /**
