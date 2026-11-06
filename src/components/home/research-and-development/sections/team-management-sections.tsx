@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import RndShareButton from "@/components/home/research-and-development/sections/rnd-share-button";
 import RoleCompensationComposer from "@/components/home/research-and-development/sections/role-compensation-composer";
 import {
   buildCompensationStrands,
@@ -139,9 +140,11 @@ export function TeamApplicationsList({
 
 export function TeamInvitesSection({
   projectSlug,
+  isProjectPublished,
   // HIDDEN-FOR-BETA: `openRoles` and `inviteMutation` feed the hidden form below.
 }: {
   readonly projectSlug: string;
+  readonly isProjectPublished: boolean;
   readonly openRoles: readonly OpenRole[];
   readonly inviteMutation: ReturnType<typeof useInviteToProjectMutation>;
 }) {
@@ -166,8 +169,23 @@ export function TeamInvitesSection({
         <p className="text-sm text-muted-foreground">You have not invited anyone yet.</p>
       )}
 
+      {isProjectPublished ? (
+        <div className="space-y-2">
+          <RndShareButton
+            sharePath={`/research-and-development/project/${projectSlug}/join`}
+            shareTitle="Join my project on Qatoto"
+            buttonLabel="Share invite link"
+          />
+          <p className="text-xs text-muted-foreground">
+            Send this to anyone, even without an account. They sign up and ask to join, and you
+            decide below.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Publish this project to get an invite link.</p>
+      )}
       <p className="text-sm text-muted-foreground">
-        To invite someone, find them under{" "}
+        To invite someone already on Qatoto, find them under{" "}
         <Link
           href="/research-and-development/talent"
           className="font-medium text-primary-imprint underline-offset-2 hover:underline"
@@ -255,10 +273,14 @@ export function TeamInvitesSection({
 }
 
 export function TeamOpenRolesSection({
+  projectSlug,
+  isProjectPublished,
   openRoles,
   currency,
   roleMutation,
 }: {
+  readonly projectSlug: string;
+  readonly isProjectPublished: boolean;
   readonly openRoles: readonly OpenRole[];
   readonly currency: string;
   readonly roleMutation: ReturnType<typeof useOpenRoleMutation>;
@@ -286,7 +308,13 @@ export function TeamOpenRolesSection({
                   {role.slotsFilledCount} of {role.slotsTotal} filled · {role.status}
                 </span>
               </span>
-              <span className="flex gap-2">
+              <span className="flex flex-wrap items-center gap-2">
+                {isProjectPublished && role.status === "open" && (
+                  <RndShareButton
+                    sharePath={`/research-and-development/project/${projectSlug}/join?role=${role.id}`}
+                    shareTitle={`Join my project on Qatoto as ${role.roleTitle}`}
+                  />
+                )}
                 <button
                   type="button"
                   disabled={roleMutation.isPending}

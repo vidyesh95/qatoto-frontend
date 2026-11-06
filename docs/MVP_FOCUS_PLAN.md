@@ -269,6 +269,9 @@ compliance by about **May 2027**. Details are in `FOCUS_AREAS_RESEARCH.md`.
 **Warning:** this removes every live account and row from production, including admin access. Keep
 the old database untouched until beta is stable, so you can roll back.
 
+**Do not deploy the reminder job to a worker on the current database.** It would reach every seeded
+member at 7 pm, 88 of them when this was written. Deploy that backend version as part of the switch.
+
 Before the switch:
 
 1. Build the frontend against an empty backend on a throwaway database. The current build ran

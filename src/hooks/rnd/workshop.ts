@@ -12,6 +12,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import {
+  readBrowserTimeZone,
+  updateDailyLogReminder,
+} from "@/lib/notifications/daily-log-reminder.api";
+import {
   createWorkshopColumn,
   createWorkshopTask,
   deleteWorkshopColumn,
@@ -312,6 +316,11 @@ export function useDailyLogMutation(projectSlug: string) {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.projectDailyLogs(projectSlug) });
+      // Keeps the evening reminder on this person's own clock. A refused write costs nothing: the
+      // log is already in, and the next submit tries again.
+      if (variables.action === "submit") {
+        void updateDailyLogReminder({ timeZone: readBrowserTimeZone() });
+      }
       if (variables.logId) {
         void queryClient.invalidateQueries({
           queryKey: rndKeys.dailyLog(projectSlug, variables.logId),

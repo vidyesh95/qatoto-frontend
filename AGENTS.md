@@ -266,6 +266,15 @@ still answer by address, except `/press` and `/blogs`, which `next.config.ts` re
 sidebar or mobile nav links a surface, that holds again only once its row is restored. The focus and
 cutover steps are in `docs/MVP_FOCUS_PLAN.md`.
 
+**An invite link is the project's `/join` page, not a secret.** `/research-and-development/project/<slug>/join`
+is a public welcome over the normal application flow, and the founder approves everyone, so it has no
+token, limit or expiry. Do not add them unless joining stops needing approval.
+
+**A daily log reminder uses the person's own time zone, never `project_stats.projectTimeZone`.** That
+column is locked to UTC because it decides a project's day for streaks and equity.
+`daily_log_reminder_preference.time_zone` only decides when a reminder is sent, so a browser may set
+it, and nothing that reads it may touch money, effort or streaks.
+
 ## The Blueprints hub replaced /anime (wired; its SEEDED CONTENT is invented)
 
 `/anime` was RETIRED. It is now `/blueprints` — engineering teardowns (70%), working

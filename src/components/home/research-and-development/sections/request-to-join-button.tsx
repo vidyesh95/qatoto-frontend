@@ -33,9 +33,16 @@ import { ROLE_COMMITMENT_LABELS } from "@/lib/rnd/labels";
  * `expectedCompensationNote` IS THE APPLICANT'S OWN SENTENCE. It is never read by the
  * ledger and is never an input to any grant; nothing downstream totals it or compares it.
  */
-export default function RequestToJoinButton({ projectSlug }: { projectSlug: string }) {
+export default function RequestToJoinButton({
+  projectSlug,
+  isInitiallyOpen = false,
+}: {
+  readonly projectSlug: string;
+  /** The join page opens the form straight away: asking is why somebody followed that link. */
+  readonly isInitiallyOpen?: boolean;
+}) {
   const applyMutation = useApplyToProjectMutation(projectSlug);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(isInitiallyOpen);
   const [shortPitch, setShortPitch] = useState("");
   const [statedCommitment, setStatedCommitment] = useState<RoleCommitment>("part_time");
   const [expectedCompensationNote, setExpectedCompensationNote] = useState("");

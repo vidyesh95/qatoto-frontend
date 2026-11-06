@@ -22,10 +22,12 @@ const { LazyOverlay: LazyShareSheet, preload: preloadShareSheet } = createLazySh
 export default function RndShareButton({
   sharePath,
   shareTitle,
+  buttonLabel = "Share",
 }: {
   /** Site-relative, such as `/research-and-development/project/solar-cold-storage`. */
   readonly sharePath: string;
   readonly shareTitle: string;
+  readonly buttonLabel?: string;
 }) {
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
 
@@ -46,7 +48,7 @@ export default function RndShareButton({
           height={18}
           className="size-4.5 shrink-0"
         />
-        Share
+        {buttonLabel}
       </button>
       {isShareSheetOpen && (
         <LazyShareSheet

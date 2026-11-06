@@ -8,6 +8,7 @@ import { LanguagePanel } from "@/components/home/account/menus/language-menu";
 import { LocationPanel } from "@/components/home/account/menus/location-menu";
 import { useBrowserPreferences } from "@/state/browser-preferences-context";
 import { AiAssistPanel } from "@/components/home/account/menus/ai-assist-menu";
+import { DailyLogReminderPanel } from "@/components/home/account/menus/daily-log-reminder-panel";
 import { SettingsPanel } from "@/components/home/account/menus/settings-menu";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
 import { ACCOUNT_MENU_PANEL_CLASS_NAME } from "@/components/home/account/menus/account-menu-layout";
@@ -103,6 +104,8 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
           onMascotSizeChange={(mascotSize) => setPreference("assistantMascotSize", mascotSize)}
           onMascotSpeedChange={(mascotSpeed) => setPreference("assistantMascotSpeed", mascotSpeed)}
         />
+      ) : view === "daily-log-reminders" ? (
+        <DailyLogReminderPanel onBack={() => handleViewChange("main")} />
       ) : view === "language" ? (
         <LanguagePanel
           selected={preferences.language}

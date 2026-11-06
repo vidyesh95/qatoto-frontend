@@ -29,12 +29,15 @@ function isMaintainer(viewerProjectRole: string | null): boolean {
 
 export default function TeamManagementIsland({
   projectSlug,
+  isProjectPublished,
   currency,
   team,
   openRoles,
   viewerProjectRole,
 }: {
   readonly projectSlug: string;
+  /** A draft is visible to its founder alone, so an invite link to one would answer 404. */
+  readonly isProjectPublished: boolean;
   readonly currency: string;
   readonly team: readonly ProjectTeamMember[];
   readonly openRoles: readonly OpenRole[];
@@ -72,6 +75,7 @@ export default function TeamManagementIsland({
             <h3 className="text-sm font-medium tracking-wide xl:text-lg">Invites you have sent</h3>
             <TeamInvitesSection
               projectSlug={projectSlug}
+              isProjectPublished={isProjectPublished}
               openRoles={openRoles}
               inviteMutation={inviteMutation}
             />
@@ -80,6 +84,8 @@ export default function TeamManagementIsland({
           <section className="space-y-3">
             <h3 className="text-sm font-medium tracking-wide xl:text-lg">Roles you advertise</h3>
             <TeamOpenRolesSection
+              projectSlug={projectSlug}
+              isProjectPublished={isProjectPublished}
               openRoles={openRoles}
               currency={currency}
               roleMutation={roleMutation}

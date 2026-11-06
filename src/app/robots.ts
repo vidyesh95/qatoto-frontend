@@ -43,6 +43,8 @@ const PRIVATE_PATH_PREFIXES = [
   "/orders-and-returns",
 
   // Conversations and cases — other people's data by definition.
+  // Carries a signed token, and answers nothing without one.
+  "/daily-log-reminders/",
   "/messages",
   "/disputes",
   "/service-engagements",

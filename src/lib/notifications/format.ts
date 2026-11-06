@@ -295,6 +295,8 @@ function buildKnownHeadline(kind: NotificationKind, notification: NotificationRo
       // STAFF-FACING. Deliberately says nothing about what the case is about: the subject line
       // is text the person wrote, and an inbox row is not the place to repeat it.
       return "Someone opened a support case.";
+    case "daily_log_reminder":
+      return "You have not logged today.";
     case "support_case_replied":
       // NO STAFF NAME. `actorUserId` is null on this kind by design, so there is none to read.
       return "Support replied to your case.";

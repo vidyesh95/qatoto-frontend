@@ -10,6 +10,7 @@ import {
 export type AccountMenuView =
   | "main"
   | "ai-assist"
+  | "daily-log-reminders"
   | "language"
   | "location"
   | "settings"

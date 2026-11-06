@@ -120,7 +120,7 @@ export function AccountMenuUserCard({
 export function AccountMenuNavList({
   onViewChange,
   onSignOut,
-  // HIDDEN-FOR-BETA: `onClose` is read only by the hidden rows below.
+  onClose,
 }: {
   readonly onViewChange: (view: AccountMenuView) => void;
   readonly onSignOut: () => void;
@@ -128,6 +128,34 @@ export function AccountMenuNavList({
 }) {
   return (
     <>
+      {/* On a phone the sidebar is not shown, so this menu is how a signed-in person reaches their
+          own work. */}
+      <Link
+        href="/studio/team"
+        onClick={onClose}
+        className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+      >
+        <Image
+          src="/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={24}
+          height={24}
+        />
+        <span className="text-sm font-medium text-secondary-foreground">My team</span>
+      </Link>
+      <Link
+        href="/research-and-development/applications"
+        onClick={onClose}
+        className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+      >
+        <Image
+          src="/icons/send_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={24}
+          height={24}
+        />
+        <span className="text-sm font-medium text-secondary-foreground">My applications</span>
+      </Link>
       {/* HIDDEN-FOR-BETA: the video, retail and commerce rows.
       <Link
         href="/library"
@@ -221,6 +249,21 @@ export function AccountMenuNavList({
         <span className="text-sm font-medium text-secondary-foreground">Disputes</span>
       </Link>
       */}
+      <button
+        type="button"
+        onClick={() => onViewChange("daily-log-reminders")}
+        className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+      >
+        <Image
+          src="/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={24}
+          height={24}
+        />
+        <span className="w-full text-left text-sm font-medium text-secondary-foreground">
+          Daily log reminders
+        </span>
+      </button>
       <button
         type="button"
         onClick={() => onViewChange("settings")}

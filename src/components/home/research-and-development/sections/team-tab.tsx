@@ -102,6 +102,7 @@ export default function TeamTab({ project, openRolesState }: TeamTabProps) {
       </section>
       <TeamManagementIsland
         projectSlug={project.slug}
+        isProjectPublished={project.status === "active"}
         currency={project.currency}
         team={project.team}
         openRoles={openRolesState.status === "ready" ? openRolesState.rows : []}

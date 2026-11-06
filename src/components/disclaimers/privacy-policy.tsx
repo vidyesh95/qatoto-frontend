@@ -38,7 +38,7 @@ import {
 } from "@/lib/site";
 import { PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL } from "@/lib/privacy-request";
 
-const PRIVACY_POLICY_LAST_UPDATED_LABEL = "5 October 2026";
+const PRIVACY_POLICY_LAST_UPDATED_LABEL = "6 November 2026";
 
 function PrivacyOverviewSection() {
   return (
@@ -171,9 +171,12 @@ function PrivacyUsageAndBasisSection() {
           The information we collect is used to provide and improve the services we offer, to
           communicate with you, and to personalize your experience on the site. We send email only
           about your account and what you do on Qatoto — we send no newsletters or marketing — and
-          we use your information to respond to your questions and requests. We may also use
-          aggregated and anonymized information to perform research and analysis, to create reports,
-          and to support other business purposes.
+          we use your information to respond to your questions and requests. If you are on a project
+          and have not logged by the evening, we send you a reminder at about 7 pm, using the time
+          zone your browser reports. You can turn it off in your account menu or from any reminder
+          email, and it has no effect on your pay or equity. We may also use aggregated and
+          anonymized information to perform research and analysis, to create reports, and to support
+          other business purposes.
         </dd>
       </div>
       <div>

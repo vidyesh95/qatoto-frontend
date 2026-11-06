@@ -89,6 +89,8 @@ export const NOTIFICATION_KINDS = [
   "support_case_opened",
   "support_case_replied",
   "support_case_decided",
+  // Sent by a job, so `actorName` is always `null`, and the only kind a person can switch off.
+  "daily_log_reminder",
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
