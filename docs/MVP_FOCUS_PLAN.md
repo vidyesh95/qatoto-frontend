@@ -4,6 +4,23 @@ _Written 2026-11-03. Builds on `PRODUCT_REVIEW.md` (what to add, change and remo
 `FOCUS_AREAS_RESEARCH.md` (proof of work and product R&D). Do **one step at a time**: finish it,
 check it, then start the next._
 
+> **Updated 2026-11-06, read this first.** The goal changed from 3 to 5 pilot teams to as many real
+> users as possible, so the order below changed:
+>
+> - **Team formation is the front door.** Proof of effort is what teams use after they form. It is
+>   not what the site advertises.
+> - **Steps 1 and 2 are done** in beta form. Everything hidden is marked `HIDDEN-FOR-BETA`, so
+>   `rg HIDDEN-FOR-BETA` lists what to restore. The beta menu also hides Funding, Factories and
+>   Market Research, because they have no data on an empty database.
+> - **Build Seasons come next.** A six-week public cohort: join, form a team in week 1, log your
+>   work, show a prototype or demand test at a demo day. Season 0 runs by hand with 30 to 50 adults,
+>   with no equity, pay statements or prize money through Qatoto. The main number is people in a team
+>   still logging in week 3.
+> - **Step 4 becomes season demos.** Steps 5 and 6 wait.
+> - **Correction to Step 4, rule 4.** The streak leaderboard lists projects, not people, so it is not
+>   a public ranking of workers. Consent still matters for anything that names a person.
+> - **The cutover to an empty production database** is in the section at the end of this file.
+
 ## The decision
 
 - **Keep this website. Don't build a new one.** The hard parts (login, daily logs, AI analysis,
@@ -246,6 +263,38 @@ compliance by about **May 2027**. Details are in `FOCUS_AREAS_RESEARCH.md`.
 - open the changed pages in a browser, signed out and signed in, in light and dark mode
 - for backend steps: the backend repo's own checks, and a rolled-back database check, since the
   database is shared
+
+## Clean database cutover
+
+**Warning:** this removes every live account and row from production, including admin access. Keep
+the old database untouched until beta is stable, so you can roll back.
+
+Before the switch:
+
+1. Build the frontend against an empty backend on a throwaway database. The current build ran
+   against a populated one, so an empty run is unproven. `store/[...slug]`, `store/pathway/[id]` and
+   `blueprints/[slug]` have `generateStaticParams` with no sentinel, and an empty list fails the build
+   under `cacheComponents`.
+2. Replay all migrations on that throwaway database, not the shared one.
+3. Pick a plan with room. The Aiven free tier went read-only at about 429 MB.
+
+At the switch:
+
+1. Point only the production backend's `DATABASE_URL` at the new database. Development stays on the
+   old one.
+2. Run migrations.
+3. Run only `db:seed-content-categories`, `db:seed-commerce-categories`,
+   `db:seed-supplier-capabilities` and `db:seed-research-programs`. The last also creates the Project
+   Immortal row.
+4. Never run `db:seed-store-demo` (it publishes passwords), `db:seed-store-ranking-dev`,
+   `db:seed-blueprint-teardowns`, `db:seed-blueprint-case-studies`,
+   `db:seed-blueprint-store-categories` or `db:seed-promotional-slides`.
+5. Sign up, then run `db:grant-platform-role` for your account. Remove the hero slides migration 0149
+   inserts, at `/admin/blueprints-hero`.
+6. Redeploy the frontend, because prerendered pages keep the old data until then.
+7. Confirm the worker and `BREVO_API_KEY` are live, or no application emails go out.
+
+Then edit `alpha-banner.tsx` for beta, and post real projects before inviting anyone.
 
 ## Step 0 answers
 

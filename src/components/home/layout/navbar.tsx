@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import QueueButton from "@/components/home/layout/queue-button";
+// HIDDEN-FOR-BETA: the video play queue.
+// import QueueButton from "@/components/home/layout/queue-button";
 import {
   BLUEPRINT_CATEGORY_BY_SEGMENT,
   BLUEPRINT_CATEGORY_LABELS,
@@ -198,6 +199,8 @@ export default function Navbar({
           )}
         </div>
 
+        {/* HIDDEN-FOR-BETA: search and voice search. `/search` returns videos only, and the voice
+            button never had a handler.
         <div
           className={
             "hidden items-center justify-end gap-2 xl:absolute xl:left-1/2 xl:flex xl:w-xl xl:-translate-x-1/2"
@@ -251,8 +254,10 @@ export default function Navbar({
             />
           </button>
         </div>
+        */}
 
         <div className="flex shrink-0 items-center gap-x-2 text-foreground">
+          {/* HIDDEN-FOR-BETA: the compact search link.
           <Link
             href={"/search"}
             aria-label="Search"
@@ -265,8 +270,9 @@ export default function Navbar({
               height={24}
             />
           </Link>
+          */}
           {/* Renders nothing until something is queued — see the component's header. */}
-          <QueueButton />
+          {/* HIDDEN-FOR-BETA: <QueueButton /> */}
           {accountSlot}
         </div>
       </div>

@@ -73,6 +73,15 @@ const nextConfig: NextConfig = {
    */
   async redirects() {
     return [
+      // HIDDEN-FOR-BETA, AND A REDIRECT RATHER THAN A HIDDEN LINK ON PURPOSE. Without
+      // `QATOTO_CMS_URL`, `src/lib/cms.ts` serves its invented fixtures, and those state things that
+      // never happened ("Qatoto Store crosses 100 shipped products"). Real visitors must not reach
+      // them by a saved address either. `permanent: false` keeps it undoable: delete these four
+      // entries once real posts exist. They precede the `/blogs` move below so it never fires.
+      { source: "/press", destination: "/about", permanent: false },
+      { source: "/press/:path*", destination: "/about", permanent: false },
+      { source: "/blogs", destination: "/about", permanent: false },
+      { source: "/blogs/:path*", destination: "/about", permanent: false },
       {
         // THE ANIME VERTICAL WAS RETIRED and its hub became /blueprints. Every /anime child
         // was deleted, so unlike the import-intelligence entry below this one CAN take a

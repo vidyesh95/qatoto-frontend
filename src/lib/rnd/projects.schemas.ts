@@ -277,6 +277,9 @@ export const ProjectApplicationSchema = z.object({
   status: ProjectApplicationStatusSchema,
   applicantUserId: z.string(),
   applicantName: z.string(),
+  // `.default(false)`: Vercel may ship this before AWS does. Absent means no profile link, not a
+  // failed parse of the founder's whole queue.
+  applicantHasPublishedTalentProfile: z.boolean().default(false),
   applicantAvatarImageUrl: z.string().nullable(),
   openRoleId: z.string().nullable(),
   roleTitleSnapshot: z.string().nullable(),

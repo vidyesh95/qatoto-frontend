@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { signIn } from "@/lib/auth-client";
+import { buildAuthHref, buildSocialCallbackUrl } from "@/lib/auth-return-path";
 import { TERMS_VERSION } from "@/lib/legal-documents";
 import {
   AuthEmailInput,
@@ -35,13 +36,17 @@ async function readRefusalMessage(response: Response): Promise<string> {
   return fallbackMessage;
 }
 
-const handleGoogleSignIn = () =>
-  signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () =>
-  signIn.social({ provider: "github", callbackURL: window.location.origin });
-
-export default function SignUp() {
+export default function SignUp({
+  returnPath = "/",
+}: {
+  /** Already validated by `readSafeReturnPath` in the page. */
+  readonly returnPath?: string;
+}) {
   const router = useRouter();
+  const handleGoogleSignIn = () =>
+    signIn.social({ provider: "google", callbackURL: buildSocialCallbackUrl(returnPath) });
+  const handleGitHubSignIn = () =>
+    signIn.social({ provider: "github", callbackURL: buildSocialCallbackUrl(returnPath) });
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -149,7 +154,7 @@ export default function SignUp() {
         return;
       }
 
-      router.push("/");
+      router.push(returnPath);
     } catch (submitError) {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
@@ -289,7 +294,10 @@ export default function SignUp() {
 
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Already have an account?</span>
-          <Link href="sign-in" className="cursor-pointer text-primary-imprint">
+          <Link
+            href={buildAuthHref("/sign-in", returnPath)}
+            className="cursor-pointer text-primary-imprint"
+          >
             Sign in
           </Link>
         </p>

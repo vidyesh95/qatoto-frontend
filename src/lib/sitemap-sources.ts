@@ -25,6 +25,7 @@
 
 import { listChannels } from "@/lib/channels/api";
 import { getBlogs, getPressList } from "@/lib/cms";
+import { listPublishedPitchSlugs } from "@/lib/rnd/pitches.api";
 import { listStoreCategories, searchStore } from "@/lib/store/catalog.api";
 import { listCofounderProfiles } from "@/lib/store/cofounders.api";
 import { listStoreFactories } from "@/lib/store/factories.api";
@@ -128,6 +129,15 @@ export async function getResearchProjectSitemapEntries(): Promise<SitemapEntry[]
   if (!result.success) return [];
 
   return result.data.map((slug) => ({ path: `/research-and-development/project/${slug}` }));
+}
+
+/** Published pitches, from the same public slug read `generateStaticParams` uses. */
+export async function getPitchSitemapEntries(): Promise<SitemapEntry[]> {
+  "use cache";
+  const result = await listPublishedPitchSlugs();
+  if (!result.success) return [];
+
+  return result.data.map((slug) => ({ path: `/research-and-development/pitches/${slug}` }));
 }
 
 /**

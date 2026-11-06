@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
+import RndShareButton from "@/components/home/research-and-development/sections/rnd-share-button";
 import WatchProjectButton from "@/components/home/research-and-development/sections/watch-project-button";
 import EditProjectSheet from "@/components/home/research-and-development/sheets/edit-project-sheet";
 import { formatIsoInstant } from "@/lib/rnd/format";
@@ -111,6 +112,10 @@ export default function ProjectHeader({ project }: { project: ResearchProjectDet
             isWatchedByViewer={project.isWatchedByViewer}
           />
           <RequestToJoinButton projectSlug={project.slug} />
+          <RndShareButton
+            sharePath={`/research-and-development/project/${project.slug}`}
+            shareTitle={project.name}
+          />
           <EditProjectSheet project={project} />
         </div>
       </div>

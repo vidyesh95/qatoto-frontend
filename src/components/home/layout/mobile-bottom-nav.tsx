@@ -7,6 +7,42 @@ import { usePathname } from "next/navigation";
 // Bottom tab bar shown only on mobile (md:hidden). Mirrors the five primary
 // product surfaces from the desktop sidebar's COLLAPSED_NAV_CONFIG. Active item
 // gets a filled icon inside a teal pill, matching the collapsed-sidebar style.
+//
+// HIDDEN-FOR-BETA: Blueprints, Create, Store and R&D left this bar. The original list is kept below.
+const NAV_ITEMS = [
+  {
+    href: "/",
+    label: "Home",
+    activeIcon: "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/research-and-development/team-building",
+    label: "Teams",
+    activeIcon: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/research-and-development/new",
+    label: "Start",
+    activeIcon: "/icons/add_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/research-and-development/talent",
+    label: "People",
+    activeIcon: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/research-and-development/build-log",
+    label: "Log",
+    activeIcon: "/icons/checklist_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/checklist_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+] as const;
+
+/* HIDDEN-FOR-BETA: the pre-beta bar, unchanged.
 const NAV_ITEMS = [
   {
     href: "/",
@@ -39,6 +75,7 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
 ] as const;
+*/
 
 // Home matches exactly; every other route stays active for itself and any
 // sub-path (e.g. /blueprints/<slug> keeps /blueprints active).

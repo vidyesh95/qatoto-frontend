@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import RoleCompensationComposer from "@/components/home/research-and-development/sections/role-compensation-composer";
 import {
@@ -55,7 +56,16 @@ export function TeamApplicationsList({
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="font-medium">{application.applicantName}</p>
+              {application.applicantHasPublishedTalentProfile ? (
+                <Link
+                  href={`/research-and-development/talent/${application.applicantUserId}`}
+                  className="font-medium underline-offset-2 hover:underline"
+                >
+                  {application.applicantName}
+                </Link>
+              ) : (
+                <p className="font-medium">{application.applicantName}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {application.roleTitleSnapshot ?? "Open application"} ·{" "}
                 {ROLE_COMMITMENT_LABELS[application.statedCommitment]} ·{" "}
@@ -129,17 +139,16 @@ export function TeamApplicationsList({
 
 export function TeamInvitesSection({
   projectSlug,
-  openRoles,
-  inviteMutation,
+  // HIDDEN-FOR-BETA: `openRoles` and `inviteMutation` feed the hidden form below.
 }: {
   readonly projectSlug: string;
   readonly openRoles: readonly OpenRole[];
   readonly inviteMutation: ReturnType<typeof useInviteToProjectMutation>;
 }) {
   const invitesQuery = useProjectInvitesQuery(projectSlug);
-  const [inviteeUserId, setInviteeUserId] = useState("");
-  const [inviteOpenRoleId, setInviteOpenRoleId] = useState("");
-  const [inviteMessage, setInviteMessage] = useState("");
+  // HIDDEN-FOR-BETA: const [inviteeUserId, setInviteeUserId] = useState("");
+  // HIDDEN-FOR-BETA: const [inviteOpenRoleId, setInviteOpenRoleId] = useState("");
+  // HIDDEN-FOR-BETA: const [inviteMessage, setInviteMessage] = useState("");
 
   return (
     <>
@@ -157,6 +166,18 @@ export function TeamInvitesSection({
         <p className="text-sm text-muted-foreground">You have not invited anyone yet.</p>
       )}
 
+      <p className="text-sm text-muted-foreground">
+        To invite someone, find them under{" "}
+        <Link
+          href="/research-and-development/talent"
+          className="font-medium text-primary-imprint underline-offset-2 hover:underline"
+        >
+          People
+        </Link>{" "}
+        and use Invite to project on their profile.
+      </p>
+      {/* HIDDEN-FOR-BETA: the raw user id form. Profiles never showed an id, so nobody could use it.
+          `invite-to-project-panel.tsx` replaces it. Restoring needs the three `useState`s above.
       <form
         className="space-y-2 rounded-2xl border border-outline-variant/60 p-4"
         onSubmit={(submitEvent) => {
@@ -228,6 +249,7 @@ export function TeamInvitesSection({
           </p>
         )}
       </form>
+      */}
     </>
   );
 }

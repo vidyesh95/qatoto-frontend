@@ -4,8 +4,10 @@
 
 import { useState } from "react";
 
+import SignInReturnLink from "@/components/auth/sign-in-return-link";
 import RndSheet from "@/components/home/research-and-development/sheets/rnd-sheet";
 import { createLazySheetBody } from "@/components/home/shared/lazy-overlay";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import type { OpenRole } from "@/lib/rnd/catalog.schemas";
 
 const { LazyOverlay: LazyApplyRoleForm, preload: preloadApplyRoleForm } = createLazySheetBody(
@@ -15,6 +17,17 @@ const { LazyOverlay: LazyApplyRoleForm, preload: preloadApplyRoleForm } = create
 /** Apply to a specific role. What the application carries is documented in `apply-role-form.tsx`. */
 export default function ApplyRoleSheet({ role }: { role: OpenRole }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  // A signed-out visitor used to write a whole application and only then be refused on submit. This
+  // is a prompt, not a gate: the backend still authorizes the write.
+  const isSignedIn = useViewerSignedIn(false);
+
+  if (!isSignedIn) {
+    return (
+      <SignInReturnLink className="mt-auto rounded-full border border-outline-strong px-4 py-2 text-center text-sm font-medium text-primary-imprint">
+        Sign in to apply
+      </SignInReturnLink>
+    );
+  }
 
   return (
     <>

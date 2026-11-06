@@ -9,11 +9,13 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import { RndSignInRequiredPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import {
   useCreateResearchProjectMutation,
   useResearchCategoriesQuery,
   type CreateProjectProgress,
 } from "@/hooks/rnd/projects";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { ApiRequestError } from "@/lib/http";
 
 import IdeaBasicsStep from "@/components/home/research-and-development/wizard/idea-basics-step";
@@ -87,6 +89,9 @@ const EMPTY_NEW_IDEA_DRAFT: NewIdeaDraft = {
 };
 
 export default function NewIdeaWizardPage() {
+  // A prompt, not a gate: the backend still authorizes the write. "I have an idea" is the home
+  // page's first button, and without this a visitor wrote all four steps and was refused at the end.
+  const isSignedIn = useViewerSignedIn(false);
   const [viewState, setViewState] = useState<NewIdeaWizardViewState>({
     status: "editing",
     currentStepIndex: 0,
@@ -121,6 +126,14 @@ export default function NewIdeaWizardPage() {
   };
 
   const isDraftValid = draft.ideaName.trim() !== "" && draft.oneLinePitch.trim() !== "";
+
+  if (!isSignedIn) {
+    return (
+      <div className="mx-auto max-w-xl px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
+        <RndSignInRequiredPanel message="Sign in to post your idea." />
+      </div>
+    );
+  }
 
   const renderCurrentStep = (stepId: NewIdeaStepId) => {
     switch (stepId) {

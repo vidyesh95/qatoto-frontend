@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { SITE_SHARE_IMAGE } from "@/lib/site";
+
 import ProjectDetail from "@/components/home/research-and-development/project-detail";
 import { getResearchProjectDetail, listResearchProjectSlugs } from "@/lib/rnd/projects.api";
 import { withSentinelValues } from "@/lib/static-params";
@@ -38,10 +40,26 @@ export async function generateMetadata({
   const { id } = await params;
   const detailResult = await getResearchProjectDetail(id);
   if (!detailResult.success) return { title: "Project · R&D" };
+  const { name, tagline, coverImageUrl } = detailResult.data;
+  // The fallback is named, not inherited: Next replaces `openGraph` rather than merging it, so
+  // leaving `images` off for a project with no cover would emit no `og:image` at all.
+  const shareImage = coverImageUrl === null ? SITE_SHARE_IMAGE : { url: coverImageUrl, alt: name };
   return {
-    title: `${detailResult.data.name} · R&D`,
-    description: detailResult.data.tagline,
+    title: `${name} · R&D`,
+    description: tagline,
     alternates: { canonical: `/research-and-development/project/${id}` },
+    openGraph: {
+      title: name,
+      description: tagline,
+      url: `/research-and-development/project/${id}`,
+      images: [shareImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: name,
+      description: tagline,
+      images: [shareImage.url],
+    },
   };
 }
 

@@ -8,7 +8,7 @@
 // shows "No insights yet" when the backend is down reports a platform outage as a
 // finding about the data.
 
-import Link from "next/link";
+import SignInReturnLink from "@/components/auth/sign-in-return-link";
 
 export default function RndStatusPanel({
   message,
@@ -35,12 +35,9 @@ export function RndSignInRequiredPanel({ message }: { message: string }) {
     <RndStatusPanel
       message={message}
       action={
-        <Link
-          href="/sign-in"
-          className="rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground"
-        >
+        <SignInReturnLink className="rounded-full bg-primary-imprint px-4 py-2 text-xs font-medium text-primary-imprint-foreground">
           Sign in
-        </Link>
+        </SignInReturnLink>
       }
     />
   );

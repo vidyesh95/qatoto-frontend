@@ -4,12 +4,14 @@
 
 import { useState } from "react";
 
+import SignInReturnLink from "@/components/auth/sign-in-return-link";
 import {
   MutationErrorNotice,
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { LABEL_CLASS } from "@/components/ui/field-classes";
 import { useApplyToProjectMutation } from "@/hooks/rnd/projects";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { ApiRequestError } from "@/lib/http";
 import {
   ROLE_COMMITMENTS,
@@ -38,8 +40,19 @@ export default function RequestToJoinButton({ projectSlug }: { projectSlug: stri
   const [statedCommitment, setStatedCommitment] = useState<RoleCommitment>("part_time");
   const [expectedCompensationNote, setExpectedCompensationNote] = useState("");
 
+  // A prompt, not a gate: the backend still authorizes the write.
+  const isSignedIn = useViewerSignedIn(false);
+
   const applyError =
     applyMutation.error instanceof ApiRequestError ? applyMutation.error.apiError : null;
+
+  if (!isSignedIn) {
+    return (
+      <SignInReturnLink className="rounded-full border border-outline-strong px-4 py-2 text-sm font-medium text-primary-imprint">
+        Sign in to ask to join
+      </SignInReturnLink>
+    );
+  }
 
   if (applyMutation.isSuccess) {
     return <MutationSuccessNotice message="Sent. You can follow it on your applications page." />;

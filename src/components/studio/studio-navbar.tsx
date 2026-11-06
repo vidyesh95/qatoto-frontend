@@ -43,6 +43,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
         </div>
 
         {/* Search + voice */}
+        {/* HIDDEN-FOR-BETA: search and voice search, as in the (home) navbar.
         <div className="hidden items-center justify-end gap-2 xl:absolute xl:left-1/2 xl:flex xl:w-xl xl:-translate-x-1/2">
           <form
             action="/search"
@@ -90,9 +91,11 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
             />
           </button>
         </div>
+        */}
 
         {/* Actions */}
         <div className="flex items-center gap-x-2 text-foreground">
+          {/* HIDDEN-FOR-BETA: the compact search link.
           <Link
             href="/search"
             aria-label="Search"
@@ -105,6 +108,7 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
               height={24}
             />
           </Link>
+          */}
           {/* NO `isViewerSignedIn` TO PASS HERE, and that is the case the prop's default exists
           for: this bell sits in the navbar itself rather than inside `accountSlot`, so unlike the
           (home) and (admin) clusters it renders for anyone. It gates itself. */}

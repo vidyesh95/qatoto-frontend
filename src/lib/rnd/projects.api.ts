@@ -335,7 +335,7 @@ export function setProjectStage(
 ): Promise<ActionResponse<ResearchProjectDetail>> {
   return sendJson(
     `/research-projects/${projectSlug}/stage`,
-    "POST",
+    "PATCH",
     input,
     ResearchProjectDetailSchema,
     options,

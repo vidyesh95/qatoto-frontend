@@ -379,7 +379,30 @@ type StudioNavSection = {
 // Sidebar maps the product lifecycle: create/build-in-public up top (daily
 // tools), then pitch → team → fund → feedback, then the sell-side (orders,
 // logistics, support, earn), then channel housekeeping.
+// HIDDEN-FOR-BETA: the beta studio is the team path only. The full lists are kept below.
 const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
+  {
+    items: [{ path: STUDIO_ROUTES.home, label: "Home", iconKey: "home", isEmphasized: true }],
+  },
+  {
+    title: "Product journey",
+    items: [
+      { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
+      { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
+      { path: STUDIO_ROUTES.feedback, label: "Feedback", iconKey: "feedback" },
+    ],
+  },
+];
+
+/* ---------- Collapsed Navigation Config ---------- */
+const COLLAPSED_NAV_CONFIG: StudioNavItem[] = [
+  { path: STUDIO_ROUTES.home, label: "Home", iconKey: "home", isEmphasized: true },
+  { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
+  { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
+];
+
+/* HIDDEN-FOR-BETA: the pre-beta studio menu, unchanged.
+const ORIGINAL_STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
   {
     items: [{ path: STUDIO_ROUTES.home, label: "Home", iconKey: "home", isEmphasized: true }],
   },
@@ -446,14 +469,14 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
   },
 ];
 
-/* ---------- Collapsed Navigation Config ---------- */
-const COLLAPSED_NAV_CONFIG: StudioNavItem[] = [
+const ORIGINAL_COLLAPSED_NAV_CONFIG: StudioNavItem[] = [
   { path: STUDIO_ROUTES.home, label: "Home", iconKey: "home", isEmphasized: true },
   { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
   { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
   { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
   { path: STUDIO_ROUTES.playlists, label: "Playlists", iconKey: "playlistPlay" },
 ];
+*/
 
 /* ---------- Main Component ---------- */
 export default function StudioSidebar() {

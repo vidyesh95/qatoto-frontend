@@ -15,7 +15,7 @@ import {
   LazySendFeedbackSheet,
   preloadAccountMenu,
 } from "@/components/home/account/menus/lazy-account-menus";
-import CreateMenu from "@/components/studio/create-menu";
+// HIDDEN-FOR-BETA: import CreateMenu from "@/components/studio/create-menu";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
@@ -28,13 +28,14 @@ export default function StudioNavbarAccountCluster({
   const viewerAvatarUrl = useViewerAvatarUrl();
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+  // HIDDEN-FOR-BETA: const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   // Owned here rather than in `AccountMenu`, which unmounts the moment it closes — see the
   // note on `onSendFeedback` in `account-menu.tsx`.
   const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
 
   return (
     <>
+      {/* HIDDEN-FOR-BETA: the Create menu (upload video, go live, new playlist, add product).
       {isAuthenticated && (
         <div className="relative">
           <button
@@ -54,6 +55,7 @@ export default function StudioNavbarAccountCluster({
           {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} />}
         </div>
       )}
+      */}
       {isAuthenticated ? (
         <div className="relative">
           <button

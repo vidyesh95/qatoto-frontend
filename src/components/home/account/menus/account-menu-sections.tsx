@@ -11,12 +11,12 @@ import { preloadSendFeedbackSheet } from "@/components/home/account/menus/lazy-a
 const INFORMATION_LINKS = [
   { label: "How Qatoto Works", href: "/how-qatoto-works" },
   { label: "About", href: "/about" },
-  { label: "Press", href: "/press" },
-  { label: "Blogs", href: "/blogs" },
+  // HIDDEN-FOR-BETA: { label: "Press", href: "/press" },
+  // HIDDEN-FOR-BETA: { label: "Blogs", href: "/blogs" },
   { label: "Contact Us", href: "/contact-us" },
-  { label: "Creator", href: "/creator" },
+  // HIDDEN-FOR-BETA: { label: "Creator", href: "/creator" },
   { label: "Careers", href: "/careers" },
-  { label: "Developers", href: "/developers" },
+  // HIDDEN-FOR-BETA: { label: "Developers", href: "/developers" },
   { label: "Roadmap", href: "/roadmap" },
 ] as const;
 
@@ -120,7 +120,7 @@ export function AccountMenuUserCard({
 export function AccountMenuNavList({
   onViewChange,
   onSignOut,
-  onClose,
+  // HIDDEN-FOR-BETA: `onClose` is read only by the hidden rows below.
 }: {
   readonly onViewChange: (view: AccountMenuView) => void;
   readonly onSignOut: () => void;
@@ -128,6 +128,7 @@ export function AccountMenuNavList({
 }) {
   return (
     <>
+      {/* HIDDEN-FOR-BETA: the video, retail and commerce rows.
       <Link
         href="/library"
         onClick={onClose}
@@ -219,6 +220,7 @@ export function AccountMenuNavList({
         />
         <span className="text-sm font-medium text-secondary-foreground">Disputes</span>
       </Link>
+      */}
       <button
         type="button"
         onClick={() => onViewChange("settings")}

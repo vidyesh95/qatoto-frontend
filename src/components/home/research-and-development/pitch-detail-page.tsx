@@ -1,6 +1,8 @@
 // TRANSPORT: server-fetch — `GET /pitches/:pitchSlug`, read with the caller's session
 // forwarded so the founder additionally sees their own unconfirmed funding records.
 import Link from "next/link";
+
+import RndShareButton from "@/components/home/research-and-development/sections/rnd-share-button";
 import { notFound } from "next/navigation";
 
 import {
@@ -74,6 +76,12 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
       <h1 className="mt-3 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
         {pitch.title}
       </h1>
+      <div className="mt-3">
+        <RndShareButton
+          sharePath={`/research-and-development/pitches/${pitch.slug}`}
+          shareTitle={pitch.title}
+        />
+      </div>
 
       {/* A CLOSED PITCH KEEPS ITS PAGE, and says so. A 404 here would suggest it never
           existed, which is worse for anyone arriving from an old link. */}

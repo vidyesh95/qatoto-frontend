@@ -14,22 +14,21 @@
 // for `AdminStaffGate`. So only this component's wrapper reads the cookie, under its own `<Suspense>`,
 // and the rest of the chrome keeps prerendering.
 
-import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
 import {
   LazyAccountMenu,
-  LazyAiAssistSheet,
+  // HIDDEN-FOR-BETA: LazyAiAssistSheet, preloadAiAssistSheet (signed-out AI Assist button below).
   LazySendFeedbackSheet,
   preloadAccountMenu,
-  preloadAiAssistSheet,
 } from "@/components/home/account/menus/lazy-account-menus";
-import CartNavButton from "@/components/home/layout/cart-nav-button";
+// HIDDEN-FOR-BETA: import CartNavButton from "@/components/home/layout/cart-nav-button";
 import NotificationBell from "@/components/home/layout/notification-bell";
+import SignInReturnLink from "@/components/auth/sign-in-return-link";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
-import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas";
+// HIDDEN-FOR-BETA: import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas";
 
 export default function NavbarAccountCluster({
   isViewerSignedIn,
@@ -56,7 +55,7 @@ export default function NavbarAccountCluster({
   const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
   // Signed out, there is no account menu to hold the AI Assist switch, so the navbar offers it
   // directly. Signed in, the account menu is where it lives, as before.
-  const [isAiAssistSheetOpen, setIsAiAssistSheetOpen] = useState(false);
+  // HIDDEN-FOR-BETA: const [isAiAssistSheetOpen, setIsAiAssistSheetOpen] = useState(false);
 
   return (
     <>
@@ -66,9 +65,10 @@ export default function NavbarAccountCluster({
           button does. The server's answer is threaded down so the badge does not wait on the
           session atom. */}
           <NotificationBell isViewerSignedIn={isViewerSignedIn} />
-          {/* Owns its own cart query so the request only exists for a signed-in visitor — see
-          the header of `cart-nav-button.tsx`. */}
-          <CartNavButton />
+          {/* HIDDEN-FOR-BETA: the retail cart.
+          Owns its own cart query so the request only exists for a signed-in visitor — see
+          the header of `cart-nav-button.tsx`.
+          <CartNavButton /> */}
           <div className="relative">
             <button
               type="button"
@@ -103,9 +103,11 @@ export default function NavbarAccountCluster({
         </>
       ) : (
         <>
-          {/* The mascot's own still is the icon: `public/icons` has no AI glyph, and this is the
+          {/* HIDDEN-FOR-BETA: the signed-out AI Assist button. Signed in, the account menu still
+              carries the switch. To restore: uncomment this, its `useState` and its three imports.
+          { /* The mascot's own still is the icon: `public/icons` has no AI glyph, and this is the
               character the switch turns on. Text from `sm` up; on a phone the image and the
-              accessible name carry it, so the navbar keeps its room for search. */}
+              accessible name carry it, so the navbar keeps its room for search. * /}
           <button
             type="button"
             aria-haspopup="dialog"
@@ -127,10 +129,8 @@ export default function NavbarAccountCluster({
           {isAiAssistSheetOpen && (
             <LazyAiAssistSheet idPrefix="navbar" onClose={() => setIsAiAssistSheetOpen(false)} />
           )}
-          <Link
-            href={"/sign-in"}
-            className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint"
-          >
+          */}
+          <SignInReturnLink className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint">
             <Image
               src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
               alt={"Signin"}
@@ -138,7 +138,7 @@ export default function NavbarAccountCluster({
               height={24}
             />
             Sign in
-          </Link>
+          </SignInReturnLink>
         </>
       )}
     </>

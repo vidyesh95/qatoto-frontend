@@ -11,6 +11,7 @@ import {
   getFactorySitemapEntries,
   getForumThreadSitemapEntries,
   getPathwaySitemapEntries,
+  getPitchSitemapEntries,
   getPressSitemapEntries,
   getProblemClusterSitemapEntries,
   getProviderSitemapEntries,
@@ -82,17 +83,17 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
 
   // (information)
   "/about",
-  "/blogs",
+  // HIDDEN-FOR-BETA: "/blogs",
   "/careers",
   "/contact-us",
-  "/creator",
-  "/developers",
+  // HIDDEN-FOR-BETA: "/creator",
+  // HIDDEN-FOR-BETA: "/developers",
   "/how-qatoto-works",
-  "/press",
+  // HIDDEN-FOR-BETA: "/press",
   "/roadmap",
 
   // (home) — informational pages that are not part of the app shell.
-  "/advertise-with-us",
+  // HIDDEN-FOR-BETA: "/advertise-with-us",
   "/customer-service",
   "/policies-and-safety",
 
@@ -104,23 +105,23 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/vulnerability-disclosure-policy",
 
   // Store hubs. `/store/search` is excluded above; the RFQ, quote and inquiry surfaces are private.
-  "/store",
-  "/store/business",
-  "/store/categories",
-  "/store/factories",
-  "/store/find-cofounder",
-  "/store/forum",
-  "/store/pathways",
-  "/store/providers",
+  // HIDDEN-FOR-BETA: "/store",
+  // HIDDEN-FOR-BETA: "/store/business",
+  // HIDDEN-FOR-BETA: "/store/categories",
+  // HIDDEN-FOR-BETA: "/store/factories",
+  // HIDDEN-FOR-BETA: "/store/find-cofounder",
+  // HIDDEN-FOR-BETA: "/store/forum",
+  // HIDDEN-FOR-BETA: "/store/pathways",
+  // HIDDEN-FOR-BETA: "/store/providers",
 
   // R&D hubs. `/talent` and `/applications` are `noindex` and stay out. `/market-research`
   // IS indexed: it replaced the knowledge hub, whose noindex was justified as "signed-in
   // only" and had stopped being true — every read on it is public.
   "/research-and-development",
   "/research-and-development/build-log",
-  "/research-and-development/funding",
-  "/research-and-development/go-to-market",
-  "/research-and-development/governance",
+  // HIDDEN-FOR-BETA: "/research-and-development/funding",
+  // HIDDEN-FOR-BETA: "/research-and-development/go-to-market",
+  // HIDDEN-FOR-BETA: "/research-and-development/governance",
   // ⚠️ NO `/research-and-development/import-intelligence` HERE, AND IT WAS LISTED UNTIL NOW.
   // `next.config.ts` permanently redirects it to `market-research?tab=import-substitution`, so
   // the built sitemap was announcing a URL that answers 308 — which Google files as "Page with
@@ -128,9 +129,9 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   // names twice: no redirect-only route, and no searchParam-driven shell. The destination is
   // both, so neither spelling belongs here. `market-research` below is the indexable surface
   // and it covers the same content.
-  "/research-and-development/market-research",
-  "/research-and-development/problem-map",
-  "/research-and-development/programs",
+  // HIDDEN-FOR-BETA: "/research-and-development/market-research",
+  // HIDDEN-FOR-BETA: "/research-and-development/problem-map",
+  // HIDDEN-FOR-BETA: "/research-and-development/programs",
   "/research-and-development/team-building",
 ];
 
@@ -150,7 +151,7 @@ function toSitemapUrl(entry: SitemapEntry): MetadataRoute.Sitemap[number] {
 }
 
 /**
- * The sixteen enumerations, run ONE AT A TIME.
+ * The enumerations, run ONE AT A TIME.
  *
  * `Promise.all` WAS TRIED AND IS WRONG HERE, measurably. Each of these walks a paginated surface to
  * exhaustion, so fifteen of them at once is dozens of concurrent requests against a backend whose
@@ -168,6 +169,7 @@ const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
   getPressSitemapEntries,
   getResearchProgramSitemapEntries,
   getResearchProjectSitemapEntries,
+  getPitchSitemapEntries,
   getProblemClusterSitemapEntries,
   getSupplierSitemapEntries,
   getImportCommoditySitemapEntries,
@@ -183,10 +185,10 @@ const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const sitemapEntryBatches = await Promise.all(
-    SITEMAP_SOURCES.map((readSitemapEntries) => readSitemapEntries()),
-  );
-  const dynamicEntries = sitemapEntryBatches.flat();
+  const dynamicEntries: SitemapEntry[] = [];
+  for (const readSitemapEntries of SITEMAP_SOURCES) {
+    dynamicEntries.push(...(await readSitemapEntries()));
+  }
 
   // THE SENTINEL MUST NEVER BE PUBLISHED. `withSentinelValues` substitutes `"__none__"` when a read
   // comes back empty, because `cacheComponents` throws `EmptyGenerateStaticParamsError` on an empty

@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import InviteToProjectPanel from "@/components/home/research-and-development/sections/invite-to-project-panel";
 import { TalentCompensationAskBadges } from "@/components/home/research-and-development/cards/compensation-badges";
 import RndStatusPanel, {
   RndSignInRequiredPanel,
@@ -134,6 +135,7 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
         SAME SHEET, SAME `reportedUserId`. A report is about a PERSON, not about a page, so one
         report from here reaches the same queue and the same moderator action as one from a channel.
       */}
+      <InviteToProjectPanel inviteeUserId={profile.userId} inviteeName={profile.name} />
       <ReportProfileOpener reportedUserId={profile.userId} displayName={profile.name} />
 
       {/* ⚠️ **ONE HAIRLINE ROW, NOT THREE BOXES.** `docs/Design.md` §6 bans repeating an identical

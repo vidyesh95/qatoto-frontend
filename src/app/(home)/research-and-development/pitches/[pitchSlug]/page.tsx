@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { SITE_SHARE_IMAGE } from "@/lib/site";
+
 import PitchDetailPage from "@/components/home/research-and-development/pitch-detail-page";
 import { getPitch, listPublishedPitchSlugs } from "@/lib/rnd/pitches.api";
 import { withSentinelValues } from "@/lib/static-params";
@@ -32,10 +34,24 @@ export async function generateMetadata({
   const { pitchSlug } = await params;
   const pitchResult = await getPitch(pitchSlug);
   if (!pitchResult.success) return { title: "Pitch · R&D" };
+  const pitchTitle = pitchResult.data.pitch.title;
+  const pitchDescription = pitchResult.data.pitch.summary.slice(0, 160);
   return {
-    title: `${pitchResult.data.pitch.title} · R&D`,
-    description: pitchResult.data.pitch.summary.slice(0, 160),
+    title: `${pitchTitle} · R&D`,
+    description: pitchDescription,
     alternates: { canonical: `/research-and-development/pitches/${pitchSlug}` },
+    openGraph: {
+      title: pitchTitle,
+      description: pitchDescription,
+      url: `/research-and-development/pitches/${pitchSlug}`,
+      images: [SITE_SHARE_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pitchTitle,
+      description: pitchDescription,
+      images: [SITE_SHARE_IMAGE.url],
+    },
   };
 }
 

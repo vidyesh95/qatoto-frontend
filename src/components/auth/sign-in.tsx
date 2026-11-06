@@ -6,12 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
 import { signIn } from "@/lib/auth-client";
+import { buildAuthHref, buildSocialCallbackUrl } from "@/lib/auth-return-path";
 import { SocialSignInTermsNotice } from "./auth-step-components";
-
-const handleGoogleSignIn = () =>
-  signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () =>
-  signIn.social({ provider: "github", callbackURL: window.location.origin });
 
 type PasskeySignInState =
   | { status: "idle" }
@@ -32,10 +28,17 @@ type PasskeySignInState =
  */
 export default function SignIn({
   hasJustDeletedAccount = false,
+  returnPath = "/",
 }: {
   readonly hasJustDeletedAccount?: boolean;
+  /** Already validated by `readSafeReturnPath` in the page. */
+  readonly returnPath?: string;
 }) {
   const router = useRouter();
+  const handleGoogleSignIn = () =>
+    signIn.social({ provider: "google", callbackURL: buildSocialCallbackUrl(returnPath) });
+  const handleGitHubSignIn = () =>
+    signIn.social({ provider: "github", callbackURL: buildSocialCallbackUrl(returnPath) });
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
     status: "idle",
   });
@@ -66,7 +69,7 @@ export default function SignIn({
       });
       return;
     }
-    router.push("/");
+    router.push(returnPath);
   };
 
   return (
@@ -153,7 +156,7 @@ export default function SignIn({
           <hr className="flex-1" />
         </div>
         <Link
-          href={"/sign-in-with-password"}
+          href={buildAuthHref("/sign-in-with-password", returnPath)}
           className={
             "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-primary-imprint py-2.5 pr-6 pl-4 text-sm font-medium text-background"
           }
@@ -168,7 +171,10 @@ export default function SignIn({
         </Link>
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Don't have an account?</span>
-          <Link href={"/sign-up"} className="cursor-pointer text-primary-imprint">
+          <Link
+            href={buildAuthHref("/sign-up", returnPath)}
+            className="cursor-pointer text-primary-imprint"
+          >
             Sign up
           </Link>
         </p>

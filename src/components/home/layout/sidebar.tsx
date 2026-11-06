@@ -14,6 +14,25 @@ import { MASCOT_STATIC_FALLBACK_URL } from "@/lib/assistant/mascot-atlas.schemas
 
 /* ---------- Icon paths (outside component to prevent re-allocation) ---------- */
 const ICON_PATHS = {
+  addCircle: {
+    active: "/icons/add_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  // `static`: only the outline weight of these two is committed in `public/icons`.
+  checklist: {
+    static: "/icons/checklist_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  idCard: {
+    static: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  dashboard: {
+    active: "/icons/dashboard_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  send: {
+    active: "/icons/send_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/send_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   videoCall: {
     active: "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -123,7 +142,12 @@ const ICON_PATHS = {
 /* ---------- Route paths (outside component) ---------- */
 const ROUTES = {
   create: "/studio",
+  startProject: "/research-and-development/new",
   home: "/",
+  findTeam: "/research-and-development/team-building",
+  buildLog: "/research-and-development/build-log",
+  myApplications: "/research-and-development/applications",
+  myTeam: "/studio/team",
   blueprints: "/blueprints",
   store: "/store",
   storeSearch: "/store/search",
@@ -411,7 +435,53 @@ type NavSection = {
   hasDivider?: boolean;
 };
 
+// HIDDEN-FOR-BETA: the beta menu is the team path and nothing else. Every row that used to be here
+// is kept below, commented, so restoring one is an uncomment and `rg HIDDEN-FOR-BETA` lists the
+// lot. The routes themselves still answer by address.
 const NAVIGATION_CONFIG: NavSection[] = [
+  {
+    items: [
+      {
+        path: ROUTES.startProject,
+        label: "Start a project",
+        iconKey: "addCircle",
+        isEmphasized: true,
+      },
+    ],
+  },
+  {
+    items: [
+      { path: ROUTES.home, label: "Home", iconKey: "home" },
+      { path: ROUTES.findTeam, label: "Find a team", iconKey: "group" },
+      // Talent reads are `requireAuth`, so a signed-out visitor would only meet a sign-in wall.
+      { path: ROUTES.talent, label: "People", iconKey: "idCard", requiresSession: true },
+      { path: ROUTES.buildLog, label: "Build log", iconKey: "checklist" },
+    ],
+    hasDivider: true,
+  },
+  {
+    title: "Your work",
+    items: [
+      { path: ROUTES.myTeam, label: "My team", iconKey: "dashboard", requiresSession: true },
+      {
+        path: ROUTES.myApplications,
+        label: "My applications",
+        iconKey: "send",
+        requiresSession: true,
+      },
+    ],
+    hasDivider: true,
+  },
+  // HIDDEN-FOR-BETA: the Help section.
+  // {
+  //   title: "Help",
+  //   items: [{ path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" }],
+  //   hasDivider: true,
+  // },
+];
+
+/* HIDDEN-FOR-BETA: the pre-beta menu, unchanged. Restore rows from here into the list above.
+const ORIGINAL_NAVIGATION_CONFIG: NavSection[] = [
   {
     items: [{ path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true }],
   },
@@ -526,16 +596,19 @@ const NAVIGATION_CONFIG: NavSection[] = [
     hasDivider: true,
   },
 ];
+*/
 
 const FOOTER_LINKS_ROW1 = [
   { path: ROUTES.howQatotoWorks, label: "How Qatoto Works" },
   { path: ROUTES.about, label: "About" },
-  { path: ROUTES.press, label: "Press" },
-  { path: ROUTES.blogs, label: "Blogs" },
+  // HIDDEN-FOR-BETA: Press and Blogs serve invented CMS fixtures (see `next.config.ts`), and
+  // Creator and Developers describe surfaces the beta menu does not offer.
+  // { path: ROUTES.press, label: "Press" },
+  // { path: ROUTES.blogs, label: "Blogs" },
   { path: ROUTES.contactUs, label: "Contact Us" },
-  { path: ROUTES.creator, label: "Creator" },
+  // { path: ROUTES.creator, label: "Creator" },
   { path: ROUTES.careers, label: "Careers" },
-  { path: ROUTES.developers, label: "Developers" },
+  // { path: ROUTES.developers, label: "Developers" },
   { path: ROUTES.roadmap, label: "Roadmap" },
 ] as const;
 
@@ -550,11 +623,15 @@ const FOOTER_LINKS_ROW2 = [
 
 /* ---------- Collapsed Navigation Config ---------- */
 const COLLAPSED_NAV_CONFIG: NavLinkItem[] = [
-  { path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true },
+  // HIDDEN-FOR-BETA: Create, Blueprints, Store and R&D.
+  // { path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true },
+  // { path: ROUTES.blueprints, label: "Blueprints", iconKey: "architecture" },
+  // { path: ROUTES.store, label: "Store", iconKey: "localMall" },
+  // { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
+  { path: ROUTES.startProject, label: "Start", iconKey: "addCircle", isEmphasized: true },
   { path: ROUTES.home, label: "Home", iconKey: "home" },
-  { path: ROUTES.blueprints, label: "Blueprints", iconKey: "architecture" },
-  { path: ROUTES.store, label: "Store", iconKey: "localMall" },
-  { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
+  { path: ROUTES.findTeam, label: "Teams", iconKey: "group" },
+  { path: ROUTES.buildLog, label: "Build log", iconKey: "checklist" },
 ];
 
 /* ---------- Main Component ---------- */
