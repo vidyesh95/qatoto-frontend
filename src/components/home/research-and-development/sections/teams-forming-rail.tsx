@@ -12,8 +12,12 @@ export default function TeamsFormingRail({ projects }: { projects: ResearchProje
   return (
     <section className="space-y-1">
       <SectionHeader title="Teams forming right now" />
+      {/* SNAPS TO A CARD, so a swipe or a trackpad flick never rests with a card cut in half.
+          `scroll-px-*` matches the `px-*` gutter so the snapped card keeps that gutter instead of
+          landing flush against the edge, and `*:snap-start` sets the alignment from here, so the
+          card is unchanged everywhere else it renders. */}
       {projects.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
+        <div className="flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pt-2 pb-2 *:snap-start lg:scroll-px-6 lg:px-6">
           {projects.map((project) => (
             <ProjectCard key={project.slug} project={project} />
           ))}

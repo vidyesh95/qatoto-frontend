@@ -133,7 +133,9 @@ export default function NavbarAccountCluster({
           <SignInReturnLink className="flex gap-2 rounded-full border border-primary bg-card px-2 py-1.75 text-primary-imprint">
             <Image
               src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Signin"}
+              // Decorative: the visible "Sign in" beside it is the link's name. An alt here made it
+              // read "Signin Sign in".
+              alt=""
               width={24}
               height={24}
             />

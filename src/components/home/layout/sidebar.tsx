@@ -218,6 +218,10 @@ function isRouteActive(pathname: string, routePath: string) {
 type IconProps = {
   isActive: boolean;
   iconKey: keyof typeof ICON_PATHS;
+  /**
+   * `""` WHEN THE ROW PRINTS ITS LABEL, the label only when the icon stands alone (the collapsed
+   * Create button). Both at once made every link announce its name twice, "Home Home".
+   */
   alt: string;
 };
 
@@ -267,7 +271,7 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
       )}
     >
       <span className="shrink-0 text-foreground">
-        <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt={linkText} />
+        <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt="" />
       </span>
       <span className="truncate">{linkText}</span>
     </Link>
@@ -362,7 +366,7 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
         )}
       >
         <span className="shrink-0">
-          <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt={linkText} />
+          <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt="" />
         </span>
       </span>
       <span
@@ -715,15 +719,18 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
           <ul className="flex flex-col gap-1">
             {COLLAPSED_NAV_CONFIG.filter((item) => !item.isEmphasized).map((item) => {
               const isActive = isRouteActive(currentPathname, item.path);
+              // `<li>`, because a `<ul>` may only hold list items: bare links in it broke the list
+              // semantics a screen reader announces on the way in ("list, N items").
               return (
-                <CollapsedNavItem
-                  key={item.path}
-                  destinationPath={item.path}
-                  linkText={item.label}
-                  iconKey={item.iconKey}
-                  isEmphasized={item.isEmphasized}
-                  isActive={isActive}
-                />
+                <li key={item.path}>
+                  <CollapsedNavItem
+                    destinationPath={item.path}
+                    linkText={item.label}
+                    iconKey={item.iconKey}
+                    isEmphasized={item.isEmphasized}
+                    isActive={isActive}
+                  />
+                </li>
               );
             })}
           </ul>

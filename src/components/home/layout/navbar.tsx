@@ -125,7 +125,12 @@ export default function Navbar({
     // is already pinned above the scroll container by structure; `sticky` on a flex item that
     // never scrolls is a no-op that reads as though something depends on it. `z-50` stays — the
     // account and language menus open as `fixed` children and still stack against it.
-    <nav className="z-50 shrink-0 bg-background">
+    //
+    // `<header>`, NOT `<nav>`. This bar holds the brand, a back button and the account controls;
+    // the site's navigation is the sidebar and `MobileBottomNav`. As an unlabelled `<nav>` it was an
+    // extra "navigation" landmark with no name and nothing to navigate. At the top level of `<body>`
+    // a `<header>` is the page's `banner` landmark, which is what this is.
+    <header className="z-50 shrink-0 bg-background">
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between lg:px-6">
         {/* Brand */}
         <div
@@ -276,6 +281,6 @@ export default function Navbar({
           {accountSlot}
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

@@ -8,6 +8,12 @@ import { usePathname } from "next/navigation";
 // product surfaces from the desktop sidebar's COLLAPSED_NAV_CONFIG. Active item
 // gets a filled icon inside a teal pill, matching the collapsed-sidebar style.
 //
+// ⚠️ THE PILL'S FILL IS NOT THE INDICATOR. `--primary` on `--background` is about 1.2:1, far under
+// the 3:1 a current-page marker needs, and People and Log have no filled icon variant, so for them
+// the fill was the ONLY cue besides text colour. The `ring-primary-imprint` outline is what carries
+// it (well over 3:1 in both themes), and the label's weight is the second, non-colour cue. A ring
+// is a box-shadow, so neither changes layout. The collapsed sidebar still uses the bare pill.
+//
 // HIDDEN-FOR-BETA: Blueprints, Create, Store and R&D left this bar. The original list is kept below.
 const NAV_ITEMS = [
   {
@@ -103,7 +109,7 @@ export default function MobileBottomNav() {
           >
             <span
               className={`flex h-8 w-16 items-center justify-center rounded-full transition-colors ${
-                isActive ? "bg-primary" : ""
+                isActive ? "bg-primary ring-1 ring-primary-imprint" : ""
               }`}
             >
               <Image
@@ -114,7 +120,9 @@ export default function MobileBottomNav() {
               />
             </span>
             <span
-              className={`font-medium ${isActive ? "text-foreground" : "text-muted-foreground"}`}
+              className={
+                isActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
+              }
             >
               {item.label}
             </span>
