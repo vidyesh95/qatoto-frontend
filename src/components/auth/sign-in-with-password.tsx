@@ -6,16 +6,21 @@ import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState } from "react";
 import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import { signIn } from "@/lib/auth-client";
-import { SocialSignInTermsNotice } from "./auth-step-components";
+import { useSocialSignIn } from "@/hooks/use-social-sign-in";
+import { buildAuthHref } from "@/lib/auth-return-path";
+import { SocialSignInStatusMessage, SocialSignInTermsNotice } from "./auth-step-components";
 import ToggleSwitch from "@/components/ui/toggle-switch";
 
-const handleGoogleSignIn = () =>
-  signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () =>
-  signIn.social({ provider: "github", callbackURL: window.location.origin });
-
-export default function SignIn() {
+export default function SignIn({
+  returnPath = "/",
+}: {
+  /** Already validated by `readSafeReturnPath` in the page. */
+  readonly returnPath?: string;
+}) {
   const router = useRouter();
+  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(returnPath);
+  const handleGoogleSignIn = () => void handleSocialSignIn("google");
+  const handleGitHubSignIn = () => void handleSocialSignIn("github");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -34,7 +39,7 @@ export default function SignIn() {
   // pending, and the next explicit passkey sign-in call to the same browser
   // WebAuthn stack can then be rejected outright with no prompt at all.
   const onPasskeyAuthenticated = useEffectEvent(() => {
-    router.replace("/");
+    router.replace(returnPath);
   });
 
   useEffect(() => {
@@ -60,13 +65,16 @@ export default function SignIn() {
       setErrorMessage("Incorrect email or password.");
       return;
     }
-    router.push("/");
+    router.push(returnPath);
   };
 
   return (
     <main className="flex min-h-screen w-screen flex-col">
       <header className="space-y-10 bg-background pt-2 pb-4">
-        <Link href={"/sign-in"} className="mx-1 flex size-12 items-center justify-center">
+        <Link
+          href={buildAuthHref("/sign-in", returnPath)}
+          className="mx-1 flex size-12 items-center justify-center"
+        >
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Navigate back"
@@ -202,9 +210,10 @@ export default function SignIn() {
           <button
             type={"button"}
             onClick={handleGoogleSignIn}
+            disabled={socialSignInState.status === "redirecting"}
             aria-label="Continue with Google"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             }
           >
             <Image
@@ -217,9 +226,10 @@ export default function SignIn() {
           <button
             type={"button"}
             onClick={handleGitHubSignIn}
+            disabled={socialSignInState.status === "redirecting"}
             aria-label="Continue with GitHub"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             }
           >
             <Image
@@ -230,10 +240,14 @@ export default function SignIn() {
             />
           </button>
         </div>
+        <SocialSignInStatusMessage socialSignInState={socialSignInState} />
         <SocialSignInTermsNotice />
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Don't have an account?</span>
-          <Link href={"/sign-up"} className="cursor-pointer text-primary-imprint">
+          <Link
+            href={buildAuthHref("/sign-up", returnPath)}
+            className="cursor-pointer text-primary-imprint"
+          >
             Sign up
           </Link>
         </p>
