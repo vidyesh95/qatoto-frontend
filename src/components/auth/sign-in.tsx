@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
+import { useSocialSignIn } from "@/hooks/use-social-sign-in";
 import { signIn } from "@/lib/auth-client";
-import { buildAuthHref, buildSocialCallbackUrl } from "@/lib/auth-return-path";
-import { SocialSignInTermsNotice } from "./auth-step-components";
+import { buildAuthHref } from "@/lib/auth-return-path";
+import { SocialSignInStatusMessage, SocialSignInTermsNotice } from "./auth-step-components";
 
 type PasskeySignInState =
   | { status: "idle" }
@@ -35,10 +36,9 @@ export default function SignIn({
   readonly returnPath?: string;
 }) {
   const router = useRouter();
-  const handleGoogleSignIn = () =>
-    signIn.social({ provider: "google", callbackURL: buildSocialCallbackUrl(returnPath) });
-  const handleGitHubSignIn = () =>
-    signIn.social({ provider: "github", callbackURL: buildSocialCallbackUrl(returnPath) });
+  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(returnPath);
+  const handleGoogleSignIn = () => void handleSocialSignIn("google");
+  const handleGitHubSignIn = () => void handleSocialSignIn("github");
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
     status: "idle",
   });
@@ -95,8 +95,9 @@ export default function SignIn({
         <button
           type={"button"}
           onClick={handleGoogleSignIn}
+          disabled={socialSignInState.status === "redirecting"}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
           }
         >
           <Image
@@ -110,8 +111,9 @@ export default function SignIn({
         <button
           type={"button"}
           onClick={handleGitHubSignIn}
+          disabled={socialSignInState.status === "redirecting"}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
           }
         >
           <Image
@@ -122,6 +124,7 @@ export default function SignIn({
           />
           <span>Continue with GitHub</span>
         </button>
+        <SocialSignInStatusMessage socialSignInState={socialSignInState} />
         <SocialSignInTermsNotice />
         <button
           type={"button"}

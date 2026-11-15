@@ -19,7 +19,7 @@
  * advertising `localhost`. It also means a preview deploy emits a sitemap and a `robots.txt`
  * naming production, which is the right trade but worth knowing before you read one.
  */
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://qatoto.com";
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.qatoto.com";
 
 export const SITE_TITLE = "Qatoto : Product Research, Development & Support";
 

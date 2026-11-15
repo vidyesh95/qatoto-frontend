@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
 import ToggleSwitch from "@/components/ui/toggle-switch";
+import type { SocialSignInState } from "@/hooks/use-social-sign-in";
 
 export interface AuthWizardHeaderProps {
   readonly title: string;
@@ -293,10 +294,13 @@ export function AuthPasswordStep({
 export function AuthSocialButtons({
   onGoogleSignIn,
   onGitHubSignIn,
+  socialSignInState,
 }: {
   readonly onGoogleSignIn: () => void;
   readonly onGitHubSignIn: () => void;
+  readonly socialSignInState: SocialSignInState;
 }) {
+  const isRedirecting = socialSignInState.status === "redirecting";
   return (
     <>
       <div className="flex items-center gap-4 px-4 text-muted-foreground">
@@ -308,8 +312,9 @@ export function AuthSocialButtons({
         <button
           type="button"
           onClick={onGoogleSignIn}
+          disabled={isRedirecting}
           aria-label="Continue with Google"
-          className="border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+          className="border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Image
             src="/icons/google_logo_light.svg"
@@ -321,8 +326,9 @@ export function AuthSocialButtons({
         <button
           type="button"
           onClick={onGitHubSignIn}
+          disabled={isRedirecting}
           aria-label="Continue with GitHub"
-          className="border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+          className="border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Image
             src="/icons/github_logo_light.svg"
@@ -332,9 +338,38 @@ export function AuthSocialButtons({
           />
         </button>
       </div>
+      <SocialSignInStatusMessage socialSignInState={socialSignInState} />
       <SocialSignInTermsNotice />
     </>
   );
+}
+
+/**
+ * What a Google or GitHub click is doing, under the buttons. `redirecting` renders nothing visible:
+ * the browser is about to leave, and the disabled buttons already say a click landed. `error` is
+ * the case that used to render nothing at all.
+ */
+export function SocialSignInStatusMessage({
+  socialSignInState,
+}: {
+  readonly socialSignInState: SocialSignInState;
+}) {
+  switch (socialSignInState.status) {
+    case "idle":
+      return null;
+    case "redirecting":
+      return <output className="sr-only">Opening sign-in…</output>;
+    case "error":
+      return (
+        <p role="alert" className="px-4 text-center text-xs text-destructive">
+          {socialSignInState.message}
+        </p>
+      );
+    default: {
+      const exhaustiveSocialSignInState: never = socialSignInState;
+      return exhaustiveSocialSignInState;
+    }
+  }
 }
 
 /**

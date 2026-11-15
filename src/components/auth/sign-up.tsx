@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { signIn } from "@/lib/auth-client";
-import { buildAuthHref, buildSocialCallbackUrl } from "@/lib/auth-return-path";
+import { useSocialSignIn } from "@/hooks/use-social-sign-in";
+import { buildAuthHref } from "@/lib/auth-return-path";
 import { TERMS_VERSION } from "@/lib/legal-documents";
 import {
   AuthEmailInput,
@@ -43,10 +43,9 @@ export default function SignUp({
   readonly returnPath?: string;
 }) {
   const router = useRouter();
-  const handleGoogleSignIn = () =>
-    signIn.social({ provider: "google", callbackURL: buildSocialCallbackUrl(returnPath) });
-  const handleGitHubSignIn = () =>
-    signIn.social({ provider: "github", callbackURL: buildSocialCallbackUrl(returnPath) });
+  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(returnPath);
+  const handleGoogleSignIn = () => void handleSocialSignIn("google");
+  const handleGitHubSignIn = () => void handleSocialSignIn("github");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -290,6 +289,7 @@ export default function SignUp({
         <AuthSocialButtons
           onGoogleSignIn={handleGoogleSignIn}
           onGitHubSignIn={handleGitHubSignIn}
+          socialSignInState={socialSignInState}
         />
 
         <p className="space-x-1 text-center text-sm font-medium">

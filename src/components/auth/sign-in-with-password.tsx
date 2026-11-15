@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState } from "react";
 import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import { signIn } from "@/lib/auth-client";
-import { buildAuthHref, buildSocialCallbackUrl } from "@/lib/auth-return-path";
-import { SocialSignInTermsNotice } from "./auth-step-components";
+import { useSocialSignIn } from "@/hooks/use-social-sign-in";
+import { buildAuthHref } from "@/lib/auth-return-path";
+import { SocialSignInStatusMessage, SocialSignInTermsNotice } from "./auth-step-components";
 import ToggleSwitch from "@/components/ui/toggle-switch";
 
 export default function SignIn({
@@ -17,10 +18,9 @@ export default function SignIn({
   readonly returnPath?: string;
 }) {
   const router = useRouter();
-  const handleGoogleSignIn = () =>
-    signIn.social({ provider: "google", callbackURL: buildSocialCallbackUrl(returnPath) });
-  const handleGitHubSignIn = () =>
-    signIn.social({ provider: "github", callbackURL: buildSocialCallbackUrl(returnPath) });
+  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(returnPath);
+  const handleGoogleSignIn = () => void handleSocialSignIn("google");
+  const handleGitHubSignIn = () => void handleSocialSignIn("github");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -210,9 +210,10 @@ export default function SignIn({
           <button
             type={"button"}
             onClick={handleGoogleSignIn}
+            disabled={socialSignInState.status === "redirecting"}
             aria-label="Continue with Google"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             }
           >
             <Image
@@ -225,9 +226,10 @@ export default function SignIn({
           <button
             type={"button"}
             onClick={handleGitHubSignIn}
+            disabled={socialSignInState.status === "redirecting"}
             aria-label="Continue with GitHub"
             className={
-              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-primary-imprint disabled:cursor-not-allowed disabled:opacity-50"
             }
           >
             <Image
@@ -238,6 +240,7 @@ export default function SignIn({
             />
           </button>
         </div>
+        <SocialSignInStatusMessage socialSignInState={socialSignInState} />
         <SocialSignInTermsNotice />
         <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-muted-foreground">Don't have an account?</span>
