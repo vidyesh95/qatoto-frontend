@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { signIn } from "@/lib/auth-client";
-import { buildSocialCallbackUrl } from "@/lib/auth-return-path";
+import { buildSocialCallbackUrl, buildSocialErrorCallbackUrl } from "@/lib/auth-return-path";
 
 export type SocialSignInProvider = "google" | "github";
 
@@ -32,10 +32,26 @@ function buildSocialSignInFailureMessage(provider: SocialSignInProvider): string
   return `Couldn't start ${SOCIAL_SIGN_IN_PROVIDER_LABELS[provider]} sign-in. Try again in a moment.`;
 }
 
-export function useSocialSignIn(returnPath: string) {
-  const [socialSignInState, setSocialSignInState] = useState<SocialSignInState>({
-    status: "idle",
-  });
+/** The `?error=` keys a failed round trip appends. Scrubbed once shown, so a reload is clean. */
+const OAUTH_ERROR_QUERY_KEYS = ["error", "error_description"] as const;
+
+/**
+ * `initialErrorMessage` is the sentence for a `?error=` the provider round trip came back with,
+ * already resolved on the server by `describeSocialSignInError`; only the sign-in page passes it.
+ */
+export function useSocialSignIn(returnPath: string, initialErrorMessage: string | null = null) {
+  const [socialSignInState, setSocialSignInState] = useState<SocialSignInState>(
+    initialErrorMessage === null
+      ? { status: "idle" }
+      : { status: "error", message: initialErrorMessage },
+  );
+
+  useEffect(() => {
+    if (initialErrorMessage === null) return;
+    const currentUrl = new URL(window.location.href);
+    for (const queryKey of OAUTH_ERROR_QUERY_KEYS) currentUrl.searchParams.delete(queryKey);
+    window.history.replaceState(window.history.state, "", currentUrl);
+  }, [initialErrorMessage]);
 
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
@@ -52,6 +68,7 @@ export function useSocialSignIn(returnPath: string) {
       const { error } = await signIn.social({
         provider,
         callbackURL: buildSocialCallbackUrl(returnPath),
+        errorCallbackURL: buildSocialErrorCallbackUrl(returnPath),
       });
       if (error) {
         setSocialSignInState({

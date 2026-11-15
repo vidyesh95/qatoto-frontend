@@ -1,12 +1,14 @@
 import SignIn from "@/components/auth/sign-in";
 import { readSafeReturnPath, RETURN_PATH_QUERY_KEY } from "@/lib/auth-return-path";
+import { describeSocialSignInError } from "@/lib/social-sign-in-errors";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 /**
- * `?reason=account-deleted` and `?next=` are the parameters this route reads.
+ * `?reason=account-deleted`, `?next=` and `?error=` are the parameters this route reads. `?error=`
+ * is where a failed Google or GitHub round trip lands; it only selects a fixed sentence.
  *
  * WHY THE PAGE READS IT AND NOT THE CLIENT COMPONENT. `useSearchParams` would need a
  * Suspense boundary around a component that is otherwise entirely static, for a value the
@@ -21,12 +23,17 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { reason, [RETURN_PATH_QUERY_KEY]: rawReturnPath } = await searchParams;
+  const {
+    reason,
+    error: rawSocialSignInErrorCode,
+    [RETURN_PATH_QUERY_KEY]: rawReturnPath,
+  } = await searchParams;
 
   return (
     <SignIn
       hasJustDeletedAccount={reason === "account-deleted"}
       returnPath={readSafeReturnPath(rawReturnPath)}
+      socialSignInErrorMessage={describeSocialSignInError(rawSocialSignInErrorCode)}
     />
   );
 }

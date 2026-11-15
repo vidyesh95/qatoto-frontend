@@ -30,13 +30,19 @@ type PasskeySignInState =
 export default function SignIn({
   hasJustDeletedAccount = false,
   returnPath = "/",
+  socialSignInErrorMessage = null,
 }: {
   readonly hasJustDeletedAccount?: boolean;
   /** Already validated by `readSafeReturnPath` in the page. */
   readonly returnPath?: string;
+  /** A fixed sentence for `?error=`, from `describeSocialSignInError` in the page. */
+  readonly socialSignInErrorMessage?: string | null;
 }) {
   const router = useRouter();
-  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(returnPath);
+  const { socialSignInState, handleSocialSignIn } = useSocialSignIn(
+    returnPath,
+    socialSignInErrorMessage,
+  );
   const handleGoogleSignIn = () => void handleSocialSignIn("google");
   const handleGitHubSignIn = () => void handleSocialSignIn("github");
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({

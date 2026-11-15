@@ -76,3 +76,11 @@ export function buildAuthHref(authRoute: string, returnPath: string): string {
 export function buildSocialCallbackUrl(returnPath: string): string {
   return `${window.location.origin}${returnPath}`;
 }
+
+/**
+ * Where a failed Google or GitHub round trip lands: sign-in, still carrying the return path, so a
+ * second attempt goes back to the same place. Better Auth appends `?error=<code>` (or `&error=`).
+ */
+export function buildSocialErrorCallbackUrl(returnPath: string): string {
+  return `${window.location.origin}${buildAuthHref("/sign-in", returnPath)}`;
+}
